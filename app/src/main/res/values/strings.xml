@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="app_name">ავტოდაილერი</string>
-    <string name="accessibility_service_description">ავტომატური გათიშვა 30 წამის შემდეგ, თუ არ მიპასუხეს. ჩართეთ ეს სერვისი ზარის დასასრულებლად.</string>
-</resources>

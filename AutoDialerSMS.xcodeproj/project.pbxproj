@@ -1,0 +1,302 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		B10000012E00000100000001 /* AutoDialerSMSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000112E00000100000001 /* AutoDialerSMSApp.swift */; };
+		B10000022E00000100000001 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000122E00000100000001 /* ContentView.swift */; };
+		B10000032E00000100000001 /* SmsTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000132E00000100000001 /* SmsTemplate.swift */; };
+		B10000042E00000100000001 /* PhoneNumberParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000142E00000100000001 /* PhoneNumberParser.swift */; };
+		B10000052E00000100000001 /* CallQueueManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000152E00000100000001 /* CallQueueManager.swift */; };
+		B10000062E00000100000001 /* MessageComposeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000162E00000100000001 /* MessageComposeView.swift */; };
+		B10000072E00000100000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10000172E00000100000001 /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		B10000102E00000100000001 /* AutoDialerSMS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AutoDialerSMS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B10000112E00000100000001 /* AutoDialerSMSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoDialerSMSApp.swift; sourceTree = "<group>"; };
+		B10000122E00000100000001 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		B10000132E00000100000001 /* SmsTemplate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmsTemplate.swift; sourceTree = "<group>"; };
+		B10000142E00000100000001 /* PhoneNumberParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneNumberParser.swift; sourceTree = "<group>"; };
+		B10000152E00000100000001 /* CallQueueManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallQueueManager.swift; sourceTree = "<group>"; };
+		B10000162E00000100000001 /* MessageComposeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageComposeView.swift; sourceTree = "<group>"; };
+		B10000172E00000100000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B10000182E00000100000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		B10000202E00000100000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		B10000302E00000100000001 = {
+			isa = PBXGroup;
+			children = (
+				B10000312E00000100000001 /* AutoDialerSMS */,
+				B10000322E00000100000001 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		B10000312E00000100000001 /* AutoDialerSMS */ = {
+			isa = PBXGroup;
+			children = (
+				B10000112E00000100000001 /* AutoDialerSMSApp.swift */,
+				B10000122E00000100000001 /* ContentView.swift */,
+				B10000332E00000100000001 /* Models */,
+				B10000342E00000100000001 /* Services */,
+				B10000352E00000100000001 /* Views */,
+				B10000172E00000100000001 /* Assets.xcassets */,
+				B10000182E00000100000001 /* Info.plist */,
+			);
+			path = AutoDialerSMS;
+			sourceTree = "<group>";
+		};
+		B10000322E00000100000001 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				B10000102E00000100000001 /* AutoDialerSMS.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		B10000332E00000100000001 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				B10000132E00000100000001 /* SmsTemplate.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		B10000342E00000100000001 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				B10000142E00000100000001 /* PhoneNumberParser.swift */,
+				B10000152E00000100000001 /* CallQueueManager.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		B10000352E00000100000001 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				B10000162E00000100000001 /* MessageComposeView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		B10000402E00000100000001 /* AutoDialerSMS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B10000612E00000100000001 /* Build configuration list for PBXNativeTarget "AutoDialerSMS" */;
+			buildPhases = (
+				B10000412E00000100000001 /* Sources */,
+				B10000202E00000100000001 /* Frameworks */,
+				B10000422E00000100000001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = AutoDialerSMS;
+			productName = AutoDialerSMS;
+			productReference = B10000102E00000100000001 /* AutoDialerSMS.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		B10000502E00000100000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					B10000402E00000100000001 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = B10000602E00000100000001 /* Build configuration list for PBXProject "AutoDialerSMS" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = ka;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				ka,
+				Base,
+			);
+			mainGroup = B10000302E00000100000001;
+			productRefGroup = B10000322E00000100000001 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				B10000402E00000100000001 /* AutoDialerSMS */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		B10000422E00000100000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B10000072E00000100000001 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		B10000412E00000100000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B10000012E00000100000001 /* AutoDialerSMSApp.swift in Sources */,
+				B10000022E00000100000001 /* ContentView.swift in Sources */,
+				B10000032E00000100000001 /* SmsTemplate.swift in Sources */,
+				B10000042E00000100000001 /* PhoneNumberParser.swift in Sources */,
+				B10000052E00000100000001 /* CallQueueManager.swift in Sources */,
+				B10000062E00000100000001 /* MessageComposeView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		B10000702E00000100000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		B10000712E00000100000001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_OPTIMIZATION_LEVEL = s;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		B10000722E00000100000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = AutoDialerSMS/Info.plist;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = ge.autodialer.sms;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		B10000732E00000100000001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = AutoDialerSMS/Info.plist;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = ge.autodialer.sms;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		B10000602E00000100000001 /* Build configuration list for PBXProject "AutoDialerSMS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B10000702E00000100000001 /* Debug */,
+				B10000712E00000100000001 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B10000612E00000100000001 /* Build configuration list for PBXNativeTarget "AutoDialerSMS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B10000722E00000100000001 /* Debug */,
+				B10000732E00000100000001 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = B10000502E00000100000001 /* Project object */;
+}

@@ -1,18 +1,15 @@
-*.iml
-.gradle
-/local.properties
-/.idea
+# iOS / Xcode
+*.xcuserstate
+*.xcuserdata/
+DerivedData/
+build/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# macOS
 .DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+
+# Android (removed)
 *.apk
-*.ap_
-*.aab
-*.dex
-*.class
-bin/
-gen/
-out/
-release/
+.gradle/
