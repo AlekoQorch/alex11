@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ავტოდაილერი">
+  <meta name="theme-color" content="#1565C0">
+  <title>ავტოდაილერი + SMS</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="install-banner" class="install-banner hidden">
+    <p>📲 დააინსტალირე iPhone-ზე: Share → <strong>Add to Home Screen</strong></p>
+    <button id="dismiss-install" class="btn-text">✕</button>
+  </div>
+
+  <header>
+    <h1>📞 ავტოდაილერი</h1>
+    <p class="subtitle">iPhone-იდან პირდაპირ — Mac არ გჭირდება</p>
+  </header>
+
+  <main>
+    <section class="card note">
+      <strong>💡 როგორ მუშაობს</strong>
+      <p>ნომრებს ჩასვამ → „დაწყება“ → ტელეფონი გაიხსნება. 30 წმ-ში პასუხის გარეშე გათიშე → აპში დაბრუნდი → ავტომატურად შემდეგ ნომერზე გადავა.</p>
+    </section>
+
+    <section class="card">
+      <h2>📋 ნომრების სია</h2>
+      <textarea id="numbers-input" rows="6" placeholder="ჩაწერე ან ჩასვი ნომრები&#10;(თითო ხაზზე ერთი)&#10;&#10;მაგ: +995555123456&#10;599123456"></textarea>
+      <p class="hint" id="numbers-count">ნაპოვნი ნომრები: 0</p>
+    </section>
+
+    <section class="card status-card" id="status-card">
+      <div class="status-row">
+        <span class="status-dot" id="status-dot"></span>
+        <span id="status-text">მზად ხარ დასაწყებად</span>
+      </div>
+      <div class="progress-wrap hidden" id="progress-wrap">
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+        <p class="timer" id="timer-text">30 წმ</p>
+      </div>
+      <p class="last-result hidden" id="last-result"></p>
+      <p class="hint" id="progress-hint"></p>
+    </section>
+
+    <div class="btn-row">
+      <button id="btn-start" class="btn btn-green">▶ დაწყება</button>
+      <button id="btn-stop" class="btn btn-red" disabled>■ გაჩერება</button>
+    </div>
+
+    <section class="card">
+      <h2>💬 SMS შაბლონები</h2>
+      <input type="tel" id="sms-number" class="input" placeholder="SMS-ის მიმღები ნომერი">
+      <div id="sms-templates"></div>
+    </section>
+  </main>
+
+  <!-- შემდეგი ზარის overlay -->
+  <div id="next-call-overlay" class="overlay hidden">
+    <div class="overlay-box">
+      <p id="overlay-title">შემდეგი ნომერი</p>
+      <p id="overlay-number" class="overlay-number"></p>
+      <p id="overlay-countdown" class="overlay-countdown"></p>
+      <button id="btn-call-next" class="btn btn-green btn-large">📞 დარეკვა</button>
+      <button id="btn-skip" class="btn btn-text">გამოტოვება</button>
+    </div>
+  </div>
+
+  <!-- 30 წმ გაფრთხილება -->
+  <div id="timeout-overlay" class="overlay hidden">
+    <div class="overlay-box timeout-box">
+      <p class="timeout-icon">⏱</p>
+      <p><strong>30 წამი გავიდა!</strong></p>
+      <p>გათიშე ზარი ტელეფონში, შემდეგ დაბრუნდი აპში.</p>
+      <button id="btn-timeout-ok" class="btn btn-green btn-large">გასაგებია</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>

@@ -86,6 +86,7 @@ final class CallQueueManager: NSObject, ObservableObject {
         stopTimers()
         callWasAnswered = false
         waitingForNextAfterHangup = false
+        callFinishHandled = false
         showHangupAlert = false
         activeCallUUID = nil
 
@@ -159,8 +160,9 @@ final class CallQueueManager: NSObject, ObservableObject {
     }
 
     private func handleCallFinished(answered: Bool, reason: String? = nil) {
-        guard isRunning else { return }
+        guard isRunning, !callFinishHandled else { return }
 
+        callFinishHandled = true
         stopTimers()
         let number = currentNumber ?? queue[currentIndex]
         let result: String
