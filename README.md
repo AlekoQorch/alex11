@@ -4,17 +4,19 @@
 
 ---
 
-## 📱 iPhone-ზე გახსნა — მუშაობს ახლავე!
+## 📱 iPhone-ზე გახსნა — ეს ლინკი გამოიყენე!
 
-### ლინკი (გახსენი Safari-ში):
+Safari-ში გახსენი (დააკოპირე ზუსტად):
 
 ```
-https://cdn.jsdelivr.net/gh/AlekoQorch/alex11@gh-pages/
+https://cdn.statically.io/gh/AlekoQorch/alex11/gh-pages/index.html
 ```
 
-### Home Screen-ზე დამატება (აპივით):
+> ⚠️ **არა** jsdelivr ლინკი — ის HTML კოდს აჩვენებს, აპს არა!
+
+### Home Screen-ზე (აპივით):
 1. Share ⬆️ → **Add to Home Screen** → Add
-2. Home Screen-ზე გაქვს **„ავტოდაილერი“**
+2. Home Screen-იდან გახსენი
 
 ---
 

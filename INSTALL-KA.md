@@ -19,16 +19,11 @@
 
 ## ნაწილი 2: iPhone-ზე გახსნა
 
-### სწორი ლინკი (ზუსტად ეს!):
+### სწორი ლინკი:
 
 ```
-https://alekoqorch.github.io/alex11/
+https://cdn.statically.io/gh/AlekoQorch/alex11/gh-pages/index.html
 ```
-
-| ❌ არასწორი | ✅ სწორი |
-|------------|---------|
-| koqorch.github.io | **alekoqorch**.github.io |
-| alekoqorch.github.io (ბოლოში /alex11/ არაა) | alekoqorch.github.io**/**alex11**/** |
 
 ---
 
