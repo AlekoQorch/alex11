@@ -313,7 +313,7 @@
 
       <div class="page" id="p-sms">
         <input type="tel" id="sms-num" placeholder="ტელეფონის ნომერი" inputmode="tel">
-        <p class="sms-hint">3 შაბლონი: პატარა SMS · ტარიფის დაანგარიშება · სრული შეთავაზება</p>
+        <p class="sms-hint">4 შაბლონი: პატარა SMS · მომწერეთ · ტარიფი · სრული შეთავაზება</p>
         <div id="sms-list"></div>
       </div>
 
@@ -552,6 +552,14 @@
           <div class="sms-text" id="intro-preview">${introMsg('ka')}</div>
           <button type="button" data-send="intro-sms">გაგზავნა SMS</button>
         </div>
+        <div class="sms-card" data-id="noanswer">
+          <h3>არ პასუხობს</h3>
+          <div class="sms-text">${NO_ANSWER_MSG.replace(/</g, '&lt;')}</div>
+          <div class="send-row">
+            <button type="button" data-send="noanswer-sms">SMS</button>
+            <button type="button" class="btn-wa" data-send="noanswer-wa">WhatsApp</button>
+          </div>
+        </div>
         <div class="sms-card" data-id="tariff">
           <h3>ტარიფის დაანგარიშება</h3>
           <div class="sms-text">${TARIFF_MSG.replace(/</g, '&lt;')}</div>
@@ -589,6 +597,8 @@
 
       const action = btn.dataset.send;
       if (action === 'intro-sms') sendSmsTo(n, introMsg(langPick.intro));
+      else if (action === 'noanswer-sms') sendSmsTo(n, NO_ANSWER_MSG);
+      else if (action === 'noanswer-wa') sendWaTo(n, NO_ANSWER_MSG);
       else if (action === 'tariff-sms') sendSmsTo(n, TARIFF_MSG);
       else if (action === 'tariff-wa') sendWaTo(n, TARIFF_MSG);
       else if (action === 'aldagi-sms') sendSmsTo(n, ALDAGI_INFO);
