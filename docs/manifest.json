@@ -4,8 +4,8 @@
   "description": "ავტომატური დარეკვა და SMS შაბლონები",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#1e40af",
-  "theme_color": "#1e40af",
+  "background_color": "#f2f2f7",
+  "theme_color": "#ffffff",
   "orientation": "portrait",
   "lang": "ka",
   "icons": [
