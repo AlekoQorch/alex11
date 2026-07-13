@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ავტოდაილერი v20</title>
+  <title>ავტოდაილერი v21</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <style>
@@ -303,9 +303,9 @@
 
     .overlay {
       position: fixed; inset: 0;
-      background: rgba(0,0,0,.65);
+      background: rgba(0,0,0,.75);
       display: flex; align-items: center; justify-content: center;
-      padding: 20px; z-index: 50;
+      padding: 16px; z-index: 10000;
     }
     .box {
       background: var(--surface);
@@ -323,26 +323,54 @@
     .box p { font-size: 14px; color: var(--dim); margin: 8px 0 16px; line-height: 1.5; }
     .box-wide { max-width: 340px; text-align: left; }
     .box-wide .num { text-align: center; }
-    .send-preview {
+    .send-modal-inner { width: 100%; max-width: 420px; }
+    .send-confirm-card { margin-bottom: 0; }
+    .send-ask {
       font-size: 14px;
-      line-height: 1.5;
-      color: var(--text);
+      color: var(--dim);
+      margin: 0 0 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #3a3a40;
+    }
+    .send-to {
+      font-size: 17px;
+      font-weight: 700;
+      padding: 12px;
       background: var(--bg);
       border: 1px solid #4a4a50;
       border-radius: 10px;
+      margin-bottom: 10px;
+      text-align: center;
+      word-break: break-all;
+    }
+    .send-to.missing { color: var(--red); font-weight: 600; font-size: 15px; }
+    .send-confirm-card .sms-text { margin-bottom: 12px; max-height: 260px; overflow-y: auto; }
+    .send-confirm-card .send-row button {
+      flex: 1;
       padding: 12px;
-      margin: 0 0 14px;
-      max-height: 220px;
-      overflow-y: auto;
-      white-space: pre-wrap;
-      word-break: break-word;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: inherit;
+      border: 1px solid #3a7fd4;
+      background: var(--blue);
+      color: #fff;
+    }
+    .send-confirm-card .btn-no {
+      background: var(--bg) !important;
+      border: 1px solid #4a4a50 !important;
+      color: var(--dim) !important;
+    }
+    .send-confirm-card .send-row .btn-wa {
+      background: #25d366 !important;
+      border-color: #1faa52 !important;
     }
     .hide { display: none !important; }
   </style>
 </head>
 <body>
   <div class="app">
-    <h1>ავტოდაილერი <span class="ver">v20</span></h1>
+    <h1>ავტოდაილერი <span class="ver">v21</span></h1>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
@@ -397,12 +425,19 @@
   </div>
 
   <div class="overlay hide" id="send-modal">
-    <div class="box box-wide">
-      <div class="lbl">ვის ვუგზავნით</div>
-      <div class="num" id="send-num"></div>
-      <div class="send-preview" id="send-preview"></div>
-      <button class="go btn-sms" id="send-go" type="button">გაგზავნა</button>
-      <button class="skip" id="send-cancel" type="button">გაუქმება</button>
+    <div class="send-modal-inner">
+      <div class="sms-card send-confirm-card">
+        <h3 id="send-title">გაგზავნა</h3>
+        <p class="send-ask">ნამდვილად გსურთ გაგზავნა?</p>
+        <span class="field-label">ნომერი</span>
+        <div class="send-to" id="send-num"></div>
+        <span class="field-label">ტექსტი</span>
+        <div class="sms-text" id="send-preview"></div>
+        <div class="send-row">
+          <button type="button" class="btn-no" id="send-cancel">არა</button>
+          <button type="button" id="send-go">დიახ, SMS</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -628,22 +663,58 @@
       location.href = 'https://wa.me/' + n + '?text=' + encodeURIComponent(msg);
     }
 
-    function showSendConfirm(num, msg, type) {
-      pendingSend.num = num;
+    function showSendConfirm(num, msg, type, title) {
+      pendingSend.num = num || '';
       pendingSend.msg = msg;
       pendingSend.type = type;
-      $('send-num').textContent = num;
+      $('send-title').textContent = title || 'გაგზავნა';
+      const numEl = $('send-num');
+      if (num) {
+        numEl.textContent = num;
+        numEl.classList.remove('missing');
+      } else {
+        numEl.textContent = 'ნომერი არ არის — შეიყვანე ზემოთ';
+        numEl.classList.add('missing');
+      }
       $('send-preview').textContent = msg;
       const btn = $('send-go');
-      btn.textContent = type === 'wa' ? 'WhatsApp-ში გაგზავნა' : 'SMS გაგზავნა';
-      btn.className = 'go ' + (type === 'wa' ? 'btn-wa' : 'btn-sms');
+      btn.textContent = type === 'wa' ? 'დიახ, WhatsApp' : 'დიახ, SMS';
+      btn.className = type === 'wa' ? 'btn-wa' : '';
       $('send-modal').classList.remove('hide');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeSendModal() {
+      $('send-modal').classList.add('hide');
+      document.body.style.overflow = '';
     }
 
     function confirmSend() {
-      $('send-modal').classList.add('hide');
-      if (pendingSend.type === 'wa') sendWaTo(pendingSend.num, pendingSend.msg);
-      else sendSmsTo(pendingSend.num, pendingSend.msg);
+      if (!pendingSend.num) {
+        $('send-num').textContent = 'შეიყვანე ტელეფონის ნომერი!';
+        $('send-num').classList.add('missing');
+        return;
+      }
+      const num = pendingSend.num;
+      const msg = pendingSend.msg;
+      const type = pendingSend.type;
+      closeSendModal();
+      if (type === 'wa') sendWaTo(num, msg);
+      else sendSmsTo(num, msg);
+    }
+
+    function openSendFromBtn(btn) {
+      const card = btn.closest('.sms-card');
+      const title = card?.querySelector('h3')?.textContent || 'გაგზავნა';
+      const n = getPhone();
+      const action = btn.dataset.send;
+      if (action === 'intro-sms') showSendConfirm(n, introMsg(langPick.intro), 'sms', title);
+      else if (action === 'noanswer-sms') showSendConfirm(n, NO_ANSWER_MSG, 'sms', title);
+      else if (action === 'noanswer-wa') showSendConfirm(n, NO_ANSWER_MSG, 'wa', title);
+      else if (action === 'tariff-sms') showSendConfirm(n, TARIFF_MSG, 'sms', title);
+      else if (action === 'tariff-wa') showSendConfirm(n, TARIFF_MSG, 'wa', title);
+      else if (action === 'aldagi-sms') showSendConfirm(n, buildAldagiMsg(), 'sms', title);
+      else if (action === 'aldagi-wa') showSendConfirm(n, buildAldagiMsg(), 'wa', title);
     }
 
     function showAfterCall(n, answered) {
@@ -749,7 +820,7 @@ ${ALDAGI_TAIL}`;
       });
     }
 
-    $('sms-list').onclick = e => {
+    $('sms-list').addEventListener('click', e => {
       const langBtn = e.target.closest('[data-lang]');
       if (langBtn) {
         const card = langBtn.closest('[data-id="intro"]');
@@ -761,18 +832,11 @@ ${ALDAGI_TAIL}`;
 
       const btn = e.target.closest('[data-send]');
       if (!btn) return;
-      const n = getPhone();
-      if (!n) { setStatus('მიუთითე ნომერი'); goTab('sms'); return; }
-
-      const action = btn.dataset.send;
-      if (action === 'intro-sms') showSendConfirm(n, introMsg(langPick.intro), 'sms');
-      else if (action === 'noanswer-sms') showSendConfirm(n, NO_ANSWER_MSG, 'sms');
-      else if (action === 'noanswer-wa') showSendConfirm(n, NO_ANSWER_MSG, 'wa');
-      else if (action === 'tariff-sms') showSendConfirm(n, TARIFF_MSG, 'sms');
-      else if (action === 'tariff-wa') showSendConfirm(n, TARIFF_MSG, 'wa');
-      else if (action === 'aldagi-sms') showSendConfirm(n, buildAldagiMsg(), 'sms');
-      else if (action === 'aldagi-wa') showSendConfirm(n, buildAldagiMsg(), 'wa');
-    };
+      e.preventDefault();
+      e.stopPropagation();
+      syncFromDial();
+      openSendFromBtn(btn);
+    });
 
     renderSmsList();
     initOfferFields();
@@ -783,11 +847,12 @@ ${ALDAGI_TAIL}`;
     };
     $('start').onclick = start;
     $('stop').onclick = stopAll;
-    $('after-call-sms').onclick = () => showSendConfirm($('after-call-num').textContent, NO_ANSWER_MSG, 'sms');
+    $('after-call-sms').onclick = () => showSendConfirm($('after-call-num').textContent, NO_ANSWER_MSG, 'sms', 'არ პასუხობს');
     $('after-call-next').onclick = goNextCall;
     $('after-call-done').onclick = () => { $('after-call-modal').classList.add('hide'); done(); };
     $('send-go').onclick = confirmSend;
-    $('send-cancel').onclick = () => $('send-modal').classList.add('hide');
+    $('send-cancel').onclick = closeSendModal;
+    $('send-modal').onclick = e => { if (e.target === $('send-modal')) closeSendModal(); };
     $('time-ok').onclick = () => $('time-modal').classList.add('hide');
     $('paste').onclick = async () => {
       try {
