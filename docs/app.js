@@ -7,35 +7,35 @@ const SMS_TEMPLATES = [
 ];
 
 const TIMEOUT_SEC = 30;
+const RING_CIRC = 213.6;
+const HISTORY_KEY = 'callHistory';
 
 const state = {
   queue: [],
   index: 0,
   running: false,
+  paused: false,
   callStartTime: null,
   timerInterval: null,
   selectedSmsId: 1,
   waitingReturn: false,
-  timeoutShown: false
+  timeoutShown: false,
+  stats: { answered: 0, missed: 0 }
 };
 
-// ── DOM ──
 const $ = (id) => document.getElementById(id);
-const numbersInput = $('numbers-input');
-const numbersCount = $('numbers-count');
-const statusText = $('status-text');
-const statusDot = $('status-dot');
-const progressWrap = $('progress-wrap');
-const progressFill = $('progress-fill');
-const timerText = $('timer-text');
-const lastResult = $('last-result');
-const progressHint = $('progress-hint');
-const btnStart = $('btn-start');
-const btnStop = $('btn-stop');
-const smsNumber = $('sms-number');
-const smsTemplates = $('sms-templates');
-const nextCallOverlay = $('next-call-overlay');
-const timeoutOverlay = $('timeout-overlay');
+
+// ── Navigation ──
+function switchView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.dock-item').forEach(d => d.classList.remove('active'));
+  $('view-' + name)?.classList.add('active');
+  document.querySelector(`.dock-item[data-view="${name}"]`)?.classList.add('active');
+}
+
+document.querySelectorAll('.dock-item').forEach(btn => {
+  btn.addEventListener('click', () => switchView(btn.dataset.view));
+});
 
 // ── Parser ──
 function parseNumbers(text) {
@@ -50,26 +50,95 @@ function normalizeTel(num) {
   return num.replace(/[^\d+]/g, '');
 }
 
-// ── UI updates ──
-function setStatus(text, mode = 'idle') {
-  statusText.textContent = text;
-  statusDot.className = 'status-dot' + (mode === 'active' ? ' active' : mode === 'waiting' ? ' waiting' : '');
+function formatPhone(num) {
+  const d = num.replace(/\D/g, '');
+  if (d.length === 9) return d.replace(/(\d{3})(\d{2})(\d{2})(\d{2})/, '$1 $2 $3 $4');
+  return num;
 }
 
-function updateNumbersCount() {
-  const count = parseNumbers(numbersInput.value).length;
-  numbersCount.textContent = `ნაპოვნი ნომრები: ${count}`;
+// ── Toast ──
+let toastTimer;
+function toast(msg) {
+  const el = $('toast');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.add('hidden'), 2500);
 }
 
-function showProgress(show) {
-  progressWrap.classList.toggle('hidden', !show);
+// ── UI ──
+function setStatus(text, mode = 'idle', phone = '') {
+  const badge = $('status-badge');
+  const phoneEl = $('status-number');
+  $('status-text').textContent = text;
+  badge.className = 'pill ' + mode;
+  const labels = { idle: 'მზად', active: 'ირეკება', waiting: 'მოლოდინი', done: 'დასრულდა' };
+  badge.textContent = labels[mode] || 'მზად';
+
+  if (phone) {
+    phoneEl.textContent = formatPhone(phone);
+    phoneEl.classList.remove('hidden');
+  } else {
+    phoneEl.classList.add('hidden');
+  }
+
+  const subtitles = {
+    idle: 'მზად ხარ დასაწყებად',
+    active: 'ზარი მიმდინარეობს...',
+    waiting: 'შემდეგ ნომერზე გადასვლა',
+    done: 'ყველა ნომერი დამუშავდა'
+  };
+  $('header-subtitle').textContent = subtitles[mode] || text;
+}
+
+function updateStats() {
+  const left = state.running ? state.queue.length - state.index : 0;
+  $('stat-answered').textContent = state.stats.answered;
+  $('stat-missed').textContent = state.stats.missed;
+  $('stat-left').textContent = left;
+  $('stats-row').classList.toggle('hidden', !state.running && state.stats.answered === 0 && state.stats.missed === 0);
+}
+
+function updateNumbersUI() {
+  const nums = parseNumbers($('numbers-input').value);
+  $('numbers-count').textContent = nums.length;
+
+  const chips = $('number-chips');
+  const show = nums.slice(0, 6);
+  chips.innerHTML = show.map(n => `<span class="tag">${formatPhone(n)}</span>`).join('')
+    + (nums.length > 6 ? `<span class="tag more">+${nums.length - 6}</span>` : '');
+}
+
+function updateQueueProgress() {
+  const wrap = $('queue-progress');
+  const label = $('queue-label');
+  if (!state.running || !state.queue.length) {
+    wrap.classList.add('hidden');
+    label.classList.add('hidden');
+    return;
+  }
+  wrap.classList.remove('hidden');
+  label.classList.remove('hidden');
+  const pct = (state.index / state.queue.length) * 100;
+  $('queue-fill').style.width = pct + '%';
+  label.textContent = `${state.index} / ${state.queue.length}`;
+}
+
+function showRing(show) {
+  $('ring-wrap').classList.toggle('hidden', !show);
+}
+
+function updateRing(remaining) {
+  const offset = RING_CIRC * (1 - remaining / TIMEOUT_SEC);
+  $('ring-fill').style.strokeDashoffset = offset;
+  $('ring-time').textContent = Math.ceil(remaining);
 }
 
 function startTimer() {
   stopTimer();
   state.callStartTime = Date.now();
   state.timeoutShown = false;
-  showProgress(true);
+  showRing(true);
   updateTimerDisplay();
 
   state.timerInterval = setInterval(() => {
@@ -80,7 +149,7 @@ function startTimer() {
       showTimeoutAlert();
       vibrate();
     }
-  }, 500);
+  }, 400);
 }
 
 function stopTimer() {
@@ -88,19 +157,65 @@ function stopTimer() {
     clearInterval(state.timerInterval);
     state.timerInterval = null;
   }
-  showProgress(false);
+  showRing(false);
 }
 
 function updateTimerDisplay() {
   if (!state.callStartTime) return;
   const elapsed = (Date.now() - state.callStartTime) / 1000;
   const remaining = Math.max(0, TIMEOUT_SEC - elapsed);
-  progressFill.style.width = `${(remaining / TIMEOUT_SEC) * 100}%`;
-  timerText.textContent = `${Math.ceil(remaining)} წმ`;
+  updateRing(remaining);
 }
 
 function vibrate() {
   if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+}
+
+function setRunningUI(running) {
+  $('btn-start').classList.toggle('hidden', running);
+  $('action-row').classList.toggle('hidden', !running);
+  $('numbers-input').disabled = running;
+  $('btn-pause').textContent = state.paused ? 'გაგრძელება' : 'პაუზა';
+}
+
+// ── History ──
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; }
+  catch { return []; }
+}
+
+function saveHistory(list) {
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(list.slice(0, 50)));
+}
+
+function addHistory(num, type, detail) {
+  const list = loadHistory();
+  list.unshift({
+    num,
+    type,
+    detail,
+    time: new Date().toLocaleString('ka-GE', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' })
+  });
+  saveHistory(list);
+  renderHistory();
+}
+
+function renderHistory() {
+  const list = loadHistory();
+  const el = $('history-list');
+  if (!list.length) {
+    el.innerHTML = '<p class="empty">ჯერ ზარები არ გაქვს</p>';
+    return;
+  }
+  el.innerHTML = list.map(h => `
+    <div class="hist-item">
+      <span class="hist-dot ${h.type}"></span>
+      <div class="hist-body">
+        <div class="hist-num">${formatPhone(h.num)}</div>
+        <div class="hist-meta">${h.detail} · ${h.time}</div>
+      </div>
+    </div>
+  `).join('');
 }
 
 // ── Dialer ──
@@ -109,99 +224,96 @@ function dialNumber(num) {
 }
 
 function startQueue() {
-  state.queue = parseNumbers(numbersInput.value);
+  state.queue = parseNumbers($('numbers-input').value);
   if (!state.queue.length) {
-    setStatus('შეიყვანე მაინც ერთი ნომერი');
+    toast('შეიყვანე მაინც ერთი ნომერი');
     return;
   }
   state.index = 0;
   state.running = true;
-  btnStart.disabled = true;
-  btnStop.disabled = false;
-  numbersInput.disabled = true;
-  localStorage.setItem('savedNumbers', numbersInput.value);
+  state.paused = false;
+  state.stats = { answered: 0, missed: 0 };
+  setRunningUI(true);
+  localStorage.setItem('savedNumbers', $('numbers-input').value);
+  updateStats();
   callCurrent();
 }
 
 function callCurrent() {
-  if (!state.running || state.index >= state.queue.length) {
+  if (!state.running || state.paused) return;
+  if (state.index >= state.queue.length) {
     finishQueue();
     return;
   }
 
   const num = state.queue[state.index];
-  setStatus(`ირეკება: ${num} (${state.index + 1}/${state.queue.length})`, 'active');
-  progressHint.textContent = `პროგრესი: ${state.index}/${state.queue.length}`;
-  lastResult.classList.add('hidden');
+  setStatus(`ირეკება ${state.index + 1}/${state.queue.length}`, 'active', num);
+  updateQueueProgress();
   state.waitingReturn = true;
-
   startTimer();
   dialNumber(num);
 }
 
 function onReturnFromCall() {
-  if (!state.running || !state.waitingReturn) return;
+  if (!state.running || !state.waitingReturn || state.paused) return;
   state.waitingReturn = false;
   stopTimer();
 
   const num = state.queue[state.index];
   const elapsed = state.callStartTime ? (Date.now() - state.callStartTime) / 1000 : 0;
   const answered = elapsed > 8 && elapsed < TIMEOUT_SEC;
-  const result = elapsed >= TIMEOUT_SEC
-    ? `${num} — არ მიპასუხეს (30 წმ)`
-    : answered
-      ? `${num} — მიპასუხეს ✓`
-      : `${num} — არ მიპასუხეს`;
+  const missed = !answered;
 
-  lastResult.textContent = result;
-  lastResult.classList.remove('hidden');
-  setStatus(result, 'waiting');
+  if (answered) {
+    state.stats.answered++;
+    addHistory(num, 'ok', 'მიპასუხეს');
+    setStatus('მიპასუხეს ✓', 'waiting', num);
+  } else {
+    state.stats.missed++;
+    addHistory(num, 'bad', elapsed >= TIMEOUT_SEC ? '30 წმ — პასუხი არა' : 'არ მიპასუხეს');
+    setStatus('არ მიპასუხეს', 'waiting', num);
+  }
+  updateStats();
 
   state.index++;
+  updateQueueProgress();
+
   if (state.running && state.index < state.queue.length) {
-    showNextCallOverlay(state.queue[state.index]);
+    showNextCallModal(state.queue[state.index]);
   } else if (state.running) {
     finishQueue();
   }
 }
 
-function showNextCallOverlay(num) {
-  $('overlay-number').textContent = num;
-  $('overlay-title').textContent = `შემდეგი ნომერი (${state.index + 1}/${state.queue.length})`;
-  nextCallOverlay.classList.remove('hidden');
+function showNextCallModal(num) {
+  $('modal-number').textContent = formatPhone(num);
+  $('modal-label').textContent = `შემდეგი (${state.index + 1}/${state.queue.length})`;
+  const modal = $('next-call-modal');
+  modal.classList.remove('hidden');
 
-  let count = 3;
-  const countdownEl = $('overlay-countdown');
-  countdownEl.textContent = `${count} წამში ავტომატურად...`;
+  const bar = $('countdown-bar');
+  bar.style.animation = 'none';
+  void bar.offsetWidth;
+  bar.style.animation = 'countdown-shrink 3s linear forwards';
 
-  const interval = setInterval(() => {
-    count--;
-    if (count > 0) {
-      countdownEl.textContent = `${count} წამში ავტომატურად...`;
-    } else {
-      clearInterval(interval);
-      countdownEl.textContent = '';
-      triggerNextCall();
-    }
-  }, 1000);
-
-  nextCallOverlay._countdownInterval = interval;
+  clearTimeout(modal._timer);
+  modal._timer = setTimeout(() => {
+    if (!modal.classList.contains('hidden')) triggerNextCall();
+  }, 3000);
 }
 
-function hideNextCallOverlay() {
-  if (nextCallOverlay._countdownInterval) {
-    clearInterval(nextCallOverlay._countdownInterval);
-  }
-  nextCallOverlay.classList.add('hidden');
+function hideNextCallModal() {
+  clearTimeout($('next-call-modal')._timer);
+  $('next-call-modal').classList.add('hidden');
 }
 
 function triggerNextCall() {
-  hideNextCallOverlay();
-  if (state.running) callCurrent();
+  hideNextCallModal();
+  if (state.running && !state.paused) callCurrent();
 }
 
 function showTimeoutAlert() {
-  timeoutOverlay.classList.remove('hidden');
+  $('timeout-modal').classList.remove('hidden');
   vibrate();
 }
 
@@ -209,46 +321,76 @@ function finishQueue() {
   state.running = false;
   state.waitingReturn = false;
   stopTimer();
-  hideNextCallOverlay();
-  btnStart.disabled = false;
-  btnStop.disabled = true;
-  numbersInput.disabled = false;
-  setStatus('ყველა ნომერზე დასრულდა 🎉');
-  progressHint.textContent = '';
+  hideNextCallModal();
+  setRunningUI(false);
+  setStatus('ყველა ნომერზე დასრულდა 🎉', 'done');
+  updateQueueProgress();
+  updateStats();
 }
 
 function stopQueue() {
   state.running = false;
+  state.paused = false;
   state.waitingReturn = false;
   stopTimer();
-  hideNextCallOverlay();
-  timeoutOverlay.classList.add('hidden');
-  btnStart.disabled = false;
-  btnStop.disabled = true;
-  numbersInput.disabled = false;
-  setStatus('გაჩერებულია');
+  hideNextCallModal();
+  $('timeout-modal').classList.add('hidden');
+  setRunningUI(false);
+  setStatus('გაჩერებულია', 'idle');
+  updateQueueProgress();
+  updateStats();
+}
+
+function skipCurrent() {
+  if (!state.running) return;
+  state.waitingReturn = false;
+  stopTimer();
+  const num = state.queue[state.index];
+  addHistory(num, 'skip', 'გამოტოვებული');
+  state.index++;
+  updateQueueProgress();
+  updateStats();
+  if (state.index < state.queue.length) {
+    callCurrent();
+  } else {
+    finishQueue();
+  }
+}
+
+function togglePause() {
+  if (!state.running) return;
+  state.paused = !state.paused;
+  $('btn-pause').textContent = state.paused ? 'გაგრძელება' : 'პაუზა';
+  if (state.paused) {
+    stopTimer();
+    setStatus('პაუზაზეა', 'waiting');
+  } else if (!state.waitingReturn) {
+    callCurrent();
+  }
 }
 
 // ── SMS ──
 function renderSmsTemplates() {
-  smsTemplates.innerHTML = SMS_TEMPLATES.map(t => `
-    <div class="sms-item ${t.id === state.selectedSmsId ? 'selected' : ''}" data-id="${t.id}">
-      <h3>${t.title}</h3>
+  const el = $('sms-templates');
+  el.innerHTML = SMS_TEMPLATES.map(t => `
+    <div class="tpl ${t.id === state.selectedSmsId ? 'selected' : ''}" data-id="${t.id}">
+      <div class="tpl-head">
+        <h3>${t.title}</h3>
+        <button class="tpl-send" data-id="${t.id}" type="button">გაგზავნა</button>
+      </div>
       <p>${t.message}</p>
-      <button class="btn-send" data-id="${t.id}">📨 გაგზავნა</button>
-      <div style="clear:both"></div>
     </div>
   `).join('');
 
-  smsTemplates.querySelectorAll('.sms-item').forEach(el => {
-    el.addEventListener('click', (e) => {
-      if (e.target.classList.contains('btn-send')) return;
-      state.selectedSmsId = +el.dataset.id;
+  el.querySelectorAll('.tpl').forEach(card => {
+    card.addEventListener('click', (e) => {
+      if (e.target.classList.contains('tpl-send')) return;
+      state.selectedSmsId = +card.dataset.id;
       renderSmsTemplates();
     });
   });
 
-  smsTemplates.querySelectorAll('.btn-send').forEach(btn => {
+  el.querySelectorAll('.tpl-send').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       const tmpl = SMS_TEMPLATES.find(t => t.id === +btn.dataset.id);
@@ -258,49 +400,81 @@ function renderSmsTemplates() {
 }
 
 function sendSms(tmpl) {
-  let num = smsNumber.value.trim() || state.queue[state.index - 1] || parseNumbers(numbersInput.value)[0] || '';
+  let num = $('sms-number').value.trim()
+    || (state.index > 0 ? state.queue[state.index - 1] : '')
+    || parseNumbers($('numbers-input').value)[0]
+    || '';
   num = normalizeTel(num);
-  if (!num) { alert('მიუთითე ნომერი SMS-ისთვის'); return; }
-  const body = encodeURIComponent(tmpl.message);
-  window.location.href = `sms:${num}?body=${body}`;
+  if (!num) { toast('მიუთითე ნომერი'); return; }
+  window.location.href = `sms:${num}?body=${encodeURIComponent(tmpl.message)}`;
+}
+
+function useCurrentNumber() {
+  const num = state.running && state.queue[state.index]
+    ? state.queue[state.index]
+    : state.index > 0 ? state.queue[state.index - 1]
+    : parseNumbers($('numbers-input').value)[0];
+  if (num) {
+    $('sms-number').value = num;
+    toast('ნომერი ჩასმულია');
+  } else {
+    toast('ნომერი ვერ მოიძებნა');
+  }
 }
 
 // ── Events ──
-numbersInput.addEventListener('input', updateNumbersCount);
-
-btnStart.addEventListener('click', startQueue);
-btnStop.addEventListener('click', stopQueue);
-
+$('numbers-input').addEventListener('input', updateNumbersUI);
+$('btn-start').addEventListener('click', startQueue);
+$('btn-stop').addEventListener('click', stopQueue);
+$('btn-pause').addEventListener('click', togglePause);
+$('btn-skip-current').addEventListener('click', skipCurrent);
 $('btn-call-next').addEventListener('click', triggerNextCall);
-$('btn-skip').addEventListener('click', () => {
-  hideNextCallOverlay();
-  if (state.running) callCurrent();
+$('btn-skip-next').addEventListener('click', () => {
+  hideNextCallModal();
+  skipCurrent();
 });
-$('btn-timeout-ok').addEventListener('click', () => timeoutOverlay.classList.add('hidden'));
+$('btn-timeout-ok').addEventListener('click', () => $('timeout-modal').classList.add('hidden'));
+$('btn-sms-current').addEventListener('click', useCurrentNumber);
+
+$('btn-paste').addEventListener('click', async () => {
+  try {
+    const text = await navigator.clipboard.readText();
+    if (text) {
+      $('numbers-input').value = text;
+      updateNumbersUI();
+      toast('ჩასმულია');
+    }
+  } catch {
+    toast('ჩასმა ვერ მოხერხდა — ხელით ჩასვი');
+  }
+});
+
+$('btn-clear').addEventListener('click', () => {
+  $('numbers-input').value = '';
+  updateNumbersUI();
+  localStorage.removeItem('savedNumbers');
+});
+
+$('btn-clear-history').addEventListener('click', () => {
+  saveHistory([]);
+  renderHistory();
+  toast('ისტორია გასუფთავდა');
+});
 
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
-    setTimeout(onReturnFromCall, 300);
+    setTimeout(onReturnFromCall, 400);
   }
 });
 
 window.addEventListener('pageshow', (e) => {
-  if (e.persisted) setTimeout(onReturnFromCall, 300);
-});
-
-// ── Install banner (iOS Safari) ──
-const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
-if (isIOS && !isStandalone && !localStorage.getItem('installDismissed')) {
-  $('install-banner').classList.remove('hidden');
-}
-$('dismiss-install').addEventListener('click', () => {
-  $('install-banner').classList.add('hidden');
-  localStorage.setItem('installDismissed', '1');
+  if (e.persisted) setTimeout(onReturnFromCall, 400);
 });
 
 // ── Init ──
 const saved = localStorage.getItem('savedNumbers');
-if (saved) numbersInput.value = saved;
-updateNumbersCount();
+if (saved) $('numbers-input').value = saved;
+updateNumbersUI();
 renderSmsTemplates();
+renderHistory();
+setStatus('ჩასვი ნომრები და დააჭირე დაწყებას', 'idle');

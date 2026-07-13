@@ -1,597 +1,151 @@
 <!DOCTYPE html>
-<html lang="ka">
+<html lang="ka" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="ავტოდაილერი">
-  <meta name="theme-color" content="#1565C0">
-  <title>ავტოდაილერი + SMS</title>
-  <meta name="color-scheme" content="light">
-  <style>
-:root {
-  --blue: #1565C0;
-  --green: #2E7D32;
-  --red: #C62828;
-  --bg: #F5F7FA;
-  --card: #FFFFFF;
-  --text: #1A1A2E;
-  --muted: #6B7280;
-  --radius: 14px;
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
-}
-
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100dvh;
-  padding-bottom: calc(24px + var(--safe-bottom));
-}
-
-header {
-  background: linear-gradient(135deg, #1565C0, #0D47A1);
-  color: white;
-  padding: 20px 16px 24px;
-  text-align: center;
-}
-
-header h1 { font-size: 1.5rem; font-weight: 700; }
-.subtitle { font-size: 0.85rem; opacity: 0.85; margin-top: 4px; }
-
-main { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
-
-.card {
-  background: var(--card);
-  border-radius: var(--radius);
-  padding: 16px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-}
-
-.card h2 { font-size: 1rem; margin-bottom: 10px; color: var(--blue); }
-
-.card.note {
-  background: #FFF8E1;
-  border: 1px solid #FFE082;
-  font-size: 0.85rem;
-  line-height: 1.5;
-}
-
-.card.note strong { display: block; margin-bottom: 6px; color: #E65100; }
-
-textarea, .input {
-  width: 100%;
-  border: 1.5px solid #E0E0E0;
-  border-radius: 10px;
-  padding: 12px;
-  font-size: 16px;
-  font-family: inherit;
-  resize: vertical;
-  background: #FAFAFA;
-}
-
-textarea:focus, .input:focus {
-  outline: none;
-  border-color: var(--blue);
-  background: white;
-}
-
-.hint { font-size: 0.78rem; color: var(--muted); margin-top: 6px; }
-
-.status-card { background: #E3F2FD; }
-
-.status-row { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 0.95rem; }
-
-.status-dot {
-  width: 10px; height: 10px;
-  border-radius: 50%;
-  background: #9E9E9E;
-  flex-shrink: 0;
-}
-
-.status-dot.active { background: var(--green); animation: pulse 1s infinite; }
-.status-dot.waiting { background: #FF9800; }
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-
-.progress-wrap { margin-top: 12px; }
-.progress-bar {
-  height: 8px;
-  background: #BBDEFB;
-  border-radius: 4px;
-  overflow: hidden;
-}
-.progress-fill {
-  height: 100%;
-  background: var(--blue);
-  border-radius: 4px;
-  transition: width 0.3s linear;
-  width: 100%;
-}
-.timer { text-align: center; font-size: 0.85rem; color: var(--muted); margin-top: 4px; }
-
-.last-result { font-size: 0.85rem; color: #37474F; margin-top: 8px; }
-
-.btn-row { display: flex; gap: 10px; }
-
-.btn {
-  flex: 1;
-  padding: 14px;
-  border: none;
-  border-radius: 12px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: inherit;
-}
-
-.btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.btn-green { background: var(--green); color: white; }
-.btn-red { background: #FFEBEE; color: var(--red); border: 1.5px solid #FFCDD2; }
-.btn-text { background: none; border: none; color: var(--muted); font-size: 0.9rem; padding: 8px; cursor: pointer; }
-
-.btn-large { width: 100%; padding: 16px; font-size: 1.1rem; margin-top: 8px; }
-
-.sms-item {
-  border: 1.5px solid #E0E0E0;
-  border-radius: 12px;
-  padding: 12px;
-  margin-top: 10px;
-  cursor: pointer;
-  transition: border-color 0.2s;
-}
-
-.sms-item.selected { border-color: var(--blue); background: #F0F7FF; }
-.sms-item h3 { font-size: 0.95rem; margin-bottom: 4px; }
-.sms-item p { font-size: 0.8rem; color: var(--muted); line-height: 1.4; margin-bottom: 8px; }
-
-.sms-item .btn-send {
-  background: var(--blue);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 8px 16px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  float: right;
-}
-
-.install-banner {
-  background: #1565C0;
-  color: white;
-  padding: 10px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 0.82rem;
-  gap: 8px;
-}
-
-.install-banner .btn-text { color: white; opacity: 0.8; }
-
-.overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 20px;
-}
-
-.overlay-box {
-  background: white;
-  border-radius: 20px;
-  padding: 28px 24px;
-  width: 100%;
-  max-width: 340px;
-  text-align: center;
-}
-
-.overlay-number { font-size: 1.4rem; font-weight: 700; color: var(--blue); margin: 12px 0; }
-.overlay-countdown { color: var(--muted); font-size: 0.9rem; margin-bottom: 8px; }
-
-.timeout-box .timeout-icon { font-size: 3rem; margin-bottom: 8px; }
-.timeout-box p { margin-bottom: 8px; line-height: 1.5; }
-
-.hidden { display: none !important; }
-
-  body { color-scheme: light; }
-  </style>
+  <meta name="theme-color" content="#0a0a0f">
+  <meta name="color-scheme" content="dark">
+  <title>ავტოდაილერი</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  
+  <link rel="stylesheet" href="styles.css?v=5">
 </head>
 <body>
-  <div id="install-banner" class="install-banner hidden">
-    <p>📲 დააინსტალირე iPhone-ზე: Share → <strong>Add to Home Screen</strong></p>
-    <button id="dismiss-install" class="btn-text">✕</button>
-  </div>
+  <div class="aurora" aria-hidden="true"></div>
+  <div class="grain" aria-hidden="true"></div>
 
-  <header>
-    <h1>📞 ავტოდაილერი</h1>
-    <p class="subtitle">iPhone-იდან პირდაპირ — Mac არ გჭირდება</p>
-  </header>
+  <div class="app">
+    <header class="header">
+      <div class="header-glow"></div>
+      <p class="eyebrow">Auto Dialer</p>
+      <h1 class="title-shine">ავტოდაილერი</h1>
+      <p class="subtitle" id="header-subtitle">მზად ხარ დასაწყებად</p>
+    </header>
 
-  <main>
-    <section class="card note">
-      <strong>💡 როგორ მუშაობს</strong>
-      <p>ნომრებს ჩასვამ → „დაწყება“ → ტელეფონი გაიხსნება. 30 წმ-ში პასუხის გარეშე გათიშე → აპში დაბრუნდი → ავტომატურად შემდეგ ნომერზე გადავა.</p>
-    </section>
+    <div class="stats hidden" id="stats-row">
+      <span class="chip ok"><b id="stat-answered">0</b> პასუხი</span>
+      <span class="chip bad"><b id="stat-missed">0</b> გამოტოვ.</span>
+      <span class="chip"><b id="stat-left">0</b> დარჩა</span>
+    </div>
 
-    <section class="card">
-      <h2>📋 ნომრების სია</h2>
-      <textarea id="numbers-input" rows="6" placeholder="ჩაწერე ან ჩასვი ნომრები&#10;(თითო ხაზზე ერთი)&#10;&#10;მაგ: +995555123456&#10;599123456"></textarea>
-      <p class="hint" id="numbers-count">ნაპოვნი ნომრები: 0</p>
-    </section>
+    <main class="main">
+      <!-- DIAL -->
+      <section class="view active" id="view-dial">
+        <div class="glass status-panel" id="status-card">
+          <div class="ring-box hidden" id="ring-wrap">
+            <svg width="80" height="80" viewBox="0 0 80 80">
+              <circle cx="40" cy="40" r="34" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="4"/>
+              <circle id="ring-fill" cx="40" cy="40" r="34" fill="none" stroke="url(#rg)" stroke-width="4" stroke-linecap="round" transform="rotate(-90 40 40)"/>
+              <defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#5227FF"/><stop offset="1" stop-color="#7cff67"/></linearGradient></defs>
+            </svg>
+            <span class="ring-num" id="ring-time">30</span>
+          </div>
+          <div id="status-info">
+            <span class="pill idle" id="status-badge">მზად</span>
+            <p class="status-line" id="status-text">ჩასვი ნომრები და დააჭირე დაწყებას</p>
+            <p class="status-phone hidden" id="status-number"></p>
+          </div>
+          <div class="track hidden" id="queue-progress"><i id="queue-fill"></i></div>
+          <p class="track-label hidden" id="queue-label">0 / 0</p>
+        </div>
 
-    <section class="card status-card" id="status-card">
-      <div class="status-row">
-        <span class="status-dot" id="status-dot"></span>
-        <span id="status-text">მზად ხარ დასაწყებად</span>
+        <div class="glass block">
+          <div class="block-head">
+            <h2>ნომრები</h2>
+            <div class="links">
+              <button class="link" id="btn-paste" type="button">ჩასმა</button>
+              <button class="link danger" id="btn-clear" type="button">გასუფთავება</button>
+            </div>
+          </div>
+          <textarea id="numbers-input" placeholder="თითო ხაზზე ერთი ნომერი&#10;599 12 34 56"></textarea>
+          <div class="tags" id="number-chips"></div>
+          <p class="meta"><span id="numbers-count">0</span> ნომერი</p>
+        </div>
+
+        <div class="actions" id="action-bar">
+          <button class="btn-primary" id="btn-start" type="button">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            დაწყება
+          </button>
+          <div class="actions-row hidden" id="action-row">
+            <button class="btn-ghost" id="btn-pause" type="button">პაუზა</button>
+            <button class="btn-danger" id="btn-stop" type="button">გაჩერება</button>
+            <button class="btn-ghost sm" id="btn-skip-current" type="button">Skip</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- SMS -->
+      <section class="view" id="view-sms">
+        <div class="glass block">
+          <h2>მიმღები</h2>
+          <div class="row">
+            <input type="tel" id="sms-number" class="inp" placeholder="+995 5XX XX XX XX" inputmode="tel">
+            <button class="btn-side" id="btn-sms-current" type="button">მიმდინარე</button>
+          </div>
+        </div>
+        <p class="section-label">შაბლონები</p>
+        <div id="sms-templates"></div>
+      </section>
+
+      <!-- HISTORY -->
+      <section class="view" id="view-history">
+        <div class="block-head pad">
+          <h2>ისტორია</h2>
+          <button class="link danger" id="btn-clear-history" type="button">გასუფთავება</button>
+        </div>
+        <div id="history-list" class="timeline">
+          <p class="empty">ჯერ ზარები არ გაქვს</p>
+        </div>
+      </section>
+    </main>
+
+    <!-- React Bits style Dock -->
+    <nav class="dock-outer">
+      <div class="dock-panel">
+        <button class="dock-item active" data-view="dial" type="button" title="დარეკვა">
+          <span class="dock-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3.1 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.1 2 2 0 014.1 2h3a2 2 0 012 1.7c.1 1 .4 1.9.7 2.8a2 2 0 01-.5 2.1L8.1 9.9a16 16 0 006 6l1.3-1.3a2 2 0 012.1-.5c.9.3 1.9.6 2.8.7a2 2 0 011.9 2z"/></svg></span>
+        </button>
+        <button class="dock-item" data-view="sms" type="button" title="SMS">
+          <span class="dock-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a4 4 0 01-4 4H7l-4 4V7a4 4 0 014-4h10a4 4 0 014 4z"/></svg></span>
+        </button>
+        <button class="dock-item" data-view="history" type="button" title="ისტორია">
+          <span class="dock-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+        </button>
       </div>
-      <div class="progress-wrap hidden" id="progress-wrap">
-        <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
-        <p class="timer" id="timer-text">30 წმ</p>
-      </div>
-      <p class="last-result hidden" id="last-result"></p>
-      <p class="hint" id="progress-hint"></p>
-    </section>
+    </nav>
+  </div>
 
-    <div class="btn-row">
-      <button id="btn-start" class="btn btn-green">▶ დაწყება</button>
-      <button id="btn-stop" class="btn btn-red" disabled>■ გაჩერება</button>
-    </div>
+  <div id="toast" class="toast hidden"></div>
 
-    <section class="card">
-      <h2>💬 SMS შაბლონები</h2>
-      <input type="tel" id="sms-number" class="input" placeholder="SMS-ის მიმღები ნომერი">
-      <div id="sms-templates"></div>
-    </section>
-  </main>
-
-  <!-- შემდეგი ზარის overlay -->
-  <div id="next-call-overlay" class="overlay hidden">
-    <div class="overlay-box">
-      <p id="overlay-title">შემდეგი ნომერი</p>
-      <p id="overlay-number" class="overlay-number"></p>
-      <p id="overlay-countdown" class="overlay-countdown"></p>
-      <button id="btn-call-next" class="btn btn-green btn-large">📞 დარეკვა</button>
-      <button id="btn-skip" class="btn btn-text">გამოტოვება</button>
+  <div class="modal hidden" id="next-call-modal">
+    <div class="modal-bg"></div>
+    <div class="modal-sheet glass">
+      <p class="modal-kicker" id="modal-label">შემდეგი</p>
+      <p class="modal-phone" id="modal-number"></p>
+      <div class="modal-bar"><i id="countdown-bar"></i></div>
+      <button class="btn-primary" id="btn-call-next" type="button">დარეკვა</button>
+      <button class="btn-ghost full" id="btn-skip-next" type="button">გამოტოვება</button>
     </div>
   </div>
 
-  <!-- 30 წმ გაფრთხილება -->
-  <div id="timeout-overlay" class="overlay hidden">
-    <div class="overlay-box timeout-box">
-      <p class="timeout-icon">⏱</p>
-      <p><strong>30 წამი გავიდა!</strong></p>
-      <p>გათიშე ზარი ტელეფონში, შემდეგ დაბრუნდი აპში.</p>
-      <button id="btn-timeout-ok" class="btn btn-green btn-large">გასაგებია</button>
+  <div class="modal hidden" id="timeout-modal">
+    <div class="modal-bg"></div>
+    <div class="modal-sheet glass">
+      <div class="modal-emoji">⏱</div>
+      <h3>დრო ამოიწურა</h3>
+      <p>გათიშე ზარი და დაბრუნდი აპში</p>
+      <button class="btn-primary" id="btn-timeout-ok" type="button">გასაგებია</button>
     </div>
   </div>
 
-    <script>
-const SMS_TEMPLATES = [
-  { id: 1, title: 'ზარის მოთხოვნა', message: 'გამარჯობა! გთხოვთ დაგვიბრუნოთ ზარი, როცა შეძლებთ. გმადლობთ!' },
-  { id: 2, title: 'შეხსენება', message: 'გამარჯობა! გიგზავნით შეხსენებას — გთხოვთ დაგვიკავშირდეთ დღესვე. გმადლობთ!' },
-  { id: 3, title: 'ვიზიტის დადასტურება', message: 'გამარჯობა! თქვენი ვიზიტი დადასტურებულია. დამატებითი კითხვებისთვის დაგვიკავშირდით.' },
-  { id: 4, title: 'გადახდის შეხსენება', message: 'გამარჯობა! გიგზავნით შეხსენებას გადასახადის გადახდის შესახებ. გმადლობთ ყურადღებისთვის!' },
-  { id: 5, title: 'მადლობა', message: 'გმადლობთ ჩვენთან კავშირისთვის! საჭიროების შემთხვევაში ნებისმიერ დროს დაგვიკავშირდით.' }
-];
-
-const TIMEOUT_SEC = 30;
-
-const state = {
-  queue: [],
-  index: 0,
-  running: false,
-  callStartTime: null,
-  timerInterval: null,
-  selectedSmsId: 1,
-  waitingReturn: false,
-  timeoutShown: false
-};
-
-// ── DOM ──
-const $ = (id) => document.getElementById(id);
-const numbersInput = $('numbers-input');
-const numbersCount = $('numbers-count');
-const statusText = $('status-text');
-const statusDot = $('status-dot');
-const progressWrap = $('progress-wrap');
-const progressFill = $('progress-fill');
-const timerText = $('timer-text');
-const lastResult = $('last-result');
-const progressHint = $('progress-hint');
-const btnStart = $('btn-start');
-const btnStop = $('btn-stop');
-const smsNumber = $('sms-number');
-const smsTemplates = $('sms-templates');
-const nextCallOverlay = $('next-call-overlay');
-const timeoutOverlay = $('timeout-overlay');
-
-// ── Parser ──
-function parseNumbers(text) {
-  return text
-    .split(/[\n,;]+/)
-    .map(n => n.trim().replace(/[\s\-()]/g, ''))
-    .filter(n => n.replace(/\D/g, '').length >= 9)
-    .filter((n, i, arr) => arr.indexOf(n) === i);
-}
-
-function normalizeTel(num) {
-  return num.replace(/[^\d+]/g, '');
-}
-
-// ── UI updates ──
-function setStatus(text, mode = 'idle') {
-  statusText.textContent = text;
-  statusDot.className = 'status-dot' + (mode === 'active' ? ' active' : mode === 'waiting' ? ' waiting' : '');
-}
-
-function updateNumbersCount() {
-  const count = parseNumbers(numbersInput.value).length;
-  numbersCount.textContent = `ნაპოვნი ნომრები: ${count}`;
-}
-
-function showProgress(show) {
-  progressWrap.classList.toggle('hidden', !show);
-}
-
-function startTimer() {
-  stopTimer();
-  state.callStartTime = Date.now();
-  state.timeoutShown = false;
-  showProgress(true);
-  updateTimerDisplay();
-
-  state.timerInterval = setInterval(() => {
-    updateTimerDisplay();
-    const elapsed = (Date.now() - state.callStartTime) / 1000;
-    if (elapsed >= TIMEOUT_SEC && !state.timeoutShown) {
-      state.timeoutShown = true;
-      showTimeoutAlert();
-      vibrate();
-    }
-  }, 500);
-}
-
-function stopTimer() {
-  if (state.timerInterval) {
-    clearInterval(state.timerInterval);
-    state.timerInterval = null;
-  }
-  showProgress(false);
-}
-
-function updateTimerDisplay() {
-  if (!state.callStartTime) return;
-  const elapsed = (Date.now() - state.callStartTime) / 1000;
-  const remaining = Math.max(0, TIMEOUT_SEC - elapsed);
-  progressFill.style.width = `${(remaining / TIMEOUT_SEC) * 100}%`;
-  timerText.textContent = `${Math.ceil(remaining)} წმ`;
-}
-
-function vibrate() {
-  if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-}
-
-// ── Dialer ──
-function dialNumber(num) {
-  window.location.href = `tel:${normalizeTel(num)}`;
-}
-
-function startQueue() {
-  state.queue = parseNumbers(numbersInput.value);
-  if (!state.queue.length) {
-    setStatus('შეიყვანე მაინც ერთი ნომერი');
-    return;
-  }
-  state.index = 0;
-  state.running = true;
-  btnStart.disabled = true;
-  btnStop.disabled = false;
-  numbersInput.disabled = true;
-  localStorage.setItem('savedNumbers', numbersInput.value);
-  callCurrent();
-}
-
-function callCurrent() {
-  if (!state.running || state.index >= state.queue.length) {
-    finishQueue();
-    return;
-  }
-
-  const num = state.queue[state.index];
-  setStatus(`ირეკება: ${num} (${state.index + 1}/${state.queue.length})`, 'active');
-  progressHint.textContent = `პროგრესი: ${state.index}/${state.queue.length}`;
-  lastResult.classList.add('hidden');
-  state.waitingReturn = true;
-
-  startTimer();
-  dialNumber(num);
-}
-
-function onReturnFromCall() {
-  if (!state.running || !state.waitingReturn) return;
-  state.waitingReturn = false;
-  stopTimer();
-
-  const num = state.queue[state.index];
-  const elapsed = state.callStartTime ? (Date.now() - state.callStartTime) / 1000 : 0;
-  const answered = elapsed > 8 && elapsed < TIMEOUT_SEC;
-  const result = elapsed >= TIMEOUT_SEC
-    ? `${num} — არ მიპასუხეს (30 წმ)`
-    : answered
-      ? `${num} — მიპასუხეს ✓`
-      : `${num} — არ მიპასუხეს`;
-
-  lastResult.textContent = result;
-  lastResult.classList.remove('hidden');
-  setStatus(result, 'waiting');
-
-  state.index++;
-  if (state.running && state.index < state.queue.length) {
-    showNextCallOverlay(state.queue[state.index]);
-  } else if (state.running) {
-    finishQueue();
-  }
-}
-
-function showNextCallOverlay(num) {
-  $('overlay-number').textContent = num;
-  $('overlay-title').textContent = `შემდეგი ნომერი (${state.index + 1}/${state.queue.length})`;
-  nextCallOverlay.classList.remove('hidden');
-
-  let count = 3;
-  const countdownEl = $('overlay-countdown');
-  countdownEl.textContent = `${count} წამში ავტომატურად...`;
-
-  const interval = setInterval(() => {
-    count--;
-    if (count > 0) {
-      countdownEl.textContent = `${count} წამში ავტომატურად...`;
-    } else {
-      clearInterval(interval);
-      countdownEl.textContent = '';
-      triggerNextCall();
-    }
-  }, 1000);
-
-  nextCallOverlay._countdownInterval = interval;
-}
-
-function hideNextCallOverlay() {
-  if (nextCallOverlay._countdownInterval) {
-    clearInterval(nextCallOverlay._countdownInterval);
-  }
-  nextCallOverlay.classList.add('hidden');
-}
-
-function triggerNextCall() {
-  hideNextCallOverlay();
-  if (state.running) callCurrent();
-}
-
-function showTimeoutAlert() {
-  timeoutOverlay.classList.remove('hidden');
-  vibrate();
-}
-
-function finishQueue() {
-  state.running = false;
-  state.waitingReturn = false;
-  stopTimer();
-  hideNextCallOverlay();
-  btnStart.disabled = false;
-  btnStop.disabled = true;
-  numbersInput.disabled = false;
-  setStatus('ყველა ნომერზე დასრულდა 🎉');
-  progressHint.textContent = '';
-}
-
-function stopQueue() {
-  state.running = false;
-  state.waitingReturn = false;
-  stopTimer();
-  hideNextCallOverlay();
-  timeoutOverlay.classList.add('hidden');
-  btnStart.disabled = false;
-  btnStop.disabled = true;
-  numbersInput.disabled = false;
-  setStatus('გაჩერებულია');
-}
-
-// ── SMS ──
-function renderSmsTemplates() {
-  smsTemplates.innerHTML = SMS_TEMPLATES.map(t => `
-    <div class="sms-item ${t.id === state.selectedSmsId ? 'selected' : ''}" data-id="${t.id}">
-      <h3>${t.title}</h3>
-      <p>${t.message}</p>
-      <button class="btn-send" data-id="${t.id}">📨 გაგზავნა</button>
-      <div style="clear:both"></div>
-    </div>
-  `).join('');
-
-  smsTemplates.querySelectorAll('.sms-item').forEach(el => {
-    el.addEventListener('click', (e) => {
-      if (e.target.classList.contains('btn-send')) return;
-      state.selectedSmsId = +el.dataset.id;
-      renderSmsTemplates();
-    });
-  });
-
-  smsTemplates.querySelectorAll('.btn-send').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const tmpl = SMS_TEMPLATES.find(t => t.id === +btn.dataset.id);
-      sendSms(tmpl);
-    });
-  });
-}
-
-function sendSms(tmpl) {
-  let num = smsNumber.value.trim() || state.queue[state.index - 1] || parseNumbers(numbersInput.value)[0] || '';
-  num = normalizeTel(num);
-  if (!num) { alert('მიუთითე ნომერი SMS-ისთვის'); return; }
-  const body = encodeURIComponent(tmpl.message);
-  window.location.href = `sms:${num}?body=${body}`;
-}
-
-// ── Events ──
-numbersInput.addEventListener('input', updateNumbersCount);
-
-btnStart.addEventListener('click', startQueue);
-btnStop.addEventListener('click', stopQueue);
-
-$('btn-call-next').addEventListener('click', triggerNextCall);
-$('btn-skip').addEventListener('click', () => {
-  hideNextCallOverlay();
-  if (state.running) callCurrent();
-});
-$('btn-timeout-ok').addEventListener('click', () => timeoutOverlay.classList.add('hidden'));
-
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') {
-    setTimeout(onReturnFromCall, 300);
-  }
-});
-
-window.addEventListener('pageshow', (e) => {
-  if (e.persisted) setTimeout(onReturnFromCall, 300);
-});
-
-// ── Install banner (iOS Safari) ──
-const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
-if (isIOS && !isStandalone && !localStorage.getItem('installDismissed')) {
-  $('install-banner').classList.remove('hidden');
-}
-$('dismiss-install').addEventListener('click', () => {
-  $('install-banner').classList.add('hidden');
-  localStorage.setItem('installDismissed', '1');
-});
-
-// ── Init ──
-const saved = localStorage.getItem('savedNumbers');
-if (saved) numbersInput.value = saved;
-updateNumbersCount();
-renderSmsTemplates();
-
-  </script>
+  <script src="app.js?v=5"></script>
   <script>
-    // წაშალე ძველი service worker (CSS-ის ბაგის გამო)
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister()));
+      navigator.serviceWorker.getRegistrations().then(r => r.forEach(x => x.unregister()));
     }
   </script>
 </body>
