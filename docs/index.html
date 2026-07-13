@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ავტოდაილერი v23</title>
+  <title>ავტოდაილერი v24</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <style>
@@ -121,15 +121,20 @@
       font-size: 13px;
       color: var(--dim);
     }
-    .tools div button {
+    .tools .tool-btns {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .tools .tool-btns button {
       background: none;
       border: none;
       color: var(--blue);
       font-size: 13px;
       font-family: inherit;
-      padding: 6px 0 6px 12px;
+      padding: 6px 0;
     }
-    .tools div button.red { color: var(--red); }
+    .tools .tool-btns button.red { color: var(--red); }
 
     .row {
       display: flex;
@@ -370,7 +375,7 @@
 </head>
 <body>
   <div class="app">
-    <h1>ავტოდაილერი <span class="ver">v23</span></h1>
+    <h1>ავტოდაილერი <span class="ver">v24</span></h1>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
@@ -385,9 +390,9 @@
         <textarea id="nums" placeholder="თითო ხაზზე ერთი ნომერი"></textarea>
         <div class="tools">
           <span><b id="ncount">0</b> ნომერი</span>
-          <div>
-            <button id="paste" type="button">ჩასმა</button>
+          <div class="tool-btns">
             <button class="red" id="clear" type="button">გასუფთავება</button>
+            <button id="paste" type="button">ჩასმა</button>
           </div>
         </div>
       </div>
