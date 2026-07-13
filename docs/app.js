@@ -7,7 +7,6 @@ const SMS_TEMPLATES = [
 ];
 
 const TIMEOUT_SEC = 30;
-const RING_CIRC = 213.6;
 const HISTORY_KEY = 'callHistory';
 
 const state = {
@@ -28,12 +27,12 @@ const $ = (id) => document.getElementById(id);
 // ── Navigation ──
 function switchView(name) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.querySelectorAll('.dock-item').forEach(d => d.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(d => d.classList.remove('active'));
   $('view-' + name)?.classList.add('active');
-  document.querySelector(`.dock-item[data-view="${name}"]`)?.classList.add('active');
+  document.querySelector(`.tab[data-view="${name}"]`)?.classList.add('active');
 }
 
-document.querySelectorAll('.dock-item').forEach(btn => {
+document.querySelectorAll('.tab').forEach(btn => {
   btn.addEventListener('click', () => switchView(btn.dataset.view));
 });
 
@@ -71,7 +70,7 @@ function setStatus(text, mode = 'idle', phone = '') {
   const badge = $('status-badge');
   const phoneEl = $('status-number');
   $('status-text').textContent = text;
-  badge.className = 'pill ' + mode;
+  badge.className = 'badge ' + mode;
   const labels = { idle: 'მზად', active: 'ირეკება', waiting: 'მოლოდინი', done: 'დასრულდა' };
   badge.textContent = labels[mode] || 'მზად';
 
@@ -91,22 +90,8 @@ function setStatus(text, mode = 'idle', phone = '') {
   $('header-subtitle').textContent = subtitles[mode] || text;
 }
 
-function updateStats() {
-  const left = state.running ? state.queue.length - state.index : 0;
-  $('stat-answered').textContent = state.stats.answered;
-  $('stat-missed').textContent = state.stats.missed;
-  $('stat-left').textContent = left;
-  $('stats-row').classList.toggle('hidden', !state.running && state.stats.answered === 0 && state.stats.missed === 0);
-}
-
 function updateNumbersUI() {
-  const nums = parseNumbers($('numbers-input').value);
-  $('numbers-count').textContent = nums.length;
-
-  const chips = $('number-chips');
-  const show = nums.slice(0, 6);
-  chips.innerHTML = show.map(n => `<span class="tag">${formatPhone(n)}</span>`).join('')
-    + (nums.length > 6 ? `<span class="tag more">+${nums.length - 6}</span>` : '');
+  $('numbers-count').textContent = parseNumbers($('numbers-input').value).length;
 }
 
 function updateQueueProgress() {
@@ -121,24 +106,15 @@ function updateQueueProgress() {
   label.classList.remove('hidden');
   const pct = (state.index / state.queue.length) * 100;
   $('queue-fill').style.width = pct + '%';
-  label.textContent = `${state.index} / ${state.queue.length}`;
-}
-
-function showRing(show) {
-  $('ring-wrap').classList.toggle('hidden', !show);
-}
-
-function updateRing(remaining) {
-  const offset = RING_CIRC * (1 - remaining / TIMEOUT_SEC);
-  $('ring-fill').style.strokeDashoffset = offset;
-  $('ring-time').textContent = Math.ceil(remaining);
+  const left = state.queue.length - state.index;
+  label.textContent = `${state.index}/${state.queue.length} · პასუხი ${state.stats.answered} · გამოტოვ. ${state.stats.missed} · დარჩა ${left}`;
 }
 
 function startTimer() {
   stopTimer();
   state.callStartTime = Date.now();
   state.timeoutShown = false;
-  showRing(true);
+  $('timer-text').classList.remove('hidden');
   updateTimerDisplay();
 
   state.timerInterval = setInterval(() => {
@@ -157,14 +133,14 @@ function stopTimer() {
     clearInterval(state.timerInterval);
     state.timerInterval = null;
   }
-  showRing(false);
+  $('timer-text').classList.add('hidden');
 }
 
 function updateTimerDisplay() {
   if (!state.callStartTime) return;
   const elapsed = (Date.now() - state.callStartTime) / 1000;
   const remaining = Math.max(0, TIMEOUT_SEC - elapsed);
-  updateRing(remaining);
+  $('timer-text').textContent = `${Math.ceil(remaining)} წმ`;
 }
 
 function vibrate() {
@@ -235,7 +211,6 @@ function startQueue() {
   state.stats = { answered: 0, missed: 0 };
   setRunningUI(true);
   localStorage.setItem('savedNumbers', $('numbers-input').value);
-  updateStats();
   callCurrent();
 }
 
@@ -273,8 +248,6 @@ function onReturnFromCall() {
     addHistory(num, 'bad', elapsed >= TIMEOUT_SEC ? '30 წმ — პასუხი არა' : 'არ მიპასუხეს');
     setStatus('არ მიპასუხეს', 'waiting', num);
   }
-  updateStats();
-
   state.index++;
   updateQueueProgress();
 
@@ -290,11 +263,6 @@ function showNextCallModal(num) {
   $('modal-label').textContent = `შემდეგი (${state.index + 1}/${state.queue.length})`;
   const modal = $('next-call-modal');
   modal.classList.remove('hidden');
-
-  const bar = $('countdown-bar');
-  bar.style.animation = 'none';
-  void bar.offsetWidth;
-  bar.style.animation = 'countdown-shrink 3s linear forwards';
 
   clearTimeout(modal._timer);
   modal._timer = setTimeout(() => {
@@ -325,7 +293,6 @@ function finishQueue() {
   setRunningUI(false);
   setStatus('ყველა ნომერზე დასრულდა 🎉', 'done');
   updateQueueProgress();
-  updateStats();
 }
 
 function stopQueue() {
@@ -338,7 +305,6 @@ function stopQueue() {
   setRunningUI(false);
   setStatus('გაჩერებულია', 'idle');
   updateQueueProgress();
-  updateStats();
 }
 
 function skipCurrent() {
@@ -349,7 +315,6 @@ function skipCurrent() {
   addHistory(num, 'skip', 'გამოტოვებული');
   state.index++;
   updateQueueProgress();
-  updateStats();
   if (state.index < state.queue.length) {
     callCurrent();
   } else {

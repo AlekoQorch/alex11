@@ -4,8 +4,8 @@
   "description": "ავტომატური დარეკვა და SMS შაბლონები iPhone-ისთვის",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#0a0a0f",
-  "theme_color": "#0a0a0f",
+  "background_color": "#121218",
+  "theme_color": "#121218",
   "orientation": "portrait",
   "lang": "ka",
   "icons": [

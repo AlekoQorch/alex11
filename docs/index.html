@@ -6,116 +6,82 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="ავტოდაილერი">
-  <meta name="theme-color" content="#0a0a0f">
+  <meta name="theme-color" content="#121218">
   <meta name="color-scheme" content="dark">
   <title>ავტოდაილერი</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=5">
+  <link rel="stylesheet" href="styles.css?v=6">
 </head>
 <body>
-  <div class="aurora" aria-hidden="true"></div>
-  <div class="grain" aria-hidden="true"></div>
-
   <div class="app">
     <header class="header">
-      <div class="header-glow"></div>
-      <p class="eyebrow">Auto Dialer</p>
-      <h1 class="title-shine">ავტოდაილერი</h1>
+      <h1>ავტოდაილერი</h1>
       <p class="subtitle" id="header-subtitle">მზად ხარ დასაწყებად</p>
     </header>
 
-    <div class="stats hidden" id="stats-row">
-      <span class="chip ok"><b id="stat-answered">0</b> პასუხი</span>
-      <span class="chip bad"><b id="stat-missed">0</b> გამოტოვ.</span>
-      <span class="chip"><b id="stat-left">0</b> დარჩა</span>
-    </div>
-
     <main class="main">
-      <!-- DIAL -->
       <section class="view active" id="view-dial">
-        <div class="glass status-panel" id="status-card">
-          <div class="ring-box hidden" id="ring-wrap">
-            <svg width="80" height="80" viewBox="0 0 80 80">
-              <circle cx="40" cy="40" r="34" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="4"/>
-              <circle id="ring-fill" cx="40" cy="40" r="34" fill="none" stroke="url(#rg)" stroke-width="4" stroke-linecap="round" transform="rotate(-90 40 40)"/>
-              <defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#5227FF"/><stop offset="1" stop-color="#7cff67"/></linearGradient></defs>
-            </svg>
-            <span class="ring-num" id="ring-time">30</span>
+        <div class="card status-card" id="status-card">
+          <div class="status-top">
+            <span class="badge idle" id="status-badge">მზად</span>
+            <span class="timer hidden" id="timer-text">30 წმ</span>
           </div>
-          <div id="status-info">
-            <span class="pill idle" id="status-badge">მზად</span>
-            <p class="status-line" id="status-text">ჩასვი ნომრები და დააჭირე დაწყებას</p>
-            <p class="status-phone hidden" id="status-number"></p>
-          </div>
-          <div class="track hidden" id="queue-progress"><i id="queue-fill"></i></div>
-          <p class="track-label hidden" id="queue-label">0 / 0</p>
+          <p class="status-line" id="status-text">ჩასვი ნომრები და დააჭირე დაწყებას</p>
+          <p class="status-phone hidden" id="status-number"></p>
+          <div class="bar hidden" id="queue-progress"><i id="queue-fill"></i></div>
+          <p class="bar-label hidden" id="queue-label"></p>
         </div>
 
-        <div class="glass block">
-          <div class="block-head">
+        <div class="card">
+          <div class="row-head">
             <h2>ნომრები</h2>
-            <div class="links">
-              <button class="link" id="btn-paste" type="button">ჩასმა</button>
-              <button class="link danger" id="btn-clear" type="button">გასუფთავება</button>
+            <div class="row-actions">
+              <button class="text-btn" id="btn-paste" type="button">ჩასმა</button>
+              <button class="text-btn red" id="btn-clear" type="button">გასუფთავება</button>
             </div>
           </div>
           <textarea id="numbers-input" placeholder="თითო ხაზზე ერთი ნომერი&#10;599 12 34 56"></textarea>
-          <div class="tags" id="number-chips"></div>
-          <p class="meta"><span id="numbers-count">0</span> ნომერი</p>
+          <p class="hint"><span id="numbers-count">0</span> ნომერი</p>
         </div>
 
-        <div class="actions" id="action-bar">
-          <button class="btn-primary" id="btn-start" type="button">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-            დაწყება
-          </button>
+        <div class="actions">
+          <button class="btn main" id="btn-start" type="button">დაწყება</button>
           <div class="actions-row hidden" id="action-row">
-            <button class="btn-ghost" id="btn-pause" type="button">პაუზა</button>
-            <button class="btn-danger" id="btn-stop" type="button">გაჩერება</button>
-            <button class="btn-ghost sm" id="btn-skip-current" type="button">Skip</button>
+            <button class="btn" id="btn-pause" type="button">პაუზა</button>
+            <button class="btn red" id="btn-stop" type="button">გაჩერება</button>
+            <button class="btn sm" id="btn-skip-current" type="button">Skip</button>
           </div>
         </div>
       </section>
 
-      <!-- SMS -->
       <section class="view" id="view-sms">
-        <div class="glass block">
+        <div class="card">
           <h2>მიმღები</h2>
-          <div class="row">
-            <input type="tel" id="sms-number" class="inp" placeholder="+995 5XX XX XX XX" inputmode="tel">
-            <button class="btn-side" id="btn-sms-current" type="button">მიმდინარე</button>
+          <div class="input-row">
+            <input type="tel" id="sms-number" class="input" placeholder="+995 5XX XX XX XX" inputmode="tel">
+            <button class="btn sm" id="btn-sms-current" type="button">მიმდინარე</button>
           </div>
         </div>
-        <p class="section-label">შაბლონები</p>
+        <p class="label">შაბლონები</p>
         <div id="sms-templates"></div>
       </section>
 
-      <!-- HISTORY -->
       <section class="view" id="view-history">
-        <div class="block-head pad">
+        <div class="row-head pad">
           <h2>ისტორია</h2>
-          <button class="link danger" id="btn-clear-history" type="button">გასუფთავება</button>
+          <button class="text-btn red" id="btn-clear-history" type="button">გასუფთავება</button>
         </div>
-        <div id="history-list" class="timeline">
+        <div id="history-list" class="list">
           <p class="empty">ჯერ ზარები არ გაქვს</p>
         </div>
       </section>
     </main>
 
-    <!-- React Bits style Dock -->
-    <nav class="dock-outer">
-      <div class="dock-panel">
-        <button class="dock-item active" data-view="dial" type="button" title="დარეკვა">
-          <span class="dock-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3.1 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.1 2 2 0 014.1 2h3a2 2 0 012 1.7c.1 1 .4 1.9.7 2.8a2 2 0 01-.5 2.1L8.1 9.9a16 16 0 006 6l1.3-1.3a2 2 0 012.1-.5c.9.3 1.9.6 2.8.7a2 2 0 011.9 2z"/></svg></span>
-        </button>
-        <button class="dock-item" data-view="sms" type="button" title="SMS">
-          <span class="dock-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a4 4 0 01-4 4H7l-4 4V7a4 4 0 014-4h10a4 4 0 014 4z"/></svg></span>
-        </button>
-        <button class="dock-item" data-view="history" type="button" title="ისტორია">
-          <span class="dock-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
-        </button>
-      </div>
+    <nav class="tabs">
+      <button class="tab active" data-view="dial" type="button">დარეკვა</button>
+      <button class="tab" data-view="sms" type="button">SMS</button>
+      <button class="tab" data-view="history" type="button">ისტორია</button>
     </nav>
   </div>
 
@@ -123,26 +89,24 @@
 
   <div class="modal hidden" id="next-call-modal">
     <div class="modal-bg"></div>
-    <div class="modal-sheet glass">
-      <p class="modal-kicker" id="modal-label">შემდეგი</p>
-      <p class="modal-phone" id="modal-number"></p>
-      <div class="modal-bar"><i id="countdown-bar"></i></div>
-      <button class="btn-primary" id="btn-call-next" type="button">დარეკვა</button>
-      <button class="btn-ghost full" id="btn-skip-next" type="button">გამოტოვება</button>
+    <div class="modal-box">
+      <p class="modal-label" id="modal-label">შემდეგი</p>
+      <p class="modal-num" id="modal-number"></p>
+      <button class="btn main" id="btn-call-next" type="button">დარეკვა</button>
+      <button class="btn" id="btn-skip-next" type="button">გამოტოვება</button>
     </div>
   </div>
 
   <div class="modal hidden" id="timeout-modal">
     <div class="modal-bg"></div>
-    <div class="modal-sheet glass">
-      <div class="modal-emoji">⏱</div>
+    <div class="modal-box">
       <h3>დრო ამოიწურა</h3>
       <p>გათიშე ზარი და დაბრუნდი აპში</p>
-      <button class="btn-primary" id="btn-timeout-ok" type="button">გასაგებია</button>
+      <button class="btn main" id="btn-timeout-ok" type="button">გასაგებია</button>
     </div>
   </div>
 
-  <script src="app.js?v=5"></script>
+  <script src="app.js?v=6"></script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(r => r.forEach(x => x.unregister()));
