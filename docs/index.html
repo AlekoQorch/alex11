@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ავტოდაილერი v18</title>
+  <title>ავტოდაილერი v19</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <style>
@@ -324,7 +324,7 @@
 </head>
 <body>
   <div class="app">
-    <h1>ავტოდაილერი <span class="ver">v18</span></h1>
+    <h1>ავტოდაილერი <span class="ver">v19</span></h1>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
@@ -453,20 +453,30 @@
       document.querySelectorAll('.page').forEach(x => x.classList.remove('on'));
       $('p-' + v).classList.add('on');
       $('action-bar').classList.toggle('hide', v !== 'dial');
-      if (v === 'sms') syncSmsNum(getDialNum());
+      if (v === 'sms') syncFromDial();
     }
 
-    function syncSmsNum(n) {
-      if (!n) return;
-      S.last = n;
-      $('sms-num').value = n;
+    function firstNumFromText() {
+      const parsed = parse($('nums').value);
+      if (parsed[0]) return parsed[0];
+      return $('nums').value.split(/[\n,;]+/).map(l => l.trim()).find(Boolean) || '';
     }
 
     function getDialNum() {
       if (S.run && S.q[S.i]) return S.q[S.i];
-      if (S.last) return S.last;
-      const p = parse($('nums').value);
-      return p[0] || '';
+      const fromText = firstNumFromText();
+      if (fromText) return fromText;
+      return S.last || '';
+    }
+
+    function syncFromDial() {
+      syncSmsNum(getDialNum());
+    }
+
+    function syncSmsNum(n) {
+      const v = (n || '').trim();
+      if (v) S.last = v;
+      $('sms-num').value = v;
     }
 
     document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => goTab(b.dataset.v));
@@ -564,6 +574,7 @@
     function done() {
       S.run = false; S.wait = false;
       timer(false); reset();
+      syncFromDial();
       setStatus('დასრულდა ✓');
     }
 
@@ -715,7 +726,7 @@ ${ALDAGI_TAIL}`;
 
     $('nums').oninput = () => {
       count();
-      if (!S.run) syncSmsNum(parse($('nums').value)[0] || '');
+      syncFromDial();
     };
     $('start').onclick = start;
     $('stop').onclick = stopAll;
@@ -725,10 +736,20 @@ ${ALDAGI_TAIL}`;
     $('paste').onclick = async () => {
       try {
         const t = await navigator.clipboard.readText();
-        if (t) { $('nums').value = t; count(); setStatus('ჩასმულია'); }
+        if (t) {
+          $('nums').value = t;
+          count();
+          syncFromDial();
+          setStatus('ჩასმულია');
+        }
       } catch { setStatus('ჩასმა ვერ მოხერხდა'); }
     };
-    $('clear').onclick = () => { $('nums').value = ''; count(); localStorage.removeItem('nums'); };
+    $('clear').onclick = () => {
+      $('nums').value = '';
+      count();
+      syncSmsNum('');
+      localStorage.removeItem('nums');
+    };
     $('clr-hist').onclick = () => { localStorage.removeItem('hist'); showHist(); };
 
     document.addEventListener('visibilitychange', () => {
@@ -740,7 +761,7 @@ ${ALDAGI_TAIL}`;
     const saved = localStorage.getItem('nums');
     if (saved) $('nums').value = saved;
     count();
-    syncSmsNum(parse($('nums').value)[0] || '');
+    syncFromDial();
     showHist();
   </script>
 </body>
