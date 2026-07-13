@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ავტოდაილერი v17</title>
+  <title>ავტოდაილერი v18</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <style>
@@ -324,7 +324,7 @@
 </head>
 <body>
   <div class="app">
-    <h1>ავტოდაილერი <span class="ver">v17</span></h1>
+    <h1>ავტოდაილერი <span class="ver">v18</span></h1>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
@@ -438,7 +438,7 @@
 
     const langPick = { intro: 'ka' };
     const TOUT = 30;
-    const S = { q: [], i: 0, run: false, t0: null, ti: null, wait: false, to: false };
+    const S = { q: [], i: 0, run: false, t0: null, ti: null, wait: false, to: false, last: '' };
 
     const $ = id => document.getElementById(id);
     const st = $('status');
@@ -453,6 +453,20 @@
       document.querySelectorAll('.page').forEach(x => x.classList.remove('on'));
       $('p-' + v).classList.add('on');
       $('action-bar').classList.toggle('hide', v !== 'dial');
+      if (v === 'sms') syncSmsNum(getDialNum());
+    }
+
+    function syncSmsNum(n) {
+      if (!n) return;
+      S.last = n;
+      $('sms-num').value = n;
+    }
+
+    function getDialNum() {
+      if (S.run && S.q[S.i]) return S.q[S.i];
+      if (S.last) return S.last;
+      const p = parse($('nums').value);
+      return p[0] || '';
     }
 
     document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => goTab(b.dataset.v));
@@ -508,6 +522,7 @@
     function call() {
       if (!S.run || S.i >= S.q.length) { done(); return; }
       S.wait = true;
+      syncSmsNum(S.q[S.i]);
       timer(true);
       dial(S.q[S.i]);
     }
@@ -519,6 +534,7 @@
       const n = S.q[S.i];
       const sec = S.t0 ? (Date.now() - S.t0) / 1000 : 0;
       const ok = sec > 8 && sec < TOUT;
+      syncSmsNum(n);
       addHist(n, ok ? 'მიპასუხეს' : 'არ მიპასუხეს');
       setStatus(ok ? `${n} — მიპასუხეს` : `${n} — არ მიპასუხეს`);
       S.i++;
@@ -558,7 +574,7 @@
     }
 
     function getPhone() {
-      return tel($('sms-num').value || $('nums').value.split('\n').find(l => l.trim()) || '');
+      return tel($('sms-num').value || getDialNum());
     }
 
     function introMsg(lang) {
@@ -697,7 +713,10 @@ ${ALDAGI_TAIL}`;
     renderSmsList();
     initOfferFields();
 
-    $('nums').oninput = count;
+    $('nums').oninput = () => {
+      count();
+      if (!S.run) syncSmsNum(parse($('nums').value)[0] || '');
+    };
     $('start').onclick = start;
     $('stop').onclick = stopAll;
     $('next-go').onclick = next;
@@ -720,7 +739,9 @@ ${ALDAGI_TAIL}`;
 
     const saved = localStorage.getItem('nums');
     if (saved) $('nums').value = saved;
-    count(); showHist();
+    count();
+    syncSmsNum(parse($('nums').value)[0] || '');
+    showHist();
   </script>
 </body>
 </html>
