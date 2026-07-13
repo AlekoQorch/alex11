@@ -195,6 +195,38 @@
       font-weight: 600;
       font-family: inherit;
     }
+    .sms-text.long { max-height: 220px; overflow-y: auto; font-size: 14px; }
+
+    .lang-pick {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .lang-pick button {
+      flex: 1;
+      padding: 8px 4px;
+      border: 1px solid #4a4a50;
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--dim);
+      font-size: 12px;
+      font-family: inherit;
+    }
+    .lang-pick button.on {
+      border-color: var(--blue);
+      color: var(--text);
+      background: #1a2a3a;
+    }
+    .send-row {
+      display: flex;
+      gap: 8px;
+    }
+    .send-row button { flex: 1; }
+    .btn-wa {
+      background: #25d366 !important;
+      border-color: #1faa52 !important;
+      color: #fff !important;
+    }
 
     .hist {
       padding: 12px 0;
@@ -317,14 +349,50 @@
   </div>
 
   <script>
-    const SMS = [
-      ['პატარა SMS-ის დატოვება', 'ალექსანდრე ქორჩაშვილი გწერთ სადაზღვეო კომპანია ალდაგიდან. მოინიშნეთ ეს ნომერი და დამიკავშირდით ნებისმიერ კითხვით.\n\nAleksandre Korchashvili is writing to you from Aldagi Insurance. Please save this number and contact me if you have any questions.'],
+    const INTRO_KA = 'ალექსანდრე ქორჩაშვილი გწერთ სადაზღვეო კომპანია ალდაგიდან. მოინიშნეთ ეს ნომერი და დამიკავშირდით ნებისმიერ კითხვით.';
+    const INTRO_EN = 'Aleksandre Korchashvili is writing to you from Aldagi Insurance. Please save this number and contact me if you have any questions.';
+
+    const ALDAGI_INFO = `რისკები:
+ავტოსაგზაო შემთხვევა
+ხანძარი | აფეთქება
+ვანდალიზმი | ქურდობა | ძარცვა | ყაჩაღობა
+სტიქიური მოვლენები
+საგნის ვარდნა
+დაზიანება დაუდგენელ ვითარებაში
+საქარე მინის დაზიანება
+
+დამატებითი რისკები: ორმოში ჩარტყმა, გარეგანი დაზიანება (მოიცავს ყველაფერს რაც ადამიანის ძალით არ არის გამოწვეული)
+ტვირთად გადაადგილების დროს დაზიანება.
+
+ტარიფი:
+ავტომობილი:
+მესამე პირი:
+მძღოლისა და მგზავრების ჯანმრთელობა:
+
++ ჩანაცვლების სერვისიც შეგვიძლია მოვნიშნოთ (თუ დაგიზიანდებათ ავტომობილი სხვა ავტომობილით ჩაგინაცვლებთ ავტომობილს ჩვენი კომპანია სანამ თქვენი ავტომობილი შეკეთდება)
+
++ უხეში გაუფრთხილებაც თუ მოვნიშნავთ — თუ წითელზე გაივლით ან bus line-ში ან საპირისპირო ზოლში გადახვალთ, ამ შემთხვევაშიც ანაზღაურდება ზიანი
+
+ბენეფიტები:
+ავტოასისტანსის (საწვავის მიტანა, საბურავის შეცვლა, დაბერვა, დაქოქვაში დახმარება) და ევაკუატორის სერვისი უფასოდ საქართველოს 7 დიდ ქალაქში: თბილისი, თელავი, გორი, ქუთაისი, ბათუმი, ფოთი და ზუგდიდი
+
+საჩუქრები:
+1. საწვავის ფასდაკლება 20 თთრი
+2. 25%-იანი ფასდაკლება "ამბოლში"
+3. 20% ფასდაკლება "დელფი მოტორსში" ავტოდითეილინგ მომსახურებაზე
+4. 10%-იანი ფასდაკლება ქონების დაზღვევაზე
+
+დეტალურად: https://aldagi.ge/individual/auto-insurance`;
+
+    const SMS_SIMPLE = [
       ['ზარის მოთხოვნა', 'გამარჯობა! გთხოვთ დაგვიბრუნოთ ზარი, როცა შეძლებთ. გმადლობთ!'],
       ['შეხსენება', 'გამარჯობა! გიგზავნით შეხსენებას — გთხოვთ დაგვიკავშირდეთ დღესვე. გმადლობთ!'],
       ['ვიზიტის დადასტურება', 'გამარჯობა! თქვენი ვიზიტი დადასტურებულია. დამატებითი კითხვებისთვის დაგვიკავშირდით.'],
       ['გადახდის შეხსენება', 'გამარჯობა! გიგზავნით შეხსენებას გადასახადის გადახდის შესახებ. გმადლობთ ყურადღებისთვის!'],
       ['მადლობა', 'გმადლობთ ჩვენთან კავშირისთვის! საჭიროების შემთხვევაში ნებისმიერ დროს დაგვიკავშირდით.']
     ];
+
+    const langPick = { intro: 'ka' };
     const TOUT = 30;
     const S = { q: [], i: 0, run: false, t0: null, ti: null, wait: false, to: false };
 
@@ -445,16 +513,79 @@
       setStatus('გაჩერებულია');
     }
 
-    $('sms-list').innerHTML = SMS.map(([t, m], i) =>
-      `<div class="sms-card"><h3>${t}</h3><div class="sms-text">${m}</div><button type="button" data-i="${i}">გაგზავნა</button></div>`
-    ).join('');
+    function getPhone() {
+      return tel($('sms-num').value || $('nums').value.split('\n').find(l => l.trim()) || '');
+    }
+
+    function introMsg(lang) {
+      if (lang === 'en') return INTRO_EN;
+      if (lang === 'both') return INTRO_KA + '\n\n' + INTRO_EN;
+      return INTRO_KA;
+    }
+
+    function sendSmsTo(num, msg) {
+      location.href = 'sms:' + num + '?body=' + encodeURIComponent(msg);
+    }
+
+    function sendWaTo(num, msg) {
+      const n = num.replace(/\D/g, '');
+      location.href = 'https://wa.me/' + n + '?text=' + encodeURIComponent(msg);
+    }
+
+    function renderSmsList() {
+      let html = `
+        <div class="sms-card" data-id="intro">
+          <h3>პატარა SMS-ის დატოვება</h3>
+          <div class="lang-pick">
+            <button type="button" class="on" data-lang="ka">ქართული</button>
+            <button type="button" data-lang="en">ინგლისური</button>
+            <button type="button" data-lang="both">ორივე</button>
+          </div>
+          <div class="sms-text" id="intro-preview">${introMsg('ka')}</div>
+          <button type="button" data-send="intro-sms">გაგზავნა SMS</button>
+        </div>
+        <div class="sms-card" data-id="aldagi">
+          <h3>ავტოდაზღვევა — ალდაგი</h3>
+          <div class="sms-text long">${ALDAGI_INFO.replace(/</g, '&lt;')}</div>
+          <div class="send-row">
+            <button type="button" data-send="aldagi-sms">SMS</button>
+            <button type="button" class="btn-wa" data-send="aldagi-wa">WhatsApp</button>
+          </div>
+        </div>`;
+
+      html += SMS_SIMPLE.map(([t, m], i) =>
+        `<div class="sms-card"><h3>${t}</h3><div class="sms-text">${m}</div><button type="button" data-send="simple-${i}">გაგზავნა</button></div>`
+      ).join('');
+
+      $('sms-list').innerHTML = html;
+    }
+
     $('sms-list').onclick = e => {
-      const b = e.target.closest('[data-i]');
-      if (!b) return;
-      const n = tel($('sms-num').value || $('nums').value.split('\n').find(l => l.trim()) || '');
-      if (!n) { setStatus('მიუთითე ნომერი SMS-ისთვის'); goTab('sms'); return; }
-      location.href = 'sms:' + n + '?body=' + encodeURIComponent(SMS[+b.dataset.i][1]);
+      const langBtn = e.target.closest('[data-lang]');
+      if (langBtn) {
+        const card = langBtn.closest('[data-id="intro"]');
+        card.querySelectorAll('[data-lang]').forEach(b => b.classList.toggle('on', b === langBtn));
+        langPick.intro = langBtn.dataset.lang;
+        $('intro-preview').textContent = introMsg(langPick.intro);
+        return;
+      }
+
+      const btn = e.target.closest('[data-send]');
+      if (!btn) return;
+      const n = getPhone();
+      if (!n) { setStatus('მიუთითე ნომერი'); goTab('sms'); return; }
+
+      const action = btn.dataset.send;
+      if (action === 'intro-sms') sendSmsTo(n, introMsg(langPick.intro));
+      else if (action === 'aldagi-sms') sendSmsTo(n, ALDAGI_INFO);
+      else if (action === 'aldagi-wa') sendWaTo(n, ALDAGI_INFO);
+      else if (action.startsWith('simple-')) {
+        const i = +action.split('-')[1];
+        sendSmsTo(n, SMS_SIMPLE[i][1]);
+      }
     };
+
+    renderSmsList();
 
     $('nums').oninput = count;
     $('start').onclick = start;
