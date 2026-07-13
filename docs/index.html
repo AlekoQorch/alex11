@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ავტოდაილერი v22</title>
+  <title>ავტოდაილერი v23</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <style>
@@ -370,7 +370,7 @@
 </head>
 <body>
   <div class="app">
-    <h1>ავტოდაილერი <span class="ver">v22</span></h1>
+    <h1>ავტოდაილერი <span class="ver">v23</span></h1>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
@@ -593,6 +593,16 @@
       $('nums').disabled = true;
       localStorage.setItem('nums', $('nums').value);
       call();
+    }
+
+    function applyPaste(pasted) {
+      if (!pasted) return;
+      const merged = mergeNums($('nums').value, pasted);
+      $('nums').value = merged;
+      saveNums();
+      count();
+      syncFromDial();
+      setStatus('ჩასმულია');
     }
 
     function call() {
@@ -844,6 +854,7 @@ ${ALDAGI_TAIL}`;
     $('nums').oninput = () => {
       count();
       syncFromDial();
+      saveNums();
     };
     $('start').onclick = start;
     $('stop').onclick = stopAll;
@@ -855,21 +866,34 @@ ${ALDAGI_TAIL}`;
     $('send-modal').onclick = e => { if (e.target === $('send-modal')) closeSendModal(); };
     $('time-ok').onclick = () => $('time-modal').classList.add('hide');
     function mergeNums(existing, pasted) {
-      const all = parse((existing || '') + '\n' + (pasted || ''));
-      return all.join('\n');
+      const ex = (existing || '').trimEnd();
+      const pa = (pasted || '').trim();
+      if (!pa) return ex;
+      if (!ex) return pa;
+      return ex + '\n' + pa;
     }
+
+    function saveNums() {
+      localStorage.setItem('nums', $('nums').value);
+    }
+
+    $('nums').addEventListener('paste', e => {
+      const pasted = (e.clipboardData || window.clipboardData).getData('text');
+      if (!pasted) return;
+      const ta = $('nums');
+      const cur = ta.value;
+      const allSelected = ta.selectionStart === 0 && ta.selectionEnd === cur.length && cur.trim();
+      const atEnd = ta.selectionStart === cur.length && ta.selectionEnd === cur.length && cur.trim();
+      if (allSelected || atEnd) {
+        e.preventDefault();
+        applyPaste(pasted);
+      }
+    });
 
     $('paste').onclick = async () => {
       try {
         const t = await navigator.clipboard.readText();
-        if (t) {
-          const merged = mergeNums($('nums').value, t);
-          $('nums').value = merged;
-          localStorage.setItem('nums', merged);
-          count();
-          syncFromDial();
-          setStatus('ჩასმულია');
-        }
+        if (t) applyPaste(t);
       } catch { setStatus('ჩასმა ვერ მოხერხდა'); }
     };
     $('clear').onclick = () => {
