@@ -4,23 +4,27 @@
 
 ---
 
-## 📱 iPhone-ზე გახსნა (3 ნაბიჯი)
+## 📱 iPhone-ზე გახსნა — მუშაობს ახლავე!
 
-### 1. Safari-ში გახსენი ეს ლინკი (ზუსტად ეს!):
+### ლინკი (გახსენი Safari-ში):
 
 ```
-https://alekoqorch.github.io/alex11/
+https://cdn.jsdelivr.net/gh/AlekoQorch/alex11@gh-pages/
 ```
 
-> ⚠️ **არა** `koqorch.github.io` — სწორია: **alekoqorch** (Ale + koqorch)
+### Home Screen-ზე დამატება (აპივით):
+1. Share ⬆️ → **Add to Home Screen** → Add
+2. Home Screen-ზე გაქვს **„ავტოდაილერი“**
 
-### 2. დააინსტალირე Home Screen-ზე
-1. Share ⬆️ (ქვედა ზოლი)
-2. **Add to Home Screen**
-3. **Add**
+---
 
-### 3. გაუშვი
-Home Screen-ზე გამოჩნდება **„ავტოდაილერი“** — როგორც ნორმალური აპი.
+## GitHub Pages (სურვილისამებრ, მომავალში)
+
+თუ გინდა `alekoqorch.github.io/alex11/` ლინკი:
+1. https://github.com/AlekoQorch/alex11/settings/pages
+2. Source: **Deploy from a branch**
+3. Branch: **gh-pages** → **/ (root)** → **Save**
+4. 2-3 წუთი დაელოდე
 
 ---
 
