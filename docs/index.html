@@ -1,116 +1,296 @@
 <!DOCTYPE html>
-<html lang="ka" class="dark">
+<html lang="ka">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="ავტოდაილერი">
-  <meta name="theme-color" content="#121218">
+  <meta name="theme-color" content="#000000">
   <meta name="color-scheme" content="dark">
   <title>ავტოდაილერი</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=6">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, sans-serif;
+      background: #000;
+      color: #fff;
+      padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
+      font-size: 16px;
+      line-height: 1.4;
+    }
+    h1 { font-size: 20px; text-align: center; padding: 16px 0 12px; }
+    nav { display: flex; border-bottom: 1px solid #333; margin-bottom: 16px; }
+    nav button {
+      flex: 1; background: none; border: none; color: #888;
+      padding: 10px; font-size: 14px; font-family: inherit;
+    }
+    nav button.on { color: #fff; border-bottom: 2px solid #fff; margin-bottom: -1px; }
+    .page { display: none; }
+    .page.on { display: block; }
+    #status { color: #aaa; font-size: 14px; margin-bottom: 12px; min-height: 20px; }
+    textarea, input {
+      width: 100%; background: #111; border: 1px solid #333;
+      border-radius: 8px; padding: 12px; color: #fff;
+      font-size: 16px; font-family: inherit;
+    }
+    textarea { min-height: 120px; margin-bottom: 8px; }
+    input { margin-bottom: 12px; }
+    .meta { font-size: 13px; color: #666; margin-bottom: 12px; }
+    .meta button { background: none; border: none; color: #6af; font-size: 13px; font-family: inherit; }
+    .meta .x { color: #f66; }
+    .go {
+      width: 100%; padding: 16px; border: none; border-radius: 8px;
+      background: #2e7d32; color: #fff; font-size: 17px;
+      font-weight: 600; font-family: inherit;
+    }
+    .stop {
+      width: 100%; padding: 14px; margin-top: 8px; border: 1px solid #c62828;
+      border-radius: 8px; background: transparent; color: #f66;
+      font-size: 15px; font-family: inherit;
+    }
+    .sms-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 0; border-bottom: 1px solid #222; gap: 8px;
+    }
+    .sms-row span { font-size: 14px; flex: 1; }
+    .sms-row button {
+      background: #1565c0; color: #fff; border: none; border-radius: 6px;
+      padding: 8px 12px; font-size: 13px; font-family: inherit; white-space: nowrap;
+    }
+    .hist { font-size: 14px; padding: 8px 0; border-bottom: 1px solid #222; color: #ccc; }
+    .hist small { color: #666; display: block; font-size: 12px; }
+    .empty { color: #555; text-align: center; padding: 32px 0; font-size: 14px; }
+    .overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.8);
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+    }
+    .box {
+      background: #111; border: 1px solid #333; border-radius: 12px;
+      padding: 20px; width: 100%; max-width: 300px; text-align: center;
+    }
+    .box p { color: #aaa; font-size: 14px; margin: 8px 0 16px; }
+    .box .num { font-size: 20px; font-weight: 700; color: #fff; }
+    .box button { width: 100%; margin-top: 6px; }
+    .hide { display: none !important; }
+  </style>
 </head>
 <body>
-  <div class="app">
-    <header class="header">
-      <h1>ავტოდაილერი</h1>
-      <p class="subtitle" id="header-subtitle">მზად ხარ დასაწყებად</p>
-    </header>
+  <h1>ავტოდაილერი</h1>
+  <nav>
+    <button class="on" data-v="dial" type="button">დარეკვა</button>
+    <button data-v="sms" type="button">SMS</button>
+    <button data-v="history" type="button">ისტორია</button>
+  </nav>
 
-    <main class="main">
-      <section class="view active" id="view-dial">
-        <div class="card status-card" id="status-card">
-          <div class="status-top">
-            <span class="badge idle" id="status-badge">მზად</span>
-            <span class="timer hidden" id="timer-text">30 წმ</span>
-          </div>
-          <p class="status-line" id="status-text">ჩასვი ნომრები და დააჭირე დაწყებას</p>
-          <p class="status-phone hidden" id="status-number"></p>
-          <div class="bar hidden" id="queue-progress"><i id="queue-fill"></i></div>
-          <p class="bar-label hidden" id="queue-label"></p>
-        </div>
+  <p id="status">ჩასვი ნომრები და დააჭირე დაწყებას</p>
 
-        <div class="card">
-          <div class="row-head">
-            <h2>ნომრები</h2>
-            <div class="row-actions">
-              <button class="text-btn" id="btn-paste" type="button">ჩასმა</button>
-              <button class="text-btn red" id="btn-clear" type="button">გასუფთავება</button>
-            </div>
-          </div>
-          <textarea id="numbers-input" placeholder="თითო ხაზზე ერთი ნომერი&#10;599 12 34 56"></textarea>
-          <p class="hint"><span id="numbers-count">0</span> ნომერი</p>
-        </div>
-
-        <div class="actions">
-          <button class="btn main" id="btn-start" type="button">დაწყება</button>
-          <div class="actions-row hidden" id="action-row">
-            <button class="btn" id="btn-pause" type="button">პაუზა</button>
-            <button class="btn red" id="btn-stop" type="button">გაჩერება</button>
-            <button class="btn sm" id="btn-skip-current" type="button">Skip</button>
-          </div>
-        </div>
-      </section>
-
-      <section class="view" id="view-sms">
-        <div class="card">
-          <h2>მიმღები</h2>
-          <div class="input-row">
-            <input type="tel" id="sms-number" class="input" placeholder="+995 5XX XX XX XX" inputmode="tel">
-            <button class="btn sm" id="btn-sms-current" type="button">მიმდინარე</button>
-          </div>
-        </div>
-        <p class="label">შაბლონები</p>
-        <div id="sms-templates"></div>
-      </section>
-
-      <section class="view" id="view-history">
-        <div class="row-head pad">
-          <h2>ისტორია</h2>
-          <button class="text-btn red" id="btn-clear-history" type="button">გასუფთავება</button>
-        </div>
-        <div id="history-list" class="list">
-          <p class="empty">ჯერ ზარები არ გაქვს</p>
-        </div>
-      </section>
-    </main>
-
-    <nav class="tabs">
-      <button class="tab active" data-view="dial" type="button">დარეკვა</button>
-      <button class="tab" data-view="sms" type="button">SMS</button>
-      <button class="tab" data-view="history" type="button">ისტორია</button>
-    </nav>
+  <div class="page on" id="p-dial">
+    <textarea id="nums" placeholder="თითო ხაზზე ერთი ნომერი"></textarea>
+    <p class="meta">
+      <span id="ncount">0</span> ნომერი ·
+      <button id="paste" type="button">ჩასმა</button> ·
+      <button class="x" id="clear" type="button">გასუფთავება</button>
+    </p>
+    <button class="go" id="start" type="button">დაწყება</button>
+    <button class="stop hide" id="stop" type="button">გაჩერება</button>
   </div>
 
-  <div id="toast" class="toast hidden"></div>
+  <div class="page" id="p-sms">
+    <input type="tel" id="sms-num" placeholder="ტელეფონის ნომერი" inputmode="tel">
+    <div id="sms-list"></div>
+  </div>
 
-  <div class="modal hidden" id="next-call-modal">
-    <div class="modal-bg"></div>
-    <div class="modal-box">
-      <p class="modal-label" id="modal-label">შემდეგი</p>
-      <p class="modal-num" id="modal-number"></p>
-      <button class="btn main" id="btn-call-next" type="button">დარეკვა</button>
-      <button class="btn" id="btn-skip-next" type="button">გამოტოვება</button>
+  <div class="page" id="p-history">
+    <p class="meta"><button class="x" id="clr-hist" type="button">ისტორიის გასუფთავება</button></p>
+    <div id="hist"></div>
+  </div>
+
+  <div class="overlay hide" id="next-modal">
+    <div class="box">
+      <p id="next-lbl">შემდეგი ნომერი</p>
+      <p class="num" id="next-num"></p>
+      <button class="go" id="next-go" type="button">დარეკვა</button>
+      <button class="stop" id="next-skip" type="button">გამოტოვება</button>
     </div>
   </div>
 
-  <div class="modal hidden" id="timeout-modal">
-    <div class="modal-bg"></div>
-    <div class="modal-box">
-      <h3>დრო ამოიწურა</h3>
+  <div class="overlay hide" id="time-modal">
+    <div class="box">
+      <p class="num">⏱ 30 წმ გავიდა</p>
       <p>გათიშე ზარი და დაბრუნდი აპში</p>
-      <button class="btn main" id="btn-timeout-ok" type="button">გასაგებია</button>
+      <button class="go" id="time-ok" type="button">კარგი</button>
     </div>
   </div>
 
-  <script src="app.js?v=6"></script>
   <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(r => r.forEach(x => x.unregister()));
+    const SMS = [
+      ['ზარის მოთხოვნა', 'გამარჯობა! გთხოვთ დაგვიბრუნოთ ზარი, როცა შეძლებთ. გმადლობთ!'],
+      ['შეხსენება', 'გამარჯობა! გიგზავნით შეხსენებას — გთხოვთ დაგვიკავშირდეთ დღესვე. გმადლობთ!'],
+      ['ვიზიტი', 'გამარჯობა! თქვენი ვიზიტი დადასტურებულია.'],
+      ['გადახდა', 'გამარჯობა! გიგზავნით შეხსენებას გადასახადის შესახებ.'],
+      ['მადლობა', 'გმადლობთ ჩვენთან კავშირისთვის!']
+    ];
+    const TOUT = 30;
+    const S = { q: [], i: 0, run: false, t0: null, ti: null, wait: false, to: false };
+
+    const $ = id => document.getElementById(id);
+    const status = t => { $('status').textContent = t; };
+
+    document.querySelectorAll('nav button').forEach(b => {
+      b.onclick = () => {
+        document.querySelectorAll('nav button').forEach(x => x.classList.remove('on'));
+        document.querySelectorAll('.page').forEach(x => x.classList.remove('on'));
+        b.classList.add('on');
+        $('p-' + b.dataset.v).classList.add('on');
+      };
+    });
+
+    function parse(t) {
+      return t.split(/[\n,;]+/).map(n => n.trim().replace(/[\s\-()]/g, ''))
+        .filter(n => n.replace(/\D/g, '').length >= 9)
+        .filter((n, i, a) => a.indexOf(n) === i);
     }
+    function tel(n) { return n.replace(/[^\d+]/g, ''); }
+
+    function count() {
+      $('ncount').textContent = parse($('nums').value).length;
+    }
+
+    function hist() {
+      try { return JSON.parse(localStorage.getItem('hist') || '[]'); } catch { return []; }
+    }
+    function addHist(num, note) {
+      const h = hist();
+      h.unshift({ num, note, t: new Date().toLocaleString('ka-GE', { hour: '2-digit', minute: '2-digit' }) });
+      localStorage.setItem('hist', JSON.stringify(h.slice(0, 40)));
+      showHist();
+    }
+    function showHist() {
+      const h = hist();
+      $('hist').innerHTML = h.length ? h.map(x =>
+        `<div class="hist">${x.num}<small>${x.note} · ${x.t}</small></div>`
+      ).join('') : '<p class="empty">ცარიელია</p>';
+    }
+
+    function timer(on) {
+      clearInterval(S.ti);
+      if (!on) return;
+      S.t0 = Date.now(); S.to = false;
+      S.ti = setInterval(() => {
+        const left = TOUT - (Date.now() - S.t0) / 1000;
+        if (left > 0) status(`ირეკება... ${Math.ceil(left)} წმ`);
+        else if (!S.to) { S.to = true; $('time-modal').classList.remove('hide'); }
+      }, 500);
+    }
+
+    function dial(n) { location.href = 'tel:' + tel(n); }
+
+    function start() {
+      S.q = parse($('nums').value);
+      if (!S.q.length) { status('შეიყვანე ნომერი'); return; }
+      S.i = 0; S.run = true;
+      $('start').classList.add('hide');
+      $('stop').classList.remove('hide');
+      $('nums').disabled = true;
+      localStorage.setItem('nums', $('nums').value);
+      call();
+    }
+
+    function call() {
+      if (!S.run || S.i >= S.q.length) { done(); return; }
+      const n = S.q[S.i];
+      status(`ირეკება ${S.i + 1}/${S.q.length}: ${n}`);
+      S.wait = true;
+      timer(true);
+      dial(n);
+    }
+
+    function returned() {
+      if (!S.run || !S.wait) return;
+      S.wait = false;
+      timer(false);
+      const n = S.q[S.i];
+      const sec = S.t0 ? (Date.now() - S.t0) / 1000 : 0;
+      const ok = sec > 8 && sec < TOUT;
+      addHist(n, ok ? 'მიპასუხეს' : 'არ მიპასუხეს');
+      status(ok ? `${n} — მიპასუხეს` : `${n} — არ მიპასუხეს`);
+      S.i++;
+      if (S.run && S.i < S.q.length) {
+        $('next-num').textContent = S.q[S.i];
+        $('next-lbl').textContent = `შემდეგი (${S.i + 1}/${S.q.length})`;
+        $('next-modal').classList.remove('hide');
+        clearTimeout($('next-modal')._t);
+        $('next-modal')._t = setTimeout(next, 3000);
+      } else if (S.run) done();
+    }
+
+    function next() {
+      $('next-modal').classList.add('hide');
+      clearTimeout($('next-modal')._t);
+      if (S.run) call();
+    }
+
+    function done() {
+      S.run = false; S.wait = false;
+      timer(false);
+      $('next-modal').classList.add('hide');
+      $('time-modal').classList.add('hide');
+      $('start').classList.remove('hide');
+      $('stop').classList.add('hide');
+      $('nums').disabled = false;
+      status('დასრულდა ✓');
+    }
+
+    function stopAll() {
+      S.run = false; S.wait = false;
+      timer(false);
+      $('next-modal').classList.add('hide');
+      $('time-modal').classList.add('hide');
+      $('start').classList.remove('hide');
+      $('stop').classList.add('hide');
+      $('nums').disabled = false;
+      status('გაჩერებულია');
+    }
+
+    $('sms-list').innerHTML = SMS.map(([title, msg], i) =>
+      `<div class="sms-row"><span>${title}</span><button type="button" data-i="${i}">გაგზავნა</button></div>`
+    ).join('');
+    $('sms-list').onclick = e => {
+      if (!e.target.dataset.i) return;
+      const msg = SMS[+e.target.dataset.i][1];
+      let n = tel($('sms-num').value || $('nums').value.split('\n')[0] || '');
+      if (!n) { status('მიუთითე ნომერი SMS-ისთვის'); return; }
+      location.href = 'sms:' + n + '?body=' + encodeURIComponent(msg);
+    };
+
+    $('nums').oninput = count;
+    $('start').onclick = start;
+    $('stop').onclick = stopAll;
+    $('next-go').onclick = next;
+    $('next-skip').onclick = () => { $('next-modal').classList.add('hide'); S.i++; S.run && S.i < S.q.length ? call() : done(); };
+    $('time-ok').onclick = () => $('time-modal').classList.add('hide');
+    $('paste').onclick = async () => {
+      try {
+        const t = await navigator.clipboard.readText();
+        if (t) { $('nums').value = t; count(); status('ჩასმულია'); }
+      } catch { status('ჩასმა ვერ მოხერხდა'); }
+    };
+    $('clear').onclick = () => { $('nums').value = ''; count(); localStorage.removeItem('nums'); };
+    $('clr-hist').onclick = () => { localStorage.removeItem('hist'); showHist(); };
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') setTimeout(returned, 400);
+    });
+    window.addEventListener('pageshow', e => { if (e.persisted) setTimeout(returned, 400); });
+
+    if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then(r => r.forEach(x => x.unregister()));
+
+    const saved = localStorage.getItem('nums');
+    if (saved) $('nums').value = saved;
+    count(); showHist();
   </script>
 </body>
 </html>
