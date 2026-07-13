@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ავტოდაილერი v21</title>
+  <title>ავტოდაილერი v22</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <style>
@@ -370,7 +370,7 @@
 </head>
 <body>
   <div class="app">
-    <h1>ავტოდაილერი <span class="ver">v21</span></h1>
+    <h1>ავტოდაილერი <span class="ver">v22</span></h1>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
@@ -854,11 +854,18 @@ ${ALDAGI_TAIL}`;
     $('send-cancel').onclick = closeSendModal;
     $('send-modal').onclick = e => { if (e.target === $('send-modal')) closeSendModal(); };
     $('time-ok').onclick = () => $('time-modal').classList.add('hide');
+    function mergeNums(existing, pasted) {
+      const all = parse((existing || '') + '\n' + (pasted || ''));
+      return all.join('\n');
+    }
+
     $('paste').onclick = async () => {
       try {
         const t = await navigator.clipboard.readText();
         if (t) {
-          $('nums').value = t;
+          const merged = mergeNums($('nums').value, t);
+          $('nums').value = merged;
+          localStorage.setItem('nums', merged);
           count();
           syncFromDial();
           setStatus('ჩასმულია');
