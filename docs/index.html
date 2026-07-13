@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ავტოდაილერი v11</title>
+  <title>ავტოდაილერი v12</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <style>
@@ -229,6 +229,40 @@
       color: #fff !important;
     }
 
+    .offer-fields { margin-bottom: 12px; }
+    .field-label {
+      font-size: 12px;
+      color: var(--dim);
+      margin: 10px 0 6px;
+      display: block;
+    }
+    .field-label:first-child { margin-top: 0; }
+    .offer-fields input.field-inp {
+      width: 100%;
+      margin-bottom: 0;
+      padding: 10px 12px;
+      font-size: 15px;
+    }
+    .lim-pick {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .lim-pick button {
+      padding: 8px 10px;
+      border: 1px solid #4a4a50;
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--dim);
+      font-size: 13px;
+      font-family: inherit;
+    }
+    .lim-pick button.on {
+      border-color: var(--blue);
+      color: var(--text);
+      background: #1a2a3a;
+    }
+
     .hist {
       padding: 12px 0;
       border-bottom: 1px solid var(--line);
@@ -353,7 +387,7 @@
     const INTRO_KA = 'ალექსანდრე ქორჩაშვილი გწერთ სადაზღვეო კომპანია ალდაგიდან. მოინიშნეთ ეს ნომერი და დამიკავშირდით ნებისმიერ კითხვით.';
     const INTRO_EN = 'Aleksandre Korchashvili is writing to you from Aldagi Insurance. Please save this number and contact me if you have any questions.';
 
-    const ALDAGI_INFO = `რისკები:
+    const ALDAGI_HEAD = `რისკები:
 ავტოსაგზაო შემთხვევა
 ხანძარი | აფეთქება
 ვანდალიზმი | ქურდობა | ძარცვა | ყაჩაღობა
@@ -365,12 +399,9 @@
 დამატებითი რისკები: ორმოში ჩარტყმა, გარეგანი დაზიანება (მოიცავს ყველაფერს რაც ადამიანის ძალით არ არის გამოწვეული)
 ტვირთად გადაადგილების დროს დაზიანება.
 
-ტარიფი:
-ავტომობილი:
-მესამე პირი:
-მძღოლისა და მგზავრების ჯანმრთელობა:
+ტარიფი:`;
 
-+ ჩანაცვლების სერვისიც შეგვიძლია მოვნიშნოთ (თუ დაგიზიანდებათ ავტომობილი სხვა ავტომობილით ჩაგინაცვლებთ ავტომობილს ჩვენი კომპანია სანამ თქვენი ავტომობილი შეკეთდება)
+    const ALDAGI_TAIL = `+ ჩანაცვლების სერვისიც შეგვიძლია მოვნიშნოთ (თუ დაგიზიანდებათ ავტომობილი სხვა ავტომობილით ჩაგინაცვლებთ ავტომობილს ჩვენი კომპანია სანამ თქვენი ავტომობილი შეკეთდება)
 
 + უხეში გაუფრთხილებაც თუ მოვნიშნავთ — თუ წითელზე გაივლით ან bus line-ში ან საპირისპირო ზოლში გადახვალთ, ამ შემთხვევაშიც ანაზღაურდება ზიანი
 
@@ -384,6 +415,12 @@
 4. 10%-იანი ფასდაკლება ქონების დაზღვევაზე
 
 დეტალურად: https://aldagi.ge/individual/auto-insurance`;
+
+    const OFFER_LIMITS = {
+      third: ['5000$', '10000$', '25000$', '50000$'],
+      health: ['20000$', '40000$', '100000$']
+    };
+    const offerPick = { third: '10000$', health: '20000$' };
 
     const TARIFF_MSG = `გამარჯობა, ალექსანდრე ქორჩაშვილი გწერთ სადაზღვეო კომპანია ალდაგიდან.
 
@@ -570,7 +607,19 @@
         </div>
         <div class="sms-card" data-id="aldagi">
           <h3>სრული შეთავაზება</h3>
-          <div class="sms-text long">${ALDAGI_INFO.replace(/</g, '&lt;')}</div>
+          <div class="offer-fields">
+            <span class="field-label">ტარიფი (ავტომობილი)</span>
+            <input class="field-inp" id="offer-tariff" type="text" placeholder="მაგ: 450 ლ / წელი">
+            <span class="field-label">მესამე პირი</span>
+            <div class="lim-pick" id="offer-third">
+              ${OFFER_LIMITS.third.map(v => `<button type="button" data-k="third" data-val="${v}" class="${v === offerPick.third ? 'on' : ''}">${v}</button>`).join('')}
+            </div>
+            <span class="field-label">მძღოლისა და მგზავრების ჯანმრთელობა</span>
+            <div class="lim-pick" id="offer-health">
+              ${OFFER_LIMITS.health.map(v => `<button type="button" data-k="health" data-val="${v}" class="${v === offerPick.health ? 'on' : ''}">${v}</button>`).join('')}
+            </div>
+          </div>
+          <div class="sms-text long" id="aldagi-preview"></div>
           <div class="send-row">
             <button type="button" data-send="aldagi-sms">SMS</button>
             <button type="button" class="btn-wa" data-send="aldagi-wa">WhatsApp</button>
@@ -578,6 +627,34 @@
         </div>`;
 
       $('sms-list').innerHTML = html;
+      updateAldagiPreview();
+    }
+
+    function buildAldagiMsg() {
+      const tariff = $('offer-tariff')?.value.trim() || '—';
+      return `${ALDAGI_HEAD}
+ავტომობილი: ${tariff}
+მესამე პირი: ${offerPick.third}
+მძღოლისა და მგზავრების ჯანმრთელობა: ${offerPick.health}
+
+${ALDAGI_TAIL}`;
+    }
+
+    function updateAldagiPreview() {
+      const el = $('aldagi-preview');
+      if (el) el.textContent = buildAldagiMsg();
+    }
+
+    function initOfferFields() {
+      $('offer-tariff')?.addEventListener('input', updateAldagiPreview);
+      document.querySelectorAll('.lim-pick button').forEach(b => {
+        b.onclick = () => {
+          const k = b.dataset.k;
+          offerPick[k] = b.dataset.val;
+          b.parentElement.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+          updateAldagiPreview();
+        };
+      });
     }
 
     $('sms-list').onclick = e => {
@@ -601,11 +678,12 @@
       else if (action === 'noanswer-wa') sendWaTo(n, NO_ANSWER_MSG);
       else if (action === 'tariff-sms') sendSmsTo(n, TARIFF_MSG);
       else if (action === 'tariff-wa') sendWaTo(n, TARIFF_MSG);
-      else if (action === 'aldagi-sms') sendSmsTo(n, ALDAGI_INFO);
-      else if (action === 'aldagi-wa') sendWaTo(n, ALDAGI_INFO);
+      else if (action === 'aldagi-sms') sendSmsTo(n, buildAldagiMsg());
+      else if (action === 'aldagi-wa') sendWaTo(n, buildAldagiMsg());
     };
 
     renderSmsList();
+    initOfferFields();
 
     $('nums').oninput = count;
     $('start').onclick = start;
