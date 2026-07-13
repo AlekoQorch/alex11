@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ავტოდაილერი</title>
+  <title>ავტოდაილერი v9</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <style>
@@ -313,7 +313,7 @@
 
       <div class="page" id="p-sms">
         <input type="tel" id="sms-num" placeholder="ტელეფონის ნომერი" inputmode="tel">
-        <p class="sms-hint">4 შაბლონი: პატარა SMS · მომწერეთ · ტარიფი · სრული შეთავაზება</p>
+        <p class="sms-hint">4 შაბლონი: პატარა SMS · არ პასუხობს · ტარიფი · სრული შეთავაზება</p>
         <div id="sms-list"></div>
       </div>
 
@@ -398,7 +398,7 @@
 7) ძრავის მოცულობა
 8) რამდენი ხანია რაც მართვის გამოცდილება გაქვთ`;
 
-    const NO_ANSWER_MSG = `გამარჯობა, ავტომობილის დაზღვევასთან დაკავშირებით გირეკავდით, სადაზღვეო კომპანია ალდაგიდან. თუ დაინტერესდებით ამ ნომერზე დამიკავშირდით.`;
+    const NO_ANSWER_MSG = `გამარჯობა, ავტომობილის დაზღვევასთან დაკავშირებით გირეკავდით, სადაზღვეო კომპანია ალდაგიდან თუ დაინტერესდებით ამ ნომერზე დამიკავშირდით.`;
 
     const langPick = { intro: 'ka' };
     const TOUT = 30;
@@ -553,7 +553,7 @@
           <button type="button" data-send="intro-sms">გაგზავნა SMS</button>
         </div>
         <div class="sms-card" data-id="noanswer">
-          <h3>არ პასუხობს</h3>
+          <h3>მომწერეთ</h3>
           <div class="sms-text">${NO_ANSWER_MSG.replace(/</g, '&lt;')}</div>
           <div class="send-row">
             <button type="button" data-send="noanswer-sms">SMS</button>
