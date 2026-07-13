@@ -8,9 +8,207 @@
   <meta name="apple-mobile-web-app-title" content="ავტოდაილერი">
   <meta name="theme-color" content="#1565C0">
   <title>ავტოდაილერი + SMS</title>
+  <meta name="color-scheme" content="light">
+  <style>
+:root {
+  --blue: #1565C0;
+  --green: #2E7D32;
+  --red: #C62828;
+  --bg: #F5F7FA;
+  --card: #FFFFFF;
+  --text: #1A1A2E;
+  --muted: #6B7280;
+  --radius: 14px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  padding-bottom: calc(24px + var(--safe-bottom));
+}
+
+header {
+  background: linear-gradient(135deg, #1565C0, #0D47A1);
+  color: white;
+  padding: 20px 16px 24px;
+  text-align: center;
+}
+
+header h1 { font-size: 1.5rem; font-weight: 700; }
+.subtitle { font-size: 0.85rem; opacity: 0.85; margin-top: 4px; }
+
+main { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.card h2 { font-size: 1rem; margin-bottom: 10px; color: var(--blue); }
+
+.card.note {
+  background: #FFF8E1;
+  border: 1px solid #FFE082;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.card.note strong { display: block; margin-bottom: 6px; color: #E65100; }
+
+textarea, .input {
+  width: 100%;
+  border: 1.5px solid #E0E0E0;
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 16px;
+  font-family: inherit;
+  resize: vertical;
+  background: #FAFAFA;
+}
+
+textarea:focus, .input:focus {
+  outline: none;
+  border-color: var(--blue);
+  background: white;
+}
+
+.hint { font-size: 0.78rem; color: var(--muted); margin-top: 6px; }
+
+.status-card { background: #E3F2FD; }
+
+.status-row { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 0.95rem; }
+
+.status-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: #9E9E9E;
+  flex-shrink: 0;
+}
+
+.status-dot.active { background: var(--green); animation: pulse 1s infinite; }
+.status-dot.waiting { background: #FF9800; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.progress-wrap { margin-top: 12px; }
+.progress-bar {
+  height: 8px;
+  background: #BBDEFB;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--blue);
+  border-radius: 4px;
+  transition: width 0.3s linear;
+  width: 100%;
+}
+.timer { text-align: center; font-size: 0.85rem; color: var(--muted); margin-top: 4px; }
+
+.last-result { font-size: 0.85rem; color: #37474F; margin-top: 8px; }
+
+.btn-row { display: flex; gap: 10px; }
+
+.btn {
+  flex: 1;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-green { background: var(--green); color: white; }
+.btn-red { background: #FFEBEE; color: var(--red); border: 1.5px solid #FFCDD2; }
+.btn-text { background: none; border: none; color: var(--muted); font-size: 0.9rem; padding: 8px; cursor: pointer; }
+
+.btn-large { width: 100%; padding: 16px; font-size: 1.1rem; margin-top: 8px; }
+
+.sms-item {
+  border: 1.5px solid #E0E0E0;
+  border-radius: 12px;
+  padding: 12px;
+  margin-top: 10px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.sms-item.selected { border-color: var(--blue); background: #F0F7FF; }
+.sms-item h3 { font-size: 0.95rem; margin-bottom: 4px; }
+.sms-item p { font-size: 0.8rem; color: var(--muted); line-height: 1.4; margin-bottom: 8px; }
+
+.sms-item .btn-send {
+  background: var(--blue);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  float: right;
+}
+
+.install-banner {
+  background: #1565C0;
+  color: white;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  gap: 8px;
+}
+
+.install-banner .btn-text { color: white; opacity: 0.8; }
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.overlay-box {
+  background: white;
+  border-radius: 20px;
+  padding: 28px 24px;
+  width: 100%;
+  max-width: 340px;
+  text-align: center;
+}
+
+.overlay-number { font-size: 1.4rem; font-weight: 700; color: var(--blue); margin: 12px 0; }
+.overlay-countdown { color: var(--muted); font-size: 0.9rem; margin-bottom: 8px; }
+
+.timeout-box .timeout-icon { font-size: 3rem; margin-bottom: 8px; }
+.timeout-box p { margin-bottom: 8px; line-height: 1.5; }
+
+.hidden { display: none !important; }
+
+  body { color-scheme: light; }
+  </style>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="styles.css">
+  
 </head>
 <body>
   <div id="install-banner" class="install-banner hidden">
@@ -81,10 +279,319 @@
     </div>
   </div>
 
-  <script src="app.js"></script>
+    <script>
+const SMS_TEMPLATES = [
+  { id: 1, title: 'ზარის მოთხოვნა', message: 'გამარჯობა! გთხოვთ დაგვიბრუნოთ ზარი, როცა შეძლებთ. გმადლობთ!' },
+  { id: 2, title: 'შეხსენება', message: 'გამარჯობა! გიგზავნით შეხსენებას — გთხოვთ დაგვიკავშირდეთ დღესვე. გმადლობთ!' },
+  { id: 3, title: 'ვიზიტის დადასტურება', message: 'გამარჯობა! თქვენი ვიზიტი დადასტურებულია. დამატებითი კითხვებისთვის დაგვიკავშირდით.' },
+  { id: 4, title: 'გადახდის შეხსენება', message: 'გამარჯობა! გიგზავნით შეხსენებას გადასახადის გადახდის შესახებ. გმადლობთ ყურადღებისთვის!' },
+  { id: 5, title: 'მადლობა', message: 'გმადლობთ ჩვენთან კავშირისთვის! საჭიროების შემთხვევაში ნებისმიერ დროს დაგვიკავშირდით.' }
+];
+
+const TIMEOUT_SEC = 30;
+
+const state = {
+  queue: [],
+  index: 0,
+  running: false,
+  callStartTime: null,
+  timerInterval: null,
+  selectedSmsId: 1,
+  waitingReturn: false,
+  timeoutShown: false
+};
+
+// ── DOM ──
+const $ = (id) => document.getElementById(id);
+const numbersInput = $('numbers-input');
+const numbersCount = $('numbers-count');
+const statusText = $('status-text');
+const statusDot = $('status-dot');
+const progressWrap = $('progress-wrap');
+const progressFill = $('progress-fill');
+const timerText = $('timer-text');
+const lastResult = $('last-result');
+const progressHint = $('progress-hint');
+const btnStart = $('btn-start');
+const btnStop = $('btn-stop');
+const smsNumber = $('sms-number');
+const smsTemplates = $('sms-templates');
+const nextCallOverlay = $('next-call-overlay');
+const timeoutOverlay = $('timeout-overlay');
+
+// ── Parser ──
+function parseNumbers(text) {
+  return text
+    .split(/[\n,;]+/)
+    .map(n => n.trim().replace(/[\s\-()]/g, ''))
+    .filter(n => n.replace(/\D/g, '').length >= 9)
+    .filter((n, i, arr) => arr.indexOf(n) === i);
+}
+
+function normalizeTel(num) {
+  return num.replace(/[^\d+]/g, '');
+}
+
+// ── UI updates ──
+function setStatus(text, mode = 'idle') {
+  statusText.textContent = text;
+  statusDot.className = 'status-dot' + (mode === 'active' ? ' active' : mode === 'waiting' ? ' waiting' : '');
+}
+
+function updateNumbersCount() {
+  const count = parseNumbers(numbersInput.value).length;
+  numbersCount.textContent = `ნაპოვნი ნომრები: ${count}`;
+}
+
+function showProgress(show) {
+  progressWrap.classList.toggle('hidden', !show);
+}
+
+function startTimer() {
+  stopTimer();
+  state.callStartTime = Date.now();
+  state.timeoutShown = false;
+  showProgress(true);
+  updateTimerDisplay();
+
+  state.timerInterval = setInterval(() => {
+    updateTimerDisplay();
+    const elapsed = (Date.now() - state.callStartTime) / 1000;
+    if (elapsed >= TIMEOUT_SEC && !state.timeoutShown) {
+      state.timeoutShown = true;
+      showTimeoutAlert();
+      vibrate();
+    }
+  }, 500);
+}
+
+function stopTimer() {
+  if (state.timerInterval) {
+    clearInterval(state.timerInterval);
+    state.timerInterval = null;
+  }
+  showProgress(false);
+}
+
+function updateTimerDisplay() {
+  if (!state.callStartTime) return;
+  const elapsed = (Date.now() - state.callStartTime) / 1000;
+  const remaining = Math.max(0, TIMEOUT_SEC - elapsed);
+  progressFill.style.width = `${(remaining / TIMEOUT_SEC) * 100}%`;
+  timerText.textContent = `${Math.ceil(remaining)} წმ`;
+}
+
+function vibrate() {
+  if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+}
+
+// ── Dialer ──
+function dialNumber(num) {
+  window.location.href = `tel:${normalizeTel(num)}`;
+}
+
+function startQueue() {
+  state.queue = parseNumbers(numbersInput.value);
+  if (!state.queue.length) {
+    setStatus('შეიყვანე მაინც ერთი ნომერი');
+    return;
+  }
+  state.index = 0;
+  state.running = true;
+  btnStart.disabled = true;
+  btnStop.disabled = false;
+  numbersInput.disabled = true;
+  localStorage.setItem('savedNumbers', numbersInput.value);
+  callCurrent();
+}
+
+function callCurrent() {
+  if (!state.running || state.index >= state.queue.length) {
+    finishQueue();
+    return;
+  }
+
+  const num = state.queue[state.index];
+  setStatus(`ირეკება: ${num} (${state.index + 1}/${state.queue.length})`, 'active');
+  progressHint.textContent = `პროგრესი: ${state.index}/${state.queue.length}`;
+  lastResult.classList.add('hidden');
+  state.waitingReturn = true;
+
+  startTimer();
+  dialNumber(num);
+}
+
+function onReturnFromCall() {
+  if (!state.running || !state.waitingReturn) return;
+  state.waitingReturn = false;
+  stopTimer();
+
+  const num = state.queue[state.index];
+  const elapsed = state.callStartTime ? (Date.now() - state.callStartTime) / 1000 : 0;
+  const answered = elapsed > 8 && elapsed < TIMEOUT_SEC;
+  const result = elapsed >= TIMEOUT_SEC
+    ? `${num} — არ მიპასუხეს (30 წმ)`
+    : answered
+      ? `${num} — მიპასუხეს ✓`
+      : `${num} — არ მიპასუხეს`;
+
+  lastResult.textContent = result;
+  lastResult.classList.remove('hidden');
+  setStatus(result, 'waiting');
+
+  state.index++;
+  if (state.running && state.index < state.queue.length) {
+    showNextCallOverlay(state.queue[state.index]);
+  } else if (state.running) {
+    finishQueue();
+  }
+}
+
+function showNextCallOverlay(num) {
+  $('overlay-number').textContent = num;
+  $('overlay-title').textContent = `შემდეგი ნომერი (${state.index + 1}/${state.queue.length})`;
+  nextCallOverlay.classList.remove('hidden');
+
+  let count = 3;
+  const countdownEl = $('overlay-countdown');
+  countdownEl.textContent = `${count} წამში ავტომატურად...`;
+
+  const interval = setInterval(() => {
+    count--;
+    if (count > 0) {
+      countdownEl.textContent = `${count} წამში ავტომატურად...`;
+    } else {
+      clearInterval(interval);
+      countdownEl.textContent = '';
+      triggerNextCall();
+    }
+  }, 1000);
+
+  nextCallOverlay._countdownInterval = interval;
+}
+
+function hideNextCallOverlay() {
+  if (nextCallOverlay._countdownInterval) {
+    clearInterval(nextCallOverlay._countdownInterval);
+  }
+  nextCallOverlay.classList.add('hidden');
+}
+
+function triggerNextCall() {
+  hideNextCallOverlay();
+  if (state.running) callCurrent();
+}
+
+function showTimeoutAlert() {
+  timeoutOverlay.classList.remove('hidden');
+  vibrate();
+}
+
+function finishQueue() {
+  state.running = false;
+  state.waitingReturn = false;
+  stopTimer();
+  hideNextCallOverlay();
+  btnStart.disabled = false;
+  btnStop.disabled = true;
+  numbersInput.disabled = false;
+  setStatus('ყველა ნომერზე დასრულდა 🎉');
+  progressHint.textContent = '';
+}
+
+function stopQueue() {
+  state.running = false;
+  state.waitingReturn = false;
+  stopTimer();
+  hideNextCallOverlay();
+  timeoutOverlay.classList.add('hidden');
+  btnStart.disabled = false;
+  btnStop.disabled = true;
+  numbersInput.disabled = false;
+  setStatus('გაჩერებულია');
+}
+
+// ── SMS ──
+function renderSmsTemplates() {
+  smsTemplates.innerHTML = SMS_TEMPLATES.map(t => `
+    <div class="sms-item ${t.id === state.selectedSmsId ? 'selected' : ''}" data-id="${t.id}">
+      <h3>${t.title}</h3>
+      <p>${t.message}</p>
+      <button class="btn-send" data-id="${t.id}">📨 გაგზავნა</button>
+      <div style="clear:both"></div>
+    </div>
+  `).join('');
+
+  smsTemplates.querySelectorAll('.sms-item').forEach(el => {
+    el.addEventListener('click', (e) => {
+      if (e.target.classList.contains('btn-send')) return;
+      state.selectedSmsId = +el.dataset.id;
+      renderSmsTemplates();
+    });
+  });
+
+  smsTemplates.querySelectorAll('.btn-send').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const tmpl = SMS_TEMPLATES.find(t => t.id === +btn.dataset.id);
+      sendSms(tmpl);
+    });
+  });
+}
+
+function sendSms(tmpl) {
+  let num = smsNumber.value.trim() || state.queue[state.index - 1] || parseNumbers(numbersInput.value)[0] || '';
+  num = normalizeTel(num);
+  if (!num) { alert('მიუთითე ნომერი SMS-ისთვის'); return; }
+  const body = encodeURIComponent(tmpl.message);
+  window.location.href = `sms:${num}?body=${body}`;
+}
+
+// ── Events ──
+numbersInput.addEventListener('input', updateNumbersCount);
+
+btnStart.addEventListener('click', startQueue);
+btnStop.addEventListener('click', stopQueue);
+
+$('btn-call-next').addEventListener('click', triggerNextCall);
+$('btn-skip').addEventListener('click', () => {
+  hideNextCallOverlay();
+  if (state.running) callCurrent();
+});
+$('btn-timeout-ok').addEventListener('click', () => timeoutOverlay.classList.add('hidden'));
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    setTimeout(onReturnFromCall, 300);
+  }
+});
+
+window.addEventListener('pageshow', (e) => {
+  if (e.persisted) setTimeout(onReturnFromCall, 300);
+});
+
+// ── Install banner (iOS Safari) ──
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+if (isIOS && !isStandalone && !localStorage.getItem('installDismissed')) {
+  $('install-banner').classList.remove('hidden');
+}
+$('dismiss-install').addEventListener('click', () => {
+  $('install-banner').classList.add('hidden');
+  localStorage.setItem('installDismissed', '1');
+});
+
+// ── Init ──
+const saved = localStorage.getItem('savedNumbers');
+if (saved) numbersInput.value = saved;
+updateNumbersCount();
+renderSmsTemplates();
+
+  </script>
   <script>
+    // წაშალე ძველი service worker (CSS-ის ბაგის გამო)
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').catch(() => {});
+      navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister()));
     }
   </script>
 </body>
