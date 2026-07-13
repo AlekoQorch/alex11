@@ -1,4 +1,4 @@
-const CACHE = 'autodialer-v4';
+const CACHE = 'autodialer-v5';
 const ASSETS = ['./', './index.html', './app.js', './styles.css', './manifest.json'];
 
 self.addEventListener('install', (e) => {
