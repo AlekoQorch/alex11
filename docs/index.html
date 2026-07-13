@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ავტოდაილერი v16</title>
+  <title>ავტოდაილერი v17</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <style>
@@ -324,7 +324,7 @@
 </head>
 <body>
   <div class="app">
-    <h1>ავტოდაილერი <span class="ver">v16</span></h1>
+    <h1>ავტოდაილერი <span class="ver">v17</span></h1>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
@@ -642,6 +642,7 @@
       const tariff = formatUsd($('offer-tariff')?.value || '');
       const car = formatUsd($('offer-car')?.value || '');
       return `${ALDAGI_HEAD}
+
 ტარიფი: ${tariff}
 ავტომობილი: ${car}
 მესამე პირი: ${offerPick.third}
