@@ -150,6 +150,47 @@
       font-family: inherit;
     }
 
+    .sms-hint {
+      font-size: 13px;
+      color: var(--dim);
+      margin: 10px 0 12px;
+      line-height: 1.4;
+    }
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+    }
+    .sms-card h3 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+    .sms-text {
+      font-size: 15px;
+      line-height: 1.5;
+      color: var(--text);
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 10px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .sms-card button {
+      width: 100%;
+      padding: 11px;
+      border: none;
+      border-radius: 8px;
+      background: var(--blue);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: inherit;
+    }
+
     .hist {
       padding: 12px 0;
       border-bottom: 1px solid var(--line);
@@ -234,6 +275,7 @@
 
       <div class="page" id="p-sms">
         <input type="tel" id="sms-num" placeholder="ტელეფონის ნომერი" inputmode="tel">
+        <p class="sms-hint">აირჩიე შაბლონი — ქვემოთ ჩანს ზუსტად რა ტექსტი გაიგზავნება</p>
         <div id="sms-list"></div>
       </div>
 
@@ -273,9 +315,9 @@
     const SMS = [
       ['ზარის მოთხოვნა', 'გამარჯობა! გთხოვთ დაგვიბრუნოთ ზარი, როცა შეძლებთ. გმადლობთ!'],
       ['შეხსენება', 'გამარჯობა! გიგზავნით შეხსენებას — გთხოვთ დაგვიკავშირდეთ დღესვე. გმადლობთ!'],
-      ['ვიზიტი', 'გამარჯობა! თქვენი ვიზიტი დადასტურებულია.'],
-      ['გადახდა', 'გამარჯობა! გიგზავნით შეხსენებას გადასახადის შესახებ.'],
-      ['მადლობა', 'გმადლობთ ჩვენთან კავშირისთვის!']
+      ['ვიზიტის დადასტურება', 'გამარჯობა! თქვენი ვიზიტი დადასტურებულია. დამატებითი კითხვებისთვის დაგვიკავშირდით.'],
+      ['გადახდის შეხსენება', 'გამარჯობა! გიგზავნით შეხსენებას გადასახადის გადახდის შესახებ. გმადლობთ ყურადღებისთვის!'],
+      ['მადლობა', 'გმადლობთ ჩვენთან კავშირისთვის! საჭიროების შემთხვევაში ნებისმიერ დროს დაგვიკავშირდით.']
     ];
     const TOUT = 30;
     const S = { q: [], i: 0, run: false, t0: null, ti: null, wait: false, to: false };
@@ -398,7 +440,7 @@
     }
 
     $('sms-list').innerHTML = SMS.map(([t, m], i) =>
-      `<div class="row"><div><b>${t}</b><small>${m}</small></div><button type="button" data-i="${i}">გაგზავნა</button></div>`
+      `<div class="sms-card"><h3>${t}</h3><div class="sms-text">${m}</div><button type="button" data-i="${i}">გაგზავნა</button></div>`
     ).join('');
     $('sms-list').onclick = e => {
       const b = e.target.closest('[data-i]');
