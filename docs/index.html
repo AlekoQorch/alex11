@@ -8,6 +8,7 @@
   <meta name="apple-mobile-web-app-title" content="ავტოდაილერი">
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <title>ავტოდაილერი</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -549,6 +550,14 @@
           <div class="sms-text" id="intro-preview">${introMsg('ka')}</div>
           <button type="button" data-send="intro-sms">გაგზავნა SMS</button>
         </div>
+        <div class="sms-card" data-id="tariff">
+          <h3>ტარიფის დაანგარიშება</h3>
+          <div class="sms-text">${TARIFF_MSG.replace(/</g, '&lt;')}</div>
+          <div class="send-row">
+            <button type="button" data-send="tariff-sms">SMS</button>
+            <button type="button" class="btn-wa" data-send="tariff-wa">WhatsApp</button>
+          </div>
+        </div>
         <div class="sms-card" data-id="aldagi">
           <h3>სრული შეთავაზება</h3>
           <div class="sms-text long">${ALDAGI_INFO.replace(/</g, '&lt;')}</div>
@@ -557,10 +566,6 @@
             <button type="button" class="btn-wa" data-send="aldagi-wa">WhatsApp</button>
           </div>
         </div>`;
-
-      html += SMS_SIMPLE.map(([t, m], i) =>
-        `<div class="sms-card"><h3>${t}</h3><div class="sms-text">${m}</div><button type="button" data-send="simple-${i}">გაგზავნა</button></div>`
-      ).join('');
 
       $('sms-list').innerHTML = html;
     }
@@ -582,12 +587,10 @@
 
       const action = btn.dataset.send;
       if (action === 'intro-sms') sendSmsTo(n, introMsg(langPick.intro));
+      else if (action === 'tariff-sms') sendSmsTo(n, TARIFF_MSG);
+      else if (action === 'tariff-wa') sendWaTo(n, TARIFF_MSG);
       else if (action === 'aldagi-sms') sendSmsTo(n, ALDAGI_INFO);
       else if (action === 'aldagi-wa') sendWaTo(n, ALDAGI_INFO);
-      else if (action.startsWith('simple-')) {
-        const i = +action.split('-')[1];
-        sendSmsTo(n, SMS_SIMPLE[i][1]);
-      }
     };
 
     renderSmsList();
