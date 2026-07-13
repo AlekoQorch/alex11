@@ -4,29 +4,24 @@
 
 ---
 
-## 📱 iPhone-ზე გახსნა — ეს ლინკი გამოიყენე!
+## 📱 iPhone-ზე გახსნა
 
-Safari-ში გახსენი (დააკოპირე ზუსტად):
+### ❌ HTML კოდი ხედავ? — არასწორია!
 
-```
-https://cdn.statically.io/gh/AlekoQorch/alex11/gh-pages/index.html
-```
+თუ `<!DOCTYPE html>` ჩანს — აპი არ გაიხსნა. გჭირდება **ერთხელ** GitHub Pages ჩართვა.
 
-> ⚠️ **არა** jsdelivr ლინკი — ის HTML კოდს აჩვენებს, აპს არა!
+### ✅ შენ ერთი რამ გააკეთე (Save):
 
-### Home Screen-ზე (აპივით):
-1. Share ⬆️ → **Add to Home Screen** → Add
-2. Home Screen-იდან გახსენი
-
----
-
-## GitHub Pages (სურვილისამებრ, მომავალში)
-
-თუ გინდა `alekoqorch.github.io/alex11/` ლინკი:
-1. https://github.com/AlekoQorch/alex11/settings/pages
+1. გახსენი: **https://github.com/AlekoQorch/alex11/settings/pages**
 2. Source: **Deploy from a branch**
-3. Branch: **gh-pages** → **/ (root)** → **Save**
-4. 2-3 წუთი დაელოდე
+3. Branch: **main** → Folder: **/docs**
+4. **Save** → 2-3 წუთი დაელოდე
+5. გახსენი: **https://alekoqorch.github.io/alex11/**
+
+### Home Screen-ზე:
+Share ⬆️ → **Add to Home Screen** → Add
+
+დეტალური ინსტრუქცია: [INSTALL-KA.md](INSTALL-KA.md)
 
 ---
 
