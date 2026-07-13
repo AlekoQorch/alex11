@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ავტოდაილერი v19</title>
+  <title>ავტოდაილერი v20</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <style>
@@ -317,14 +317,32 @@
     .box .lbl { font-size: 13px; color: var(--dim); }
     .box .num { font-size: 21px; font-weight: 700; margin: 8px 0 18px; }
     .box .go { width: 100%; margin-top: 8px; padding: 14px; border: none; border-radius: 10px; background: var(--green); color: #000; font-size: 16px; font-weight: 600; font-family: inherit; }
+    .box .go.btn-sms { background: var(--blue); color: #fff; }
+    .box .go.btn-wa { background: #25d366; color: #fff; }
     .box .skip { width: 100%; margin-top: 8px; padding: 13px; border: 1px solid var(--line); border-radius: 10px; background: none; color: var(--dim); font-size: 15px; font-family: inherit; }
     .box p { font-size: 14px; color: var(--dim); margin: 8px 0 16px; line-height: 1.5; }
+    .box-wide { max-width: 340px; text-align: left; }
+    .box-wide .num { text-align: center; }
+    .send-preview {
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--text);
+      background: var(--bg);
+      border: 1px solid #4a4a50;
+      border-radius: 10px;
+      padding: 12px;
+      margin: 0 0 14px;
+      max-height: 220px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
     .hide { display: none !important; }
   </style>
 </head>
 <body>
   <div class="app">
-    <h1>ავტოდაილერი <span class="ver">v19</span></h1>
+    <h1>ავტოდაილერი <span class="ver">v20</span></h1>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
@@ -367,12 +385,24 @@
     <button class="stop hide" id="stop" type="button">გაჩერება</button>
   </div>
 
-  <div class="overlay hide" id="next-modal">
+  <div class="overlay hide" id="after-call-modal">
     <div class="box">
-      <div class="lbl" id="next-lbl">შემდეგი</div>
-      <div class="num" id="next-num"></div>
-      <button class="go" id="next-go" type="button">დარეკვა</button>
-      <button class="skip" id="next-skip" type="button">გამოტოვება</button>
+      <div class="lbl">ზარი დასრულდა</div>
+      <div class="num" id="after-call-num"></div>
+      <p id="after-call-note"></p>
+      <button class="go btn-sms" id="after-call-sms" type="button">SMS გაგზავნა</button>
+      <button class="go" id="after-call-next" type="button">შემდეგი ნომერი</button>
+      <button class="skip" id="after-call-done" type="button">დასრულება</button>
+    </div>
+  </div>
+
+  <div class="overlay hide" id="send-modal">
+    <div class="box box-wide">
+      <div class="lbl">ვის ვუგზავნით</div>
+      <div class="num" id="send-num"></div>
+      <div class="send-preview" id="send-preview"></div>
+      <button class="go btn-sms" id="send-go" type="button">გაგზავნა</button>
+      <button class="skip" id="send-cancel" type="button">გაუქმება</button>
     </div>
   </div>
 
@@ -439,6 +469,7 @@
     const langPick = { intro: 'ka' };
     const TOUT = 30;
     const S = { q: [], i: 0, run: false, t0: null, ti: null, wait: false, to: false, last: '' };
+    const pendingSend = { num: '', msg: '', type: 'sms' };
 
     const $ = id => document.getElementById(id);
     const st = $('status');
@@ -548,26 +579,20 @@
       addHist(n, ok ? 'მიპასუხეს' : 'არ მიპასუხეს');
       setStatus(ok ? `${n} — მიპასუხეს` : `${n} — არ მიპასუხეს`);
       S.i++;
-      if (S.run && S.i < S.q.length) {
-        $('next-num').textContent = S.q[S.i];
-        $('next-lbl').textContent = `შემდეგი (${S.i + 1}/${S.q.length})`;
-        $('next-modal').classList.remove('hide');
-        clearTimeout($('next-modal')._t);
-        $('next-modal')._t = setTimeout(next, 3000);
-      } else if (S.run) done();
+      if (S.run) showAfterCall(n, ok);
     }
 
-    function next() {
-      $('next-modal').classList.add('hide');
-      clearTimeout($('next-modal')._t);
-      if (S.run) call();
+    function goNextCall() {
+      $('after-call-modal').classList.add('hide');
+      if (S.run && S.i < S.q.length) call();
+      else done();
     }
 
     function reset() {
       $('start').classList.remove('hide');
       $('stop').classList.add('hide');
       $('nums').disabled = false;
-      $('next-modal').classList.add('hide');
+      $('after-call-modal').classList.add('hide');
       $('time-modal').classList.add('hide');
     }
 
@@ -601,6 +626,34 @@
     function sendWaTo(num, msg) {
       const n = num.replace(/\D/g, '');
       location.href = 'https://wa.me/' + n + '?text=' + encodeURIComponent(msg);
+    }
+
+    function showSendConfirm(num, msg, type) {
+      pendingSend.num = num;
+      pendingSend.msg = msg;
+      pendingSend.type = type;
+      $('send-num').textContent = num;
+      $('send-preview').textContent = msg;
+      const btn = $('send-go');
+      btn.textContent = type === 'wa' ? 'WhatsApp-ში გაგზავნა' : 'SMS გაგზავნა';
+      btn.className = 'go ' + (type === 'wa' ? 'btn-wa' : 'btn-sms');
+      $('send-modal').classList.remove('hide');
+    }
+
+    function confirmSend() {
+      $('send-modal').classList.add('hide');
+      if (pendingSend.type === 'wa') sendWaTo(pendingSend.num, pendingSend.msg);
+      else sendSmsTo(pendingSend.num, pendingSend.msg);
+    }
+
+    function showAfterCall(n, answered) {
+      $('after-call-num').textContent = n;
+      $('after-call-note').textContent = answered ? 'მიპასუხეს' : 'არ მიპასუხეს';
+      const hasNext = S.run && S.i < S.q.length;
+      $('after-call-next').classList.toggle('hide', !hasNext);
+      $('after-call-done').classList.toggle('hide', hasNext);
+      if (hasNext) $('after-call-next').textContent = `შემდეგი ნომერი (${S.i + 1}/${S.q.length})`;
+      $('after-call-modal').classList.remove('hide');
     }
 
     function renderSmsList() {
@@ -712,13 +765,13 @@ ${ALDAGI_TAIL}`;
       if (!n) { setStatus('მიუთითე ნომერი'); goTab('sms'); return; }
 
       const action = btn.dataset.send;
-      if (action === 'intro-sms') sendSmsTo(n, introMsg(langPick.intro));
-      else if (action === 'noanswer-sms') sendSmsTo(n, NO_ANSWER_MSG);
-      else if (action === 'noanswer-wa') sendWaTo(n, NO_ANSWER_MSG);
-      else if (action === 'tariff-sms') sendSmsTo(n, TARIFF_MSG);
-      else if (action === 'tariff-wa') sendWaTo(n, TARIFF_MSG);
-      else if (action === 'aldagi-sms') sendSmsTo(n, buildAldagiMsg());
-      else if (action === 'aldagi-wa') sendWaTo(n, buildAldagiMsg());
+      if (action === 'intro-sms') showSendConfirm(n, introMsg(langPick.intro), 'sms');
+      else if (action === 'noanswer-sms') showSendConfirm(n, NO_ANSWER_MSG, 'sms');
+      else if (action === 'noanswer-wa') showSendConfirm(n, NO_ANSWER_MSG, 'wa');
+      else if (action === 'tariff-sms') showSendConfirm(n, TARIFF_MSG, 'sms');
+      else if (action === 'tariff-wa') showSendConfirm(n, TARIFF_MSG, 'wa');
+      else if (action === 'aldagi-sms') showSendConfirm(n, buildAldagiMsg(), 'sms');
+      else if (action === 'aldagi-wa') showSendConfirm(n, buildAldagiMsg(), 'wa');
     };
 
     renderSmsList();
@@ -730,8 +783,11 @@ ${ALDAGI_TAIL}`;
     };
     $('start').onclick = start;
     $('stop').onclick = stopAll;
-    $('next-go').onclick = next;
-    $('next-skip').onclick = () => { $('next-modal').classList.add('hide'); S.i++; S.run && S.i < S.q.length ? call() : done(); };
+    $('after-call-sms').onclick = () => showSendConfirm($('after-call-num').textContent, NO_ANSWER_MSG, 'sms');
+    $('after-call-next').onclick = goNextCall;
+    $('after-call-done').onclick = () => { $('after-call-modal').classList.add('hide'); done(); };
+    $('send-go').onclick = confirmSend;
+    $('send-cancel').onclick = () => $('send-modal').classList.add('hide');
     $('time-ok').onclick = () => $('time-modal').classList.add('hide');
     $('paste').onclick = async () => {
       try {
