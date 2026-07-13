@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ავტოდაილერი v13</title>
+  <title>ავტოდაილერი v14</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <style>
@@ -324,7 +324,7 @@
 </head>
 <body>
   <div class="app">
-    <h1>ავტოდაილერი <span class="ver">v13</span></h1>
+    <h1>ავტოდაილერი <span class="ver">v14</span></h1>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
@@ -418,10 +418,11 @@
 დეტალურად: https://aldagi.ge/individual/auto-insurance`;
 
     const OFFER_LIMITS = {
+      car: ['10000$', '20000$', '50000$', '100000$'],
       third: ['5000$', '10000$', '25000$', '50000$'],
       health: ['20000$', '40000$', '100000$']
     };
-    const offerPick = { third: '10000$', health: '20000$' };
+    const offerPick = { car: '10000$', third: '10000$', health: '20000$' };
 
     const TARIFF_MSG = `გამარჯობა, ალექსანდრე ქორჩაშვილი გწერთ სადაზღვეო კომპანია ალდაგიდან.
 
@@ -609,8 +610,12 @@
         <div class="sms-card" data-id="aldagi">
           <h3>სრული შეთავაზება</h3>
           <div class="offer-fields">
-            <span class="field-label">ტარიფი (ავტომობილი)</span>
-            <input class="field-inp" id="offer-tariff" type="text" placeholder="მაგ: 450 ლ / წელი">
+            <span class="field-label">ტარიფი ($)</span>
+            <input class="field-inp" id="offer-tariff" type="text" inputmode="decimal" placeholder="მაგ: 150$">
+            <span class="field-label">ავტომობილი</span>
+            <div class="lim-pick" id="offer-car">
+              ${OFFER_LIMITS.car.map(v => `<button type="button" data-k="car" data-val="${v}" class="${v === offerPick.car ? 'on' : ''}">${v}</button>`).join('')}
+            </div>
             <span class="field-label">მესამე პირი</span>
             <div class="lim-pick" id="offer-third">
               ${OFFER_LIMITS.third.map(v => `<button type="button" data-k="third" data-val="${v}" class="${v === offerPick.third ? 'on' : ''}">${v}</button>`).join('')}
@@ -631,10 +636,18 @@
       updateAldagiPreview();
     }
 
+    function formatUsd(val) {
+      const v = val.trim();
+      if (!v) return '—';
+      if (v.includes('$')) return v;
+      return v + '$';
+    }
+
     function buildAldagiMsg() {
-      const tariff = $('offer-tariff')?.value.trim() || '—';
+      const tariff = formatUsd($('offer-tariff')?.value || '');
       return `${ALDAGI_HEAD}
-ავტომობილი: ${tariff}
+${tariff}
+ავტომობილი: ${offerPick.car}
 მესამე პირი: ${offerPick.third}
 მძღოლისა და მგზავრების ჯანმრთელობა: ${offerPick.health}
 
