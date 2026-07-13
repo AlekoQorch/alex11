@@ -4,124 +4,266 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="ავტოდაილერი">
-  <meta name="theme-color" content="#000000">
+  <meta name="theme-color" content="#1c1c1e">
   <meta name="color-scheme" content="dark">
   <title>ავტოდაილერი</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #1c1c1e;
+      --card: #2c2c2e;
+      --input: #3a3a3c;
+      --border: #3a3a3c;
+      --text: #f2f2f7;
+      --muted: #98989f;
+      --accent: #0a84ff;
+      --green: #30d158;
+      --red: #ff453a;
+      --radius: 12px;
+      --pad: 16px;
+      --tabs: 56px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     body {
-      font-family: -apple-system, sans-serif;
-      background: #000;
-      color: #fff;
-      padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
       font-size: 16px;
-      line-height: 1.4;
+      line-height: 1.5;
+      min-height: 100dvh;
     }
-    h1 { font-size: 20px; text-align: center; padding: 16px 0 12px; }
-    nav { display: flex; border-bottom: 1px solid #333; margin-bottom: 16px; }
-    nav button {
-      flex: 1; background: none; border: none; color: #888;
-      padding: 10px; font-size: 14px; font-family: inherit;
+    .wrap {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: calc(env(safe-area-inset-top) + 12px) var(--pad) calc(var(--tabs) + env(safe-area-inset-bottom) + 12px);
     }
-    nav button.on { color: #fff; border-bottom: 2px solid #fff; margin-bottom: -1px; }
+    header { margin-bottom: 20px; }
+    header h1 { font-size: 22px; font-weight: 700; }
+    header p { font-size: 14px; color: var(--muted); margin-top: 4px; }
+
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 14px var(--pad);
+      margin-bottom: 12px;
+    }
+    .card-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-bottom: 10px;
+    }
+    .card-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .card-row .card-title { margin-bottom: 0; }
+
+    #status-text { font-size: 15px; color: var(--text); }
+    #status-text.calling { color: var(--green); }
+    #status-sub { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+    textarea, .field {
+      width: 100%;
+      background: var(--input);
+      border: none;
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-size: 16px;
+      font-family: inherit;
+      line-height: 1.45;
+    }
+    textarea { min-height: 130px; resize: vertical; }
+    textarea:disabled { opacity: 0.5; }
+    textarea::placeholder, .field::placeholder { color: #636366; }
+    textarea:focus, .field:focus { outline: 2px solid var(--accent); outline-offset: 0; }
+
+    .foot {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .foot button {
+      background: none; border: none; font-family: inherit;
+      font-size: 13px; color: var(--accent); padding: 4px 0;
+    }
+    .foot button.danger { color: var(--red); }
+
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 17px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .btn-green { background: var(--green); color: #000; }
+    .btn-red {
+      background: transparent;
+      color: var(--red);
+      border: 1px solid rgba(255,69,58,.4);
+      margin-top: 8px;
+    }
+    .btn-blue {
+      background: var(--accent);
+      color: #fff;
+      padding: 8px 14px;
+      width: auto;
+      font-size: 14px;
+      border-radius: 8px;
+    }
+
     .page { display: none; }
     .page.on { display: block; }
-    #status { color: #aaa; font-size: 14px; margin-bottom: 12px; min-height: 20px; }
-    textarea, input {
-      width: 100%; background: #111; border: 1px solid #333;
-      border-radius: 8px; padding: 12px; color: #fff;
-      font-size: 16px; font-family: inherit;
+
+    .sms-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
     }
-    textarea { min-height: 120px; margin-bottom: 8px; }
-    input { margin-bottom: 12px; }
-    .meta { font-size: 13px; color: #666; margin-bottom: 12px; }
-    .meta button { background: none; border: none; color: #6af; font-size: 13px; font-family: inherit; }
-    .meta .x { color: #f66; }
-    .go {
-      width: 100%; padding: 16px; border: none; border-radius: 8px;
-      background: #2e7d32; color: #fff; font-size: 17px;
-      font-weight: 600; font-family: inherit;
+    .sms-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .sms-item:first-child { padding-top: 0; }
+    .sms-item strong { display: block; font-size: 15px; margin-bottom: 3px; }
+    .sms-item span { font-size: 13px; color: var(--muted); line-height: 1.4; }
+
+    .hist-item {
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
     }
-    .stop {
-      width: 100%; padding: 14px; margin-top: 8px; border: 1px solid #c62828;
-      border-radius: 8px; background: transparent; color: #f66;
-      font-size: 15px; font-family: inherit;
+    .hist-item:last-child { border-bottom: none; }
+    .hist-item .num { font-size: 15px; font-weight: 500; }
+    .hist-item .info { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+    .empty { text-align: center; color: var(--muted); font-size: 14px; padding: 24px 0; }
+
+    .tabs {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      display: flex;
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      padding-bottom: env(safe-area-inset-bottom);
     }
-    .sms-row {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 12px 0; border-bottom: 1px solid #222; gap: 8px;
+    .tabs button {
+      flex: 1;
+      padding: 14px 8px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 13px;
+      font-family: inherit;
     }
-    .sms-row span { font-size: 14px; flex: 1; }
-    .sms-row button {
-      background: #1565c0; color: #fff; border: none; border-radius: 6px;
-      padding: 8px 12px; font-size: 13px; font-family: inherit; white-space: nowrap;
-    }
-    .hist { font-size: 14px; padding: 8px 0; border-bottom: 1px solid #222; color: #ccc; }
-    .hist small { color: #666; display: block; font-size: 12px; }
-    .empty { color: #555; text-align: center; padding: 32px 0; font-size: 14px; }
+    .tabs button.on { color: var(--accent); font-weight: 600; }
+
     .overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,.8);
-      display: flex; align-items: center; justify-content: center; padding: 20px;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.6);
+      display: flex; align-items: center; justify-content: center;
+      padding: var(--pad); z-index: 50;
     }
-    .box {
-      background: #111; border: 1px solid #333; border-radius: 12px;
-      padding: 20px; width: 100%; max-width: 300px; text-align: center;
+    .modal {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 24px var(--pad);
+      width: 100%; max-width: 320px;
+      text-align: center;
     }
-    .box p { color: #aaa; font-size: 14px; margin: 8px 0 16px; }
-    .box .num { font-size: 20px; font-weight: 700; color: #fff; }
-    .box button { width: 100%; margin-top: 6px; }
+    .modal h2 { font-size: 14px; color: var(--muted); font-weight: 500; margin-bottom: 8px; }
+    .modal .phone { font-size: 22px; font-weight: 700; margin-bottom: 20px; }
+    .modal p { font-size: 14px; color: var(--muted); margin-bottom: 16px; line-height: 1.5; }
+    .modal .btn { margin-top: 8px; }
+
     .hide { display: none !important; }
   </style>
 </head>
 <body>
-  <h1>ავტოდაილერი</h1>
-  <nav>
+  <div class="wrap">
+    <header>
+      <h1>ავტოდაილერი</h1>
+      <p>ნომრების ავტომატური დარეკვა</p>
+    </header>
+
+    <div class="card" id="status-card">
+      <div class="card-title">სტატუსი</div>
+      <div id="status-text">ჩასვი ნომრები და დააჭირე დაწყებას</div>
+      <div id="status-sub"></div>
+    </div>
+
+    <div class="page on" id="p-dial">
+      <div class="card">
+        <div class="card-row">
+          <div class="card-title">ნომრები</div>
+          <div class="foot" style="margin:0">
+            <button id="paste" type="button">ჩასმა</button>
+            <button class="danger" id="clear" type="button">გასუფთავება</button>
+          </div>
+        </div>
+        <textarea id="nums" placeholder="თითო ხაზზე ერთი ნომერი&#10;მაგ: 599123456"></textarea>
+        <div class="foot"><span><b id="ncount">0</b> ნომერი</span></div>
+      </div>
+      <button class="btn btn-green" id="start" type="button">დაწყება</button>
+      <button class="btn btn-red hide" id="stop" type="button">გაჩერება</button>
+    </div>
+
+    <div class="page" id="p-sms">
+      <div class="card">
+        <div class="card-title">მიმღების ნომერი</div>
+        <input class="field" type="tel" id="sms-num" placeholder="+995 5XX XX XX XX" inputmode="tel">
+      </div>
+      <div class="card">
+        <div class="card-title">შაბლონები</div>
+        <div id="sms-list"></div>
+      </div>
+    </div>
+
+    <div class="page" id="p-history">
+      <div class="card">
+        <div class="card-row">
+          <div class="card-title">ბოლო ზარები</div>
+          <button class="danger" id="clr-hist" type="button" style="background:none;border:none;color:var(--red);font-size:13px;font-family:inherit">გასუფთავება</button>
+        </div>
+        <div id="hist"><p class="empty">ჯერ ცარიელია</p></div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="tabs">
     <button class="on" data-v="dial" type="button">დარეკვა</button>
     <button data-v="sms" type="button">SMS</button>
     <button data-v="history" type="button">ისტორია</button>
   </nav>
 
-  <p id="status">ჩასვი ნომრები და დააჭირე დაწყებას</p>
-
-  <div class="page on" id="p-dial">
-    <textarea id="nums" placeholder="თითო ხაზზე ერთი ნომერი"></textarea>
-    <p class="meta">
-      <span id="ncount">0</span> ნომერი ·
-      <button id="paste" type="button">ჩასმა</button> ·
-      <button class="x" id="clear" type="button">გასუფთავება</button>
-    </p>
-    <button class="go" id="start" type="button">დაწყება</button>
-    <button class="stop hide" id="stop" type="button">გაჩერება</button>
-  </div>
-
-  <div class="page" id="p-sms">
-    <input type="tel" id="sms-num" placeholder="ტელეფონის ნომერი" inputmode="tel">
-    <div id="sms-list"></div>
-  </div>
-
-  <div class="page" id="p-history">
-    <p class="meta"><button class="x" id="clr-hist" type="button">ისტორიის გასუფთავება</button></p>
-    <div id="hist"></div>
-  </div>
-
   <div class="overlay hide" id="next-modal">
-    <div class="box">
-      <p id="next-lbl">შემდეგი ნომერი</p>
-      <p class="num" id="next-num"></p>
-      <button class="go" id="next-go" type="button">დარეკვა</button>
-      <button class="stop" id="next-skip" type="button">გამოტოვება</button>
+    <div class="modal">
+      <h2 id="next-lbl">შემდეგი ნომერი</h2>
+      <div class="phone" id="next-num"></div>
+      <button class="btn btn-green" id="next-go" type="button">დარეკვა</button>
+      <button class="btn btn-red" id="next-skip" type="button">გამოტოვება</button>
     </div>
   </div>
 
   <div class="overlay hide" id="time-modal">
-    <div class="box">
-      <p class="num">⏱ 30 წმ გავიდა</p>
-      <p>გათიშე ზარი და დაბრუნდი აპში</p>
-      <button class="go" id="time-ok" type="button">კარგი</button>
+    <div class="modal">
+      <div class="phone">30 წამი გავიდა</div>
+      <p>გათიშე ზარი ხელით და დაბრუნდი აპში — ავტომატურად გაგრძელდება</p>
+      <button class="btn btn-green" id="time-ok" type="button">გასაგებია</button>
     </div>
   </div>
 
@@ -129,19 +271,26 @@
     const SMS = [
       ['ზარის მოთხოვნა', 'გამარჯობა! გთხოვთ დაგვიბრუნოთ ზარი, როცა შეძლებთ. გმადლობთ!'],
       ['შეხსენება', 'გამარჯობა! გიგზავნით შეხსენებას — გთხოვთ დაგვიკავშირდეთ დღესვე. გმადლობთ!'],
-      ['ვიზიტი', 'გამარჯობა! თქვენი ვიზიტი დადასტურებულია.'],
-      ['გადახდა', 'გამარჯობა! გიგზავნით შეხსენებას გადასახადის შესახებ.'],
+      ['ვიზიტის დადასტურება', 'გამარჯობა! თქვენი ვიზიტი დადასტურებულია.'],
+      ['გადახდის შეხსენება', 'გამარჯობა! გიგზავნით შეხსენებას გადასახადის შესახებ.'],
       ['მადლობა', 'გმადლობთ ჩვენთან კავშირისთვის!']
     ];
     const TOUT = 30;
     const S = { q: [], i: 0, run: false, t0: null, ti: null, wait: false, to: false };
 
     const $ = id => document.getElementById(id);
-    const status = t => { $('status').textContent = t; };
+    const statusEl = $('status-text');
+    const statusSub = $('status-sub');
 
-    document.querySelectorAll('nav button').forEach(b => {
+    function setStatus(main, sub, calling) {
+      statusEl.textContent = main;
+      statusSub.textContent = sub || '';
+      statusEl.classList.toggle('calling', !!calling);
+    }
+
+    document.querySelectorAll('.tabs button').forEach(b => {
       b.onclick = () => {
-        document.querySelectorAll('nav button').forEach(x => x.classList.remove('on'));
+        document.querySelectorAll('.tabs button').forEach(x => x.classList.remove('on'));
         document.querySelectorAll('.page').forEach(x => x.classList.remove('on'));
         b.classList.add('on');
         $('p-' + b.dataset.v).classList.add('on');
@@ -155,24 +304,22 @@
     }
     function tel(n) { return n.replace(/[^\d+]/g, ''); }
 
-    function count() {
-      $('ncount').textContent = parse($('nums').value).length;
-    }
+    function count() { $('ncount').textContent = parse($('nums').value).length; }
 
     function hist() {
       try { return JSON.parse(localStorage.getItem('hist') || '[]'); } catch { return []; }
     }
     function addHist(num, note) {
       const h = hist();
-      h.unshift({ num, note, t: new Date().toLocaleString('ka-GE', { hour: '2-digit', minute: '2-digit' }) });
-      localStorage.setItem('hist', JSON.stringify(h.slice(0, 40)));
+      h.unshift({ num, note, t: new Date().toLocaleString('ka-GE', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' }) });
+      localStorage.setItem('hist', JSON.stringify(h.slice(0, 50)));
       showHist();
     }
     function showHist() {
       const h = hist();
-      $('hist').innerHTML = h.length ? h.map(x =>
-        `<div class="hist">${x.num}<small>${x.note} · ${x.t}</small></div>`
-      ).join('') : '<p class="empty">ცარიელია</p>';
+      $('hist').innerHTML = h.length
+        ? h.map(x => `<div class="hist-item"><div class="num">${x.num}</div><div class="info">${x.note} · ${x.t}</div></div>`).join('')
+        : '<p class="empty">ჯერ ცარიელია</p>';
     }
 
     function timer(on) {
@@ -181,8 +328,12 @@
       S.t0 = Date.now(); S.to = false;
       S.ti = setInterval(() => {
         const left = TOUT - (Date.now() - S.t0) / 1000;
-        if (left > 0) status(`ირეკება... ${Math.ceil(left)} წმ`);
-        else if (!S.to) { S.to = true; $('time-modal').classList.remove('hide'); }
+        if (left > 0) {
+          setStatus(`ირეკება ${S.i + 1}/${S.q.length}`, `${S.q[S.i]} · ${Math.ceil(left)} წმ დარჩა`, true);
+        } else if (!S.to) {
+          S.to = true;
+          $('time-modal').classList.remove('hide');
+        }
       }, 500);
     }
 
@@ -190,7 +341,7 @@
 
     function start() {
       S.q = parse($('nums').value);
-      if (!S.q.length) { status('შეიყვანე ნომერი'); return; }
+      if (!S.q.length) { setStatus('შეიყვანე მაინც ერთი ნომერი', ''); return; }
       S.i = 0; S.run = true;
       $('start').classList.add('hide');
       $('stop').classList.remove('hide');
@@ -201,11 +352,9 @@
 
     function call() {
       if (!S.run || S.i >= S.q.length) { done(); return; }
-      const n = S.q[S.i];
-      status(`ირეკება ${S.i + 1}/${S.q.length}: ${n}`);
       S.wait = true;
       timer(true);
-      dial(n);
+      dial(S.q[S.i]);
     }
 
     function returned() {
@@ -216,7 +365,7 @@
       const sec = S.t0 ? (Date.now() - S.t0) / 1000 : 0;
       const ok = sec > 8 && sec < TOUT;
       addHist(n, ok ? 'მიპასუხეს' : 'არ მიპასუხეს');
-      status(ok ? `${n} — მიპასუხეს` : `${n} — არ მიპასუხეს`);
+      setStatus(ok ? 'მიპასუხეს ✓' : 'არ მიპასუხეს', n);
       S.i++;
       if (S.run && S.i < S.q.length) {
         $('next-num').textContent = S.q[S.i];
@@ -233,36 +382,37 @@
       if (S.run) call();
     }
 
-    function done() {
-      S.run = false; S.wait = false;
-      timer(false);
-      $('next-modal').classList.add('hide');
-      $('time-modal').classList.add('hide');
+    function resetUI() {
       $('start').classList.remove('hide');
       $('stop').classList.add('hide');
       $('nums').disabled = false;
-      status('დასრულდა ✓');
+      $('next-modal').classList.add('hide');
+      $('time-modal').classList.add('hide');
+    }
+
+    function done() {
+      S.run = false; S.wait = false;
+      timer(false);
+      resetUI();
+      setStatus('ყველა ნომერზე დასრულდა', `${S.q.length} ნომერი დამუშავდა`);
     }
 
     function stopAll() {
       S.run = false; S.wait = false;
       timer(false);
-      $('next-modal').classList.add('hide');
-      $('time-modal').classList.add('hide');
-      $('start').classList.remove('hide');
-      $('stop').classList.add('hide');
-      $('nums').disabled = false;
-      status('გაჩერებულია');
+      resetUI();
+      setStatus('გაჩერებულია', '');
     }
 
     $('sms-list').innerHTML = SMS.map(([title, msg], i) =>
-      `<div class="sms-row"><span>${title}</span><button type="button" data-i="${i}">გაგზავნა</button></div>`
+      `<div class="sms-item"><div><strong>${title}</strong><span>${msg}</span></div><button class="btn btn-blue" type="button" data-i="${i}">გაგზავნა</button></div>`
     ).join('');
     $('sms-list').onclick = e => {
-      if (!e.target.dataset.i) return;
-      const msg = SMS[+e.target.dataset.i][1];
-      let n = tel($('sms-num').value || $('nums').value.split('\n')[0] || '');
-      if (!n) { status('მიუთითე ნომერი SMS-ისთვის'); return; }
+      const btn = e.target.closest('[data-i]');
+      if (!btn) return;
+      const msg = SMS[+btn.dataset.i][1];
+      const n = tel($('sms-num').value || $('nums').value.split('\n').find(l => l.trim()) || '');
+      if (!n) { setStatus('მიუთითე ნომერი SMS-ისთვის', 'SMS ჩანართში'); return; }
       location.href = 'sms:' + n + '?body=' + encodeURIComponent(msg);
     };
 
@@ -275,8 +425,8 @@
     $('paste').onclick = async () => {
       try {
         const t = await navigator.clipboard.readText();
-        if (t) { $('nums').value = t; count(); status('ჩასმულია'); }
-      } catch { status('ჩასმა ვერ მოხერხდა'); }
+        if (t) { $('nums').value = t; count(); setStatus('ნომრები ჩასმულია', ''); }
+      } catch { setStatus('ჩასმა ვერ მოხერხდა', 'ხელით ჩასვი'); }
     };
     $('clear').onclick = () => { $('nums').value = ''; count(); localStorage.removeItem('nums'); };
     $('clr-hist').onclick = () => { localStorage.removeItem('hist'); showHist(); };
@@ -285,7 +435,6 @@
       if (document.visibilityState === 'visible') setTimeout(returned, 400);
     });
     window.addEventListener('pageshow', e => { if (e.persisted) setTimeout(returned, 400); });
-
     if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then(r => r.forEach(x => x.unregister()));
 
     const saved = localStorage.getItem('nums');

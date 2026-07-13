@@ -4,8 +4,8 @@
   "description": "ავტომატური დარეკვა და SMS iPhone-ისთვის",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#000000",
+  "background_color": "#1c1c1e",
+  "theme_color": "#1c1c1e",
   "orientation": "portrait",
   "lang": "ka",
   "icons": [
