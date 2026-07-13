@@ -6,86 +6,214 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="ავტოდაილერი">
-  <meta name="theme-color" content="#1565C0">
-  <title>ავტოდაილერი + SMS</title>
+  <meta name="theme-color" content="#0f172a" id="meta-theme">
+  <title>ავტოდაილერი</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div id="install-banner" class="install-banner hidden">
-    <p>📲 დააინსტალირე iPhone-ზე: Share → <strong>Add to Home Screen</strong></p>
-    <button id="dismiss-install" class="btn-text">✕</button>
-  </div>
+  <div class="app-bg"></div>
 
-  <header>
-    <h1>📞 ავტოდაილერი</h1>
-    <p class="subtitle">iPhone-იდან პირდაპირ — Mac არ გჭირდება</p>
-  </header>
+  <div id="toast" class="toast hidden" role="status"></div>
 
-  <main>
-    <section class="card note">
-      <strong>💡 როგორ მუშაობს</strong>
-      <p>ნომრებს ჩასვამ → „დაწყება“ → ტელეფონი გაიხსნება. 30 წმ-ში პასუხის გარეშე გათიშე → აპში დაბრუნდი → ავტომატურად შემდეგ ნომერზე გადავა.</p>
-    </section>
-
-    <section class="card">
-      <h2>📋 ნომრების სია</h2>
-      <textarea id="numbers-input" rows="6" placeholder="ჩაწერე ან ჩასვი ნომრები&#10;(თითო ხაზზე ერთი)&#10;&#10;მაგ: +995555123456&#10;599123456"></textarea>
-      <p class="hint" id="numbers-count">ნაპოვნი ნომრები: 0</p>
-    </section>
-
-    <section class="card status-card" id="status-card">
-      <div class="status-row">
-        <span class="status-dot" id="status-dot"></span>
-        <span id="status-text">მზად ხარ დასაწყებად</span>
+  <header class="header">
+    <div class="header-top">
+      <div class="brand">
+        <div class="brand-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+        </div>
+        <div>
+          <h1>ავტოდაილერი</h1>
+          <p class="subtitle" id="header-subtitle">მზად ხარ</p>
+        </div>
       </div>
-      <div class="progress-wrap hidden" id="progress-wrap">
-        <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
-        <p class="timer" id="timer-text">30 წმ</p>
-      </div>
-      <p class="last-result hidden" id="last-result"></p>
-      <p class="hint" id="progress-hint"></p>
-    </section>
-
-    <div class="btn-row">
-      <button id="btn-start" class="btn btn-green">▶ დაწყება</button>
-      <button id="btn-stop" class="btn btn-red" disabled>■ გაჩერება</button>
+      <button class="icon-btn" id="btn-theme" aria-label="თემის შეცვლა">
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        <svg class="icon-moon hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+      </button>
     </div>
 
-    <section class="card">
-      <h2>💬 SMS შაბლონები</h2>
-      <input type="tel" id="sms-number" class="input" placeholder="SMS-ის მიმღები ნომერი">
-      <div id="sms-templates"></div>
+    <div class="stats-row hidden" id="stats-row">
+      <div class="stat"><span class="stat-val" id="stat-done">0</span><span class="stat-lbl">დასრულ.</span></div>
+      <div class="stat"><span class="stat-val stat-green" id="stat-answered">0</span><span class="stat-lbl">პასუხი</span></div>
+      <div class="stat"><span class="stat-val stat-red" id="stat-missed">0</span><span class="stat-lbl">გამოტოვ.</span></div>
+      <div class="stat"><span class="stat-val" id="stat-left">0</span><span class="stat-lbl">დარჩა</span></div>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-tab="dialer" role="tab">📞 დარეკვა</button>
+    <button class="tab" data-tab="sms" role="tab">💬 SMS</button>
+    <button class="tab" data-tab="history" role="tab">📋 ისტორია</button>
+    <button class="tab" data-tab="settings" role="tab">⚙️</button>
+  </nav>
+
+  <main class="main">
+    <!-- DIALER -->
+    <section class="panel active" id="panel-dialer" role="tabpanel">
+      <div class="card hero-card" id="status-card">
+        <div class="hero-status">
+          <div class="ring-wrap hidden" id="ring-wrap">
+            <svg class="ring" viewBox="0 0 120 120">
+              <circle class="ring-bg" cx="60" cy="60" r="52"/>
+              <circle class="ring-fill" id="ring-fill" cx="60" cy="60" r="52"/>
+            </svg>
+            <div class="ring-center">
+              <span class="ring-time" id="ring-time">30</span>
+              <span class="ring-label">წამი</span>
+            </div>
+          </div>
+          <div class="status-info" id="status-info">
+            <span class="status-badge idle" id="status-badge">მზად</span>
+            <p class="status-text" id="status-text">ჩასვი ნომრები და დააჭირე დაწყებას</p>
+            <p class="status-number hidden" id="status-number"></p>
+          </div>
+        </div>
+        <div class="progress-track hidden" id="queue-progress">
+          <div class="progress-fill" id="queue-fill"></div>
+        </div>
+        <p class="queue-label hidden" id="queue-label">0 / 0</p>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2>ნომრების სია</h2>
+          <div class="card-actions">
+            <button class="chip-btn" id="btn-paste" type="button">ჩასმა</button>
+            <button class="chip-btn chip-danger" id="btn-clear" type="button">გასუფთ.</button>
+          </div>
+        </div>
+        <textarea id="numbers-input" rows="5" placeholder="თითო ხაზზე ერთი ნომერი&#10;&#10;599123456&#10;555123456&#10;+995591234567"></textarea>
+        <div class="chips" id="number-chips"></div>
+        <p class="hint"><span id="numbers-count">0</span> ნომერი</p>
+      </div>
+
+      <div class="action-bar" id="action-bar">
+        <button class="btn btn-primary btn-xl" id="btn-start" type="button">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          დაწყება
+        </button>
+        <div class="action-row hidden" id="action-row">
+          <button class="btn btn-secondary" id="btn-pause" type="button">⏸ პაუზა</button>
+          <button class="btn btn-danger" id="btn-stop" type="button">■ გაჩერება</button>
+          <button class="btn btn-ghost" id="btn-skip-current" type="button">გამოტოვება</button>
+        </div>
+      </div>
+
+      <details class="help-card">
+        <summary>როგორ მუშაობს?</summary>
+        <ol>
+          <li>ჩასვი ნომრები ან დააჭირე <strong>ჩასმა</strong></li>
+          <li><strong>დაწყება</strong> → რიგრიგობით ირეკავს</li>
+          <li><span id="help-timeout">30</span> წმ-ში პასუხის გარეშე → გათიშე → დაბრუნდი აპში</li>
+          <li>ავტომატურად გადავა შემდეგ ნომერზე</li>
+        </ol>
+      </details>
+    </section>
+
+    <!-- SMS -->
+    <section class="panel" id="panel-sms" role="tabpanel">
+      <div class="card">
+        <h2>SMS მიმღები</h2>
+        <div class="input-row">
+          <input type="tel" id="sms-number" class="input" placeholder="ნომერი" inputmode="tel">
+          <button class="chip-btn" id="btn-sms-current" type="button">მიმდინარე</button>
+        </div>
+      </div>
+      <div id="sms-templates" class="sms-list"></div>
+    </section>
+
+    <!-- HISTORY -->
+    <section class="panel" id="panel-history" role="tabpanel">
+      <div class="card-head standalone">
+        <h2>დარეკვის ისტორია</h2>
+        <button class="chip-btn chip-danger" id="btn-clear-history" type="button">გასუფთავება</button>
+      </div>
+      <div id="history-list" class="history-list">
+        <p class="empty-state">ისტორია ცარიელია</p>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="panel" id="panel-settings" role="tabpanel">
+      <div class="card">
+        <h2>ზარის პარამეტრები</h2>
+        <label class="setting-row">
+          <span>ტაიმაუტი (წმ)</span>
+          <select id="setting-timeout" class="select">
+            <option value="15">15 წმ</option>
+            <option value="30" selected>30 წმ</option>
+            <option value="45">45 წმ</option>
+            <option value="60">60 წმ</option>
+          </select>
+        </label>
+        <label class="setting-row">
+          <span>შემდეგ ზამდე (წმ)</span>
+          <select id="setting-delay" class="select">
+            <option value="1">1 წმ</option>
+            <option value="2">2 წმ</option>
+            <option value="3" selected>3 წმ</option>
+            <option value="5">5 წმ</option>
+          </select>
+        </label>
+        <label class="setting-toggle">
+          <span>ავტომატური შემდეგი ზარი</span>
+          <input type="checkbox" id="setting-auto-next" checked>
+          <span class="toggle"></span>
+        </label>
+        <label class="setting-toggle">
+          <span>ვიბრაცია გაფრთხილებაზე</span>
+          <input type="checkbox" id="setting-vibrate" checked>
+          <span class="toggle"></span>
+        </label>
+      </div>
+      <div class="card">
+        <h2>აპი</h2>
+        <p class="hint">ვერსია 2.0 · iPhone PWA</p>
+        <button class="btn btn-secondary btn-block" id="btn-install-hint" type="button">📲 Home Screen-ზე დამატება</button>
+      </div>
     </section>
   </main>
 
-  <!-- შემდეგი ზარის overlay -->
-  <div id="next-call-overlay" class="overlay hidden">
-    <div class="overlay-box">
-      <p id="overlay-title">შემდეგი ნომერი</p>
-      <p id="overlay-number" class="overlay-number"></p>
-      <p id="overlay-countdown" class="overlay-countdown"></p>
-      <button id="btn-call-next" class="btn btn-green btn-large">📞 დარეკვა</button>
-      <button id="btn-skip" class="btn btn-text">გამოტოვება</button>
+  <!-- Next call modal -->
+  <div class="modal hidden" id="next-call-modal" role="dialog">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <p class="modal-label" id="modal-label">შემდეგი ნომერი</p>
+      <p class="modal-number" id="modal-number"></p>
+      <div class="modal-countdown" id="modal-countdown">
+        <div class="countdown-bar" id="countdown-bar"></div>
+      </div>
+      <button class="btn btn-primary btn-xl" id="btn-call-next" type="button">📞 დარეკვა ახლა</button>
+      <button class="btn btn-ghost btn-block" id="btn-skip-next" type="button">გამოტოვება</button>
     </div>
   </div>
 
-  <!-- 30 წმ გაფრთხილება -->
-  <div id="timeout-overlay" class="overlay hidden">
-    <div class="overlay-box timeout-box">
-      <p class="timeout-icon">⏱</p>
-      <p><strong>30 წამი გავიდა!</strong></p>
-      <p>გათიშე ზარი ტელეფონში, შემდეგ დაბრუნდი აპში.</p>
-      <button id="btn-timeout-ok" class="btn btn-green btn-large">გასაგებია</button>
+  <!-- Timeout modal -->
+  <div class="modal hidden" id="timeout-modal" role="dialog">
+    <div class="modal-sheet modal-alert">
+      <div class="alert-icon">⏱</div>
+      <h3>დრო ამოიწურა</h3>
+      <p>გათიშე ზარი ტელეფონში და დაბრუნდი აპში — შემდეგ ნომერზე გადავალთ.</p>
+      <button class="btn btn-primary btn-block" id="btn-timeout-ok" type="button">გასაგებია</button>
+    </div>
+  </div>
+
+  <!-- Install hint -->
+  <div class="modal hidden" id="install-modal" role="dialog">
+    <div class="modal-sheet">
+      <h3>📲 აპის დამატება</h3>
+      <ol class="install-steps">
+        <li>Safari-ში Share ⬆️ დააჭირე</li>
+        <li><strong>Add to Home Screen</strong></li>
+        <li><strong>Add</strong></li>
+      </ol>
+      <button class="btn btn-primary btn-block" id="btn-install-close" type="button">გასაგებია</button>
     </div>
   </div>
 
   <script src="app.js"></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').catch(() => {});
-    }
-  </script>
+  <script>if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});</script>
 </body>
 </html>
