@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ავტოდაილერი v14</title>
+  <title>ავტოდაილერი v15</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <style>
@@ -324,7 +324,7 @@
 </head>
 <body>
   <div class="app">
-    <h1>ავტოდაილერი <span class="ver">v14</span></h1>
+    <h1>ავტოდაილერი <span class="ver">v15</span></h1>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
@@ -611,10 +611,8 @@
           <div class="offer-fields">
             <span class="field-label">ტარიფი ($)</span>
             <input class="field-inp" id="offer-tariff" type="text" inputmode="decimal" placeholder="მაგ: 150$">
-            <span class="field-label">ავტომობილი</span>
-            <div class="lim-pick" id="offer-car">
-              ${OFFER_LIMITS.car.map(v => `<button type="button" data-k="car" data-val="${v}" class="${v === offerPick.car ? 'on' : ''}">${v}</button>`).join('')}
-            </div>
+            <span class="field-label">ავტომობილი ($)</span>
+            <input class="field-inp" id="offer-car" type="text" inputmode="decimal" placeholder="მაგ: 10000$">
             <span class="field-label">მესამე პირი</span>
             <div class="lim-pick" id="offer-third">
               ${OFFER_LIMITS.third.map(v => `<button type="button" data-k="third" data-val="${v}" class="${v === offerPick.third ? 'on' : ''}">${v}</button>`).join('')}
@@ -644,9 +642,10 @@
 
     function buildAldagiMsg() {
       const tariff = formatUsd($('offer-tariff')?.value || '');
+      const car = formatUsd($('offer-car')?.value || '');
       return `${ALDAGI_HEAD}
 ${tariff}
-ავტომობილი: ${offerPick.car}
+ავტომობილი: ${car}
 მესამე პირი: ${offerPick.third}
 მძღოლისა და მგზავრების ჯანმრთელობა: ${offerPick.health}
 
@@ -660,6 +659,7 @@ ${ALDAGI_TAIL}`;
 
     function initOfferFields() {
       $('offer-tariff')?.addEventListener('input', updateAldagiPreview);
+      $('offer-car')?.addEventListener('input', updateAldagiPreview);
       document.querySelectorAll('.lim-pick button').forEach(b => {
         b.onclick = () => {
           const k = b.dataset.k;
