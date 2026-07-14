@@ -11,14 +11,17 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>Cold Caller v62</title>
+  <title>Cold Caller v63</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '62';
+    window.__CC_VER = '63';
     (function () {
       function go(v) {
         try {
@@ -89,19 +92,54 @@
       padding-bottom: calc(var(--bar) + env(safe-area-inset-bottom) + 48px);
     }
 
-    h1 {
-      font-size: 20px;
+    .brand {
+      position: relative;
+      overflow: hidden;
+      margin: 0 0 14px;
+      padding: 26px 20px 20px;
       text-align: center;
-      padding: 18px 16px;
-      margin: 12px 16px 16px;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-      background: var(--surface);
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      color: var(--text);
+      background:
+        radial-gradient(90% 70% at 50% -10%, rgba(50, 215, 75, 0.18), transparent 58%),
+        radial-gradient(70% 50% at 100% 0%, rgba(77, 159, 255, 0.10), transparent 50%),
+        linear-gradient(180deg, #1a1c20 0%, #161618 100%);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     }
-    h1 .ver { font-size: 11px; color: var(--dim); font-weight: 400; margin-left: 4px; }
+    .brand::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      width: 72px;
+      height: 2px;
+      transform: translateX(-50%);
+      border-radius: 2px;
+      background: linear-gradient(90deg, transparent, var(--green), transparent);
+      opacity: 0.85;
+    }
+    .brand h1 {
+      position: relative;
+      z-index: 1;
+      margin: 0;
+      padding: 0;
+      border: none;
+      background: none;
+      border-radius: 0;
+      font-family: "Syne", -apple-system, sans-serif;
+      font-size: clamp(28px, 8vw, 34px);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1.1;
+      color: #f4f6f5;
+    }
+    .brand .ver {
+      display: inline-block;
+      margin-top: 8px;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(236, 236, 236, 0.45);
+    }
 
     .tabs {
       display: flex;
@@ -583,7 +621,10 @@
 </head>
 <body>
   <div class="app">
-    <h1>Cold Caller <span class="ver">v62</span></h1>
+    <header class="brand">
+      <h1>Cold Caller</h1>
+      <div class="ver">v63</div>
+    </header>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
