@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ავტოდაილერი v43</title>
+  <title>ავტოდაილერი v44</title>
   <link rel="manifest" href="manifest.json?v=27">
   <link rel="apple-touch-icon" href="apple-touch-icon.png?v=27">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=27">
@@ -185,9 +185,13 @@
       font-family: ui-monospace, "SF Mono", "Menlo", "Cascadia Mono", "Roboto Mono", monospace;
       font-variant-numeric: tabular-nums;
       letter-spacing: 0.02em;
+      min-width: 0;
     }
     .num-inp:disabled { opacity: 0.55; }
     .num-inp:focus { outline: none; }
+    .num-inp.tap-dial {
+      caret-color: transparent;
+    }
 
     .tools {
       display: flex;
@@ -480,7 +484,7 @@
 </head>
 <body>
   <div class="app">
-    <h1>ავტოდაილერი <span class="ver">v43</span></h1>
+    <h1>ავტოდაილერი <span class="ver">v44</span></h1>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
@@ -543,11 +547,11 @@
 
   <div class="overlay hide" id="after-call-modal">
     <div class="box">
-      <div class="lbl">ზარი დასრულდა</div>
+      <div class="lbl">გადავიდეთ შემდეგზე?</div>
       <div class="num" id="after-call-num"></div>
       <p id="after-call-note"></p>
-      <button class="go" id="after-call-next" type="button">შემდეგი ნომერი</button>
-      <button class="skip" id="after-call-done" type="button">დასრულება</button>
+      <button class="go" id="after-call-next" type="button">დიახ, შემდეგი</button>
+      <button class="skip" id="after-call-done" type="button">არა, დასრულება</button>
     </div>
   </div>
 
@@ -565,16 +569,6 @@
           <button type="button" id="send-go">დიახ, SMS</button>
         </div>
       </div>
-    </div>
-  </div>
-
-  <div class="overlay hide" id="dial-cancel-modal">
-    <div class="box">
-      <div class="lbl">ზარი გაუქმდა</div>
-      <p>Cancel დააჭირე — დარეკვა არ მოხდა</p>
-      <button class="go" id="dial-cancel-retry" type="button">თავიდან დარეკვა</button>
-      <button class="go" id="dial-cancel-next" type="button">შემდეგი ნომერი</button>
-      <button class="skip" id="dial-cancel-stop" type="button">გაჩერება</button>
     </div>
   </div>
 
@@ -632,8 +626,6 @@
 
     const langPick = { intro: 'ka' };
     const S = { q: [], i: 0, run: false, wait: false, last: '', called: {} };
-    let dialLeftApp = false;
-    let dialCancelTimer = null;
     const pendingSend = { num: '', msg: '', type: 'sms' };
 
     const $ = id => document.getElementById(id);
@@ -799,16 +791,36 @@
         focusNextRow(inp);
       });
       $('num-list').addEventListener('click', e => {
-        const btn = e.target.closest('[data-row-send]');
-        if (!btn) return;
+        const sendBtn = e.target.closest('[data-row-send]');
+        if (sendBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          const row = sendBtn.closest('.num-row');
+          const inp = row?.querySelector('.num-inp');
+          const num = tel(inp?.value || '');
+          if (!num) return;
+          const type = sendBtn.dataset.rowSend;
+          showSendConfirm(num, NO_ANSWER_MSG, type, type === 'wa' ? 'WhatsApp' : 'SMS');
+          return;
+        }
+
+        // რიგის ნომერზე (1. 2.) — რედაქტირება
+        const lbl = e.target.closest('.num-lbl');
+        if (lbl) {
+          const inp = lbl.closest('.num-row')?.querySelector('.num-inp');
+          inp?.focus();
+          return;
+        }
+
+        // ნომერზე დაჭერა → iOS Call / Cancel → დარეკვა
+        // (რედაქტირებისთვის დააჭირე მარცხნივ რიგის ნომერს: 1. 2.)
+        const inp = e.target.closest('.num-inp');
+        if (!inp) return;
+        if (localDigitCount(inp.value) < 9) return;
+        if (document.activeElement === inp) return;
         e.preventDefault();
-        e.stopPropagation();
-        const row = btn.closest('.num-row');
-        const inp = row?.querySelector('.num-inp');
-        const num = tel(inp?.value || '');
-        if (!num) return;
-        const type = btn.dataset.rowSend;
-        showSendConfirm(num, NO_ANSWER_MSG, type, type === 'wa' ? 'WhatsApp' : 'SMS');
+        inp.blur();
+        dialFromList(inp.value);
       });
     }
 
@@ -867,7 +879,6 @@
 
     function call() {
       if (!S.run || S.i >= S.q.length) { done(); return; }
-      hideDialCancelModal();
       S.wait = true;
       hideCallActiveBar();
       highlightNumRow(S.i);
@@ -889,37 +900,20 @@
       if (S.run && S.wait) showCallActiveBar();
     }
 
+    /** იხსნის iOS Call / Cancel ფანჯარას */
     function dial(n) {
-      clearTimeout(dialCancelTimer);
-      dialLeftApp = false;
-      const onVis = () => {
-        if (document.visibilityState === 'hidden') dialLeftApp = true;
-      };
-      document.addEventListener('visibilitychange', onVis);
-      location.href = 'tel:' + tel(n);
-      dialCancelTimer = setTimeout(() => {
-        document.removeEventListener('visibilitychange', onVis);
-        if (!dialLeftApp && document.visibilityState === 'visible' && S.wait && S.run) {
-          handleDialCancelled();
-        }
-      }, 1200);
+      const raw = tel(n);
+      if (!raw) return;
+      location.href = 'tel:' + raw;
     }
 
-    function handleDialCancelled() {
-      if (!S.run || !S.wait) return;
-      S.wait = false;
-      hideCallActiveBar();
-      const n = S.q[S.i];
-      if (n && S.called[normNum(n)] === 'active') delete S.called[normNum(n)];
-      markNumRows();
-      setStatus('გაუქმებულია');
-      const hasNext = S.i < S.q.length - 1;
-      $('dial-cancel-next').classList.toggle('hide', !hasNext);
-      $('dial-cancel-modal').classList.remove('hide');
-    }
-
-    function hideDialCancelModal() {
-      $('dial-cancel-modal').classList.add('hide');
+    /** ლისტიდან ერთი ნომერი — ჯერ Call/Cancel, მერე დარეკვა */
+    function dialFromList(raw) {
+      const n = tel(raw);
+      if (localDigitCount(n) < 9) return;
+      syncSmsNum(n);
+      setStatus(`${formatPhoneDisplay(n)} · ირეკება...`, true);
+      dial(n);
     }
 
     function start() {
@@ -971,7 +965,6 @@
       $('stop').classList.add('hide');
       setNumsDisabled(false);
       hideCallActiveBar();
-      hideDialCancelModal();
       markNumRows();
       $('after-call-modal').classList.add('hide');
       $('time-modal').classList.add('hide');
@@ -985,7 +978,6 @@
     }
 
     function stopAll() {
-      clearTimeout(dialCancelTimer);
       S.run = false; S.wait = false;
       reset();
       setStatus('გაჩერებულია');
@@ -1067,11 +1059,14 @@
     function showAfterCall(n, answered) {
       $('after-call-num').textContent = formatPhoneDisplay(n);
       $('after-call-num').dataset.raw = tel(n);
-      $('after-call-note').textContent = answered ? 'მიპასუხეს' : 'არ მიპასუხეს';
+      $('after-call-note').textContent = answered
+        ? 'მიპასუხეს — გადავიდეთ შემდეგზე?'
+        : 'არ მიპასუხეს — გადავიდეთ შემდეგზე?';
       const hasNext = S.run && S.i < S.q.length;
       $('after-call-next').classList.toggle('hide', !hasNext);
-      $('after-call-done').classList.toggle('hide', hasNext);
-      if (hasNext) $('after-call-next').textContent = `შემდეგი ნომერი (${S.i + 1}/${S.q.length})`;
+      $('after-call-done').classList.toggle('hide', false);
+      if (hasNext) $('after-call-next').textContent = `დიახ, შემდეგი (${S.i + 1}/${S.q.length})`;
+      else $('after-call-next').classList.add('hide');
       $('after-call-modal').classList.remove('hide');
     }
 
@@ -1194,21 +1189,6 @@ ${ALDAGI_TAIL}`;
     $('stop').onclick = stopAll;
     $('after-call-next').onclick = goNextCall;
     $('after-call-done').onclick = () => { $('after-call-modal').classList.add('hide'); done(); };
-    $('dial-cancel-retry').onclick = () => {
-      hideDialCancelModal();
-      if (S.run) call();
-    };
-    $('dial-cancel-next').onclick = () => {
-      hideDialCancelModal();
-      if (!S.run) return;
-      S.i++;
-      if (S.i < S.q.length) call();
-      else done();
-    };
-    $('dial-cancel-stop').onclick = () => {
-      hideDialCancelModal();
-      stopAll();
-    };
     $('send-go').onclick = confirmSend;
     $('send-cancel').onclick = closeSendModal;
     $('send-modal').onclick = e => { if (e.target === $('send-modal')) closeSendModal(); };
