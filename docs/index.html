@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>Cold Caller v59</title>
+  <title>Cold Caller v60</title>
   <link rel="manifest" href="manifest.json?v=59">
   <link rel="apple-touch-icon" href="apple-touch-icon.png?v=59">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=59">
@@ -25,7 +25,7 @@
       --blue: #4d9fff;
       --green: #32d74b;
       --red: #ff453a;
-      --bar: 64px;
+      --bar: 80px;
     }
     body {
       font-family: -apple-system, sans-serif;
@@ -42,7 +42,7 @@
       display: flex;
       flex-direction: column;
       padding-top: env(safe-area-inset-top);
-      padding-bottom: calc(var(--bar) + env(safe-area-inset-bottom) + 24px);
+      padding-bottom: calc(var(--bar) + env(safe-area-inset-bottom) + 48px);
     }
 
     h1 {
@@ -209,7 +209,7 @@
       color: var(--dim);
     }
     #p-dial .tools {
-      margin: 0 0 28px;
+      margin: 0 0 40px;
       padding: 8px 0 4px;
     }
     .tools .tool-btns {
@@ -396,7 +396,7 @@
     .bar {
       position: fixed;
       left: 0; right: 0; bottom: env(safe-area-inset-bottom);
-      padding: 14px 16px 16px;
+      padding: 18px 16px 28px;
       background: var(--bg);
       border-top: 1px solid var(--line);
     }
@@ -533,7 +533,7 @@
 </head>
 <body>
   <div class="app">
-    <h1>Cold Caller <span class="ver">v59</span></h1>
+    <h1>Cold Caller <span class="ver">v60</span></h1>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
