@@ -9,11 +9,55 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>Cold Caller v60</title>
-  <link rel="manifest" href="manifest.json?v=59">
-  <link rel="apple-touch-icon" href="apple-touch-icon.png?v=59">
-  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=59">
-  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png?v=59">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Cold Caller v61</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <script>
+    /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
+    window.__CC_VER = '61';
+    (function () {
+      function go(v) {
+        try {
+          var once = 'cc_tried_' + v;
+          if (sessionStorage.getItem(once)) return;
+          sessionStorage.setItem(once, '1');
+          localStorage.setItem('cc_app_ver', v);
+        } catch (e) {}
+        var u = new URL(location.href);
+        u.searchParams.set('v', v);
+        u.searchParams.set('_', String(Date.now()));
+        location.replace(u.pathname + u.search + u.hash);
+      }
+      function check() {
+        fetch('version.json?_=' + Date.now(), { cache: 'no-store' })
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            if (!d || !d.v) return;
+            if (d.v !== window.__CC_VER) {
+              go(d.v);
+              return;
+            }
+            try { localStorage.setItem('cc_app_ver', d.v); } catch (e) {}
+            try {
+              var u = new URL(location.href);
+              if (u.searchParams.get('v') !== d.v) {
+                u.searchParams.set('v', d.v);
+                history.replaceState(null, '', u.pathname + u.search + u.hash);
+              }
+            } catch (e) {}
+          })
+          .catch(function () {});
+      }
+      check();
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible') check();
+      });
+    })();
+  </script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     :root {
@@ -533,7 +577,7 @@
 </head>
 <body>
   <div class="app">
-    <h1>Cold Caller <span class="ver">v60</span></h1>
+    <h1>Cold Caller <span class="ver">v61</span></h1>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
@@ -1459,7 +1503,19 @@ ${ALDAGI_TAIL}`;
       if (document.visibilityState === 'visible') onAppVisible();
     });
     window.addEventListener('pageshow', e => { if (e.persisted) onAppVisible(); });
-    if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then(r => r.forEach(x => x.unregister()));
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').then(reg => {
+        reg.update();
+        setInterval(() => reg.update(), 60000);
+      }).catch(() => {});
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (refreshing) return;
+        refreshing = true;
+        location.reload();
+      });
+    }
 
     const saved = localStorage.getItem('nums');
     if (saved) setNumsFromList(saved.split(/[\n,;]+/).map(l => l.trim()).filter(Boolean));
