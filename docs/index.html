@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ავტოდაილერი v44</title>
+  <title>ავტოდაილერი v45</title>
   <link rel="manifest" href="manifest.json?v=27">
   <link rel="apple-touch-icon" href="apple-touch-icon.png?v=27">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=27">
@@ -390,31 +390,6 @@
       font-family: inherit;
     }
 
-    .call-active-bar {
-      position: fixed;
-      left: 0; right: 0;
-      bottom: calc(var(--bar) + env(safe-area-inset-bottom));
-      padding: 12px 16px;
-      background: #1a2a3a;
-      border-top: 1px solid var(--blue);
-      z-index: 40;
-      font-size: 14px;
-      color: var(--text);
-    }
-    .call-active-bar p { margin-bottom: 10px; font-size: 13px; color: var(--dim); }
-    .call-btns { display: flex; gap: 8px; }
-    .call-btns button {
-      flex: 1;
-      padding: 11px 8px;
-      border: none;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 600;
-      font-family: inherit;
-    }
-    .call-btns .btn-no { background: var(--red); color: #fff; }
-    .call-btns .btn-ok { background: var(--green); color: #000; }
-
     .overlay {
       position: fixed; inset: 0;
       background: rgba(0,0,0,.75);
@@ -484,7 +459,7 @@
 </head>
 <body>
   <div class="app">
-    <h1>ავტოდაილერი <span class="ver">v44</span></h1>
+    <h1>ავტოდაილერი <span class="ver">v45</span></h1>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
@@ -523,18 +498,10 @@
     </div>
   </div>
 
-  <div class="call-active-bar hide" id="call-active-bar">
-    <p id="call-active-txt">რა მოხდა?</p>
-    <div class="call-btns">
-      <button class="btn-no" id="call-noanswer" type="button">არ მიპასუხეს</button>
-      <button class="btn-ok" id="call-answered" type="button">მიპასუხეს</button>
-    </div>
-  </div>
-
   <div class="overlay hide" id="perm-modal">
     <div class="box">
       <div class="lbl">ნებართვები</div>
-      <p>შეტყობინებების ნება საჭიროა ზარის შედეგისთვის. ზარის შემდეგ აირჩიე: არ მიპასუხეს / მიპასუხეს.</p>
+      <p>შეტყობინებების ნება საჭიროა ზარის შემდეგ აპში დასაბრუნებლად.</p>
       <button class="go" id="perm-allow" type="button">Allow შეტყობინებები</button>
       <button class="skip" id="perm-skip" type="button">გამოტოვება</button>
     </div>
@@ -880,24 +847,14 @@
     function call() {
       if (!S.run || S.i >= S.q.length) { done(); return; }
       S.wait = true;
-      hideCallActiveBar();
       highlightNumRow(S.i);
       syncSmsNum(S.q[S.i]);
       setStatus(`${formatPhoneDisplay(S.q[S.i])} · ირეკება...`, true);
       dial(S.q[S.i]);
     }
 
-    function showCallActiveBar() {
-      $('call-active-txt').textContent = `${formatPhoneDisplay(S.q[S.i])} — აირჩიე სტატუსი`;
-      $('call-active-bar').classList.remove('hide');
-    }
-
-    function hideCallActiveBar() {
-      $('call-active-bar').classList.add('hide');
-    }
-
     function onAppVisible() {
-      if (S.run && S.wait) showCallActiveBar();
+      if (S.run && S.wait) finishCall();
     }
 
     /** იხსნის iOS Call / Cancel ფანჯარას */
@@ -940,18 +897,17 @@
       setStatus('ჩასმულია');
     }
 
-    function finishCall(answered) {
+    function finishCall() {
       if (!S.run || !S.wait) return;
-      hideCallActiveBar();
       S.wait = false;
       const n = S.q[S.i];
       S.called[normNum(n)] = 'called';
       markNumRows();
       syncSmsNum(n);
-      addHist(n, answered ? 'მიპასუხეს' : 'არ მიპასუხეს');
-      setStatus(answered ? `${formatPhoneDisplay(n)} — მიპასუხეს` : `${formatPhoneDisplay(n)} — არ მიპასუხეს`);
+      addHist(n, 'დარეკილი');
+      setStatus(formatPhoneDisplay(n));
       S.i++;
-      if (S.run) showAfterCall(n, answered);
+      if (S.run) showAfterCall(n);
     }
 
     function goNextCall() {
@@ -964,7 +920,6 @@
       $('start').classList.remove('hide');
       $('stop').classList.add('hide');
       setNumsDisabled(false);
-      hideCallActiveBar();
       markNumRows();
       $('after-call-modal').classList.add('hide');
       $('time-modal').classList.add('hide');
@@ -1056,12 +1011,10 @@
       else if (action === 'aldagi-wa') showSendConfirm(n, buildAldagiMsg(), 'wa', title);
     }
 
-    function showAfterCall(n, answered) {
+    function showAfterCall(n) {
       $('after-call-num').textContent = formatPhoneDisplay(n);
       $('after-call-num').dataset.raw = tel(n);
-      $('after-call-note').textContent = answered
-        ? 'მიპასუხეს — გადავიდეთ შემდეგზე?'
-        : 'არ მიპასუხეს — გადავიდეთ შემდეგზე?';
+      $('after-call-note').textContent = 'გადავიდეთ შემდეგზე?';
       const hasNext = S.run && S.i < S.q.length;
       $('after-call-next').classList.toggle('hide', !hasNext);
       $('after-call-done').classList.toggle('hide', false);
@@ -1192,8 +1145,6 @@ ${ALDAGI_TAIL}`;
     $('send-go').onclick = confirmSend;
     $('send-cancel').onclick = closeSendModal;
     $('send-modal').onclick = e => { if (e.target === $('send-modal')) closeSendModal(); };
-    $('call-noanswer').onclick = () => finishCall(false);
-    $('call-answered').onclick = () => finishCall(true);
     $('perm-allow').onclick = () => {
       $('perm-modal').classList.add('hide');
       if ('Notification' in window) Notification.requestPermission();
