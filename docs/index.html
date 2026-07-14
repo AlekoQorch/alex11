@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ავტოდაილერი v46</title>
+  <title>ავტოდაილერი v47</title>
   <link rel="manifest" href="manifest.json?v=27">
   <link rel="apple-touch-icon" href="apple-touch-icon.png?v=27">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=27">
@@ -459,7 +459,7 @@
 </head>
 <body>
   <div class="app">
-    <h1>ავტოდაილერი <span class="ver">v46</span></h1>
+    <h1>ავტოდაილერი <span class="ver">v47</span></h1>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
@@ -804,8 +804,23 @@
       return S.last || '';
     }
 
+    /** SMS/WA სამიზნე: ჯერ რაც გრაფაშია, მერე ბოლო დარეკილი */
+    function getPhone() {
+      const fromField = tel($('sms-num').value || '');
+      if (fromField.replace(/\D/g, '').length >= 9) return fromField;
+      if (S.last && tel(S.last).replace(/\D/g, '').length >= 9) return tel(S.last);
+      return tel(getDialNum() || '');
+    }
+
     function syncFromDial() {
-      syncSmsNum(getDialNum());
+      const cur = $('sms-num').value.trim();
+      // ნუ გადააწერ იმას, რაც უკვე ჩაწერილია გრაფაში
+      if (cur && localDigitCount(cur) >= 9) {
+        S.last = tel(cur);
+        return;
+      }
+      const n = S.last || firstNumFromText() || '';
+      if (n) syncSmsNum(n);
     }
 
     function syncSmsNum(n) {
@@ -818,6 +833,8 @@
 
     $('sms-num').addEventListener('input', () => {
       filterPhoneInput($('sms-num'));
+      const t = tel($('sms-num').value);
+      if (localDigitCount(t) >= 9) S.last = t;
     });
 
     function parse(t) {
@@ -938,10 +955,6 @@
       setStatus('გაჩერებულია');
     }
 
-    function getPhone() {
-      return tel($('sms-num').value || getDialNum());
-    }
-
     function introMsg(lang) {
       if (lang === 'en') return INTRO_EN;
       if (lang === 'both') return INTRO_KA + '\n\n' + INTRO_EN;
@@ -953,7 +966,8 @@
     }
 
     function sendWaTo(num, msg) {
-      const n = num.replace(/\D/g, '');
+      let n = String(num || '').replace(/\D/g, '');
+      if (n.length === 9 && n.startsWith('5')) n = '995' + n;
       location.href = 'https://wa.me/' + n + '?text=' + encodeURIComponent(msg);
     }
 
@@ -1130,7 +1144,6 @@ ${ALDAGI_TAIL}`;
       if (!btn) return;
       e.preventDefault();
       e.stopPropagation();
-      syncFromDial();
       openSendFromBtn(btn);
     });
 
