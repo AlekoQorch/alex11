@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ავტოდაილერი v56</title>
+  <title>ავტოდაილერი v57</title>
   <link rel="manifest" href="manifest.json?v=27">
   <link rel="apple-touch-icon" href="apple-touch-icon.png?v=27">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=27">
@@ -533,7 +533,7 @@
 </head>
 <body>
   <div class="app">
-    <h1>ავტოდაილერი <span class="ver">v56</span></h1>
+    <h1>ავტოდაილერი <span class="ver">v57</span></h1>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
@@ -592,7 +592,7 @@
       <div class="num" id="after-call-num"></div>
       <p id="after-call-note"></p>
       <button class="go" id="after-call-next" type="button">დიახ, შემდეგი</button>
-      <button class="skip" id="after-call-done" type="button">არა, დასრულება</button>
+      <button class="skip" id="after-call-done" type="button">არა</button>
     </div>
   </div>
 
@@ -1385,7 +1385,10 @@ ${ALDAGI_TAIL}`;
     $('start').onclick = start;
     $('stop').onclick = stopAll;
     $('after-call-next').onclick = goNextCall;
-    $('after-call-done').onclick = () => { $('after-call-modal').classList.add('hide'); done(); };
+    // «არა» — მხოლოდ მოდალის დახურვა; გაჩერება = ქვედა «გაჩერება»
+    $('after-call-done').onclick = () => {
+      $('after-call-modal').classList.add('hide');
+    };
     $('send-go').onclick = confirmSend;
     $('send-cancel').onclick = closeSendModal;
     $('send-modal').onclick = e => { if (e.target === $('send-modal')) closeSendModal(); };
