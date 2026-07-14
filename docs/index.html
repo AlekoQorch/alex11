@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ავტოდაილერი v34</title>
+  <title>ავტოდაილერი v35</title>
   <link rel="manifest" href="manifest.json?v=27">
   <link rel="apple-touch-icon" href="apple-touch-icon.png?v=27">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=27">
@@ -454,7 +454,7 @@
 </head>
 <body>
   <div class="app">
-    <h1>ავტოდაილერი <span class="ver">v34</span></h1>
+    <h1>ავტოდაილერი <span class="ver">v35</span></h1>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
@@ -613,6 +613,7 @@
     }
 
     const NUM_ROWS_START = 5;
+    const SHORT_CALL = 6;
 
     function getNumInputs() {
       return [...$('num-list').querySelectorAll('.num-inp')];
@@ -768,14 +769,23 @@
         : '<p class="empty">ცარიელია</p>';
     }
 
+    function callElapsed() {
+      return S.t0 ? (Date.now() - S.t0) / 1000 : 0;
+    }
+
     function timer(on) {
       clearInterval(S.ti);
       if (!on) return;
       S.t0 = Date.now(); S.to = false;
       S.ti = setInterval(() => {
-        const left = TOUT - (Date.now() - S.t0) / 1000;
+        const sec = callElapsed();
+        const left = TOUT - sec;
         if (left > 0) setStatus(`ირეკება ${S.i + 1}/${S.q.length} · ${S.q[S.i]} · ${Math.ceil(left)} წმ`, true);
-        else if (!S.to) { S.to = true; $('time-modal').classList.remove('hide'); }
+        else if (!S.to) {
+          S.to = true;
+          if (sec < SHORT_CALL) $('time-modal').classList.remove('hide');
+          else if (S.wait) showCallActiveBar();
+        }
       }, 500);
     }
 
@@ -827,32 +837,36 @@
     function onAppVisible() {
       if (!S.run || !S.wait) return;
       clearTimeout(returnTimer);
-      const elapsed = (Date.now() - S.t0) / 1000;
-      if (elapsed < 8) {
+      const elapsed = callElapsed();
+      if (elapsed < SHORT_CALL) {
         returnTimer = setTimeout(() => {
-          if (S.wait && document.visibilityState === 'visible') returned();
-        }, 400);
+          if (S.wait && document.visibilityState === 'visible') returned(true);
+        }, 1000);
       } else {
         showCallActiveBar();
       }
     }
 
-    function returned() {
+    function returned(isAuto) {
       if (!S.run || !S.wait) return;
+      const sec = callElapsed();
+      if (isAuto && sec >= SHORT_CALL) return;
       clearTimeout(returnTimer);
       hideCallActiveBar();
       S.wait = false;
       timer(false);
       const n = S.q[S.i];
-      const sec = S.t0 ? (Date.now() - S.t0) / 1000 : 0;
-      const ok = sec > 8 && sec < TOUT;
+      const ok = !isAuto && sec > 5;
       S.called[normNum(n)] = 'called';
       markNumRows();
       syncSmsNum(n);
       addHist(n, ok ? 'მიპასუხეს' : 'არ მიპასუხეს');
       setStatus(ok ? `${n} — მიპასუხეს` : `${n} — არ მიპასუხეს`);
       S.i++;
-      if (S.run) showAfterCall(n, ok);
+      if (S.run) {
+        if (isAuto) showAfterCall(n, false);
+        else showAfterCall(n, ok);
+      }
     }
 
     function goNextCall() {
@@ -880,6 +894,7 @@
 
     function stopAll() {
       S.run = false; S.wait = false;
+      clearTimeout(returnTimer);
       timer(false); reset();
       setStatus('გაჩერებულია');
     }
@@ -1090,7 +1105,7 @@ ${ALDAGI_TAIL}`;
     $('send-go').onclick = confirmSend;
     $('send-cancel').onclick = closeSendModal;
     $('send-modal').onclick = e => { if (e.target === $('send-modal')) closeSendModal(); };
-    $('call-ended').onclick = returned;
+    $('call-ended').onclick = () => returned(false);
     $('time-ok').onclick = () => $('time-modal').classList.add('hide');
     function saveNums() {
       localStorage.setItem('nums', getNumsText());
