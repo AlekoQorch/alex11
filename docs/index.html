@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ავტოდაილერი v54</title>
+  <title>ავტოდაილერი v55</title>
   <link rel="manifest" href="manifest.json?v=27">
   <link rel="apple-touch-icon" href="apple-touch-icon.png?v=27">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=27">
@@ -130,6 +130,11 @@
     }
     .num-row:last-child { border-bottom: none; }
     .num-row.on { background: #1a2a3a; border-left: 3px solid var(--blue); padding-left: 7px; }
+    .num-row:focus-within {
+      background: #1a2a3a;
+      border-left: 3px solid var(--blue);
+      padding-left: 7px;
+    }
     .num-list.running .num-row { cursor: pointer; }
     .num-list.running .num-row .num-inp { pointer-events: none; }
     .num-row.called .num-inp {
@@ -516,7 +521,7 @@
 </head>
 <body>
   <div class="app">
-    <h1>ავტოდაილერი <span class="ver">v54</span></h1>
+    <h1>ავტოდაილერი <span class="ver">v55</span></h1>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
@@ -751,10 +756,17 @@
     function markNumRows() {
       $('num-list').querySelectorAll('.num-row').forEach(row => {
         const inp = row.querySelector('.num-inp');
-        const st = S.called[normNum(inp?.value || '')];
+        const val = inp?.value || '';
+        const mark = row.querySelector('.num-mark');
+        // ცარიელ ხაზს → / ✓ არ უნდა ჰქონდეს
+        if (!localDigitCount(val)) {
+          row.classList.remove('on', 'called');
+          if (mark) mark.textContent = '';
+          return;
+        }
+        const st = S.called[normNum(val)];
         row.classList.toggle('on', st === 'active');
         row.classList.toggle('called', st === 'called');
-        const mark = row.querySelector('.num-mark');
         if (mark) mark.textContent = st === 'called' ? '✓' : st === 'active' ? '→' : '';
       });
     }
