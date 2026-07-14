@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ავტოდაილერი v29</title>
+  <title>ავტოდაილერი v30</title>
   <link rel="manifest" href="manifest.json?v=27">
   <link rel="apple-touch-icon" href="apple-touch-icon.png?v=27">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=27">
@@ -413,7 +413,7 @@
 </head>
 <body>
   <div class="app">
-    <h1>ავტოდაილერი <span class="ver">v29</span></h1>
+    <h1>ავტოდაილერი <span class="ver">v30</span></h1>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
@@ -580,16 +580,16 @@
     }
 
     function setNumsFromList(nums) {
-      const list = $('num-list');
-      const needed = Math.max(NUM_ROWS_START, nums.length + 1);
+      const needed = nums.length ? Math.max(NUM_ROWS_START, nums.length + 1) : NUM_ROWS_START;
       renderNumRows(needed);
       getNumInputs().forEach((inp, i) => { inp.value = nums[i] || ''; });
       onNumsChange();
     }
 
-    function renderNumRows(count) {
+    function renderNumRows(count, focusIdx) {
       const list = $('num-list');
       const cur = getNumInputs().map(i => i.value);
+      const activeIdx = focusIdx ?? getNumInputs().findIndex(i => i === document.activeElement);
       list.innerHTML = '';
       for (let i = 0; i < count; i++) {
         const row = document.createElement('div');
@@ -599,10 +599,17 @@
         inp.value = cur[i] || '';
         list.appendChild(row);
       }
+      if (activeIdx >= 0) getNumInputs()[activeIdx]?.focus();
     }
 
-    function addNextRow() {
-      renderNumRows(getNumInputs().length + 1);
+    function addNextRow(focusIdx) {
+      renderNumRows(getNumInputs().length + 1, focusIdx);
+    }
+
+    function maybeAddRowOnInput(inp) {
+      const inputs = getNumInputs();
+      const i = inputs.indexOf(inp);
+      if (i === inputs.length - 1 && inp.value.trim()) addNextRow(i);
     }
 
     function setNumsDisabled(on) {
@@ -632,6 +639,7 @@
         const inp = e.target.closest('.num-inp');
         if (!inp) return;
         filterPhoneInput(inp);
+        maybeAddRowOnInput(inp);
         onNumsChange();
       });
       $('num-list').addEventListener('keydown', e => {
