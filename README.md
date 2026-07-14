@@ -48,11 +48,18 @@ Share ⬆️ → **Add to Home Screen** → Add
 
 ---
 
-## თუ ძველი ვერსია ჩანს (iPhone cache)
+## განახლებები (ავტომატური)
 
-1. Home Screen-იდან წაშალე ძველი ხატულა
-2. Safari-ში გახსენი: `https://alekoqorch.github.io/alex11/?v=60`
-3. თავიდან **Add to Home Screen**
+აპი ახლა **თავად ამოწმებს** ახალ ვერსიას (`version.json` + service worker).  
+ჩვეულებრივ **აღარ გჭირდება** ახალი `?v=…` ლინკის გახსნა ყოველ ცვლილებაზე.
+
+### ერთხელ გააკეთე (ბოლოჯერ):
+
+1. Home Screen-იდან **წაშალე** ძველი ხატულა
+2. Safari-ში გახსენი: **https://alekoqorch.github.io/alex11/**
+3. Share ⬆️ → **Add to Home Screen**
+
+შემდეგ უბრალოდ Home Screen-იდან გახსენი — განახლება თავისით მოვა (ზოგჯერ აპის თავიდან გახსნა საკმარისია).
 
 ---
 
