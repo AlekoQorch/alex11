@@ -30,6 +30,30 @@ struct ContentView: View {
             } message: {
                 Text("iOS-ზე აპი ვერ გათიშავს ზარს ავტომატურად. გთხოვთ, ხელით გათიშოთ — შემდეგ ავტომატურად გადავა შემდეგ ნომერზე.")
             }
+            .confirmationDialog(
+                callManager.afterCallAnswered ? "მიპასუხეს" : "არ მიპასუხეს",
+                isPresented: $callManager.showAfterCallSheet,
+                titleVisibility: .visible
+            ) {
+                if let num = callManager.afterCallNumber {
+                    Button("SMS: \(num)") {
+                        smsTargetNumber = num
+                        callManager.continueAfterCall(goNext: false)
+                    }
+                }
+                if callManager.currentIndex < callManager.numbers.count - 1 {
+                    Button("შემდეგი ნომერი") {
+                        callManager.continueAfterCall(goNext: true)
+                    }
+                }
+                Button("დასრულება", role: .cancel) {
+                    callManager.continueAfterCall(goNext: false)
+                }
+            } message: {
+                if let num = callManager.afterCallNumber {
+                    Text(num)
+                }
+            }
             .alert("SMS ვერ გაიგზავნა", isPresented: $showSmsUnavailableAlert) {
                 Button("კარგი", role: .cancel) {}
             } message: {
@@ -48,10 +72,10 @@ struct ContentView: View {
 
     private var iosNoteCard: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Label("iOS შეზღუდვა", systemImage: "info.circle.fill")
+            Label("CallKit — ზარის აღმოჩენა", systemImage: "phone.connection.fill")
                 .font(.subheadline.bold())
-                .foregroundStyle(.orange)
-            Text("Apple არ იძლევა აპებს ზარის ავტომატურ გათიშვის უფლებას. 30 წამის შემდეგ გაჩნდება შეტყობინება — ხელით გათიშეთ, დანარჩენს აპი გააკეთებს.")
+                .foregroundStyle(.green)
+            Text("ეს iOS აპი ხედავს ზარის სტატუსს: ირეკება (Calling) → მიპასუხეს → დასრულდა. Safari/PWA-ს Apple არ აძლევს ამ წვდომის უფლებას.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

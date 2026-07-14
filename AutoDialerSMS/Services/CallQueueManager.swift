@@ -22,6 +22,9 @@ final class CallQueueManager: NSObject, ObservableObject {
     @Published var statusMessage = "მზად ხართ დასაწყებად"
     @Published var lastResult: String?
     @Published var showHangupAlert = false
+    @Published var showAfterCallSheet = false
+    @Published var afterCallAnswered = false
+    @Published var afterCallNumber: String?
 
     private let timeoutSeconds = 30
     private var queue: [String] = []
@@ -99,7 +102,7 @@ final class CallQueueManager: NSObject, ObservableObject {
         currentNumber = number
         status = .dialing
         secondsRemaining = timeoutSeconds
-        statusMessage = "ირეკება: \(number) (\(currentIndex + 1)/\(queue.count))"
+        statusMessage = "ირეკება... \(number) (\(currentIndex + 1)/\(queue.count))"
 
         guard let url = URL(string: "tel://\(number)") else {
             handleCallFinished(answered: false, reason: "არასწორი ნომერი")
@@ -165,21 +168,31 @@ final class CallQueueManager: NSObject, ObservableObject {
         callFinishHandled = true
         stopTimers()
         let number = currentNumber ?? queue[currentIndex]
+        afterCallNumber = number
+        afterCallAnswered = answered
+
         let result: String
         if let reason {
             result = "\(number) — \(reason)"
         } else if answered {
             result = "\(number) — მიპასუხეს ✓"
         } else {
-            result = "\(number) — არ მიპასუხეს (30 წმ)"
+            result = "\(number) — არ მიპასუხეს"
         }
 
         lastResult = result
         statusMessage = result
-        currentIndex += 1
+        status = .idle
+        showAfterCallSheet = true
+    }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
-            self?.dialNext()
+    func continueAfterCall(goNext: Bool) {
+        showAfterCallSheet = false
+        currentIndex += 1
+        if goNext && isRunning {
+            dialNext()
+        } else if !goNext {
+            finishQueue()
         }
     }
 
@@ -196,18 +209,26 @@ final class CallQueueManager: NSObject, ObservableObject {
 extension CallQueueManager: CXCallObserverDelegate {
     nonisolated func callObserver(_ callObserver: CXCallObserver, callChanged call: CXCall) {
         Task { @MainActor in
+            guard isRunning else { return }
+
             if call.isOutgoing && !call.hasEnded {
-                if call.hasConnected && !callWasAnswered {
-                    callWasAnswered = true
-                    stopTimers()
-                    status = .answered
-                    statusMessage = "მიპასუხეს: \(currentNumber ?? "")"
-                    showHangupAlert = false
+                if call.hasConnected {
+                    if !callWasAnswered {
+                        callWasAnswered = true
+                        stopTimers()
+                        status = .answered
+                        statusMessage = "მიპასუხეს: \(currentNumber ?? "")"
+                        showHangupAlert = false
+                    }
+                } else if status == .dialing || status == .ringing {
+                    status = .ringing
+                    statusMessage = "ირეკება (Calling): \(currentNumber ?? "")"
                 }
             }
 
-            if call.hasEnded && isRunning {
-                if waitingForNextAfterHangup || status == .dialing || status == .ringing || status == .waitingHangup {
+            if call.hasEnded {
+                let wasActive = status == .dialing || status == .ringing || status == .answered || status == .waitingHangup || waitingForNextAfterHangup
+                if wasActive {
                     let answered = callWasAnswered
                     waitingForNextAfterHangup = false
                     showHangupAlert = false
