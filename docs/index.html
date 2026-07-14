@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ავტოდაილერი v50</title>
+  <title>ავტოდაილერი v51</title>
   <link rel="manifest" href="manifest.json?v=27">
   <link rel="apple-touch-icon" href="apple-touch-icon.png?v=27">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=27">
@@ -461,7 +461,7 @@
 </head>
 <body>
   <div class="app">
-    <h1>ავტოდაილერი <span class="ver">v50</span></h1>
+    <h1>ავტოდაილერი <span class="ver">v51</span></h1>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
@@ -610,8 +610,8 @@
       document.querySelectorAll('.page').forEach(x => x.classList.remove('on'));
       $('p-' + v).classList.add('on');
       $('action-bar').classList.toggle('hide', v !== 'dial');
-      // SMS ტაბზე ყოველთვის ბოლოს დარეკილი ნომერი
-      if (v === 'sms') fillSmsWithLastCalled();
+      // SMS ტაბზე — გალურჯებული / მიმდინარე ნომერი
+      if (v === 'sms') fillSmsTarget();
     }
 
     const NUM_ROWS_START = 5;
@@ -711,7 +711,11 @@
 
     function highlightNumRow(idx) {
       clearActiveMarks();
-      if (S.run && idx >= 0 && S.q[idx]) S.called[normNum(S.q[idx])] = 'active';
+      if (S.run && idx >= 0 && S.q[idx]) {
+        S.called[normNum(S.q[idx])] = 'active';
+        // გალურჯებული ნომერი → SMS გრაფაც
+        setLastCalled(S.q[idx]);
+      }
       markNumRows();
     }
 
@@ -867,21 +871,25 @@
       return S.last || '';
     }
 
-    /** ბოლოს დარეკილი ნომერი → SMS გრაფა */
-    function fillSmsWithLastCalled() {
-      if (S.last) {
-        $('sms-num').value = formatPhoneDisplay(S.last);
-        return;
+    /** გალურჯებული → თუ არა ბოლო დარეკილი → თუ არა პირველი სიიდან */
+    function getBlueOrActiveNumber() {
+      if (S.run && S.q[S.i]) return S.q[S.i];
+      for (const [num, st] of Object.entries(S.called)) {
+        if (st === 'active') return num;
       }
-      const n = firstNumFromText() || '';
+      return '';
+    }
+
+    function fillSmsTarget() {
+      const n = getBlueOrActiveNumber() || S.last || firstNumFromText() || '';
       $('sms-num').value = n ? formatPhoneDisplay(n) : '';
     }
 
-    /** SMS/WA: გრაფა, თუ ცარიელია — ბოლო დარეკილი */
+    /** SMS/WA: გრაფა, თუ ცარიელია — ლურჯი / ბოლო დარეკილი */
     function getPhone() {
       const fromField = tel($('sms-num').value || '');
       if (fromField.replace(/\D/g, '').length >= 9) return fromField;
-      return tel(S.last || '');
+      return tel(getBlueOrActiveNumber() || S.last || '');
     }
 
     function setLastCalled(n) {
@@ -892,7 +900,7 @@
     }
 
     function syncFromDial() {
-      fillSmsWithLastCalled();
+      fillSmsTarget();
     }
 
     function syncSmsNum(n) {
