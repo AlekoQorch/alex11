@@ -1,5 +1,5 @@
 /* Cold Caller — network-first updates (no need for new ?v= links) */
-const CACHE = 'cold-caller-v63';
+const CACHE = 'cold-caller-v64';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
