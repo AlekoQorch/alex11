@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ავტოდაილერი v41</title>
+  <title>ავტოდაილერი v42</title>
   <link rel="manifest" href="manifest.json?v=27">
   <link rel="apple-touch-icon" href="apple-touch-icon.png?v=27">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=27">
@@ -456,7 +456,7 @@
 </head>
 <body>
   <div class="app">
-    <h1>ავტოდაილერი <span class="ver">v41</span></h1>
+    <h1>ავტოდაილერი <span class="ver">v42</span></h1>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
@@ -737,28 +737,39 @@
       try { inp.setSelectionRange(pos, pos); } catch {}
     }
 
+    /** ადგილობრივი მობილურის სიგრძე: 577 92 04 71 → 9 ციფრი */
+    function localDigitCount(val) {
+      let d = String(val || '').replace(/\D/g, '');
+      if (d.startsWith('995') && d.length > 9) d = d.slice(3);
+      return d.length;
+    }
+
+    function focusNextRow(inp) {
+      const inputs = getNumInputs();
+      const i = inputs.indexOf(inp);
+      if (i < 0) return;
+      if (i >= inputs.length - 1) addNextRow(i);
+      getNumInputs()[i + 1]?.focus();
+    }
+
     function initNumList() {
       renderNumRows(NUM_ROWS_START);
       $('num-list').addEventListener('input', e => {
         const inp = e.target.closest('.num-inp');
         if (!inp) return;
+        const before = localDigitCount(inp.dataset.prev || '');
         filterPhoneInput(inp);
+        const after = localDigitCount(inp.value);
+        inp.dataset.prev = inp.value;
         maybeAddRowOnInput(inp);
+        if (before < 9 && after >= 9) focusNextRow(inp);
         onNumsChange();
       });
       $('num-list').addEventListener('keydown', e => {
         const inp = e.target.closest('.num-inp');
         if (!inp || e.key !== 'Enter') return;
         e.preventDefault();
-        const inputs = getNumInputs();
-        const i = inputs.indexOf(inp);
-        if (i < 0) return;
-        if (i < inputs.length - 1) {
-          inputs[i + 1].focus();
-        } else {
-          addNextRow();
-          getNumInputs()[i + 1]?.focus();
-        }
+        focusNextRow(inp);
       });
     }
 
