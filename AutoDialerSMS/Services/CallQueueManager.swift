@@ -2,13 +2,13 @@ import CallKit
 import Combine
 import Foundation
 import UIKit
+import UserNotifications
 
 enum DialerStatus: Equatable {
     case idle
     case dialing
     case ringing
     case answered
-    case paused
 }
 
 @MainActor
@@ -22,6 +22,8 @@ final class CallQueueManager: NSObject, ObservableObject {
     @Published var showAfterCallSheet = false
     @Published var afterCallAnswered = false
     @Published var afterCallNumber: String?
+    @Published var calledNumbers: Set<String> = []
+    @Published var history: [CallRecord] = []
 
     private var queue: [String] = []
     private var isRunning = false
@@ -34,6 +36,7 @@ final class CallQueueManager: NSObject, ObservableObject {
         let observer = CXCallObserver()
         observer.setDelegate(self, queue: nil)
         callObserver = observer
+        loadHistory()
     }
 
     var isActive: Bool {
@@ -42,11 +45,15 @@ final class CallQueueManager: NSObject, ObservableObject {
 
     var progressText: String {
         guard !queue.isEmpty else { return "" }
-        return "\(min(currentIndex, queue.count))/\(queue.count)"
+        return "\(currentIndex + 1)/\(queue.count)"
     }
 
-    func updateNumbers(from text: String) {
-        numbers = PhoneNumberParser.parse(text)
+    var smsTargetNumber: String {
+        currentNumber ?? numbers.first ?? ""
+    }
+
+    func isCalled(_ number: String) -> Bool {
+        calledNumbers.contains(normalize(number))
     }
 
     func start(numbers parsed: [String]) {
@@ -58,6 +65,7 @@ final class CallQueueManager: NSObject, ObservableObject {
         numbers = parsed
         currentIndex = 0
         isRunning = true
+        calledNumbers = []
         status = .idle
         dialNext()
     }
@@ -69,6 +77,11 @@ final class CallQueueManager: NSObject, ObservableObject {
         currentNumber = nil
         status = .idle
         statusMessage = "გაჩერებულია"
+    }
+
+    func clearHistory() {
+        history = []
+        UserDefaults.standard.removeObject(forKey: "callHistory")
     }
 
     private func dialNext() {
@@ -86,7 +99,7 @@ final class CallQueueManager: NSObject, ObservableObject {
         let number = queue[currentIndex]
         currentNumber = number
         status = .dialing
-        statusMessage = "ირეკება... \(number) (\(currentIndex + 1)/\(queue.count))"
+        statusMessage = "ირეკება... \(number)"
 
         guard let url = URL(string: "tel://\(number)") else {
             handleCallFinished(answered: false, reason: "არასწორი ნომერი")
@@ -111,19 +124,22 @@ final class CallQueueManager: NSObject, ObservableObject {
         afterCallNumber = number
         afterCallAnswered = answered
 
-        let result: String
+        let note: String
         if let reason {
-            result = "\(number) — \(reason)"
-        } else if answered {
-            result = "\(number) — მიპასუხეს ✓"
+            note = reason
         } else {
-            result = "\(number) — არ მიპასუხეს"
+            note = answered ? "მიპასუხეს" : "არ მიპასუხეს"
         }
 
+        calledNumbers.insert(normalize(number))
+        addHistory(number: number, note: note)
+
+        let result = "\(number) — \(note)"
         lastResult = result
         statusMessage = result
         status = .idle
         showAfterCallSheet = true
+        notifyCallResult(number: number, note: note)
     }
 
     func continueAfterCall(goNext: Bool) {
@@ -140,7 +156,38 @@ final class CallQueueManager: NSObject, ObservableObject {
         isRunning = false
         currentNumber = nil
         status = .idle
-        statusMessage = "ყველა ნომერზე დარეკვა დასრულდა"
+        statusMessage = "დასრულდა ✓"
+    }
+
+    private func addHistory(number: String, note: String) {
+        history.insert(CallRecord(number: number, note: note), at: 0)
+        if history.count > 50 { history = Array(history.prefix(50)) }
+        if let data = try? JSONEncoder().encode(history) {
+            UserDefaults.standard.set(data, forKey: "callHistory")
+        }
+    }
+
+    private func loadHistory() {
+        guard let data = UserDefaults.standard.data(forKey: "callHistory"),
+              let records = try? JSONDecoder().decode([CallRecord].self, from: data) else { return }
+        history = records
+    }
+
+    private func normalize(_ n: String) -> String {
+        n.replacingOccurrences(of: "[\\s\\-()]", with: "", options: .regularExpression)
+    }
+
+    private func notifyCallResult(number: String, note: String) {
+        let content = UNMutableNotificationContent()
+        content.title = "ზარი დასრულდა"
+        content.body = "\(number) — \(note)"
+        content.sound = .default
+        let request = UNNotificationRequest(
+            identifier: UUID().uuidString,
+            content: content,
+            trigger: nil
+        )
+        UNUserNotificationCenter.current().add(request)
     }
 }
 
@@ -158,7 +205,7 @@ extension CallQueueManager: CXCallObserverDelegate {
                     }
                 } else {
                     status = .ringing
-                    statusMessage = "ირეკება (Calling): \(currentNumber ?? "")"
+                    statusMessage = "Calling: \(currentNumber ?? "")"
                 }
             }
 

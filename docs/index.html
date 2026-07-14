@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ავტოდაილერი v38</title>
+  <title>ავტოდაილერი v39</title>
   <link rel="manifest" href="manifest.json?v=27">
   <link rel="apple-touch-icon" href="apple-touch-icon.png?v=27">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=27">
@@ -94,10 +94,16 @@
     #status.work { color: var(--green); }
     #ios-note {
       font-size: 13px;
-      color: #f5a623;
-      padding: 8px 4px 10px;
-      line-height: 1.4;
+      color: #fff;
+      background: linear-gradient(135deg, #1a6b3c 0%, #0d4d8c 100%);
+      padding: 12px 14px;
+      line-height: 1.45;
+      border-radius: 12px;
+      margin-bottom: 10px;
+      border: 1px solid rgba(255,255,255,0.15);
     }
+    #ios-note b { color: #ffe082; }
+    #ios-note a { color: #fff; font-weight: 600; text-decoration: underline; }
 
     textarea, input {
       width: 100%;
@@ -458,7 +464,7 @@
 </head>
 <body>
   <div class="app">
-    <h1>ავტოდაილერი <span class="ver">v38</span></h1>
+    <h1>ავტოდაილერი <span class="ver">v39</span></h1>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
@@ -467,7 +473,7 @@
     </div>
 
     <div class="body">
-      <div id="ios-note" class="hide">⚠️ Safari ვერ ხედავს Calling/მიპასუხეს. ზუსტი სტატუსისთვის დააყენე iOS აპი (AutoDialerSMS) Xcode-დან.</div>
+      <div id="ios-note" class="hide">📱 <b>iOS აპი</b> — Calling/მიპასუხეს ავტომატურად ხედავს (CallKit). Safari/PWA ამას ვერ აკეთებს.<br><a href="https://github.com/AlekoQorch/alex11#-ios-აპი-callkit" target="_blank" rel="noopener">→ Xcode-ით დააყენე AutoDialerSMS</a></div>
       <div id="status">ჩასვი ნომრები და დააჭირე დაწყებას</div>
 
       <div class="page on" id="p-dial">
@@ -508,7 +514,7 @@
   <div class="overlay hide" id="perm-modal">
     <div class="box">
       <div class="lbl">ნებართვები</div>
-      <p>შეტყობინებების ნება საჭიროა ზარის შედეგისთვის. ზუსტი Calling/მიპასუხეს — iOS აპში.</p>
+      <p>შეტყობინებების ნება საჭიროა ზარის შედეგისთვის. <b>Calling / მიპასუხეს</b> — მხოლოდ iOS აპში (CallKit).</p>
       <button class="go" id="perm-allow" type="button">Allow შეტყობინებები</button>
       <button class="skip" id="perm-skip" type="button">გამოტოვება</button>
     </div>
