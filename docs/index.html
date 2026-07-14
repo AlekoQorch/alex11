@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ავტოდაილერი v57</title>
+  <title>ავტოდაილერი v58</title>
   <link rel="manifest" href="manifest.json?v=27">
   <link rel="apple-touch-icon" href="apple-touch-icon.png?v=27">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=27">
@@ -533,7 +533,7 @@
 </head>
 <body>
   <div class="app">
-    <h1>ავტოდაილერი <span class="ver">v57</span></h1>
+    <h1>ავტოდაილერი <span class="ver">v58</span></h1>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
@@ -684,6 +684,8 @@
     const S = { q: [], i: 0, run: false, wait: false, last: '', called: {}, smsManual: false };
     const pendingSend = { num: '', msg: '', type: 'sms' };
     const pendingTpl = { num: '', type: 'sms' };
+    let rowTapTimer = null;
+    let rowTapLast = { t: 0, row: null };
 
     const $ = id => document.getElementById(id);
     const st = $('status');
@@ -931,8 +933,22 @@
         const inp = row.querySelector('.num-inp');
         if (!inp || localDigitCount(inp.value) < 9) return;
 
-        // დაწყების შემდეგ: თითი ნომერზე → ლურჯი + იქიდან რეკვა
-        if (S.run || $('stop') && !$('stop').classList.contains('hide')) {
+        const now = Date.now();
+        const isDouble = rowTapLast.row === row && (now - rowTapLast.t) < 350;
+        rowTapLast = { t: now, row };
+
+        // ორჯერ დაჭერა → ისარი (→) აქ + იქიდან რეკვა
+        if (isDouble) {
+          clearTimeout(rowTapTimer);
+          rowTapTimer = null;
+          e.preventDefault();
+          jumpToNumberAndContinue(inp.value);
+          return;
+        }
+
+        // სესია მიმდინარეა: ერთი თითიც იგივეა (გაგრძელება იქიდან)
+        if (S.run) {
+          clearTimeout(rowTapTimer);
           e.preventDefault();
           jumpToNumberAndContinue(inp.value);
           return;
@@ -945,12 +961,16 @@
           return;
         }
 
-        // უქმი რეჟიმი: ნომერზე დაჭერა → Call / Cancel
+        // უქმი რეჟიმი: ერთი დაჭერა (ორჯერის შემოწმების შემდეგ) → Call
         if (!e.target.closest('.num-inp')) return;
         if (document.activeElement === inp) return;
         e.preventDefault();
-        inp.blur();
-        dialFromList(inp.value);
+        clearTimeout(rowTapTimer);
+        rowTapTimer = setTimeout(() => {
+          rowTapTimer = null;
+          inp.blur();
+          dialFromList(inp.value);
+        }, 320);
       });
     }
 
