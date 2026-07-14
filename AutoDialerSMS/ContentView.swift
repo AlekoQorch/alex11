@@ -25,11 +25,6 @@ struct ContentView: View {
             }
             .navigationTitle("ავტოდაილერი + SMS")
             .navigationBarTitleDisplayMode(.inline)
-            .alert("30 წამი გავიდა", isPresented: $callManager.showHangupAlert) {
-                Button("კარგი", role: .cancel) {}
-            } message: {
-                Text("iOS-ზე აპი ვერ გათიშავს ზარს ავტომატურად. გთხოვთ, ხელით გათიშოთ — შემდეგ ავტომატურად გადავა შემდეგ ნომერზე.")
-            }
             .confirmationDialog(
                 callManager.afterCallAnswered ? "მიპასუხეს" : "არ მიპასუხეს",
                 isPresented: $callManager.showAfterCallSheet,
@@ -128,12 +123,14 @@ struct ContentView: View {
                     .font(.subheadline.weight(.medium))
             }
 
-            if callManager.isActive && !callManager.callWasAnsweredPublic {
-                ProgressView(value: Double(callManager.secondsRemaining), total: 30)
-                    .tint(.blue)
-                Text("დარჩენილია: \(callManager.secondsRemaining) წმ")
+            if callManager.status == .ringing {
+                Label("Calling — ჯერ არ პასუხობენ", systemImage: "phone.arrow.up.right")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.orange)
+            } else if callManager.status == .answered {
+                Label("მიპასუხეს — საუბარი მიმდინარეობს", systemImage: "phone.connection.fill")
+                    .font(.caption)
+                    .foregroundStyle(.green)
             }
 
             if let last = callManager.lastResult {

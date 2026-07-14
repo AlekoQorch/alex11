@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ავტოდაილერი v37</title>
+  <title>ავტოდაილერი v38</title>
   <link rel="manifest" href="manifest.json?v=27">
   <link rel="apple-touch-icon" href="apple-touch-icon.png?v=27">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=27">
@@ -368,28 +368,26 @@
       position: fixed;
       left: 0; right: 0;
       bottom: calc(var(--bar) + env(safe-area-inset-bottom));
-      padding: 10px 16px;
+      padding: 12px 16px;
       background: #1a2a3a;
       border-top: 1px solid var(--blue);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
       z-index: 40;
       font-size: 14px;
       color: var(--text);
     }
-    .call-active-bar button {
-      flex-shrink: 0;
-      padding: 10px 14px;
+    .call-active-bar p { margin-bottom: 10px; font-size: 13px; color: var(--dim); }
+    .call-btns { display: flex; gap: 8px; }
+    .call-btns button {
+      flex: 1;
+      padding: 11px 8px;
       border: none;
       border-radius: 8px;
-      background: var(--green);
-      color: #000;
       font-size: 14px;
       font-weight: 600;
       font-family: inherit;
     }
+    .call-btns .btn-no { background: var(--red); color: #fff; }
+    .call-btns .btn-ok { background: var(--green); color: #000; }
 
     .overlay {
       position: fixed; inset: 0;
@@ -460,7 +458,7 @@
 </head>
 <body>
   <div class="app">
-    <h1>ავტოდაილერი <span class="ver">v37</span></h1>
+    <h1>ავტოდაილერი <span class="ver">v38</span></h1>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
@@ -469,7 +467,7 @@
     </div>
 
     <div class="body">
-      <div id="ios-note" class="hide">⚠️ Safari/PWA ვერ ხედავს ზარის სტატუსს (Calling/მიპასუხეს). ამისთვის საჭიროა iOS აპი Xcode-დან (AutoDialerSMS).</div>
+      <div id="ios-note" class="hide">⚠️ Safari ვერ ხედავს Calling/მიპასუხეს. ზუსტი სტატუსისთვის დააყენე iOS აპი (AutoDialerSMS) Xcode-დან.</div>
       <div id="status">ჩასვი ნომრები და დააჭირე დაწყებას</div>
 
       <div class="page on" id="p-dial">
@@ -500,8 +498,20 @@
   </div>
 
   <div class="call-active-bar hide" id="call-active-bar">
-    <span id="call-active-txt">ზარი მიმდინარეობს</span>
-    <button id="call-ended" type="button">ზარი დასრულდა</button>
+    <p id="call-active-txt">რა მოხდა?</p>
+    <div class="call-btns">
+      <button class="btn-no" id="call-noanswer" type="button">არ მიპასუხეს</button>
+      <button class="btn-ok" id="call-answered" type="button">მიპასუხეს</button>
+    </div>
+  </div>
+
+  <div class="overlay hide" id="perm-modal">
+    <div class="box">
+      <div class="lbl">ნებართვები</div>
+      <p>შეტყობინებების ნება საჭიროა ზარის შედეგისთვის. ზუსტი Calling/მიპასუხეს — iOS აპში.</p>
+      <button class="go" id="perm-allow" type="button">Allow შეტყობინებები</button>
+      <button class="skip" id="perm-skip" type="button">გამოტოვება</button>
+    </div>
   </div>
 
   <div class="bar" id="action-bar">
@@ -598,9 +608,7 @@
     const NO_ANSWER_MSG = `გამარჯობა, ავტომობილის დაზღვევასთან დაკავშირებით გირეკავდით, სადაზღვეო კომპანია ალდაგიდან თუ დაინტერესდებით ამ ნომერზე დამიკავშირდით.`;
 
     const langPick = { intro: 'ka' };
-    const TOUT = 30;
-    const S = { q: [], i: 0, run: false, t0: null, ti: null, wait: false, to: false, last: '', called: {}, answered: false, hiddenAt: null, phoneMs: 0 };
-    let returnTimer = null;
+    const S = { q: [], i: 0, run: false, wait: false, last: '', called: {} };
     const pendingSend = { num: '', msg: '', type: 'sms' };
 
     const $ = id => document.getElementById(id);
@@ -620,8 +628,6 @@
     }
 
     const NUM_ROWS_START = 5;
-    const SHORT_CALL = 6;
-    const ANSWER_MS = 12000;
 
     function getNumInputs() {
       return [...$('num-list').querySelectorAll('.num-inp')];
@@ -777,45 +783,27 @@
         : '<p class="empty">ცარიელია</p>';
     }
 
-    function callElapsed() {
-      return S.t0 ? (Date.now() - S.t0) / 1000 : 0;
+    function call() {
+      if (!S.run || S.i >= S.q.length) { done(); return; }
+      S.wait = true;
+      hideCallActiveBar();
+      highlightNumRow(S.i);
+      syncSmsNum(S.q[S.i]);
+      setStatus(`${S.q[S.i]} · ირეკება...`, true);
+      dial(S.q[S.i]);
     }
 
-    function phoneTimeMs() {
-      let ms = S.phoneMs;
-      if (S.hiddenAt) ms += Date.now() - S.hiddenAt;
-      return ms;
+    function showCallActiveBar() {
+      $('call-active-txt').textContent = `${S.q[S.i]} — აირჩიე სტატუსი`;
+      $('call-active-bar').classList.remove('hide');
     }
 
-    function resetCallTrack() {
-      S.answered = false;
-      S.hiddenAt = null;
-      S.phoneMs = 0;
+    function hideCallActiveBar() {
+      $('call-active-bar').classList.add('hide');
     }
 
-    function checkAnswered() {
-      if (phoneTimeMs() >= ANSWER_MS) S.answered = true;
-      return S.answered;
-    }
-
-    function timer(on) {
-      clearInterval(S.ti);
-      if (!on) return;
-      S.t0 = Date.now(); S.to = false;
-      S.ti = setInterval(() => {
-        checkAnswered();
-        const sec = callElapsed();
-        const left = TOUT - sec;
-        const n = S.q[S.i];
-        if (left > 0) {
-          if (S.answered) setStatus(`${n} · მიპასუხეს · ${Math.ceil(left)} წმ`, true);
-          else setStatus(`${n} · ირეკება... · ${Math.ceil(left)} წმ`, true);
-        } else if (!S.to) {
-          S.to = true;
-          if (!S.answered && sec < SHORT_CALL) $('time-modal').classList.remove('hide');
-          else if (S.wait && S.answered) showCallActiveBar();
-        }
-      }, 500);
+    function onAppVisible() {
+      if (S.run && S.wait) showCallActiveBar();
     }
 
     function dial(n) { location.href = 'tel:' + tel(n); }
@@ -844,75 +832,18 @@
       setStatus('ჩასმულია');
     }
 
-    function call() {
-      if (!S.run || S.i >= S.q.length) { done(); return; }
-      S.wait = true;
-      resetCallTrack();
-      highlightNumRow(S.i);
-      syncSmsNum(S.q[S.i]);
-      timer(true);
-      dial(S.q[S.i]);
-    }
-
-    function showCallActiveBar() {
-      $('call-active-txt').textContent = `მიპასუხეს: ${S.q[S.i]}`;
-      $('call-active-bar').classList.remove('hide');
-      setStatus(`${S.q[S.i]} · მიპასუხეს · ზარი მიმდინარეობს`, true);
-    }
-
-    function hideCallActiveBar() {
-      $('call-active-bar').classList.add('hide');
-    }
-
-    function onAppHidden() {
-      clearTimeout(returnTimer);
-      hideCallActiveBar();
-      if (S.wait && !S.hiddenAt) S.hiddenAt = Date.now();
-    }
-
-    function onAppVisible() {
+    function finishCall(answered) {
       if (!S.run || !S.wait) return;
-      clearTimeout(returnTimer);
-      if (S.hiddenAt) {
-        S.phoneMs += Date.now() - S.hiddenAt;
-        S.hiddenAt = null;
-      }
-      checkAnswered();
-      if (S.answered) {
-        showCallActiveBar();
-        return;
-      }
-      const n = S.q[S.i];
-      setStatus(`${n} · ირეკება...`, true);
-      returnTimer = setTimeout(() => {
-        if (S.wait && document.visibilityState === 'visible' && !checkAnswered()) returned(true);
-      }, 1500);
-    }
-
-    function returned(isAuto) {
-      if (!S.run || !S.wait) return;
-      if (S.hiddenAt) {
-        S.phoneMs += Date.now() - S.hiddenAt;
-        S.hiddenAt = null;
-      }
-      checkAnswered();
-      if (isAuto && S.answered) return;
-      clearTimeout(returnTimer);
       hideCallActiveBar();
       S.wait = false;
-      timer(false);
       const n = S.q[S.i];
-      const ok = S.answered;
       S.called[normNum(n)] = 'called';
       markNumRows();
       syncSmsNum(n);
-      addHist(n, ok ? 'მიპასუხეს' : 'არ მიპასუხეს');
-      setStatus(ok ? `${n} — მიპასუხეს` : `${n} — არ მიპასუხეს`);
+      addHist(n, answered ? 'მიპასუხეს' : 'არ მიპასუხეს');
+      setStatus(answered ? `${n} — მიპასუხეს` : `${n} — არ მიპასუხეს`);
       S.i++;
-      if (S.run) {
-        if (isAuto && !ok) showAfterCall(n, false);
-        else if (!isAuto || ok) showAfterCall(n, ok);
-      }
+      if (S.run) showAfterCall(n, answered);
     }
 
     function goNextCall() {
@@ -933,15 +864,14 @@
 
     function done() {
       S.run = false; S.wait = false;
-      timer(false); reset();
+      reset();
       syncFromDial();
       setStatus('დასრულდა ✓');
     }
 
     function stopAll() {
       S.run = false; S.wait = false;
-      clearTimeout(returnTimer);
-      timer(false); reset();
+      reset();
       setStatus('გაჩერებულია');
     }
 
@@ -1151,8 +1081,13 @@ ${ALDAGI_TAIL}`;
     $('send-go').onclick = confirmSend;
     $('send-cancel').onclick = closeSendModal;
     $('send-modal').onclick = e => { if (e.target === $('send-modal')) closeSendModal(); };
-    $('call-ended').onclick = () => returned(false);
-    $('time-ok').onclick = () => $('time-modal').classList.add('hide');
+    $('call-noanswer').onclick = () => finishCall(false);
+    $('call-answered').onclick = () => finishCall(true);
+    $('perm-allow').onclick = () => {
+      $('perm-modal').classList.add('hide');
+      if ('Notification' in window) Notification.requestPermission();
+    };
+    $('perm-skip').onclick = () => $('perm-modal').classList.add('hide');
     function saveNums() {
       localStorage.setItem('nums', getNumsText());
     }
@@ -1172,8 +1107,7 @@ ${ALDAGI_TAIL}`;
     $('clr-hist').onclick = () => { localStorage.removeItem('hist'); showHist(); };
 
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') onAppHidden();
-      else onAppVisible();
+      if (document.visibilityState === 'visible') onAppVisible();
     });
     window.addEventListener('pageshow', e => { if (e.persisted) onAppVisible(); });
     if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then(r => r.forEach(x => x.unregister()));
@@ -1184,6 +1118,10 @@ ${ALDAGI_TAIL}`;
     syncFromDial();
     showHist();
     if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) $('ios-note').classList.remove('hide');
+    if (!localStorage.getItem('permAsked')) {
+      $('perm-modal').classList.remove('hide');
+      localStorage.setItem('permAsked', '1');
+    }
   </script>
 </body>
 </html>

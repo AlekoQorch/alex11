@@ -14,6 +14,8 @@
 		B10000052E00000100000001 /* CallQueueManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000152E00000100000001 /* CallQueueManager.swift */; };
 		B10000062E00000100000001 /* MessageComposeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000162E00000100000001 /* MessageComposeView.swift */; };
 		B10000072E00000100000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10000172E00000100000001 /* Assets.xcassets */; };
+		B10000082E00000100000001 /* PermissionsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000192E00000100000001 /* PermissionsManager.swift */; };
+		B10000092E00000100000001 /* PermissionsOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100001A2E00000100000001 /* PermissionsOnboardingView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -26,6 +28,8 @@
 		B10000162E00000100000001 /* MessageComposeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageComposeView.swift; sourceTree = "<group>"; };
 		B10000172E00000100000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B10000182E00000100000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B10000192E00000100000001 /* PermissionsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionsManager.swift; sourceTree = "<group>"; };
+		B100001A2E00000100000001 /* PermissionsOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionsOnboardingView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -82,6 +86,7 @@
 			children = (
 				B10000142E00000100000001 /* PhoneNumberParser.swift */,
 				B10000152E00000100000001 /* CallQueueManager.swift */,
+				B10000192E00000100000001 /* PermissionsManager.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -90,6 +95,7 @@
 			isa = PBXGroup;
 			children = (
 				B10000162E00000100000001 /* MessageComposeView.swift */,
+				B100001A2E00000100000001 /* PermissionsOnboardingView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -169,6 +175,8 @@
 				B10000042E00000100000001 /* PhoneNumberParser.swift in Sources */,
 				B10000052E00000100000001 /* CallQueueManager.swift in Sources */,
 				B10000062E00000100000001 /* MessageComposeView.swift in Sources */,
+				B10000082E00000100000001 /* PermissionsManager.swift in Sources */,
+				B10000092E00000100000001 /* PermissionsOnboardingView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

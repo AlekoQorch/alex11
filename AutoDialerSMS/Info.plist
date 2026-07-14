@@ -20,6 +20,10 @@
 	<string>1.0.0</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>აქტიური ზარის აღმოჩენისთვის — მიპასუხეს თუ არა.</string>
+	<key>NSUserNotificationsUsageDescription</key>
+	<string>ზარის შედეგის შესახებ შეტყობინებებისთვის.</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>tel</string>
