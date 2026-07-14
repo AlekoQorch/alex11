@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ავტოდაილერი v45</title>
+  <title>ავტოდაილერი v46</title>
   <link rel="manifest" href="manifest.json?v=27">
   <link rel="apple-touch-icon" href="apple-touch-icon.png?v=27">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=27">
@@ -459,7 +459,7 @@
 </head>
 <body>
   <div class="app">
-    <h1>ავტოდაილერი <span class="ver">v45</span></h1>
+    <h1>ავტოდაილერი <span class="ver">v46</span></h1>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
@@ -831,16 +831,16 @@
     function hist() {
       try { return JSON.parse(localStorage.getItem('hist') || '[]'); } catch { return []; }
     }
-    function addHist(num, note) {
+    function addHist(num) {
       const h = hist();
-      h.unshift({ num, note, t: new Date().toLocaleString('ka-GE', { hour: '2-digit', minute: '2-digit' }) });
+      h.unshift({ num, t: new Date().toLocaleString('ka-GE', { hour: '2-digit', minute: '2-digit' }) });
       localStorage.setItem('hist', JSON.stringify(h.slice(0, 50)));
       showHist();
     }
     function showHist() {
       const h = hist();
       $('hist').innerHTML = h.length
-        ? h.map(x => `<div class="hist">${formatPhoneDisplay(x.num)}<span>${x.note} · ${x.t}</span></div>`).join('')
+        ? h.map(x => `<div class="hist">${formatPhoneDisplay(x.num)}<span>${x.t || ''}</span></div>`).join('')
         : '<p class="empty">ცარიელია</p>';
     }
 
@@ -849,7 +849,7 @@
       S.wait = true;
       highlightNumRow(S.i);
       syncSmsNum(S.q[S.i]);
-      setStatus(`${formatPhoneDisplay(S.q[S.i])} · ირეკება...`, true);
+      setStatus('');
       dial(S.q[S.i]);
     }
 
@@ -869,7 +869,7 @@
       const n = tel(raw);
       if (localDigitCount(n) < 9) return;
       syncSmsNum(n);
-      setStatus(`${formatPhoneDisplay(n)} · ირეკება...`, true);
+      setStatus('');
       dial(n);
     }
 
@@ -904,8 +904,8 @@
       S.called[normNum(n)] = 'called';
       markNumRows();
       syncSmsNum(n);
-      addHist(n, 'დარეკილი');
-      setStatus(formatPhoneDisplay(n));
+      addHist(n);
+      setStatus('');
       S.i++;
       if (S.run) showAfterCall(n);
     }
