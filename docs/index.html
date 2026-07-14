@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ავტოდაილერი v51</title>
+  <title>ავტოდაილერი v52</title>
   <link rel="manifest" href="manifest.json?v=27">
   <link rel="apple-touch-icon" href="apple-touch-icon.png?v=27">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=27">
@@ -461,7 +461,7 @@
 </head>
 <body>
   <div class="app">
-    <h1>ავტოდაილერი <span class="ver">v51</span></h1>
+    <h1>ავტოდაილერი <span class="ver">v52</span></h1>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
@@ -594,7 +594,7 @@
     const NO_ANSWER_MSG = `გამარჯობა, ავტომობილის დაზღვევასთან დაკავშირებით გირეკავდით, სადაზღვეო კომპანია ალდაგიდან თუ დაინტერესდებით ამ ნომერზე დამიკავშირდით.`;
 
     const langPick = { intro: 'ka' };
-    const S = { q: [], i: 0, run: false, wait: false, last: '', called: {} };
+    const S = { q: [], i: 0, run: false, wait: false, last: '', called: {}, smsManual: false };
     const pendingSend = { num: '', msg: '', type: 'sms' };
 
     const $ = id => document.getElementById(id);
@@ -713,7 +713,8 @@
       clearActiveMarks();
       if (S.run && idx >= 0 && S.q[idx]) {
         S.called[normNum(S.q[idx])] = 'active';
-        // გალურჯებული ნომერი → SMS გრაფაც
+        // გალურჯებულზე თითი → SMS-იც იმაზე (ხელით ჩაწერილი აღარ რჩება)
+        S.smsManual = false;
         setLastCalled(S.q[idx]);
       }
       markNumRows();
@@ -881,14 +882,17 @@
     }
 
     function fillSmsTarget() {
+      // თუ SMS გრაფაში ხელით ჩაწერა/შეცვლა — ნუ გადააწერ
+      if (S.smsManual) return;
       const n = getBlueOrActiveNumber() || S.last || firstNumFromText() || '';
       $('sms-num').value = n ? formatPhoneDisplay(n) : '';
     }
 
-    /** SMS/WA: გრაფა, თუ ცარიელია — ლურჯი / ბოლო დარეკილი */
+    /** SMS/WA: ჯერ გრაფა (რაც ჩაწერე), მერე ლურჯი / ბოლო */
     function getPhone() {
       const fromField = tel($('sms-num').value || '');
       if (fromField.replace(/\D/g, '').length >= 9) return fromField;
+      if (S.smsManual) return fromField; // ხელით ცარიელი/არასრული — იმასვე გამოიყენე
       return tel(getBlueOrActiveNumber() || S.last || '');
     }
 
@@ -896,7 +900,9 @@
       const v = tel(n || '');
       if (!v) return;
       S.last = v;
-      $('sms-num').value = formatPhoneDisplay(v);
+      if (!S.smsManual) {
+        $('sms-num').value = formatPhoneDisplay(v);
+      }
     }
 
     function syncFromDial() {
@@ -905,14 +911,22 @@
 
     function syncSmsNum(n) {
       const v = (n || '').trim();
-      $('sms-num').value = v ? formatPhoneDisplay(v) : '';
-      if (!v) S.last = '';
+      if (!v) {
+        S.last = '';
+        S.smsManual = false;
+        $('sms-num').value = '';
+        return;
+      }
+      if (!S.smsManual) {
+        $('sms-num').value = formatPhoneDisplay(v);
+      }
     }
 
     document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => goTab(b.dataset.v));
 
     $('sms-num').addEventListener('input', () => {
       filterPhoneInput($('sms-num'));
+      S.smsManual = true;
       const t = tel($('sms-num').value);
       if (localDigitCount(t) >= 9) S.last = t;
     });
