@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ავტოდაილერი v27</title>
+  <title>ავტოდაილერი v28</title>
   <link rel="manifest" href="manifest.json?v=27">
   <link rel="apple-touch-icon" href="apple-touch-icon.png?v=27">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=27">
@@ -113,7 +113,43 @@
     }
     textarea:disabled { opacity: 0.55; }
     textarea::placeholder, input::placeholder { color: #666; }
-    input { margin-bottom: 10px; }
+    input:not(.num-inp) { margin-bottom: 10px; }
+
+    .num-list {
+      background: var(--surface);
+      border: 1.5px solid #4a4a50;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .num-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 10px;
+      border-bottom: 1px solid #333;
+      min-height: 40px;
+    }
+    .num-row:last-child { border-bottom: none; }
+    .num-row.on { background: #1a2a3a; }
+    .num-row.done { opacity: 0.45; }
+    .num-lbl {
+      flex-shrink: 0;
+      width: 22px;
+      font-size: 13px;
+      color: var(--dim);
+      text-align: right;
+    }
+    .num-inp {
+      flex: 1;
+      border: none !important;
+      background: transparent !important;
+      padding: 10px 0 !important;
+      margin: 0 !important;
+      font-size: 16px;
+      border-radius: 0 !important;
+    }
+    .num-inp:disabled { opacity: 0.55; }
+    .num-inp:focus { outline: none; }
 
     .tools {
       display: flex;
@@ -377,7 +413,7 @@
 </head>
 <body>
   <div class="app">
-    <h1>ავტოდაილერი <span class="ver">v27</span></h1>
+    <h1>ავტოდაილერი <span class="ver">v28</span></h1>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
@@ -389,7 +425,7 @@
       <div id="status">ჩასვი ნომრები და დააჭირე დაწყებას</div>
 
       <div class="page on" id="p-dial">
-        <textarea id="nums" placeholder="თითო ხაზზე ერთი ნომერი"></textarea>
+        <div class="num-list" id="num-list"></div>
         <div class="tools">
           <span><b id="ncount">0</b> ნომერი</span>
           <div class="tool-btns">
@@ -529,10 +565,94 @@
       if (v === 'sms') syncFromDial();
     }
 
+    const NUM_ROWS_START = 10;
+    const NUM_ROWS_STEP = 5;
+
+    function getNumInputs() {
+      return [...$('num-list').querySelectorAll('.num-inp')];
+    }
+
+    function getNumsRaw() {
+      return getNumInputs().map(i => i.value.trim()).filter(Boolean);
+    }
+
+    function getNumsText() {
+      return getNumsRaw().join('\n');
+    }
+
+    function setNumsFromList(nums) {
+      const list = $('num-list');
+      const needed = Math.max(NUM_ROWS_START, nums.length + 1);
+      renderNumRows(needed);
+      getNumInputs().forEach((inp, i) => { inp.value = nums[i] || ''; });
+      onNumsChange();
+    }
+
+    function renderNumRows(count) {
+      const list = $('num-list');
+      const cur = getNumInputs().map(i => i.value);
+      list.innerHTML = '';
+      for (let i = 0; i < count; i++) {
+        const row = document.createElement('div');
+        row.className = 'num-row';
+        row.innerHTML = `<span class="num-lbl">${i + 1}.</span><input class="num-inp" type="tel" inputmode="tel" autocomplete="off" spellcheck="false" placeholder="ნომერი">`;
+        const inp = row.querySelector('.num-inp');
+        inp.value = cur[i] || '';
+        list.appendChild(row);
+      }
+    }
+
+    function ensureExtraRow() {
+      const inputs = getNumInputs();
+      const last = inputs[inputs.length - 1];
+      if (last?.value.trim()) renderNumRows(inputs.length + NUM_ROWS_STEP);
+    }
+
+    function setNumsDisabled(on) {
+      getNumInputs().forEach(i => { i.disabled = on; });
+    }
+
+    function highlightNumRow(idx) {
+      $('num-list').querySelectorAll('.num-row').forEach((row, i) => {
+        row.classList.toggle('on', S.run && i === idx);
+        row.classList.toggle('done', S.run && i < idx);
+      });
+    }
+
+    function onNumsChange() {
+      ensureExtraRow();
+      count();
+      syncFromDial();
+      saveNums();
+    }
+
+    function filterPhoneInput(inp) {
+      inp.value = inp.value.replace(/[^\d+\s\-()]/g, '');
+    }
+
+    function initNumList() {
+      renderNumRows(NUM_ROWS_START);
+      $('num-list').addEventListener('input', e => {
+        const inp = e.target.closest('.num-inp');
+        if (!inp) return;
+        filterPhoneInput(inp);
+        onNumsChange();
+      });
+      $('num-list').addEventListener('keydown', e => {
+        const inp = e.target.closest('.num-inp');
+        if (!inp || e.key !== 'Enter') return;
+        e.preventDefault();
+        const inputs = getNumInputs();
+        const i = inputs.indexOf(inp);
+        if (i >= 0 && i < inputs.length - 1) inputs[i + 1].focus();
+        else ensureExtraRow(), getNumInputs()[i + 1]?.focus();
+      });
+    }
+
     function firstNumFromText() {
-      const parsed = parse($('nums').value);
+      const parsed = parse(getNumsText());
       if (parsed[0]) return parsed[0];
-      return $('nums').value.split(/[\n,;]+/).map(l => l.trim()).find(Boolean) || '';
+      return getNumsRaw()[0] || '';
     }
 
     function getDialNum() {
@@ -560,7 +680,7 @@
         .filter((n, i, a) => a.indexOf(n) === i);
     }
     function tel(n) { return n.replace(/[^\d+]/g, ''); }
-    function count() { $('ncount').textContent = parse($('nums').value).length; }
+    function count() { $('ncount').textContent = parse(getNumsText()).length; }
 
     function hist() {
       try { return JSON.parse(localStorage.getItem('hist') || '[]'); } catch { return []; }
@@ -592,29 +712,29 @@
     function dial(n) { location.href = 'tel:' + tel(n); }
 
     function start() {
-      S.q = parse($('nums').value);
+      S.q = parse(getNumsText());
       if (!S.q.length) { setStatus('შეიყვანე ნომერი'); return; }
       S.i = 0; S.run = true;
       $('start').classList.add('hide');
       $('stop').classList.remove('hide');
-      $('nums').disabled = true;
-      localStorage.setItem('nums', $('nums').value);
+      setNumsDisabled(true);
+      highlightNumRow(0);
+      saveNums();
       call();
     }
 
     function applyPaste(pasted) {
       if (!pasted) return;
-      const merged = mergeNums($('nums').value, pasted);
-      $('nums').value = merged;
-      saveNums();
-      count();
-      syncFromDial();
+      const existing = getNumsRaw();
+      const incoming = pasted.split(/[\n,;]+/).map(l => l.trim()).filter(Boolean);
+      setNumsFromList([...existing, ...incoming]);
       setStatus('ჩასმულია');
     }
 
     function call() {
       if (!S.run || S.i >= S.q.length) { done(); return; }
       S.wait = true;
+      highlightNumRow(S.i);
       syncSmsNum(S.q[S.i]);
       timer(true);
       dial(S.q[S.i]);
@@ -643,7 +763,8 @@
     function reset() {
       $('start').classList.remove('hide');
       $('stop').classList.add('hide');
-      $('nums').disabled = false;
+      setNumsDisabled(false);
+      highlightNumRow(-1);
       $('after-call-modal').classList.add('hide');
       $('time-modal').classList.add('hide');
     }
@@ -857,12 +978,8 @@ ${ALDAGI_TAIL}`;
 
     renderSmsList();
     initOfferFields();
+    initNumList();
 
-    $('nums').oninput = () => {
-      count();
-      syncFromDial();
-      saveNums();
-    };
     $('start').onclick = start;
     $('stop').onclick = stopAll;
     $('after-call-sms').onclick = () => showSendConfirm($('after-call-num').textContent, NO_ANSWER_MSG, 'sms', 'არ პასუხობს');
@@ -872,30 +989,9 @@ ${ALDAGI_TAIL}`;
     $('send-cancel').onclick = closeSendModal;
     $('send-modal').onclick = e => { if (e.target === $('send-modal')) closeSendModal(); };
     $('time-ok').onclick = () => $('time-modal').classList.add('hide');
-    function mergeNums(existing, pasted) {
-      const ex = (existing || '').trimEnd();
-      const pa = (pasted || '').trim();
-      if (!pa) return ex;
-      if (!ex) return pa;
-      return ex + '\n' + pa;
-    }
-
     function saveNums() {
-      localStorage.setItem('nums', $('nums').value);
+      localStorage.setItem('nums', getNumsText());
     }
-
-    $('nums').addEventListener('paste', e => {
-      const pasted = (e.clipboardData || window.clipboardData).getData('text');
-      if (!pasted) return;
-      const ta = $('nums');
-      const cur = ta.value;
-      const allSelected = ta.selectionStart === 0 && ta.selectionEnd === cur.length && cur.trim();
-      const atEnd = ta.selectionStart === cur.length && ta.selectionEnd === cur.length && cur.trim();
-      if (allSelected || atEnd) {
-        e.preventDefault();
-        applyPaste(pasted);
-      }
-    });
 
     $('paste').onclick = async () => {
       try {
@@ -904,8 +1000,7 @@ ${ALDAGI_TAIL}`;
       } catch { setStatus('ჩასმა ვერ მოხერხდა'); }
     };
     $('clear').onclick = () => {
-      $('nums').value = '';
-      count();
+      setNumsFromList([]);
       syncSmsNum('');
       localStorage.removeItem('nums');
     };
@@ -918,8 +1013,8 @@ ${ALDAGI_TAIL}`;
     if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then(r => r.forEach(x => x.unregister()));
 
     const saved = localStorage.getItem('nums');
-    if (saved) $('nums').value = saved;
-    count();
+    if (saved) setNumsFromList(saved.split(/[\n,;]+/).map(l => l.trim()).filter(Boolean));
+    else count();
     syncFromDial();
     showHist();
   </script>
