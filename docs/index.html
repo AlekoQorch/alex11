@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ავტოდაილერი v38</title>
+  <title>ავტოდაილერი v39</title>
   <link rel="manifest" href="manifest.json?v=27">
   <link rel="apple-touch-icon" href="apple-touch-icon.png?v=27">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=27">
@@ -92,12 +92,7 @@
       min-height: auto;
     }
     #status.work { color: var(--green); }
-    #ios-note {
-      font-size: 13px;
-      color: #f5a623;
-      padding: 8px 4px 10px;
-      line-height: 1.4;
-    }
+    #ios-note { display: none !important; }
 
     textarea, input {
       width: 100%;
@@ -458,7 +453,7 @@
 </head>
 <body>
   <div class="app">
-    <h1>ავტოდაილერი <span class="ver">v38</span></h1>
+    <h1>ავტოდაილერი <span class="ver">v39</span></h1>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
@@ -467,7 +462,7 @@
     </div>
 
     <div class="body">
-      <div id="ios-note" class="hide">⚠️ Safari ვერ ხედავს Calling/მიპასუხეს. ზუსტი სტატუსისთვის დააყენე iOS აპი (AutoDialerSMS) Xcode-დან.</div>
+      <div id="ios-note" class="hide"></div>
       <div id="status">ჩასვი ნომრები და დააჭირე დაწყებას</div>
 
       <div class="page on" id="p-dial">
@@ -508,7 +503,7 @@
   <div class="overlay hide" id="perm-modal">
     <div class="box">
       <div class="lbl">ნებართვები</div>
-      <p>შეტყობინებების ნება საჭიროა ზარის შედეგისთვის. ზუსტი Calling/მიპასუხეს — iOS აპში.</p>
+      <p>შეტყობინებების ნება საჭიროა ზარის შედეგისთვის. ზარის შემდეგ აირჩიე: არ მიპასუხეს / მიპასუხეს.</p>
       <button class="go" id="perm-allow" type="button">Allow შეტყობინებები</button>
       <button class="skip" id="perm-skip" type="button">გამოტოვება</button>
     </div>

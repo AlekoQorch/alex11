@@ -9,8 +9,13 @@
 /* Begin PBXBuildFile section */
 		B10000012E00000100000001 /* AutoDialerSMSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000112E00000100000001 /* AutoDialerSMSApp.swift */; };
 		B10000022E00000100000001 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000122E00000100000001 /* ContentView.swift */; };
-		B10000032E00000100000001 /* SmsTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000132E00000100000001 /* SmsTemplate.swift */; };
 		B10000042E00000100000001 /* PhoneNumberParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000142E00000100000001 /* PhoneNumberParser.swift */; };
+		B20000012E00000100000001 /* AldagiMessages.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000112E00000100000001 /* AldagiMessages.swift */; };
+		B20000022E00000100000001 /* CallRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000122E00000100000001 /* CallRecord.swift */; };
+		B20000032E00000100000001 /* DialTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000132E00000100000001 /* DialTabView.swift */; };
+		B20000042E00000100000001 /* HistoryTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000142E00000100000001 /* HistoryTabView.swift */; };
+		B20000052E00000100000001 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000152E00000100000001 /* MainTabView.swift */; };
+		B20000062E00000100000001 /* SmsTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000162E00000100000001 /* SmsTabView.swift */; };
 		B10000052E00000100000001 /* CallQueueManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000152E00000100000001 /* CallQueueManager.swift */; };
 		B10000062E00000100000001 /* MessageComposeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000162E00000100000001 /* MessageComposeView.swift */; };
 		B10000072E00000100000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10000172E00000100000001 /* Assets.xcassets */; };
@@ -22,8 +27,13 @@
 		B10000102E00000100000001 /* AutoDialerSMS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AutoDialerSMS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B10000112E00000100000001 /* AutoDialerSMSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoDialerSMSApp.swift; sourceTree = "<group>"; };
 		B10000122E00000100000001 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		B10000132E00000100000001 /* SmsTemplate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmsTemplate.swift; sourceTree = "<group>"; };
 		B10000142E00000100000001 /* PhoneNumberParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneNumberParser.swift; sourceTree = "<group>"; };
+		B20000112E00000100000001 /* AldagiMessages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AldagiMessages.swift; sourceTree = "<group>"; };
+		B20000122E00000100000001 /* CallRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallRecord.swift; sourceTree = "<group>"; };
+		B20000132E00000100000001 /* DialTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DialTabView.swift; sourceTree = "<group>"; };
+		B20000142E00000100000001 /* HistoryTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryTabView.swift; sourceTree = "<group>"; };
+		B20000152E00000100000001 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		B20000162E00000100000001 /* SmsTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmsTabView.swift; sourceTree = "<group>"; };
 		B10000152E00000100000001 /* CallQueueManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallQueueManager.swift; sourceTree = "<group>"; };
 		B10000162E00000100000001 /* MessageComposeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageComposeView.swift; sourceTree = "<group>"; };
 		B10000172E00000100000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -76,7 +86,8 @@
 		B10000332E00000100000001 /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				B10000132E00000100000001 /* SmsTemplate.swift */,
+				B20000112E00000100000001 /* AldagiMessages.swift */,
+				B20000122E00000100000001 /* CallRecord.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -94,6 +105,10 @@
 		B10000352E00000100000001 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				B20000132E00000100000001 /* DialTabView.swift */,
+				B20000142E00000100000001 /* HistoryTabView.swift */,
+				B20000152E00000100000001 /* MainTabView.swift */,
+				B20000162E00000100000001 /* SmsTabView.swift */,
 				B10000162E00000100000001 /* MessageComposeView.swift */,
 				B100001A2E00000100000001 /* PermissionsOnboardingView.swift */,
 			);
@@ -171,7 +186,12 @@
 			files = (
 				B10000012E00000100000001 /* AutoDialerSMSApp.swift in Sources */,
 				B10000022E00000100000001 /* ContentView.swift in Sources */,
-				B10000032E00000100000001 /* SmsTemplate.swift in Sources */,
+				B20000012E00000100000001 /* AldagiMessages.swift in Sources */,
+				B20000022E00000100000001 /* CallRecord.swift in Sources */,
+				B20000032E00000100000001 /* DialTabView.swift in Sources */,
+				B20000042E00000100000001 /* HistoryTabView.swift in Sources */,
+				B20000052E00000100000001 /* MainTabView.swift in Sources */,
+				B20000062E00000100000001 /* SmsTabView.swift in Sources */,
 				B10000042E00000100000001 /* PhoneNumberParser.swift in Sources */,
 				B10000052E00000100000001 /* CallQueueManager.swift in Sources */,
 				B10000062E00000100000001 /* MessageComposeView.swift in Sources */,
