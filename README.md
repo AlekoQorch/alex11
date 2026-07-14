@@ -51,7 +51,7 @@ Share ⬆️ → **Add to Home Screen** → Add
 ## თუ ძველი ვერსია ჩანს (iPhone cache)
 
 1. Home Screen-იდან წაშალე ძველი ხატულა
-2. Safari-ში გახსენი: `https://alekoqorch.github.io/alex11/?v=49`
+2. Safari-ში გახსენი: `https://alekoqorch.github.io/alex11/?v=50`
 3. თავიდან **Add to Home Screen**
 
 ---
