@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ავტოდაილერი v39</title>
+  <title>ავტოდაილერი v40</title>
   <link rel="manifest" href="manifest.json?v=27">
   <link rel="apple-touch-icon" href="apple-touch-icon.png?v=27">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=27">
@@ -453,7 +453,7 @@
 </head>
 <body>
   <div class="app">
-    <h1>ავტოდაილერი <span class="ver">v39</span></h1>
+    <h1>ავტოდაილერი <span class="ver">v40</span></h1>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
@@ -636,10 +636,31 @@
       return getNumsRaw().join('\n');
     }
 
+    /** 577920471 → 577 92 04 71 (ჯერ 3, მერე ორ-ორი) */
+    function formatPhoneDisplay(raw) {
+      const s = String(raw || '').trim();
+      if (!s) return '';
+      const hasPlus = s.startsWith('+');
+      let digits = s.replace(/\D/g, '');
+      let prefix = '';
+      if (digits.startsWith('995') && digits.length > 9) {
+        prefix = (hasPlus ? '+' : '') + '995 ';
+        digits = digits.slice(3);
+      } else if (hasPlus) {
+        prefix = '+';
+      }
+      if (!digits) return prefix.trim();
+      let out = digits.slice(0, 3);
+      for (let i = 3; i < digits.length; i += 2) {
+        out += ' ' + digits.slice(i, i + 2);
+      }
+      return prefix + out;
+    }
+
     function setNumsFromList(nums) {
       const needed = nums.length ? Math.max(NUM_ROWS_START, nums.length + 1) : NUM_ROWS_START;
       renderNumRows(needed);
-      getNumInputs().forEach((inp, i) => { inp.value = nums[i] || ''; });
+      getNumInputs().forEach((inp, i) => { inp.value = nums[i] ? formatPhoneDisplay(nums[i]) : ''; });
       onNumsChange();
     }
 
@@ -701,7 +722,16 @@
     }
 
     function filterPhoneInput(inp) {
-      inp.value = inp.value.replace(/[^\d+\s\-()]/g, '');
+      const start = inp.selectionStart ?? inp.value.length;
+      const digitsBefore = inp.value.slice(0, start).replace(/\D/g, '').length;
+      const next = formatPhoneDisplay(inp.value.replace(/[^\d+]/g, ''));
+      inp.value = next;
+      let pos = 0, seen = 0;
+      while (pos < next.length && seen < digitsBefore) {
+        if (/\d/.test(next[pos])) seen++;
+        pos++;
+      }
+      try { inp.setSelectionRange(pos, pos); } catch {}
     }
 
     function initNumList() {
@@ -749,10 +779,14 @@
     function syncSmsNum(n) {
       const v = (n || '').trim();
       if (v) S.last = v;
-      $('sms-num').value = v;
+      $('sms-num').value = v ? formatPhoneDisplay(v) : '';
     }
 
     document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => goTab(b.dataset.v));
+
+    $('sms-num').addEventListener('input', () => {
+      filterPhoneInput($('sms-num'));
+    });
 
     function parse(t) {
       return t.split(/[\n,;]+/).map(n => n.trim().replace(/[\s\-()]/g, ''))
@@ -774,7 +808,7 @@
     function showHist() {
       const h = hist();
       $('hist').innerHTML = h.length
-        ? h.map(x => `<div class="hist">${x.num}<span>${x.note} · ${x.t}</span></div>`).join('')
+        ? h.map(x => `<div class="hist">${formatPhoneDisplay(x.num)}<span>${x.note} · ${x.t}</span></div>`).join('')
         : '<p class="empty">ცარიელია</p>';
     }
 
@@ -784,12 +818,12 @@
       hideCallActiveBar();
       highlightNumRow(S.i);
       syncSmsNum(S.q[S.i]);
-      setStatus(`${S.q[S.i]} · ირეკება...`, true);
+      setStatus(`${formatPhoneDisplay(S.q[S.i])} · ირეკება...`, true);
       dial(S.q[S.i]);
     }
 
     function showCallActiveBar() {
-      $('call-active-txt').textContent = `${S.q[S.i]} — აირჩიე სტატუსი`;
+      $('call-active-txt').textContent = `${formatPhoneDisplay(S.q[S.i])} — აირჩიე სტატუსი`;
       $('call-active-bar').classList.remove('hide');
     }
 
@@ -819,7 +853,7 @@
       if (!pasted) return;
       const existing = getNumsRaw();
       const incoming = pasted.split(/[\n,;]+/).map(l => l.trim()).filter(Boolean);
-      const merged = [...existing, ...incoming];
+      const merged = [...existing, ...incoming].map(formatPhoneDisplay);
       const rows = Math.max(NUM_ROWS_START, merged.length + 1);
       renderNumRows(rows);
       getNumInputs().forEach((inp, i) => { inp.value = merged[i] || ''; });
@@ -836,7 +870,7 @@
       markNumRows();
       syncSmsNum(n);
       addHist(n, answered ? 'მიპასუხეს' : 'არ მიპასუხეს');
-      setStatus(answered ? `${n} — მიპასუხეს` : `${n} — არ მიპასუხეს`);
+      setStatus(answered ? `${formatPhoneDisplay(n)} — მიპასუხეს` : `${formatPhoneDisplay(n)} — არ მიპასუხეს`);
       S.i++;
       if (S.run) showAfterCall(n, answered);
     }
@@ -890,13 +924,13 @@
     }
 
     function showSendConfirm(num, msg, type, title) {
-      pendingSend.num = num || '';
+      pendingSend.num = num ? tel(num) : '';
       pendingSend.msg = msg;
       pendingSend.type = type;
       $('send-title').textContent = title || 'გაგზავნა';
       const numEl = $('send-num');
       if (num) {
-        numEl.textContent = num;
+        numEl.textContent = formatPhoneDisplay(num);
         numEl.classList.remove('missing');
       } else {
         numEl.textContent = 'ნომერი არ არის — შეიყვანე ზემოთ';
@@ -944,7 +978,8 @@
     }
 
     function showAfterCall(n, answered) {
-      $('after-call-num').textContent = n;
+      $('after-call-num').textContent = formatPhoneDisplay(n);
+      $('after-call-num').dataset.raw = tel(n);
       $('after-call-note').textContent = answered ? 'მიპასუხეს' : 'არ მიპასუხეს';
       const hasNext = S.run && S.i < S.q.length;
       $('after-call-next').classList.toggle('hide', !hasNext);
@@ -1070,7 +1105,7 @@ ${ALDAGI_TAIL}`;
 
     $('start').onclick = start;
     $('stop').onclick = stopAll;
-    $('after-call-sms').onclick = () => showSendConfirm($('after-call-num').textContent, NO_ANSWER_MSG, 'sms', 'არ პასუხობს');
+    $('after-call-sms').onclick = () => showSendConfirm($('after-call-num').dataset.raw || $('after-call-num').textContent, NO_ANSWER_MSG, 'sms', 'არ პასუხობს');
     $('after-call-next').onclick = goNextCall;
     $('after-call-done').onclick = () => { $('after-call-modal').classList.add('hide'); done(); };
     $('send-go').onclick = confirmSend;
