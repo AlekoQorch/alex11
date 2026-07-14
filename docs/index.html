@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ავტოდაილერი v52</title>
+  <title>ავტოდაილერი v53</title>
   <link rel="manifest" href="manifest.json?v=27">
   <link rel="apple-touch-icon" href="apple-touch-icon.png?v=27">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=27">
@@ -356,11 +356,36 @@
     }
 
     .hist {
+      display: flex;
+      align-items: center;
+      gap: 10px;
       padding: 12px 0;
       border-bottom: 1px solid var(--line);
       font-size: 15px;
     }
-    .hist span { display: block; font-size: 13px; color: var(--dim); margin-top: 2px; }
+    .hist-info { flex: 1; min-width: 0; }
+    .hist-info .hist-num {
+      font-family: ui-monospace, "SF Mono", "Menlo", "Cascadia Mono", "Roboto Mono", monospace;
+      font-variant-numeric: tabular-nums;
+    }
+    .hist span.hist-time { display: block; font-size: 13px; color: var(--dim); margin-top: 2px; }
+    .hist-actions {
+      display: flex;
+      flex-shrink: 0;
+      gap: 4px;
+    }
+    .hist-actions button {
+      border: none;
+      border-radius: 6px;
+      padding: 5px 8px;
+      font-size: 11px;
+      font-family: inherit;
+      font-weight: 600;
+      color: #fff;
+      background: var(--blue);
+      line-height: 1.2;
+    }
+    .hist-actions button.row-wa { background: #25d366; }
     .empty { text-align: center; color: var(--dim); padding: 40px 0; font-size: 14px; }
 
     .bar {
@@ -461,7 +486,7 @@
 </head>
 <body>
   <div class="app">
-    <h1>ავტოდაილერი <span class="ver">v52</span></h1>
+    <h1>ავტოდაილერი <span class="ver">v53</span></h1>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
@@ -951,7 +976,19 @@
     function showHist() {
       const h = hist();
       $('hist').innerHTML = h.length
-        ? h.map(x => `<div class="hist">${formatPhoneDisplay(x.num)}<span>${x.t || ''}</span></div>`).join('')
+        ? h.map(x => {
+            const raw = tel(x.num || '');
+            return `<div class="hist" data-num="${raw}">
+              <div class="hist-info">
+                <div class="hist-num">${formatPhoneDisplay(x.num)}</div>
+                <span class="hist-time">${x.t || ''}</span>
+              </div>
+              <span class="hist-actions">
+                <button type="button" class="row-sms" data-hist-send="sms">SMS</button>
+                <button type="button" class="row-wa" data-hist-send="wa">WA</button>
+              </span>
+            </div>`;
+          }).join('')
         : '<p class="empty">ცარიელია</p>';
     }
 
@@ -1273,6 +1310,17 @@ ${ALDAGI_TAIL}`;
       localStorage.removeItem('nums');
     };
     $('clr-hist').onclick = () => { localStorage.removeItem('hist'); showHist(); };
+
+    $('hist').addEventListener('click', e => {
+      const btn = e.target.closest('[data-hist-send]');
+      if (!btn) return;
+      e.preventDefault();
+      const row = btn.closest('.hist');
+      const num = tel(row?.dataset.num || '');
+      if (!num) return;
+      const type = btn.dataset.histSend;
+      showSendConfirm(num, NO_ANSWER_MSG, type, type === 'wa' ? 'WhatsApp' : 'SMS');
+    });
 
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') onAppVisible();
