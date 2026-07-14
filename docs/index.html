@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ავტოდაილერი v47</title>
+  <title>ავტოდაილერი v48</title>
   <link rel="manifest" href="manifest.json?v=27">
   <link rel="apple-touch-icon" href="apple-touch-icon.png?v=27">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=27">
@@ -459,7 +459,7 @@
 </head>
 <body>
   <div class="app">
-    <h1>ავტოდაილერი <span class="ver">v47</span></h1>
+    <h1>ავტოდაილერი <span class="ver">v48</span></h1>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
@@ -608,7 +608,8 @@
       document.querySelectorAll('.page').forEach(x => x.classList.remove('on'));
       $('p-' + v).classList.add('on');
       $('action-bar').classList.toggle('hide', v !== 'dial');
-      if (v === 'sms') syncFromDial();
+      // SMS ტაბზე ყოველთვის ბოლოს დარეკილი ნომერი
+      if (v === 'sms') fillSmsWithLastCalled();
     }
 
     const NUM_ROWS_START = 5;
@@ -804,29 +805,38 @@
       return S.last || '';
     }
 
-    /** SMS/WA სამიზნე: ჯერ რაც გრაფაშია, მერე ბოლო დარეკილი */
+    /** ბოლოს დარეკილი ნომერი → SMS გრაფა */
+    function fillSmsWithLastCalled() {
+      if (S.last) {
+        $('sms-num').value = formatPhoneDisplay(S.last);
+        return;
+      }
+      const n = firstNumFromText() || '';
+      $('sms-num').value = n ? formatPhoneDisplay(n) : '';
+    }
+
+    /** SMS/WA: გრაფა, თუ ცარიელია — ბოლო დარეკილი */
     function getPhone() {
       const fromField = tel($('sms-num').value || '');
       if (fromField.replace(/\D/g, '').length >= 9) return fromField;
-      if (S.last && tel(S.last).replace(/\D/g, '').length >= 9) return tel(S.last);
-      return tel(getDialNum() || '');
+      return tel(S.last || '');
+    }
+
+    function setLastCalled(n) {
+      const v = tel(n || '');
+      if (!v) return;
+      S.last = v;
+      $('sms-num').value = formatPhoneDisplay(v);
     }
 
     function syncFromDial() {
-      const cur = $('sms-num').value.trim();
-      // ნუ გადააწერ იმას, რაც უკვე ჩაწერილია გრაფაში
-      if (cur && localDigitCount(cur) >= 9) {
-        S.last = tel(cur);
-        return;
-      }
-      const n = S.last || firstNumFromText() || '';
-      if (n) syncSmsNum(n);
+      fillSmsWithLastCalled();
     }
 
     function syncSmsNum(n) {
       const v = (n || '').trim();
-      if (v) S.last = v;
       $('sms-num').value = v ? formatPhoneDisplay(v) : '';
+      if (!v) S.last = '';
     }
 
     document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => goTab(b.dataset.v));
@@ -865,7 +875,6 @@
       if (!S.run || S.i >= S.q.length) { done(); return; }
       S.wait = true;
       highlightNumRow(S.i);
-      syncSmsNum(S.q[S.i]);
       setStatus('');
       dial(S.q[S.i]);
     }
@@ -885,7 +894,7 @@
     function dialFromList(raw) {
       const n = tel(raw);
       if (localDigitCount(n) < 9) return;
-      syncSmsNum(n);
+      setLastCalled(n);
       setStatus('');
       dial(n);
     }
@@ -920,7 +929,7 @@
       const n = S.q[S.i];
       S.called[normNum(n)] = 'called';
       markNumRows();
-      syncSmsNum(n);
+      setLastCalled(n);
       addHist(n);
       setStatus('');
       S.i++;
