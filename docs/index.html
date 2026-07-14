@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ავტოდაილერი v28</title>
+  <title>ავტოდაილერი v29</title>
   <link rel="manifest" href="manifest.json?v=27">
   <link rel="apple-touch-icon" href="apple-touch-icon.png?v=27">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=27">
@@ -413,7 +413,7 @@
 </head>
 <body>
   <div class="app">
-    <h1>ავტოდაილერი <span class="ver">v28</span></h1>
+    <h1>ავტოდაილერი <span class="ver">v29</span></h1>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
@@ -565,8 +565,7 @@
       if (v === 'sms') syncFromDial();
     }
 
-    const NUM_ROWS_START = 10;
-    const NUM_ROWS_STEP = 5;
+    const NUM_ROWS_START = 5;
 
     function getNumInputs() {
       return [...$('num-list').querySelectorAll('.num-inp')];
@@ -602,10 +601,8 @@
       }
     }
 
-    function ensureExtraRow() {
-      const inputs = getNumInputs();
-      const last = inputs[inputs.length - 1];
-      if (last?.value.trim()) renderNumRows(inputs.length + NUM_ROWS_STEP);
+    function addNextRow() {
+      renderNumRows(getNumInputs().length + 1);
     }
 
     function setNumsDisabled(on) {
@@ -620,7 +617,6 @@
     }
 
     function onNumsChange() {
-      ensureExtraRow();
       count();
       syncFromDial();
       saveNums();
@@ -644,8 +640,13 @@
         e.preventDefault();
         const inputs = getNumInputs();
         const i = inputs.indexOf(inp);
-        if (i >= 0 && i < inputs.length - 1) inputs[i + 1].focus();
-        else ensureExtraRow(), getNumInputs()[i + 1]?.focus();
+        if (i < 0) return;
+        if (i < inputs.length - 1) {
+          inputs[i + 1].focus();
+        } else {
+          addNextRow();
+          getNumInputs()[i + 1]?.focus();
+        }
       });
     }
 
@@ -727,7 +728,11 @@
       if (!pasted) return;
       const existing = getNumsRaw();
       const incoming = pasted.split(/[\n,;]+/).map(l => l.trim()).filter(Boolean);
-      setNumsFromList([...existing, ...incoming]);
+      const merged = [...existing, ...incoming];
+      const rows = Math.max(NUM_ROWS_START, merged.length + 1);
+      renderNumRows(rows);
+      getNumInputs().forEach((inp, i) => { inp.value = merged[i] || ''; });
+      onNumsChange();
       setStatus('ჩასმულია');
     }
 
