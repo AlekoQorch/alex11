@@ -1,8 +1,8 @@
 {
-  "name": "ავტოდაილერი",
-  "short_name": "ავტოდაილერი",
-  "description": "ავტომატური დარეკვა და SMS iPhone-ისთვის",
-  "start_url": "./index.html?v=27",
+  "name": "Cold Caller",
+  "short_name": "Cold Caller",
+  "description": "Cold calling and SMS for iPhone",
+  "start_url": "./index.html?v=59",
   "display": "standalone",
   "background_color": "#161618",
   "theme_color": "#161618",
