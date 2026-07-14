@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ავტოდაილერი v53</title>
+  <title>ავტოდაილერი v54</title>
   <link rel="manifest" href="manifest.json?v=27">
   <link rel="apple-touch-icon" href="apple-touch-icon.png?v=27">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=27">
@@ -432,7 +432,37 @@
     }
     .box .lbl { font-size: 13px; color: var(--dim); }
     .box .num { font-size: 21px; font-weight: 700; margin: 8px 0 18px; }
-    .box .go { width: 100%; margin-top: 8px; padding: 14px; border: none; border-radius: 10px; background: var(--green); color: #000; font-size: 16px; font-weight: 600; font-family: inherit; }
+    .box .tpl-btn {
+      width: 100%;
+      margin-top: 8px;
+      padding: 13px 12px;
+      border: 1.5px solid #4a4a50;
+      border-radius: 10px;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+      text-align: left;
+    }
+    .box .tpl-btn small {
+      display: block;
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--dim);
+    }
+    .box.tpl-picker {
+      max-height: 80vh;
+      overflow-y: auto;
+      text-align: left;
+    }
+    .box.tpl-picker .num { text-align: center; font-size: 18px; margin: 6px 0 4px; }
+    .box.tpl-picker .lbl { text-align: center; }
+    .box.tpl-picker .channel {
+      text-align: center;
+      font-size: 13px;
+      color: var(--blue);
+      margin-bottom: 8px;
+    }
     .box .go.btn-sms { background: var(--blue); color: #fff; }
     .box .go.btn-wa { background: #25d366; color: #fff; }
     .box .skip { width: 100%; margin-top: 8px; padding: 13px; border: 1px solid var(--line); border-radius: 10px; background: none; color: var(--dim); font-size: 15px; font-family: inherit; }
@@ -486,7 +516,7 @@
 </head>
 <body>
   <div class="app">
-    <h1>ავტოდაილერი <span class="ver">v53</span></h1>
+    <h1>ავტოდაილერი <span class="ver">v54</span></h1>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
@@ -546,6 +576,21 @@
       <p id="after-call-note"></p>
       <button class="go" id="after-call-next" type="button">დიახ, შემდეგი</button>
       <button class="skip" id="after-call-done" type="button">არა, დასრულება</button>
+    </div>
+  </div>
+
+  <div class="overlay hide" id="tpl-picker-modal">
+    <div class="box tpl-picker">
+      <div class="lbl">აირჩიე შაბლონი</div>
+      <div class="num" id="tpl-picker-num"></div>
+      <div class="channel" id="tpl-picker-channel">SMS</div>
+      <button type="button" class="tpl-btn" data-tpl="intro-ka">პატარა SMS<small>ქართული</small></button>
+      <button type="button" class="tpl-btn" data-tpl="intro-en">პატარა SMS<small>ინგლისური</small></button>
+      <button type="button" class="tpl-btn" data-tpl="intro-both">პატარა SMS<small>ორივე</small></button>
+      <button type="button" class="tpl-btn" data-tpl="noanswer">არ პასუხობს</button>
+      <button type="button" class="tpl-btn" data-tpl="tariff">ტარიფის დაანგარიშება</button>
+      <button type="button" class="tpl-btn" data-tpl="aldagi">სრული შეთავაზება</button>
+      <button type="button" class="skip" id="tpl-picker-cancel">გაუქმება</button>
     </div>
   </div>
 
@@ -621,6 +666,7 @@
     const langPick = { intro: 'ka' };
     const S = { q: [], i: 0, run: false, wait: false, last: '', called: {}, smsManual: false };
     const pendingSend = { num: '', msg: '', type: 'sms' };
+    const pendingTpl = { num: '', type: 'sms' };
 
     const $ = id => document.getElementById(id);
     const st = $('status');
@@ -852,7 +898,7 @@
           const num = tel(inp?.value || '');
           if (!num) return;
           const type = sendBtn.dataset.rowSend;
-          showSendConfirm(num, NO_ANSWER_MSG, type, type === 'wa' ? 'WhatsApp' : 'SMS');
+          showTemplatePicker(num, type);
           return;
         }
 
@@ -1101,6 +1147,36 @@
       location.href = 'https://wa.me/' + n + '?text=' + encodeURIComponent(msg);
     }
 
+    function showTemplatePicker(num, type) {
+      pendingTpl.num = tel(num || '');
+      pendingTpl.type = type === 'wa' ? 'wa' : 'sms';
+      $('tpl-picker-num').textContent = formatPhoneDisplay(num);
+      $('tpl-picker-channel').textContent = type === 'wa' ? 'WhatsApp' : 'SMS';
+      $('tpl-picker-modal').classList.remove('hide');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function hideTemplatePicker() {
+      $('tpl-picker-modal').classList.add('hide');
+      document.body.style.overflow = '';
+    }
+
+    function pickTemplate(tpl) {
+      const num = pendingTpl.num;
+      const type = pendingTpl.type;
+      let msg = '';
+      let title = '';
+      if (tpl === 'intro-ka') { msg = introMsg('ka'); title = 'პატარა SMS (ქართული)'; }
+      else if (tpl === 'intro-en') { msg = introMsg('en'); title = 'პატარა SMS (ინგლისური)'; }
+      else if (tpl === 'intro-both') { msg = introMsg('both'); title = 'პატარა SMS (ორივე)'; }
+      else if (tpl === 'noanswer') { msg = NO_ANSWER_MSG; title = 'არ პასუხობს'; }
+      else if (tpl === 'tariff') { msg = TARIFF_MSG; title = 'ტარიფის დაანგარიშება'; }
+      else if (tpl === 'aldagi') { msg = buildAldagiMsg(); title = 'სრული შეთავაზება'; }
+      else return;
+      hideTemplatePicker();
+      showSendConfirm(num, msg, type, title);
+    }
+
     function showSendConfirm(num, msg, type, title) {
       pendingSend.num = num ? tel(num) : '';
       pendingSend.msg = msg;
@@ -1288,6 +1364,15 @@ ${ALDAGI_TAIL}`;
     $('send-go').onclick = confirmSend;
     $('send-cancel').onclick = closeSendModal;
     $('send-modal').onclick = e => { if (e.target === $('send-modal')) closeSendModal(); };
+    $('tpl-picker-cancel').onclick = hideTemplatePicker;
+    $('tpl-picker-modal').onclick = e => {
+      if (e.target === $('tpl-picker-modal')) hideTemplatePicker();
+      const tplBtn = e.target.closest('[data-tpl]');
+      if (tplBtn) {
+        e.preventDefault();
+        pickTemplate(tplBtn.dataset.tpl);
+      }
+    };
     $('perm-allow').onclick = () => {
       $('perm-modal').classList.add('hide');
       if ('Notification' in window) Notification.requestPermission();
@@ -1319,7 +1404,7 @@ ${ALDAGI_TAIL}`;
       const num = tel(row?.dataset.num || '');
       if (!num) return;
       const type = btn.dataset.histSend;
-      showSendConfirm(num, NO_ANSWER_MSG, type, type === 'wa' ? 'WhatsApp' : 'SMS');
+      showTemplatePicker(num, type);
     });
 
     document.addEventListener('visibilitychange', () => {
