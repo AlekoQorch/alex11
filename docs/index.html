@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ავტოდაილერი v55</title>
+  <title>ავტოდაილერი v56</title>
   <link rel="manifest" href="manifest.json?v=27">
   <link rel="apple-touch-icon" href="apple-touch-icon.png?v=27">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=27">
@@ -437,6 +437,18 @@
     }
     .box .lbl { font-size: 13px; color: var(--dim); }
     .box .num { font-size: 21px; font-weight: 700; margin: 8px 0 18px; }
+    .box .go {
+      width: 100%;
+      margin-top: 8px;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      background: var(--green);
+      color: #000;
+      font-size: 16px;
+      font-weight: 600;
+      font-family: inherit;
+    }
     .box .tpl-btn {
       width: 100%;
       margin-top: 8px;
@@ -521,7 +533,7 @@
 </head>
 <body>
   <div class="app">
-    <h1>ავტოდაილერი <span class="ver">v55</span></h1>
+    <h1>ავტოდაილერი <span class="ver">v56</span></h1>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
@@ -1246,7 +1258,8 @@
     function showAfterCall(n) {
       $('after-call-num').textContent = formatPhoneDisplay(n);
       $('after-call-num').dataset.raw = tel(n);
-      $('after-call-note').textContent = 'გადავიდეთ შემდეგზე?';
+      $('after-call-note').textContent = '';
+      $('after-call-note').classList.add('hide');
       const hasNext = S.run && S.i < S.q.length;
       $('after-call-next').classList.toggle('hide', !hasNext);
       $('after-call-done').classList.toggle('hide', false);
