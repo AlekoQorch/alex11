@@ -92,18 +92,7 @@
       min-height: auto;
     }
     #status.work { color: var(--green); }
-    #ios-note {
-      font-size: 13px;
-      color: #fff;
-      background: linear-gradient(135deg, #1a6b3c 0%, #0d4d8c 100%);
-      padding: 12px 14px;
-      line-height: 1.45;
-      border-radius: 12px;
-      margin-bottom: 10px;
-      border: 1px solid rgba(255,255,255,0.15);
-    }
-    #ios-note b { color: #ffe082; }
-    #ios-note a { color: #fff; font-weight: 600; text-decoration: underline; }
+    #ios-note { display: none !important; }
 
     textarea, input {
       width: 100%;
@@ -473,7 +462,7 @@
     </div>
 
     <div class="body">
-      <div id="ios-note" class="hide">📱 <b>iOS აპი</b> — Calling/მიპასუხეს ავტომატურად ხედავს (CallKit). Safari/PWA ამას ვერ აკეთებს.<br><a href="https://github.com/AlekoQorch/alex11#-ios-აპი-callkit" target="_blank" rel="noopener">→ Xcode-ით დააყენე AutoDialerSMS</a></div>
+      <div id="ios-note" class="hide"></div>
       <div id="status">ჩასვი ნომრები და დააჭირე დაწყებას</div>
 
       <div class="page on" id="p-dial">
@@ -514,7 +503,7 @@
   <div class="overlay hide" id="perm-modal">
     <div class="box">
       <div class="lbl">ნებართვები</div>
-      <p>შეტყობინებების ნება საჭიროა ზარის შედეგისთვის. <b>Calling / მიპასუხეს</b> — მხოლოდ iOS აპში (CallKit).</p>
+      <p>შეტყობინებების ნება საჭიროა ზარის შედეგისთვის. ზარის შემდეგ აირჩიე: არ მიპასუხეს / მიპასუხეს.</p>
       <button class="go" id="perm-allow" type="button">Allow შეტყობინებები</button>
       <button class="skip" id="perm-skip" type="button">გამოტოვება</button>
     </div>
