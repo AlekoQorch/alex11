@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ავტოდაილერი v32</title>
+  <title>ავტოდაილერი v33</title>
   <link rel="manifest" href="manifest.json?v=27">
   <link rel="apple-touch-icon" href="apple-touch-icon.png?v=27">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=27">
@@ -128,8 +128,21 @@
       min-height: 40px;
     }
     .num-row:last-child { border-bottom: none; }
-    .num-row.on { background: #1a2a3a; }
-    .num-row.done { opacity: 0.45; }
+    .num-row.on { background: #1a2a3a; border-left: 3px solid var(--blue); padding-left: 7px; }
+    .num-row.done-ok { background: rgba(50, 215, 75, 0.08); }
+    .num-row.done-ok .num-inp { color: var(--green); }
+    .num-row.done-miss { opacity: 0.55; }
+    .num-row.done-miss .num-inp { color: var(--dim); }
+    .num-mark {
+      flex-shrink: 0;
+      width: 22px;
+      font-size: 14px;
+      text-align: center;
+      color: var(--dim);
+    }
+    .num-row.done-ok .num-mark { color: var(--green); }
+    .num-row.done-miss .num-mark { color: var(--red); }
+    .num-row.on .num-mark { color: var(--blue); }
     .num-lbl {
       flex-shrink: 0;
       width: 22px;
@@ -415,7 +428,7 @@
 </head>
 <body>
   <div class="app">
-    <h1>ავტოდაილერი <span class="ver">v32</span></h1>
+    <h1>ავტოდაილერი <span class="ver">v33</span></h1>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
@@ -548,7 +561,7 @@
 
     const langPick = { intro: 'ka' };
     const TOUT = 30;
-    const S = { q: [], i: 0, run: false, t0: null, ti: null, wait: false, to: false, last: '' };
+    const S = { q: [], i: 0, run: false, t0: null, ti: null, wait: false, to: false, last: '', called: {} };
     const pendingSend = { num: '', msg: '', type: 'sms' };
 
     const $ = id => document.getElementById(id);
@@ -596,12 +609,29 @@
       for (let i = 0; i < count; i++) {
         const row = document.createElement('div');
         row.className = 'num-row';
-        row.innerHTML = `<span class="num-lbl">${i + 1}.</span><input class="num-inp" type="tel" inputmode="tel" autocomplete="off" spellcheck="false" placeholder="ნომერი">`;
+        row.innerHTML = `<span class="num-lbl">${i + 1}.</span><input class="num-inp" type="tel" inputmode="tel" autocomplete="off" spellcheck="false" placeholder="ნომერი"><span class="num-mark"></span>`;
         const inp = row.querySelector('.num-inp');
         inp.value = cur[i] || '';
         list.appendChild(row);
       }
       if (activeIdx >= 0) getNumInputs()[activeIdx]?.focus();
+      markNumRows();
+    }
+
+    function normNum(n) {
+      return tel((n || '').trim().replace(/[\s\-()]/g, ''));
+    }
+
+    function markNumRows() {
+      $('num-list').querySelectorAll('.num-row').forEach(row => {
+        const inp = row.querySelector('.num-inp');
+        const st = S.called[normNum(inp?.value || '')];
+        row.classList.toggle('on', st === 'active');
+        row.classList.toggle('done-ok', st === 'ok');
+        row.classList.toggle('done-miss', st === 'miss');
+        const mark = row.querySelector('.num-mark');
+        if (mark) mark.textContent = st === 'ok' ? '✓' : st === 'miss' ? '✗' : st === 'active' ? '→' : '';
+      });
     }
 
     function addNextRow(focusIdx) {
@@ -619,10 +649,8 @@
     }
 
     function highlightNumRow(idx) {
-      $('num-list').querySelectorAll('.num-row').forEach((row, i) => {
-        row.classList.toggle('on', S.run && i === idx);
-        row.classList.toggle('done', S.run && i < idx);
-      });
+      if (S.run && idx >= 0 && S.q[idx]) S.called[normNum(S.q[idx])] = 'active';
+      markNumRows();
     }
 
     function onNumsChange() {
@@ -725,7 +753,7 @@
     function start() {
       S.q = parse(getNumsText());
       if (!S.q.length) { setStatus('შეიყვანე ნომერი'); return; }
-      S.i = 0; S.run = true;
+      S.i = 0; S.run = true; S.called = {};
       $('start').classList.add('hide');
       $('stop').classList.remove('hide');
       setNumsDisabled(true);
@@ -762,6 +790,8 @@
       const n = S.q[S.i];
       const sec = S.t0 ? (Date.now() - S.t0) / 1000 : 0;
       const ok = sec > 8 && sec < TOUT;
+      S.called[normNum(n)] = ok ? 'ok' : 'miss';
+      markNumRows();
       syncSmsNum(n);
       addHist(n, ok ? 'მიპასუხეს' : 'არ მიპასუხეს');
       setStatus(ok ? `${n} — მიპასუხეს` : `${n} — არ მიპასუხეს`);
@@ -779,7 +809,7 @@
       $('start').classList.remove('hide');
       $('stop').classList.add('hide');
       setNumsDisabled(false);
-      highlightNumRow(-1);
+      markNumRows();
       $('after-call-modal').classList.add('hide');
       $('time-modal').classList.add('hide');
     }
@@ -1015,6 +1045,7 @@ ${ALDAGI_TAIL}`;
       } catch { setStatus('ჩასმა ვერ მოხერხდა'); }
     };
     $('clear').onclick = () => {
+      S.called = {};
       setNumsFromList([]);
       syncSmsNum('');
       localStorage.removeItem('nums');
