@@ -11,7 +11,7 @@ struct PermissionsOnboardingView: View {
                 .font(.system(size: 56))
                 .foregroundStyle(.green)
 
-            Text("ავტოდაილერი")
+            Text("Cold Caller")
                 .font(.title.bold())
 
             Text("აპი ზარის სტატუსს ხედავს CallKit-ით:\nირეკება → მიპასუხეს → დასრულდა")

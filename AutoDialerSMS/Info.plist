@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>ka</string>
 	<key>CFBundleDisplayName</key>
-	<string>ავტოდაილერი</string>
+	<string>Cold Caller</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
