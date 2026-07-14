@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ავტოდაილერი v33</title>
+  <title>ავტოდაილერი v34</title>
   <link rel="manifest" href="manifest.json?v=27">
   <link rel="apple-touch-icon" href="apple-touch-icon.png?v=27">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=27">
@@ -129,10 +129,10 @@
     }
     .num-row:last-child { border-bottom: none; }
     .num-row.on { background: #1a2a3a; border-left: 3px solid var(--blue); padding-left: 7px; }
-    .num-row.done-ok { background: rgba(50, 215, 75, 0.08); }
-    .num-row.done-ok .num-inp { color: var(--green); }
-    .num-row.done-miss { opacity: 0.55; }
-    .num-row.done-miss .num-inp { color: var(--dim); }
+    .num-row.called .num-inp {
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
     .num-mark {
       flex-shrink: 0;
       width: 22px;
@@ -140,8 +140,7 @@
       text-align: center;
       color: var(--dim);
     }
-    .num-row.done-ok .num-mark { color: var(--green); }
-    .num-row.done-miss .num-mark { color: var(--red); }
+    .num-row.called .num-mark { color: var(--green); }
     .num-row.on .num-mark { color: var(--blue); }
     .num-lbl {
       flex-shrink: 0;
@@ -359,6 +358,33 @@
       font-family: inherit;
     }
 
+    .call-active-bar {
+      position: fixed;
+      left: 0; right: 0;
+      bottom: calc(var(--bar) + env(safe-area-inset-bottom));
+      padding: 10px 16px;
+      background: #1a2a3a;
+      border-top: 1px solid var(--blue);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      z-index: 40;
+      font-size: 14px;
+      color: var(--text);
+    }
+    .call-active-bar button {
+      flex-shrink: 0;
+      padding: 10px 14px;
+      border: none;
+      border-radius: 8px;
+      background: var(--green);
+      color: #000;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+    }
+
     .overlay {
       position: fixed; inset: 0;
       background: rgba(0,0,0,.75);
@@ -428,7 +454,7 @@
 </head>
 <body>
   <div class="app">
-    <h1>ავტოდაილერი <span class="ver">v33</span></h1>
+    <h1>ავტოდაილერი <span class="ver">v34</span></h1>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
@@ -464,6 +490,11 @@
         <div id="hist"><p class="empty">ცარიელია</p></div>
       </div>
     </div>
+  </div>
+
+  <div class="call-active-bar hide" id="call-active-bar">
+    <span id="call-active-txt">ზარი მიმდინარეობს</span>
+    <button id="call-ended" type="button">ზარი დასრულდა</button>
   </div>
 
   <div class="bar" id="action-bar">
@@ -562,6 +593,7 @@
     const langPick = { intro: 'ka' };
     const TOUT = 30;
     const S = { q: [], i: 0, run: false, t0: null, ti: null, wait: false, to: false, last: '', called: {} };
+    let returnTimer = null;
     const pendingSend = { num: '', msg: '', type: 'sms' };
 
     const $ = id => document.getElementById(id);
@@ -627,10 +659,9 @@
         const inp = row.querySelector('.num-inp');
         const st = S.called[normNum(inp?.value || '')];
         row.classList.toggle('on', st === 'active');
-        row.classList.toggle('done-ok', st === 'ok');
-        row.classList.toggle('done-miss', st === 'miss');
+        row.classList.toggle('called', st === 'called');
         const mark = row.querySelector('.num-mark');
-        if (mark) mark.textContent = st === 'ok' ? '✓' : st === 'miss' ? '✗' : st === 'active' ? '→' : '';
+        if (mark) mark.textContent = st === 'called' ? '✓' : st === 'active' ? '→' : '';
       });
     }
 
@@ -783,14 +814,39 @@
       dial(S.q[S.i]);
     }
 
+    function showCallActiveBar() {
+      $('call-active-txt').textContent = `ზარი მიმდინარეობს: ${S.q[S.i]}`;
+      $('call-active-bar').classList.remove('hide');
+      setStatus(`ირეკება: ${S.q[S.i]} · ზარი მიმდინარეობს`, true);
+    }
+
+    function hideCallActiveBar() {
+      $('call-active-bar').classList.add('hide');
+    }
+
+    function onAppVisible() {
+      if (!S.run || !S.wait) return;
+      clearTimeout(returnTimer);
+      const elapsed = (Date.now() - S.t0) / 1000;
+      if (elapsed < 8) {
+        returnTimer = setTimeout(() => {
+          if (S.wait && document.visibilityState === 'visible') returned();
+        }, 400);
+      } else {
+        showCallActiveBar();
+      }
+    }
+
     function returned() {
       if (!S.run || !S.wait) return;
+      clearTimeout(returnTimer);
+      hideCallActiveBar();
       S.wait = false;
       timer(false);
       const n = S.q[S.i];
       const sec = S.t0 ? (Date.now() - S.t0) / 1000 : 0;
       const ok = sec > 8 && sec < TOUT;
-      S.called[normNum(n)] = ok ? 'ok' : 'miss';
+      S.called[normNum(n)] = 'called';
       markNumRows();
       syncSmsNum(n);
       addHist(n, ok ? 'მიპასუხეს' : 'არ მიპასუხეს');
@@ -809,6 +865,7 @@
       $('start').classList.remove('hide');
       $('stop').classList.add('hide');
       setNumsDisabled(false);
+      hideCallActiveBar();
       markNumRows();
       $('after-call-modal').classList.add('hide');
       $('time-modal').classList.add('hide');
@@ -1033,6 +1090,7 @@ ${ALDAGI_TAIL}`;
     $('send-go').onclick = confirmSend;
     $('send-cancel').onclick = closeSendModal;
     $('send-modal').onclick = e => { if (e.target === $('send-modal')) closeSendModal(); };
+    $('call-ended').onclick = returned;
     $('time-ok').onclick = () => $('time-modal').classList.add('hide');
     function saveNums() {
       localStorage.setItem('nums', getNumsText());
@@ -1053,9 +1111,14 @@ ${ALDAGI_TAIL}`;
     $('clr-hist').onclick = () => { localStorage.removeItem('hist'); showHist(); };
 
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') setTimeout(returned, 400);
+      if (document.visibilityState === 'hidden') {
+        clearTimeout(returnTimer);
+        hideCallActiveBar();
+      } else {
+        onAppVisible();
+      }
     });
-    window.addEventListener('pageshow', e => { if (e.persisted) setTimeout(returned, 400); });
+    window.addEventListener('pageshow', e => { if (e.persisted) onAppVisible(); });
     if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then(r => r.forEach(x => x.unregister()));
 
     const saved = localStorage.getItem('nums');
