@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ავტოდაილერი v49</title>
+  <title>ავტოდაილერი v50</title>
   <link rel="manifest" href="manifest.json?v=27">
   <link rel="apple-touch-icon" href="apple-touch-icon.png?v=27">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=27">
@@ -461,7 +461,7 @@
 </head>
 <body>
   <div class="app">
-    <h1>ავტოდაილერი <span class="ver">v49</span></h1>
+    <h1>ავტოდაილერი <span class="ver">v50</span></h1>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
@@ -768,6 +768,18 @@
       getNumInputs()[i + 1]?.focus();
     }
 
+    /** ცარიელ ხაზზე Backspace → წინა ხაზზე ასვლა და იქიდან წაშლა */
+    function focusPrevRow(inp) {
+      const inputs = getNumInputs();
+      const i = inputs.indexOf(inp);
+      if (i <= 0) return false;
+      const prev = inputs[i - 1];
+      prev.focus();
+      const len = prev.value.length;
+      try { prev.setSelectionRange(len, len); } catch {}
+      return true;
+    }
+
     function initNumList() {
       renderNumRows(NUM_ROWS_START);
       $('num-list').addEventListener('input', e => {
@@ -783,9 +795,22 @@
       });
       $('num-list').addEventListener('keydown', e => {
         const inp = e.target.closest('.num-inp');
-        if (!inp || e.key !== 'Enter') return;
-        e.preventDefault();
-        focusNextRow(inp);
+        if (!inp) return;
+
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          focusNextRow(inp);
+          return;
+        }
+
+        if (e.key === 'Backspace') {
+          const empty = !inp.value.trim();
+          const atStart = (inp.selectionStart ?? 0) === 0 && (inp.selectionEnd ?? 0) === 0;
+          if (empty && atStart) {
+            e.preventDefault();
+            focusPrevRow(inp);
+          }
+        }
       });
       $('num-list').addEventListener('click', e => {
         const sendBtn = e.target.closest('[data-row-send]');
