@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ავტოდაილერი v42</title>
+  <title>ავტოდაილერი v43</title>
   <link rel="manifest" href="manifest.json?v=27">
   <link rel="apple-touch-icon" href="apple-touch-icon.png?v=27">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=27">
@@ -143,6 +143,30 @@
     }
     .num-row.called .num-mark { color: var(--green); }
     .num-row.on .num-mark { color: var(--blue); }
+    .num-row-actions {
+      display: none;
+      flex-shrink: 0;
+      gap: 4px;
+      align-items: center;
+    }
+    .num-row.called .num-row-actions { display: flex; }
+    .num-row-actions button {
+      border: none;
+      border-radius: 6px;
+      padding: 5px 8px;
+      font-size: 11px;
+      font-family: inherit;
+      font-weight: 600;
+      color: #fff;
+      background: var(--blue);
+      line-height: 1.2;
+    }
+    .num-row-actions button.row-wa {
+      background: #25d366;
+    }
+    .num-row-actions button:disabled {
+      opacity: 0.45;
+    }
     .num-lbl {
       flex-shrink: 0;
       width: 22px;
@@ -456,7 +480,7 @@
 </head>
 <body>
   <div class="app">
-    <h1>ავტოდაილერი <span class="ver">v42</span></h1>
+    <h1>ავტოდაილერი <span class="ver">v43</span></h1>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
@@ -522,7 +546,6 @@
       <div class="lbl">ზარი დასრულდა</div>
       <div class="num" id="after-call-num"></div>
       <p id="after-call-note"></p>
-      <button class="go btn-sms" id="after-call-sms" type="button">SMS გაგზავნა</button>
       <button class="go" id="after-call-next" type="button">შემდეგი ნომერი</button>
       <button class="skip" id="after-call-done" type="button">დასრულება</button>
     </div>
@@ -532,7 +555,7 @@
     <div class="send-modal-inner">
       <div class="sms-card send-confirm-card">
         <h3 id="send-title">გაგზავნა</h3>
-        <p class="send-ask">ნამდვილად გსურთ გაგზავნა?</p>
+        <p class="send-ask">ნამდვილად გსურთ ამ ნომერზე გაგზავნა?</p>
         <span class="field-label">ნომერი</span>
         <div class="send-to" id="send-num"></div>
         <span class="field-label">ტექსტი</span>
@@ -545,11 +568,13 @@
     </div>
   </div>
 
-  <div class="overlay hide" id="time-modal">
+  <div class="overlay hide" id="dial-cancel-modal">
     <div class="box">
-      <div class="num">30 წამი გავიდა</div>
-      <p>გათიშე ზარი და დაბრუნდი აპში</p>
-      <button class="go" id="time-ok" type="button">კარგი</button>
+      <div class="lbl">ზარი გაუქმდა</div>
+      <p>Cancel დააჭირე — დარეკვა არ მოხდა</p>
+      <button class="go" id="dial-cancel-retry" type="button">თავიდან დარეკვა</button>
+      <button class="go" id="dial-cancel-next" type="button">შემდეგი ნომერი</button>
+      <button class="skip" id="dial-cancel-stop" type="button">გაჩერება</button>
     </div>
   </div>
 
@@ -607,6 +632,8 @@
 
     const langPick = { intro: 'ka' };
     const S = { q: [], i: 0, run: false, wait: false, last: '', called: {} };
+    let dialLeftApp = false;
+    let dialCancelTimer = null;
     const pendingSend = { num: '', msg: '', type: 'sms' };
 
     const $ = id => document.getElementById(id);
@@ -675,7 +702,7 @@
       for (let i = 0; i < count; i++) {
         const row = document.createElement('div');
         row.className = 'num-row';
-        row.innerHTML = `<span class="num-lbl">${i + 1}.</span><input class="num-inp" type="tel" inputmode="tel" autocomplete="off" spellcheck="false" placeholder="ნომერი"><span class="num-mark"></span>`;
+        row.innerHTML = `<span class="num-lbl">${i + 1}.</span><input class="num-inp" type="tel" inputmode="tel" autocomplete="off" spellcheck="false" placeholder="ნომერი"><span class="num-row-actions"><button type="button" class="row-sms" data-row-send="sms">SMS</button><button type="button" class="row-wa" data-row-send="wa">WA</button></span><span class="num-mark"></span>`;
         const inp = row.querySelector('.num-inp');
         inp.value = cur[i] || '';
         list.appendChild(row);
@@ -771,6 +798,18 @@
         e.preventDefault();
         focusNextRow(inp);
       });
+      $('num-list').addEventListener('click', e => {
+        const btn = e.target.closest('[data-row-send]');
+        if (!btn) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const row = btn.closest('.num-row');
+        const inp = row?.querySelector('.num-inp');
+        const num = tel(inp?.value || '');
+        if (!num) return;
+        const type = btn.dataset.rowSend;
+        showSendConfirm(num, NO_ANSWER_MSG, type, type === 'wa' ? 'WhatsApp' : 'SMS');
+      });
     }
 
     function firstNumFromText() {
@@ -828,6 +867,7 @@
 
     function call() {
       if (!S.run || S.i >= S.q.length) { done(); return; }
+      hideDialCancelModal();
       S.wait = true;
       hideCallActiveBar();
       highlightNumRow(S.i);
@@ -849,7 +889,38 @@
       if (S.run && S.wait) showCallActiveBar();
     }
 
-    function dial(n) { location.href = 'tel:' + tel(n); }
+    function dial(n) {
+      clearTimeout(dialCancelTimer);
+      dialLeftApp = false;
+      const onVis = () => {
+        if (document.visibilityState === 'hidden') dialLeftApp = true;
+      };
+      document.addEventListener('visibilitychange', onVis);
+      location.href = 'tel:' + tel(n);
+      dialCancelTimer = setTimeout(() => {
+        document.removeEventListener('visibilitychange', onVis);
+        if (!dialLeftApp && document.visibilityState === 'visible' && S.wait && S.run) {
+          handleDialCancelled();
+        }
+      }, 1200);
+    }
+
+    function handleDialCancelled() {
+      if (!S.run || !S.wait) return;
+      S.wait = false;
+      hideCallActiveBar();
+      const n = S.q[S.i];
+      if (n && S.called[normNum(n)] === 'active') delete S.called[normNum(n)];
+      markNumRows();
+      setStatus('გაუქმებულია');
+      const hasNext = S.i < S.q.length - 1;
+      $('dial-cancel-next').classList.toggle('hide', !hasNext);
+      $('dial-cancel-modal').classList.remove('hide');
+    }
+
+    function hideDialCancelModal() {
+      $('dial-cancel-modal').classList.add('hide');
+    }
 
     function start() {
       S.q = parse(getNumsText());
@@ -900,6 +971,7 @@
       $('stop').classList.add('hide');
       setNumsDisabled(false);
       hideCallActiveBar();
+      hideDialCancelModal();
       markNumRows();
       $('after-call-modal').classList.add('hide');
       $('time-modal').classList.add('hide');
@@ -913,6 +985,7 @@
     }
 
     function stopAll() {
+      clearTimeout(dialCancelTimer);
       S.run = false; S.wait = false;
       reset();
       setStatus('გაჩერებულია');
@@ -1119,9 +1192,23 @@ ${ALDAGI_TAIL}`;
 
     $('start').onclick = start;
     $('stop').onclick = stopAll;
-    $('after-call-sms').onclick = () => showSendConfirm($('after-call-num').dataset.raw || $('after-call-num').textContent, NO_ANSWER_MSG, 'sms', 'არ პასუხობს');
     $('after-call-next').onclick = goNextCall;
     $('after-call-done').onclick = () => { $('after-call-modal').classList.add('hide'); done(); };
+    $('dial-cancel-retry').onclick = () => {
+      hideDialCancelModal();
+      if (S.run) call();
+    };
+    $('dial-cancel-next').onclick = () => {
+      hideDialCancelModal();
+      if (!S.run) return;
+      S.i++;
+      if (S.i < S.q.length) call();
+      else done();
+    };
+    $('dial-cancel-stop').onclick = () => {
+      hideDialCancelModal();
+      stopAll();
+    };
     $('send-go').onclick = confirmSend;
     $('send-cancel').onclick = closeSendModal;
     $('send-modal').onclick = e => { if (e.target === $('send-modal')) closeSendModal(); };
