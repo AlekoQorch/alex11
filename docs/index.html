@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ავტოდაილერი v35</title>
+  <title>ავტოდაილერი v36</title>
   <link rel="manifest" href="manifest.json?v=27">
   <link rel="apple-touch-icon" href="apple-touch-icon.png?v=27">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=27">
@@ -454,7 +454,7 @@
 </head>
 <body>
   <div class="app">
-    <h1>ავტოდაილერი <span class="ver">v35</span></h1>
+    <h1>ავტოდაილერი <span class="ver">v36</span></h1>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
@@ -592,7 +592,7 @@
 
     const langPick = { intro: 'ka' };
     const TOUT = 30;
-    const S = { q: [], i: 0, run: false, t0: null, ti: null, wait: false, to: false, last: '', called: {} };
+    const S = { q: [], i: 0, run: false, t0: null, ti: null, wait: false, to: false, last: '', called: {}, answered: false, hiddenAt: null, phoneMs: 0 };
     let returnTimer = null;
     const pendingSend = { num: '', msg: '', type: 'sms' };
 
@@ -614,6 +614,7 @@
 
     const NUM_ROWS_START = 5;
     const SHORT_CALL = 6;
+    const ANSWER_MS = 12000;
 
     function getNumInputs() {
       return [...$('num-list').querySelectorAll('.num-inp')];
@@ -773,18 +774,39 @@
       return S.t0 ? (Date.now() - S.t0) / 1000 : 0;
     }
 
+    function phoneTimeMs() {
+      let ms = S.phoneMs;
+      if (S.hiddenAt) ms += Date.now() - S.hiddenAt;
+      return ms;
+    }
+
+    function resetCallTrack() {
+      S.answered = false;
+      S.hiddenAt = null;
+      S.phoneMs = 0;
+    }
+
+    function checkAnswered() {
+      if (phoneTimeMs() >= ANSWER_MS) S.answered = true;
+      return S.answered;
+    }
+
     function timer(on) {
       clearInterval(S.ti);
       if (!on) return;
       S.t0 = Date.now(); S.to = false;
       S.ti = setInterval(() => {
+        checkAnswered();
         const sec = callElapsed();
         const left = TOUT - sec;
-        if (left > 0) setStatus(`ირეკება ${S.i + 1}/${S.q.length} · ${S.q[S.i]} · ${Math.ceil(left)} წმ`, true);
-        else if (!S.to) {
+        const n = S.q[S.i];
+        if (left > 0) {
+          if (S.answered) setStatus(`${n} · მიპასუხეს · ${Math.ceil(left)} წმ`, true);
+          else setStatus(`${n} · ირეკება... · ${Math.ceil(left)} წმ`, true);
+        } else if (!S.to) {
           S.to = true;
-          if (sec < SHORT_CALL) $('time-modal').classList.remove('hide');
-          else if (S.wait) showCallActiveBar();
+          if (!S.answered && sec < SHORT_CALL) $('time-modal').classList.remove('hide');
+          else if (S.wait && S.answered) showCallActiveBar();
         }
       }, 500);
     }
@@ -818,6 +840,7 @@
     function call() {
       if (!S.run || S.i >= S.q.length) { done(); return; }
       S.wait = true;
+      resetCallTrack();
       highlightNumRow(S.i);
       syncSmsNum(S.q[S.i]);
       timer(true);
@@ -825,38 +848,54 @@
     }
 
     function showCallActiveBar() {
-      $('call-active-txt').textContent = `ზარი მიმდინარეობს: ${S.q[S.i]}`;
+      $('call-active-txt').textContent = `მიპასუხეს: ${S.q[S.i]}`;
       $('call-active-bar').classList.remove('hide');
-      setStatus(`ირეკება: ${S.q[S.i]} · ზარი მიმდინარეობს`, true);
+      setStatus(`${S.q[S.i]} · მიპასუხეს · ზარი მიმდინარეობს`, true);
     }
 
     function hideCallActiveBar() {
       $('call-active-bar').classList.add('hide');
     }
 
+    function onAppHidden() {
+      clearTimeout(returnTimer);
+      hideCallActiveBar();
+      if (S.wait && !S.hiddenAt) S.hiddenAt = Date.now();
+    }
+
     function onAppVisible() {
       if (!S.run || !S.wait) return;
       clearTimeout(returnTimer);
-      const elapsed = callElapsed();
-      if (elapsed < SHORT_CALL) {
-        returnTimer = setTimeout(() => {
-          if (S.wait && document.visibilityState === 'visible') returned(true);
-        }, 1000);
-      } else {
-        showCallActiveBar();
+      if (S.hiddenAt) {
+        S.phoneMs += Date.now() - S.hiddenAt;
+        S.hiddenAt = null;
       }
+      checkAnswered();
+      if (S.answered) {
+        showCallActiveBar();
+        return;
+      }
+      const n = S.q[S.i];
+      setStatus(`${n} · ირეკება...`, true);
+      returnTimer = setTimeout(() => {
+        if (S.wait && document.visibilityState === 'visible' && !checkAnswered()) returned(true);
+      }, 1500);
     }
 
     function returned(isAuto) {
       if (!S.run || !S.wait) return;
-      const sec = callElapsed();
-      if (isAuto && sec >= SHORT_CALL) return;
+      if (S.hiddenAt) {
+        S.phoneMs += Date.now() - S.hiddenAt;
+        S.hiddenAt = null;
+      }
+      checkAnswered();
+      if (isAuto && S.answered) return;
       clearTimeout(returnTimer);
       hideCallActiveBar();
       S.wait = false;
       timer(false);
       const n = S.q[S.i];
-      const ok = !isAuto && sec > 5;
+      const ok = S.answered;
       S.called[normNum(n)] = 'called';
       markNumRows();
       syncSmsNum(n);
@@ -864,8 +903,8 @@
       setStatus(ok ? `${n} — მიპასუხეს` : `${n} — არ მიპასუხეს`);
       S.i++;
       if (S.run) {
-        if (isAuto) showAfterCall(n, false);
-        else showAfterCall(n, ok);
+        if (isAuto && !ok) showAfterCall(n, false);
+        else if (!isAuto || ok) showAfterCall(n, ok);
       }
     }
 
@@ -1126,12 +1165,8 @@ ${ALDAGI_TAIL}`;
     $('clr-hist').onclick = () => { localStorage.removeItem('hist'); showHist(); };
 
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') {
-        clearTimeout(returnTimer);
-        hideCallActiveBar();
-      } else {
-        onAppVisible();
-      }
+      if (document.visibilityState === 'hidden') onAppHidden();
+      else onAppVisible();
     });
     window.addEventListener('pageshow', e => { if (e.persisted) onAppVisible(); });
     if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then(r => r.forEach(x => x.unregister()));
