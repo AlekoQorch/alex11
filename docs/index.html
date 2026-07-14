@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#161618">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>ავტოდაილერი v48</title>
+  <title>ავტოდაილერი v49</title>
   <link rel="manifest" href="manifest.json?v=27">
   <link rel="apple-touch-icon" href="apple-touch-icon.png?v=27">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=27">
@@ -130,6 +130,8 @@
     }
     .num-row:last-child { border-bottom: none; }
     .num-row.on { background: #1a2a3a; border-left: 3px solid var(--blue); padding-left: 7px; }
+    .num-list.running .num-row { cursor: pointer; }
+    .num-list.running .num-row .num-inp { pointer-events: none; }
     .num-row.called .num-inp {
       text-decoration: underline;
       text-underline-offset: 3px;
@@ -459,7 +461,7 @@
 </head>
 <body>
   <div class="app">
-    <h1>ავტოდაილერი <span class="ver">v48</span></h1>
+    <h1>ავტოდაილერი <span class="ver">v49</span></h1>
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
@@ -698,11 +700,38 @@
 
     function setNumsDisabled(on) {
       getNumInputs().forEach(i => { i.disabled = on; });
+      $('num-list').classList.toggle('running', !!on);
+    }
+
+    function clearActiveMarks() {
+      Object.keys(S.called).forEach(k => {
+        if (S.called[k] === 'active') delete S.called[k];
+      });
     }
 
     function highlightNumRow(idx) {
+      clearActiveMarks();
       if (S.run && idx >= 0 && S.q[idx]) S.called[normNum(S.q[idx])] = 'active';
       markNumRows();
+    }
+
+    /** დაწყების შემდეგ ნომერზე თითი → ლურჯი + იქიდან გაგრძელება */
+    function jumpToNumberAndContinue(raw) {
+      const n = tel(raw);
+      if (localDigitCount(n) < 9) return;
+      S.q = parse(getNumsText());
+      const idx = S.q.findIndex(x => normNum(x) === normNum(n));
+      if (idx < 0) return;
+
+      $('after-call-modal').classList.add('hide');
+      S.wait = false;
+      S.run = true;
+      S.i = idx;
+      $('start').classList.add('hide');
+      $('stop').classList.remove('hide');
+      setNumsDisabled(true);
+      highlightNumRow(idx);
+      call();
     }
 
     function onNumsChange() {
@@ -772,19 +801,27 @@
           return;
         }
 
-        // რიგის ნომერზე (1. 2.) — რედაქტირება
-        const lbl = e.target.closest('.num-lbl');
-        if (lbl) {
-          const inp = lbl.closest('.num-row')?.querySelector('.num-inp');
-          inp?.focus();
+        const row = e.target.closest('.num-row');
+        if (!row) return;
+        const inp = row.querySelector('.num-inp');
+        if (!inp || localDigitCount(inp.value) < 9) return;
+
+        // დაწყების შემდეგ: თითი ნომერზე → ლურჯი + იქიდან რეკვა
+        if (S.run || $('stop') && !$('stop').classList.contains('hide')) {
+          e.preventDefault();
+          jumpToNumberAndContinue(inp.value);
           return;
         }
 
-        // ნომერზე დაჭერა → iOS Call / Cancel → დარეკვა
-        // (რედაქტირებისთვის დააჭირე მარცხნივ რიგის ნომერს: 1. 2.)
-        const inp = e.target.closest('.num-inp');
-        if (!inp) return;
-        if (localDigitCount(inp.value) < 9) return;
+        // რიგის ნომერზე (1. 2.) — რედაქტირება
+        const lbl = e.target.closest('.num-lbl');
+        if (lbl) {
+          inp.focus();
+          return;
+        }
+
+        // უქმი რეჟიმი: ნომერზე დაჭერა → Call / Cancel
+        if (!e.target.closest('.num-inp')) return;
         if (document.activeElement === inp) return;
         e.preventDefault();
         inp.blur();
