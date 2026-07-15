@@ -11,7 +11,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>Cold Caller v67</title>
+  <title>Cold Caller v68</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '67';
+    window.__CC_VER = '68';
     (function () {
       function go(v) {
         try {
@@ -623,7 +623,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v67</div>
+      <div class="ver">v68</div>
     </header>
 
     <div class="tabs">
@@ -655,7 +655,7 @@
 
       <div class="page" id="p-history">
         <div class="tools" style="margin-bottom:8px">
-          <span>ბოლო ზარები</span>
+          <span id="day-stats">დღეს: 0 ზარი</span>
           <button class="red" id="clr-hist" type="button" style="padding-right:0">გასუფთავება</button>
         </div>
         <div id="hist"><p class="empty">ცარიელია</p></div>
@@ -930,7 +930,10 @@
     function onNumsChange() {
       count();
       syncFromDial();
+      pruneCalledToList();
       saveNums();
+      saveSession();
+      updateStartBtn();
     }
 
     function filterPhoneInput(inp) {
@@ -1145,17 +1148,76 @@
     function tel(n) { return n.replace(/[^\d+]/g, ''); }
     function count() { $('ncount').textContent = parse(getNumsText()).length; }
 
+    const SESSION_KEY = 'cc_session';
+
+    function loadSession() {
+      try { return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch { return null; }
+    }
+    function saveSession() {
+      const called = {};
+      Object.keys(S.called).forEach(k => {
+        if (S.called[k] === 'called') called[k] = 'called';
+      });
+      try {
+        localStorage.setItem(SESSION_KEY, JSON.stringify({
+          i: S.i,
+          called,
+          updated: Date.now()
+        }));
+      } catch {}
+    }
+    function clearSession() {
+      try { localStorage.removeItem(SESSION_KEY); } catch {}
+    }
+    function restoreSession() {
+      const sess = loadSession();
+      if (!sess || !sess.called) return;
+      S.called = { ...sess.called };
+      if (typeof sess.i === 'number' && sess.i >= 0) S.i = sess.i;
+    }
+    function pruneCalledToList() {
+      const keys = new Set(parse(getNumsText()).map(normNum));
+      Object.keys(S.called).forEach(k => {
+        if (!keys.has(k)) delete S.called[k];
+      });
+    }
+    function calledCountInList(q) {
+      return (q || []).filter(n => S.called[normNum(n)] === 'called').length;
+    }
+    function updateStartBtn() {
+      if (S.run) return;
+      const q = parse(getNumsText());
+      const done = calledCountInList(q);
+      if (q.length && done > 0 && done < q.length) {
+        $('start').textContent = `განაგრძე (${done}/${q.length})`;
+      } else {
+        $('start').textContent = 'დაწყება';
+      }
+    }
+
     function hist() {
       try { return JSON.parse(localStorage.getItem('hist') || '[]'); } catch { return []; }
     }
+    function todayCallCount() {
+      const start = new Date();
+      start.setHours(0, 0, 0, 0);
+      const t0 = start.getTime();
+      return hist().filter(x => typeof x.ts === 'number' && x.ts >= t0).length;
+    }
     function addHist(num) {
       const h = hist();
-      h.unshift({ num, t: new Date().toLocaleString('ka-GE', { hour: '2-digit', minute: '2-digit' }) });
+      h.unshift({
+        num,
+        t: new Date().toLocaleString('ka-GE', { hour: '2-digit', minute: '2-digit' }),
+        ts: Date.now()
+      });
       localStorage.setItem('hist', JSON.stringify(h.slice(0, 50)));
       showHist();
     }
     function showHist() {
       const h = hist();
+      const dayEl = $('day-stats');
+      if (dayEl) dayEl.textContent = `დღეს: ${todayCallCount()} ზარი`;
       $('hist').innerHTML = h.length
         ? h.map(x => {
             const raw = tel(x.num || '');
@@ -1204,25 +1266,53 @@
     function start() {
       S.q = parse(getNumsText());
       if (!S.q.length) { setStatus('შეიყვანე ნომერი'); return; }
-      S.i = 0; S.run = true; S.called = {};
+
+      const done = calledCountInList(S.q);
+      if (done === 0 || done >= S.q.length) {
+        S.called = {};
+        S.i = 0;
+      } else {
+        const sess = loadSession();
+        let i = (sess && typeof sess.i === 'number') ? sess.i : 0;
+        if (i < 0 || i > S.q.length) i = 0;
+        while (i < S.q.length && S.called[normNum(S.q[i])] === 'called') i++;
+        if (i >= S.q.length) {
+          S.called = {};
+          S.i = 0;
+        } else {
+          S.i = i;
+        }
+      }
+
+      S.run = true;
       $('start').classList.add('hide');
       $('stop').classList.remove('hide');
       setNumsDisabled(true);
-      highlightNumRow(0);
+      highlightNumRow(S.i);
       saveNums();
+      saveSession();
       call();
     }
 
     function applyPaste(pasted) {
       if (!pasted) return;
       const existing = getNumsRaw();
-      const incoming = pasted.split(/[\n,;]+/).map(l => l.trim()).filter(Boolean);
-      const merged = [...existing, ...incoming].map(formatPhoneDisplay);
-      const rows = Math.max(NUM_ROWS_START, merged.length + 1);
+      const incoming = String(pasted).split(/[\n,;\t]+/).map(l => l.trim()).filter(Boolean);
+      const cleaned = [];
+      const seen = new Set();
+      for (const raw of [...existing, ...incoming]) {
+        const n = tel(raw);
+        if (localDigitCount(n) < 9) continue;
+        const key = normNum(n);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        cleaned.push(formatPhoneDisplay(n));
+      }
+      const rows = Math.max(NUM_ROWS_START, cleaned.length + 1);
       renderNumRows(rows);
-      getNumInputs().forEach((inp, i) => { inp.value = merged[i] || ''; });
+      getNumInputs().forEach((inp, i) => { inp.value = cleaned[i] || ''; });
       onNumsChange();
-      setStatus('ჩასმულია');
+      setStatus(cleaned.length ? `ჩასმულია · ${cleaned.length} ნომერი` : 'ნომერი ვერ მოიძებნა');
     }
 
     function finishCall() {
@@ -1235,6 +1325,7 @@
       addHist(n);
       setStatus('');
       S.i++;
+      saveSession();
       if (S.run) showAfterCall(n);
     }
 
@@ -1257,13 +1348,21 @@
       S.run = false; S.wait = false;
       reset();
       syncFromDial();
+      saveSession();
+      updateStartBtn();
       setStatus('დასრულდა ✓');
     }
 
     function stopAll() {
       S.run = false; S.wait = false;
       reset();
-      setStatus('გაჩერებულია');
+      saveSession();
+      updateStartBtn();
+      const q = parse(getNumsText());
+      const doneN = calledCountInList(q);
+      setStatus(doneN > 0 && doneN < q.length
+        ? `გაჩერებულია · განაგრძე ${doneN}/${q.length}-დან`
+        : 'გაჩერებულია');
     }
 
     function introMsg(lang) {
@@ -1529,9 +1628,12 @@ ${ALDAGI_TAIL}`;
     };
     $('clear').onclick = () => {
       S.called = {};
+      S.i = 0;
       setNumsFromList([]);
       syncSmsNum('');
       localStorage.removeItem('nums');
+      clearSession();
+      updateStartBtn();
     };
     $('clr-hist').onclick = () => { localStorage.removeItem('hist'); showHist(); };
 
@@ -1567,12 +1669,21 @@ ${ALDAGI_TAIL}`;
     const saved = localStorage.getItem('nums');
     if (saved) setNumsFromList(saved.split(/[\n,;]+/).map(l => l.trim()).filter(Boolean));
     else count();
+    restoreSession();
+    pruneCalledToList();
+    markNumRows();
+    updateStartBtn();
     syncFromDial();
     showHist();
     if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) $('ios-note').classList.remove('hide');
     if (!localStorage.getItem('permAsked')) {
       $('perm-modal').classList.remove('hide');
       localStorage.setItem('permAsked', '1');
+    }
+    const resumeDone = calledCountInList(parse(getNumsText()));
+    const resumeTotal = parse(getNumsText()).length;
+    if (resumeDone > 0 && resumeDone < resumeTotal) {
+      setStatus(`შენახულია · განაგრძე ${resumeDone}/${resumeTotal}-დან`);
     }
   </script>
 </body>
