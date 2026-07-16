@@ -11,7 +11,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>Cold Caller v69</title>
+  <title>Cold Caller v70</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '69';
+    window.__CC_VER = '70';
     (function () {
       function go(v) {
         try {
@@ -623,7 +623,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v69</div>
+      <div class="ver">v70</div>
     </header>
 
     <div class="tabs">
@@ -735,11 +735,11 @@
 დამატებითი რისკები: ორმოში ჩარტყმა, გარეგანი დაზიანება (მოიცავს ყველაფერს რაც ადამიანის ძალით არ არის გამოწვეული)
 ტვირთად გადაადგილების დროს დაზიანება.`;
 
-    const ALDAGI_TAIL = `+ ჩანაცვლების სერვისიც შეგვიძლია მოვნიშნოთ (თუ დაგიზიანდებათ ავტომობილი სხვა ავტომობილით ჩაგინაცვლებთ ავტომობილს ჩვენი კომპანია სანამ თქვენი ავტომობილი შეკეთდება)
+    const ALDAGI_REPLACEMENT = `+ ჩანაცვლების სერვისიც შეგვიძლია მოვნიშნოთ (თუ დაგიზიანდებათ ავტომობილი სხვა ავტომობილით ჩაგინაცვლებთ ავტომობილს ჩვენი კომპანია სანამ თქვენი ავტომობილი შეკეთდება)`;
 
-+ უხეში გაუფრთხილებაც თუ მოვნიშნავთ — თუ წითელზე გაივლით ან bus line-ში ან საპირისპირო ზოლში გადახვალთ, ამ შემთხვევაშიც ანაზღაურდება ზიანი
+    const ALDAGI_NEGLIGENCE = `+ უხეში გაუფრთხილებაც თუ მოვნიშნავთ — თუ წითელზე გაივლით ან bus line-ში ან საპირისპირო ზოლში გადახვალთ, ამ შემთხვევაშიც ანაზღაურდება ზიანი`;
 
-ბენეფიტები:
+    const ALDAGI_BENEFITS = `ბენეფიტები:
 ავტოასისტანსის (საწვავის მიტანა, საბურავის შეცვლა, დაბერვა, დაქოქვაში დახმარება) და ევაკუატორის სერვისი უფასოდ საქართველოს 7 დიდ ქალაქში: თბილისი, თელავი, გორი, ქუთაისი, ბათუმი, ფოთი და ზუგდიდი
 
 საჩუქრები:
@@ -1541,9 +1541,24 @@
       return v + '$';
     }
 
+    function parseUsdAmount(val) {
+      const n = parseFloat(String(val || '').replace(/[^\d.]/g, ''));
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function buildAldagiExtras(carRaw) {
+      const car = parseUsdAmount(carRaw);
+      const lines = [];
+      if (car >= 10000) lines.push(ALDAGI_REPLACEMENT);
+      if (car >= 20000) lines.push(ALDAGI_NEGLIGENCE);
+      return lines.length ? lines.join('\n\n') + '\n\n' : '';
+    }
+
     function buildAldagiMsg() {
       const tariff = formatUsd($('offer-tariff')?.value || '');
-      const car = formatUsd($('offer-car')?.value || '');
+      const carRaw = $('offer-car')?.value || '';
+      const car = formatUsd(carRaw);
+      const extras = buildAldagiExtras(carRaw);
       return `${ALDAGI_HEAD}
 
 ტარიფი: ${tariff}
@@ -1551,7 +1566,7 @@
 მესამე პირი: ${offerPick.third}
 მძღოლისა და მგზავრების ჯანმრთელობა: ${offerPick.health}
 
-${ALDAGI_TAIL}`;
+${extras}${ALDAGI_BENEFITS}`;
     }
 
     function updateAldagiPreview() {
