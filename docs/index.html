@@ -11,7 +11,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>Cold Caller v72</title>
+  <title>Cold Caller v73</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '72';
+    window.__CC_VER = '73';
     (function () {
       function go(v) {
         try {
@@ -623,7 +623,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v72</div>
+      <div class="ver">v73</div>
     </header>
 
     <div class="tabs">
@@ -777,10 +777,10 @@
     const pendingTpl = { num: '', type: 'sms' };
     let rowTapTimer = null;
     let rowTapLast = { t: 0, row: null };
-    /** tel: სესია — ✓ მხოლოდ თუ აპი ნამდვილად გავიდა Phone-ზე */
+    /** tel: სესია — Cancel = ✓ არა; ნამდვილი ზარი = ✓ */
     let dialWatch = null;
-    let dialSoftTimer = null;
-    const DIAL_MIN_AWAY_MS = 600;
+    const DIAL_MIN_AWAY_MS = 400;
+    const DIAL_CANCEL_MAX_MS = 2000;
 
     const $ = id => document.getElementById(id);
     const st = $('status');
@@ -1249,23 +1249,8 @@
       dial(S.q[S.i]);
     }
 
-    function clearDialSoftTimer() {
-      if (dialSoftTimer) {
-        clearTimeout(dialSoftTimer);
-        dialSoftTimer = null;
-      }
-    }
-
     function beginDialWatch() {
-      clearDialSoftTimer();
-      dialWatch = { i: S.i, leftAt: 0 };
-      // Cancel / sheet დიდხანს ღია — ✓ არ დაესვას; Call მერე leftAt დაიწერება
-      dialSoftTimer = setTimeout(() => {
-        dialSoftTimer = null;
-        if (!dialWatch || dialWatch.leftAt) return;
-        dialWatch = null;
-        if (S.wait) S.wait = false;
-      }, 8000);
+      dialWatch = { i: S.i, startedAt: Date.now(), leftAt: 0 };
     }
 
     function noteDialLeftApp() {
@@ -1275,14 +1260,32 @@
 
     function onAppVisible() {
       if (!S.run || !dialWatch) return;
-      if (!dialWatch.leftAt) return; // Cancel ან ჯერ sheet — ✓ არა
-      const away = Date.now() - dialWatch.leftAt;
-      if (away < DIAL_MIN_AWAY_MS) {
-        // მოკლე flicker Call/Cancel sheet-იდან
-        dialWatch.leftAt = 0;
+
+      // აპი ნამდვილად გავიდა Phone-ზე → ✓
+      if (dialWatch.leftAt) {
+        const away = Date.now() - dialWatch.leftAt;
+        if (away < DIAL_MIN_AWAY_MS) {
+          // Call/Cancel sheet-ის მოკლე flicker
+          dialWatch.leftAt = 0;
+          return;
+        }
+        S.i = dialWatch.i;
+        dialWatch = null;
+        S.wait = true;
+        finishCall();
         return;
       }
-      clearDialSoftTimer();
+
+      // hidden არ მოხდა (ხშირია iOS-ზე):
+      // სწრაფი დაბრუნება = Cancel → ✓ არა
+      // დიდხანს გასვლა = ზარი მოხდა → ✓
+      const elapsed = Date.now() - dialWatch.startedAt;
+      if (elapsed < DIAL_CANCEL_MAX_MS) {
+        dialWatch = null;
+        S.wait = false;
+        highlightNumRow(S.i);
+        return;
+      }
       S.i = dialWatch.i;
       dialWatch = null;
       S.wait = true;
@@ -1359,7 +1362,6 @@
 
     function finishCall() {
       if (!S.run || !S.wait) return;
-      clearDialSoftTimer();
       dialWatch = null;
       S.wait = false;
       const n = S.q[S.i];
@@ -1389,7 +1391,6 @@
     }
 
     function done() {
-      clearDialSoftTimer();
       dialWatch = null;
       S.run = false; S.wait = false;
       reset();
@@ -1400,7 +1401,6 @@
     }
 
     function stopAll() {
-      clearDialSoftTimer();
       dialWatch = null;
       S.run = false; S.wait = false;
       reset();
@@ -1717,7 +1717,11 @@ ${extras}${ALDAGI_BENEFITS}`;
       if (document.visibilityState === 'visible') onAppVisible();
     });
     window.addEventListener('pagehide', noteDialLeftApp);
-    window.addEventListener('pageshow', e => { if (e.persisted) onAppVisible(); });
+    window.addEventListener('blur', noteDialLeftApp);
+    window.addEventListener('pageshow', onAppVisible);
+    window.addEventListener('focus', () => {
+      if (document.visibilityState === 'visible') onAppVisible();
+    });
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js').then(reg => {
