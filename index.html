@@ -1,0 +1,1759 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Cold Caller">
+  <meta name="theme-color" content="#161618">
+  <meta name="color-scheme" content="dark">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Cold Caller v74</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <script>
+    /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
+    window.__CC_VER = '74';
+    (function () {
+      function go(v) {
+        try {
+          var once = 'cc_tried_' + v;
+          if (sessionStorage.getItem(once)) return;
+          sessionStorage.setItem(once, '1');
+          localStorage.setItem('cc_app_ver', v);
+        } catch (e) {}
+        var u = new URL(location.href);
+        u.searchParams.set('v', v);
+        u.searchParams.set('_', String(Date.now()));
+        location.replace(u.pathname + u.search + u.hash);
+      }
+      function check() {
+        fetch('version.json?_=' + Date.now(), { cache: 'no-store' })
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            if (!d || !d.v) return;
+            if (d.v !== window.__CC_VER) {
+              go(d.v);
+              return;
+            }
+            try { localStorage.setItem('cc_app_ver', d.v); } catch (e) {}
+            try {
+              var u = new URL(location.href);
+              if (u.searchParams.get('v') !== d.v) {
+                u.searchParams.set('v', d.v);
+                history.replaceState(null, '', u.pathname + u.search + u.hash);
+              }
+            } catch (e) {}
+          })
+          .catch(function () {});
+      }
+      check();
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible') check();
+      });
+    })();
+  </script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    :root {
+      --bg: #161618;
+      --surface: #222224;
+      --line: #333;
+      --text: #ececec;
+      --dim: #999;
+      --blue: #4d9fff;
+      --green: #32d74b;
+      --red: #ff453a;
+      --bar: 80px;
+    }
+    body {
+      font-family: -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 16px;
+      line-height: 1.45;
+      min-height: 100dvh;
+    }
+    .app {
+      max-width: 480px;
+      margin: 0 auto;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: calc(var(--bar) + env(safe-area-inset-bottom) + 48px);
+    }
+
+    .brand {
+      position: relative;
+      overflow: hidden;
+      margin: 0 0 14px;
+      padding: 26px 20px 20px;
+      text-align: center;
+      background:
+        radial-gradient(90% 70% at 50% -10%, rgba(50, 215, 75, 0.18), transparent 58%),
+        radial-gradient(70% 50% at 100% 0%, rgba(77, 159, 255, 0.10), transparent 50%),
+        linear-gradient(180deg, #1a1c20 0%, #161618 100%);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .brand::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      width: 72px;
+      height: 2px;
+      transform: translateX(-50%);
+      border-radius: 2px;
+      background: linear-gradient(90deg, transparent, var(--green), transparent);
+      opacity: 0.85;
+    }
+    .brand h1 {
+      position: relative;
+      z-index: 1;
+      margin: 0;
+      padding: 0;
+      border: none;
+      background: none;
+      border-radius: 0;
+      font-family: "Outfit", -apple-system, sans-serif;
+      font-size: clamp(28px, 8vw, 34px);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1.1;
+      color: #f4f6f5;
+    }
+    .brand .ver {
+      display: inline-block;
+      margin-top: 8px;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(236, 236, 236, 0.45);
+    }
+
+    .tabs {
+      display: flex;
+      margin: 0 16px 12px;
+      background: var(--surface);
+      border-radius: 10px;
+      padding: 3px;
+    }
+    .tabs button {
+      flex: 1;
+      border: none;
+      background: none;
+      color: var(--dim);
+      font-size: 14px;
+      font-family: inherit;
+      padding: 9px 4px;
+      border-radius: 8px;
+    }
+    .tabs button.on {
+      background: var(--bg);
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .body {
+      flex: 1;
+      padding: 0 16px;
+      overflow-y: auto;
+    }
+    .page { display: none; }
+    .page.on { display: block; }
+
+    #status {
+      font-size: 14px;
+      color: var(--dim);
+      padding: 6px 4px 10px;
+      margin-bottom: 8px;
+      min-height: auto;
+    }
+    #status.work { color: var(--green); }
+    #ios-note { display: none !important; }
+
+    textarea, input {
+      width: 100%;
+      background: var(--surface);
+      border: 1.5px solid #4a4a50;
+      border-radius: 10px;
+      padding: 14px;
+      color: var(--text);
+      font-size: 16px;
+      font-family: inherit;
+    }
+    textarea {
+      min-height: 160px;
+      line-height: 1.5;
+      resize: vertical;
+    }
+    textarea:disabled { opacity: 0.55; }
+    textarea::placeholder, input::placeholder { color: #666; }
+    input:not(.num-inp) { margin-bottom: 10px; }
+
+    .num-list {
+      background: var(--surface);
+      border: 1.5px solid #4a4a50;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .num-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 10px;
+      border-bottom: 1px solid #333;
+      min-height: 40px;
+    }
+    .num-row:last-child { border-bottom: none; }
+    .num-row.on { background: #1a2a3a; border-left: 3px solid var(--blue); padding-left: 7px; }
+    .num-row:focus-within {
+      background: #1a2a3a;
+      border-left: 3px solid var(--blue);
+      padding-left: 7px;
+    }
+    .num-list.running .num-row { cursor: pointer; }
+    .num-list.running .num-row .num-inp { pointer-events: none; }
+    .num-row.called .num-inp {
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    .num-mark {
+      flex-shrink: 0;
+      width: 22px;
+      font-size: 14px;
+      text-align: center;
+      color: var(--dim);
+    }
+    .num-row.called .num-mark { color: var(--green); }
+    .num-row.on .num-mark { color: var(--blue); }
+    .num-row-actions {
+      display: none;
+      flex-shrink: 0;
+      gap: 4px;
+      align-items: center;
+    }
+    .num-row.called .num-row-actions { display: flex; }
+    .num-row-actions button {
+      border: none;
+      border-radius: 6px;
+      padding: 5px 8px;
+      font-size: 11px;
+      font-family: inherit;
+      font-weight: 600;
+      color: #fff;
+      background: var(--blue);
+      line-height: 1.2;
+    }
+    .num-row-actions button.row-wa {
+      background: #25d366;
+    }
+    .num-row-actions button:disabled {
+      opacity: 0.45;
+    }
+    .num-lbl {
+      flex-shrink: 0;
+      width: 22px;
+      font-size: 13px;
+      color: var(--dim);
+      text-align: right;
+    }
+    .num-inp {
+      flex: 1;
+      border: none !important;
+      background: transparent !important;
+      padding: 10px 0 !important;
+      margin: 0 !important;
+      font-size: 16px;
+      border-radius: 0 !important;
+      font-family: ui-monospace, "SF Mono", "Menlo", "Cascadia Mono", "Roboto Mono", monospace;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.02em;
+      min-width: 0;
+    }
+    .num-inp:disabled { opacity: 0.55; }
+    .num-inp:focus { outline: none; }
+    .num-inp.tap-dial {
+      caret-color: transparent;
+    }
+
+    .tools {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 10px 0 0;
+      font-size: 13px;
+      color: var(--dim);
+    }
+    #p-dial .tools {
+      margin: 0 0 40px;
+      padding: 8px 0 4px;
+    }
+    .tools .tool-btns {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+    }
+    .tools .tool-btns button {
+      background: none;
+      border: none;
+      color: var(--blue);
+      font-size: 13px;
+      font-family: inherit;
+      padding: 6px 0;
+    }
+    .tools .tool-btns button.red { color: var(--red); }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--line);
+      gap: 12px;
+    }
+    .row:last-child { border-bottom: none; }
+    .row b { font-size: 15px; display: block; margin-bottom: 2px; }
+    .row small { font-size: 13px; color: var(--dim); }
+    .row button {
+      flex-shrink: 0;
+      background: var(--blue);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 14px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    .sms-hint {
+      font-size: 13px;
+      color: var(--dim);
+      margin: 10px 0 12px;
+      line-height: 1.4;
+    }
+    .sms-card {
+      background: var(--surface);
+      border: 1.5px solid #4a4a50;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    .sms-card h3 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: var(--text);
+      padding-bottom: 8px;
+      border-bottom: 1px solid #3a3a40;
+    }
+    .sms-text {
+      font-size: 15px;
+      line-height: 1.5;
+      color: var(--text);
+      background: var(--bg);
+      border: 1px solid #4a4a50;
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 12px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .sms-card button {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #3a7fd4;
+      border-radius: 10px;
+      background: var(--blue);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: inherit;
+    }
+    .sms-text.long { max-height: 220px; overflow-y: auto; font-size: 14px; }
+
+    .lang-pick {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .lang-pick button {
+      flex: 1;
+      padding: 8px 4px;
+      border: 1px solid #4a4a50;
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--dim);
+      font-size: 12px;
+      font-family: inherit;
+    }
+    .lang-pick button.on {
+      border-color: var(--blue);
+      color: var(--text);
+      background: #1a2a3a;
+    }
+    .send-row {
+      display: flex;
+      gap: 8px;
+    }
+    .send-row button { flex: 1; }
+    .btn-wa {
+      background: #25d366 !important;
+      border-color: #1faa52 !important;
+      color: #fff !important;
+    }
+
+    .offer-fields { margin-bottom: 12px; }
+    .field-label {
+      font-size: 12px;
+      color: var(--dim);
+      margin: 10px 0 6px;
+      display: block;
+    }
+    .field-label:first-child { margin-top: 0; }
+    .offer-fields input.field-inp {
+      width: 100%;
+      margin-bottom: 0;
+      padding: 10px 12px;
+      font-size: 15px;
+    }
+    .lim-pick {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .lim-pick button {
+      padding: 8px 10px;
+      border: 1px solid #4a4a50;
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--dim);
+      font-size: 13px;
+      font-family: inherit;
+    }
+    .lim-pick button.on {
+      border-color: var(--blue);
+      color: var(--text);
+      background: #1a2a3a;
+    }
+
+    .hist {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--line);
+      font-size: 15px;
+    }
+    .hist-info { flex: 1; min-width: 0; }
+    .hist-info .hist-num {
+      font-family: ui-monospace, "SF Mono", "Menlo", "Cascadia Mono", "Roboto Mono", monospace;
+      font-variant-numeric: tabular-nums;
+    }
+    .hist span.hist-time { display: block; font-size: 13px; color: var(--dim); margin-top: 2px; }
+    .hist-actions {
+      display: flex;
+      flex-shrink: 0;
+      gap: 4px;
+    }
+    .hist-actions button {
+      border: none;
+      border-radius: 6px;
+      padding: 5px 8px;
+      font-size: 11px;
+      font-family: inherit;
+      font-weight: 600;
+      color: #fff;
+      background: var(--blue);
+      line-height: 1.2;
+    }
+    .hist-actions button.row-wa { background: #25d366; }
+    .empty { text-align: center; color: var(--dim); padding: 40px 0; font-size: 14px; }
+
+    .bar {
+      position: fixed;
+      left: 0; right: 0; bottom: env(safe-area-inset-bottom);
+      padding: 18px 16px 28px;
+      background: var(--bg);
+      border-top: 1px solid var(--line);
+    }
+    .bar .go {
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 10px;
+      background: var(--green);
+      color: #000;
+      font-size: 17px;
+      font-weight: 600;
+      font-family: inherit;
+    }
+    .bar .stop {
+      width: 100%;
+      padding: 14px;
+      border: 1px solid var(--red);
+      border-radius: 10px;
+      background: transparent;
+      color: var(--red);
+      font-size: 16px;
+      font-family: inherit;
+    }
+
+    .overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.75);
+      display: flex; align-items: center; justify-content: center;
+      padding: 16px; z-index: 10000;
+    }
+    .box {
+      background: var(--surface);
+      border-radius: 14px;
+      padding: 22px 18px;
+      width: 100%; max-width: 300px;
+      text-align: center;
+    }
+    .box .lbl { font-size: 13px; color: var(--dim); }
+    .box .num { font-size: 21px; font-weight: 700; margin: 8px 0 18px; }
+    .box .go {
+      width: 100%;
+      margin-top: 8px;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      background: var(--green);
+      color: #000;
+      font-size: 16px;
+      font-weight: 600;
+      font-family: inherit;
+    }
+    .box .tpl-btn {
+      width: 100%;
+      margin-top: 8px;
+      padding: 13px 12px;
+      border: 1.5px solid #4a4a50;
+      border-radius: 10px;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+      text-align: left;
+    }
+    .box .tpl-btn small {
+      display: block;
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--dim);
+    }
+    .box.tpl-picker {
+      max-height: 80vh;
+      overflow-y: auto;
+      text-align: left;
+    }
+    .box.tpl-picker .num { text-align: center; font-size: 18px; margin: 6px 0 4px; }
+    .box.tpl-picker .lbl { text-align: center; }
+    .box.tpl-picker .channel {
+      text-align: center;
+      font-size: 13px;
+      color: var(--blue);
+      margin-bottom: 8px;
+    }
+    .box .go.btn-sms { background: var(--blue); color: #fff; }
+    .box .go.btn-wa { background: #25d366; color: #fff; }
+    .box .skip { width: 100%; margin-top: 8px; padding: 13px; border: 1px solid var(--line); border-radius: 10px; background: none; color: var(--dim); font-size: 15px; font-family: inherit; }
+    .box p { font-size: 14px; color: var(--dim); margin: 8px 0 16px; line-height: 1.5; }
+    .box-wide { max-width: 340px; text-align: left; }
+    .box-wide .num { text-align: center; }
+    .send-modal-inner { width: 100%; max-width: 420px; }
+    .send-confirm-card { margin-bottom: 0; }
+    .send-ask {
+      font-size: 14px;
+      color: var(--dim);
+      margin: 0 0 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #3a3a40;
+    }
+    .send-to {
+      font-size: 17px;
+      font-weight: 700;
+      padding: 12px;
+      background: var(--bg);
+      border: 1px solid #4a4a50;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      text-align: center;
+      word-break: break-all;
+    }
+    .send-to.missing { color: var(--red); font-weight: 600; font-size: 15px; }
+    .send-confirm-card .sms-text { margin-bottom: 12px; max-height: 260px; overflow-y: auto; }
+    .send-confirm-card .send-row button {
+      flex: 1;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: inherit;
+      border: 1px solid #3a7fd4;
+      background: var(--blue);
+      color: #fff;
+    }
+    .send-confirm-card .btn-no {
+      background: var(--bg) !important;
+      border: 1px solid #4a4a50 !important;
+      color: var(--dim) !important;
+    }
+    .send-confirm-card .send-row .btn-wa {
+      background: #25d366 !important;
+      border-color: #1faa52 !important;
+    }
+    .hide { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="brand">
+      <h1>Cold Caller</h1>
+      <div class="ver">v74</div>
+    </header>
+
+    <div class="tabs">
+      <button class="on" data-v="dial" type="button">დარეკვა</button>
+      <button data-v="sms" type="button">SMS</button>
+      <button data-v="history" type="button">ისტორია</button>
+    </div>
+
+    <div class="body">
+      <div id="ios-note" class="hide"></div>
+      <div id="status">ჩასვი ნომრები და დააჭირე დაწყებას</div>
+
+      <div class="page on" id="p-dial">
+        <div class="num-list" id="num-list"></div>
+        <div class="tools">
+          <span><b id="ncount">0</b> ნომერი</span>
+          <div class="tool-btns">
+            <button class="red" id="clear" type="button">გასუფთავება</button>
+            <button id="paste" type="button">ჩასმა</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="page" id="p-sms">
+        <input type="tel" id="sms-num" placeholder="ტელეფონის ნომერი" inputmode="tel">
+        <p class="sms-hint">4 შაბლონი: პატარა SMS · არ პასუხობს · ტარიფი · სრული შეთავაზება</p>
+        <div id="sms-list"></div>
+      </div>
+
+      <div class="page" id="p-history">
+        <div class="tools" style="margin-bottom:8px">
+          <span id="day-stats">დღეს: 0 ზარი</span>
+          <button class="red" id="clr-hist" type="button" style="padding-right:0">გასუფთავება</button>
+        </div>
+        <div id="hist"><p class="empty">ცარიელია</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay hide" id="perm-modal">
+    <div class="box">
+      <div class="lbl">ნებართვები</div>
+      <p>შეტყობინებების ნება საჭიროა ზარის შემდეგ აპში დასაბრუნებლად.</p>
+      <button class="go" id="perm-allow" type="button">Allow შეტყობინებები</button>
+      <button class="skip" id="perm-skip" type="button">გამოტოვება</button>
+    </div>
+  </div>
+
+  <div class="bar" id="action-bar">
+    <button class="go" id="start" type="button">დაწყება</button>
+    <button class="stop hide" id="stop" type="button">გაჩერება</button>
+  </div>
+
+  <div class="overlay hide" id="after-call-modal">
+    <div class="box">
+      <div class="lbl">გადავიდეთ შემდეგზე?</div>
+      <div class="num" id="after-call-num"></div>
+      <p id="after-call-note"></p>
+      <button class="go" id="after-call-next" type="button">დიახ, შემდეგი</button>
+      <button class="skip" id="after-call-done" type="button">არა</button>
+    </div>
+  </div>
+
+  <div class="overlay hide" id="tpl-picker-modal">
+    <div class="box tpl-picker">
+      <div class="lbl">აირჩიე შაბლონი</div>
+      <div class="num" id="tpl-picker-num"></div>
+      <div class="channel" id="tpl-picker-channel">SMS</div>
+      <button type="button" class="tpl-btn" data-tpl="intro-ka">პატარა SMS<small>ქართული</small></button>
+      <button type="button" class="tpl-btn" data-tpl="intro-en">პატარა SMS<small>ინგლისური</small></button>
+      <button type="button" class="tpl-btn" data-tpl="intro-both">პატარა SMS<small>ორივე</small></button>
+      <button type="button" class="tpl-btn" data-tpl="noanswer">არ პასუხობს</button>
+      <button type="button" class="tpl-btn" data-tpl="tariff">ტარიფის დაანგარიშება</button>
+      <button type="button" class="tpl-btn" data-tpl="aldagi">სრული შეთავაზება</button>
+      <button type="button" class="skip" id="tpl-picker-cancel">გაუქმება</button>
+    </div>
+  </div>
+
+  <div class="overlay hide" id="send-modal">
+    <div class="send-modal-inner">
+      <div class="sms-card send-confirm-card">
+        <h3 id="send-title">გაგზავნა</h3>
+        <p class="send-ask">ნამდვილად გსურთ ამ ნომერზე გაგზავნა?</p>
+        <span class="field-label">ნომერი</span>
+        <div class="send-to" id="send-num"></div>
+        <span class="field-label">ტექსტი</span>
+        <div class="sms-text" id="send-preview"></div>
+        <div class="send-row">
+          <button type="button" class="btn-no" id="send-cancel">არა</button>
+          <button type="button" id="send-go">დიახ, SMS</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const INTRO_KA = 'ალექსანდრე ქორჩაშვილი გწერთ სადაზღვეო კომპანია ალდაგიდან. მოინიშნეთ ეს ნომერი და დამიკავშირდით ნებისმიერ კითხვით.';
+    const INTRO_EN = 'Aleksandre Korchashvili is writing to you from Aldagi Insurance. Please save this number and contact me if you have any questions.';
+
+    const ALDAGI_HEAD = `რისკები:
+ავტოსაგზაო შემთხვევა
+ხანძარი | აფეთქება
+ვანდალიზმი | ქურდობა | ძარცვა | ყაჩაღობა
+სტიქიური მოვლენები
+საგნის ვარდნა
+დაზიანება დაუდგენელ ვითარებაში
+საქარე მინის დაზიანება
+
+დამატებითი რისკები: ორმოში ჩარტყმა, გარეგანი დაზიანება (მოიცავს ყველაფერს რაც ადამიანის ძალით არ არის გამოწვეული)
+ტვირთად გადაადგილების დროს დაზიანება.`;
+
+    const ALDAGI_REPLACEMENT = `+ ჩანაცვლების სერვისიც შეგვიძლია მოვნიშნოთ (თუ დაგიზიანდებათ ავტომობილი სხვა ავტომობილით ჩაგინაცვლებთ ავტომობილს ჩვენი კომპანია სანამ თქვენი ავტომობილი შეკეთდება)`;
+
+    const ALDAGI_NEGLIGENCE = `+ უხეში გაუფრთხილებაც თუ მოვნიშნავთ — თუ წითელზე გაივლით ან bus line-ში ან საპირისპირო ზოლში გადახვალთ, ამ შემთხვევაშიც ანაზღაურდება ზიანი`;
+
+    const ALDAGI_BENEFITS = `ბენეფიტები:
+ავტოასისტანსის (საწვავის მიტანა, საბურავის შეცვლა, დაბერვა, დაქოქვაში დახმარება) და ევაკუატორის სერვისი უფასოდ საქართველოს 7 დიდ ქალაქში: თბილისი, თელავი, გორი, ქუთაისი, ბათუმი, ფოთი და ზუგდიდი
+
+საჩუქრები:
+1. საწვავის ფასდაკლება 20 თთრი
+2. 25%-იანი ფასდაკლება "ამბოლში"
+3. 20% ფასდაკლება "დელფი მოტორსში" ავტოდითეილინგ მომსახურებაზე
+4. 10%-იანი ფასდაკლება ქონების დაზღვევაზე
+
+დეტალურად: https://aldagi.ge/individual/auto-insurance`;
+
+    const OFFER_LIMITS = {
+      third: ['5000$', '10000$', '25000$', '50000$'],
+      health: ['20000$', '40000$', '100000$']
+    };
+    const offerPick = { third: '10000$', health: '20000$' };
+
+    const TARIFF_MSG = `გამარჯობა, ალექსანდრე ქორჩაშვილი გწერთ სადაზღვეო კომპანია ალდაგიდან.
+
+ეს მონაცემებია საჭირო ტარიფის დასათვლელად:
+
+1) ავტომობილის მარკა მოდელი
+2) გამოშვების წელი
+3) ავტომობილს საშუალო საბაზრო ღირებულება
+4) მფლობელის ასაკი
+5) ყველაზე პატარა მძღოლის ასაკი თქვენს ავტომობილზე
+6) რამდენიხანია რაც გყავთ ავტომობილი
+7) ძრავის მოცულობა
+8) რამდენი ხანია რაც მართვის გამოცდილება გაქვთ`;
+
+    const NO_ANSWER_MSG = `გამარჯობა, ავტომობილის დაზღვევასთან დაკავშირებით გირეკავდით, სადაზღვეო კომპანია ალდაგიდან თუ დაინტერესდებით ამ ნომერზე დამიკავშირდით.`;
+
+    const langPick = { intro: 'ka' };
+    const S = { q: [], i: 0, run: false, wait: false, last: '', called: {}, smsManual: false };
+    const pendingSend = { num: '', msg: '', type: 'sms' };
+    const pendingTpl = { num: '', type: 'sms' };
+    let rowTapTimer = null;
+    let rowTapLast = { t: 0, row: null };
+    /** tel: სესია — Cancel = ✓ არა; ნამდვილი ზარი = ✓ */
+    let dialWatch = null;
+    const DIAL_MIN_AWAY_MS = 400;
+    const DIAL_CANCEL_MAX_MS = 2000;
+
+    const $ = id => document.getElementById(id);
+    const st = $('status');
+
+    function setStatus(t, work) {
+      st.textContent = t;
+      st.classList.toggle('work', !!work);
+    }
+
+    function goTab(v) {
+      document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x.dataset.v === v));
+      document.querySelectorAll('.page').forEach(x => x.classList.remove('on'));
+      $('p-' + v).classList.add('on');
+      $('action-bar').classList.toggle('hide', v !== 'dial');
+      // SMS ტაბზე — გალურჯებული / მიმდინარე ნომერი
+      if (v === 'sms') fillSmsTarget();
+    }
+
+    const NUM_ROWS_START = 5;
+
+    function getNumInputs() {
+      return [...$('num-list').querySelectorAll('.num-inp')];
+    }
+
+    function getNumsRaw() {
+      return getNumInputs().map(i => i.value.trim()).filter(Boolean);
+    }
+
+    function getNumsText() {
+      return getNumsRaw().join('\n');
+    }
+
+    /** 577920471 → 577 92 04 71 (ჯერ 3, მერე ორ-ორი) */
+    function formatPhoneDisplay(raw) {
+      const s = String(raw || '').trim();
+      if (!s) return '';
+      const hasPlus = s.startsWith('+');
+      let digits = s.replace(/\D/g, '');
+      let prefix = '';
+      if (digits.startsWith('995') && digits.length > 9) {
+        prefix = (hasPlus ? '+' : '') + '995 ';
+        digits = digits.slice(3);
+      } else if (hasPlus) {
+        prefix = '+';
+      }
+      if (!digits) return prefix.trim();
+      let out = digits.slice(0, 3);
+      for (let i = 3; i < digits.length; i += 2) {
+        out += ' ' + digits.slice(i, i + 2);
+      }
+      return prefix + out;
+    }
+
+    function setNumsFromList(nums) {
+      const needed = nums.length ? Math.max(NUM_ROWS_START, nums.length + 1) : NUM_ROWS_START;
+      renderNumRows(needed);
+      getNumInputs().forEach((inp, i) => { inp.value = nums[i] ? formatPhoneDisplay(nums[i]) : ''; });
+      onNumsChange();
+    }
+
+    function renderNumRows(count, focusIdx) {
+      const list = $('num-list');
+      const cur = getNumInputs().map(i => i.value);
+      const activeIdx = focusIdx ?? getNumInputs().findIndex(i => i === document.activeElement);
+      list.innerHTML = '';
+      for (let i = 0; i < count; i++) {
+        const row = document.createElement('div');
+        row.className = 'num-row';
+        row.innerHTML = `<span class="num-lbl">${i + 1}.</span><input class="num-inp" type="tel" inputmode="tel" autocomplete="off" spellcheck="false" placeholder="ნომერი"><span class="num-row-actions"><button type="button" class="row-sms" data-row-send="sms">SMS</button><button type="button" class="row-wa" data-row-send="wa">WA</button></span><span class="num-mark"></span>`;
+        const inp = row.querySelector('.num-inp');
+        inp.value = cur[i] || '';
+        list.appendChild(row);
+      }
+      if (activeIdx >= 0) getNumInputs()[activeIdx]?.focus();
+      markNumRows();
+    }
+
+    function normNum(n) {
+      return tel((n || '').trim().replace(/[\s\-()]/g, ''));
+    }
+
+    function markNumRows() {
+      $('num-list').querySelectorAll('.num-row').forEach(row => {
+        const inp = row.querySelector('.num-inp');
+        const val = inp?.value || '';
+        const mark = row.querySelector('.num-mark');
+        // ცარიელ ხაზს → / ✓ არ უნდა ჰქონდეს
+        if (!localDigitCount(val)) {
+          row.classList.remove('on', 'called');
+          if (mark) mark.textContent = '';
+          return;
+        }
+        const st = S.called[normNum(val)];
+        row.classList.toggle('on', st === 'active');
+        row.classList.toggle('called', st === 'called');
+        if (mark) mark.textContent = st === 'called' ? '✓' : st === 'active' ? '→' : '';
+      });
+    }
+
+    function addNextRow(focusIdx) {
+      renderNumRows(getNumInputs().length + 1, focusIdx);
+    }
+
+    function maybeAddRowOnInput(inp) {
+      const inputs = getNumInputs();
+      const i = inputs.indexOf(inp);
+      if (i === inputs.length - 1 && inp.value.trim()) addNextRow(i);
+    }
+
+    function setNumsDisabled(on) {
+      getNumInputs().forEach(i => { i.disabled = on; });
+      $('num-list').classList.toggle('running', !!on);
+    }
+
+    function clearActiveMarks() {
+      Object.keys(S.called).forEach(k => {
+        if (S.called[k] === 'active') delete S.called[k];
+      });
+    }
+
+    function highlightNumRow(idx) {
+      clearActiveMarks();
+      if (S.run && idx >= 0 && S.q[idx]) {
+        S.called[normNum(S.q[idx])] = 'active';
+        // გალურჯებულზე თითი → SMS-იც იმაზე (ხელით ჩაწერილი აღარ რჩება)
+        S.smsManual = false;
+        setLastCalled(S.q[idx]);
+      }
+      markNumRows();
+    }
+
+    /** დაწყების შემდეგ ნომერზე თითი → ლურჯი + იქიდან გაგრძელება */
+    function jumpToNumberAndContinue(raw) {
+      const n = tel(raw);
+      if (localDigitCount(n) < 9) return;
+      S.q = parse(getNumsText());
+      const idx = S.q.findIndex(x => normNum(x) === normNum(n));
+      if (idx < 0) return;
+
+      $('after-call-modal').classList.add('hide');
+      S.wait = false;
+      S.run = true;
+      S.i = idx;
+      $('start').classList.add('hide');
+      $('stop').classList.remove('hide');
+      setNumsDisabled(true);
+      highlightNumRow(idx);
+      saveSession();
+      call();
+    }
+
+    function onNumsChange() {
+      count();
+      syncFromDial();
+      pruneCalledToList();
+      saveNums();
+      saveSession();
+      updateStartBtn();
+    }
+
+    function filterPhoneInput(inp) {
+      const start = inp.selectionStart ?? inp.value.length;
+      const digitsBefore = inp.value.slice(0, start).replace(/\D/g, '').length;
+      const next = formatPhoneDisplay(inp.value.replace(/[^\d+]/g, ''));
+      inp.value = next;
+      let pos = 0, seen = 0;
+      while (pos < next.length && seen < digitsBefore) {
+        if (/\d/.test(next[pos])) seen++;
+        pos++;
+      }
+      try { inp.setSelectionRange(pos, pos); } catch {}
+    }
+
+    /** ადგილობრივი მობილურის სიგრძე: 577 92 04 71 → 9 ციფრი */
+    function localDigitCount(val) {
+      let d = String(val || '').replace(/\D/g, '');
+      if (d.startsWith('995') && d.length > 9) d = d.slice(3);
+      return d.length;
+    }
+
+    function focusNextRow(inp) {
+      const inputs = getNumInputs();
+      const i = inputs.indexOf(inp);
+      if (i < 0) return;
+      if (i >= inputs.length - 1) addNextRow(i);
+      getNumInputs()[i + 1]?.focus();
+    }
+
+    /** ცარიელ ხაზზე Backspace → წინა ხაზზე ასვლა და იქიდან წაშლა */
+    function focusPrevRow(inp) {
+      const inputs = getNumInputs();
+      const i = inputs.indexOf(inp);
+      if (i <= 0) return false;
+      const prev = inputs[i - 1];
+      prev.focus();
+      const len = prev.value.length;
+      try { prev.setSelectionRange(len, len); } catch {}
+      return true;
+    }
+
+    function initNumList() {
+      renderNumRows(NUM_ROWS_START);
+      $('num-list').addEventListener('input', e => {
+        const inp = e.target.closest('.num-inp');
+        if (!inp) return;
+        const before = localDigitCount(inp.dataset.prev || '');
+        filterPhoneInput(inp);
+        const after = localDigitCount(inp.value);
+        inp.dataset.prev = inp.value;
+        maybeAddRowOnInput(inp);
+        if (before < 9 && after >= 9) focusNextRow(inp);
+        onNumsChange();
+      });
+      $('num-list').addEventListener('keydown', e => {
+        const inp = e.target.closest('.num-inp');
+        if (!inp) return;
+
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          focusNextRow(inp);
+          return;
+        }
+
+        if (e.key === 'Backspace') {
+          const empty = !inp.value.trim();
+          const atStart = (inp.selectionStart ?? 0) === 0 && (inp.selectionEnd ?? 0) === 0;
+          if (empty && atStart) {
+            e.preventDefault();
+            focusPrevRow(inp);
+          }
+        }
+      });
+      $('num-list').addEventListener('click', e => {
+        const sendBtn = e.target.closest('[data-row-send]');
+        if (sendBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          const row = sendBtn.closest('.num-row');
+          const inp = row?.querySelector('.num-inp');
+          const num = tel(inp?.value || '');
+          if (!num) return;
+          const type = sendBtn.dataset.rowSend;
+          showTemplatePicker(num, type);
+          return;
+        }
+
+        const row = e.target.closest('.num-row');
+        if (!row) return;
+        const inp = row.querySelector('.num-inp');
+        if (!inp || localDigitCount(inp.value) < 9) return;
+
+        const now = Date.now();
+        const isDouble = rowTapLast.row === row && (now - rowTapLast.t) < 350;
+        rowTapLast = { t: now, row };
+
+        // ორჯერ დაჭერა → ისარი (→) აქ + იქიდან რეკვა
+        if (isDouble) {
+          clearTimeout(rowTapTimer);
+          rowTapTimer = null;
+          e.preventDefault();
+          jumpToNumberAndContinue(inp.value);
+          return;
+        }
+
+        // სესია მიმდინარეა: ერთი თითიც იგივეა (გაგრძელება იქიდან)
+        if (S.run) {
+          clearTimeout(rowTapTimer);
+          e.preventDefault();
+          jumpToNumberAndContinue(inp.value);
+          return;
+        }
+
+        // რიგის ნომერზე (1. 2.) — რედაქტირება
+        const lbl = e.target.closest('.num-lbl');
+        if (lbl) {
+          inp.focus();
+          return;
+        }
+
+        // უქმი რეჟიმი: ერთი დაჭერა (ორჯერის შემოწმების შემდეგ) → Call
+        if (!e.target.closest('.num-inp')) return;
+        if (document.activeElement === inp) return;
+        e.preventDefault();
+        clearTimeout(rowTapTimer);
+        rowTapTimer = setTimeout(() => {
+          rowTapTimer = null;
+          inp.blur();
+          dialFromList(inp.value);
+        }, 320);
+      });
+    }
+
+    function firstNumFromText() {
+      const parsed = parse(getNumsText());
+      if (parsed[0]) return parsed[0];
+      return getNumsRaw()[0] || '';
+    }
+
+    function getDialNum() {
+      if (S.run && S.q[S.i]) return S.q[S.i];
+      const fromText = firstNumFromText();
+      if (fromText) return fromText;
+      return S.last || '';
+    }
+
+    /** გალურჯებული → თუ არა ბოლო დარეკილი → თუ არა პირველი სიიდან */
+    function getBlueOrActiveNumber() {
+      if (S.run && S.q[S.i]) return S.q[S.i];
+      for (const [num, st] of Object.entries(S.called)) {
+        if (st === 'active') return num;
+      }
+      return '';
+    }
+
+    function fillSmsTarget() {
+      // თუ SMS გრაფაში ხელით ჩაწერა/შეცვლა — ნუ გადააწერ
+      if (S.smsManual) return;
+      const n = getBlueOrActiveNumber() || S.last || firstNumFromText() || '';
+      $('sms-num').value = n ? formatPhoneDisplay(n) : '';
+    }
+
+    /** SMS/WA: ჯერ გრაფა (რაც ჩაწერე), მერე ლურჯი / ბოლო */
+    function getPhone() {
+      const fromField = tel($('sms-num').value || '');
+      if (fromField.replace(/\D/g, '').length >= 9) return fromField;
+      if (S.smsManual) return fromField; // ხელით ცარიელი/არასრული — იმასვე გამოიყენე
+      return tel(getBlueOrActiveNumber() || S.last || '');
+    }
+
+    function setLastCalled(n) {
+      const v = tel(n || '');
+      if (!v) return;
+      S.last = v;
+      if (!S.smsManual) {
+        $('sms-num').value = formatPhoneDisplay(v);
+      }
+    }
+
+    function syncFromDial() {
+      fillSmsTarget();
+    }
+
+    function syncSmsNum(n) {
+      const v = (n || '').trim();
+      if (!v) {
+        S.last = '';
+        S.smsManual = false;
+        $('sms-num').value = '';
+        return;
+      }
+      if (!S.smsManual) {
+        $('sms-num').value = formatPhoneDisplay(v);
+      }
+    }
+
+    document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => goTab(b.dataset.v));
+
+    $('sms-num').addEventListener('input', () => {
+      filterPhoneInput($('sms-num'));
+      S.smsManual = true;
+      const t = tel($('sms-num').value);
+      if (localDigitCount(t) >= 9) S.last = t;
+    });
+
+    function parse(t) {
+      return t.split(/[\n,;]+/).map(n => n.trim().replace(/[\s\-()]/g, ''))
+        .filter(n => n.replace(/\D/g, '').length >= 9)
+        .filter((n, i, a) => a.indexOf(n) === i);
+    }
+    function tel(n) { return n.replace(/[^\d+]/g, ''); }
+    function count() { $('ncount').textContent = parse(getNumsText()).length; }
+
+    const SESSION_KEY = 'cc_session';
+
+    function loadSession() {
+      try { return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch { return null; }
+    }
+    function saveSession() {
+      const called = {};
+      Object.keys(S.called).forEach(k => {
+        if (S.called[k] === 'called') called[k] = 'called';
+      });
+      try {
+        localStorage.setItem(SESSION_KEY, JSON.stringify({
+          i: S.i,
+          called,
+          updated: Date.now()
+        }));
+      } catch {}
+    }
+    function clearSession() {
+      try { localStorage.removeItem(SESSION_KEY); } catch {}
+    }
+    function restoreSession() {
+      const sess = loadSession();
+      if (!sess || !sess.called) return;
+      S.called = { ...sess.called };
+      if (typeof sess.i === 'number' && sess.i >= 0) S.i = sess.i;
+    }
+    function pruneCalledToList() {
+      const keys = new Set(parse(getNumsText()).map(normNum));
+      Object.keys(S.called).forEach(k => {
+        if (!keys.has(k)) delete S.called[k];
+      });
+    }
+    function calledCountInList(q) {
+      return (q || []).filter(n => S.called[normNum(n)] === 'called').length;
+    }
+    function updateStartBtn() {
+      if (S.run) return;
+      const q = parse(getNumsText());
+      const done = calledCountInList(q);
+      if (q.length && done > 0 && done < q.length) {
+        $('start').textContent = `განაგრძე (${done}/${q.length})`;
+      } else {
+        $('start').textContent = 'დაწყება';
+      }
+    }
+
+    function hist() {
+      try { return JSON.parse(localStorage.getItem('hist') || '[]'); } catch { return []; }
+    }
+    function todayCallCount() {
+      const start = new Date();
+      start.setHours(0, 0, 0, 0);
+      const t0 = start.getTime();
+      return hist().filter(x => typeof x.ts === 'number' && x.ts >= t0).length;
+    }
+    function addHist(num) {
+      const h = hist();
+      h.unshift({
+        num,
+        t: new Date().toLocaleString('ka-GE', { hour: '2-digit', minute: '2-digit' }),
+        ts: Date.now()
+      });
+      localStorage.setItem('hist', JSON.stringify(h.slice(0, 50)));
+      showHist();
+    }
+    function showHist() {
+      const h = hist();
+      const dayEl = $('day-stats');
+      if (dayEl) dayEl.textContent = `დღეს: ${todayCallCount()} ზარი`;
+      $('hist').innerHTML = h.length
+        ? h.map(x => {
+            const raw = tel(x.num || '');
+            return `<div class="hist" data-num="${raw}">
+              <div class="hist-info">
+                <div class="hist-num">${formatPhoneDisplay(x.num)}</div>
+                <span class="hist-time">${x.t || ''}</span>
+              </div>
+              <span class="hist-actions">
+                <button type="button" class="row-sms" data-hist-send="sms">SMS</button>
+                <button type="button" class="row-wa" data-hist-send="wa">WA</button>
+              </span>
+            </div>`;
+          }).join('')
+        : '<p class="empty">ცარიელია</p>';
+    }
+
+    function call() {
+      if (!S.run || S.i >= S.q.length) { done(); return; }
+      S.wait = true;
+      highlightNumRow(S.i);
+      setStatus('');
+      beginDialWatch();
+      dial(S.q[S.i]);
+    }
+
+    function beginDialWatch() {
+      dialWatch = { i: S.i, startedAt: Date.now(), leftAt: 0 };
+    }
+
+    function noteDialLeftApp() {
+      if (!dialWatch || dialWatch.leftAt) return;
+      dialWatch.leftAt = Date.now();
+    }
+
+    function onAppVisible() {
+      if (!S.run || !dialWatch) return;
+
+      // აპი ნამდვილად გავიდა Phone-ზე → ✓
+      if (dialWatch.leftAt) {
+        const away = Date.now() - dialWatch.leftAt;
+        if (away < DIAL_MIN_AWAY_MS) {
+          // Call/Cancel sheet-ის მოკლე flicker
+          dialWatch.leftAt = 0;
+          return;
+        }
+        S.i = dialWatch.i;
+        dialWatch = null;
+        S.wait = true;
+        finishCall();
+        return;
+      }
+
+      // hidden არ მოხდა (ხშირია iOS-ზე):
+      // სწრაფი დაბრუნება = Cancel → ✓ არა
+      // დიდხანს გასვლა = ზარი მოხდა → ✓
+      const elapsed = Date.now() - dialWatch.startedAt;
+      if (elapsed < DIAL_CANCEL_MAX_MS) {
+        dialWatch = null;
+        S.wait = false;
+        highlightNumRow(S.i);
+        return;
+      }
+      S.i = dialWatch.i;
+      dialWatch = null;
+      S.wait = true;
+      finishCall();
+    }
+
+    /** იხსნის iOS Call / Cancel ფანჯარას */
+    function dial(n) {
+      const raw = tel(n);
+      if (!raw) return;
+      location.href = 'tel:' + raw;
+    }
+
+    /** ლისტიდან ერთი ნომერი — ჯერ Call/Cancel, მერე დარეკვა */
+    function dialFromList(raw) {
+      const n = tel(raw);
+      if (localDigitCount(n) < 9) return;
+      setLastCalled(n);
+      setStatus('');
+      dial(n);
+    }
+
+    function start() {
+      S.q = parse(getNumsText());
+      if (!S.q.length) { setStatus('შეიყვანე ნომერი'); return; }
+
+      const done = calledCountInList(S.q);
+      if (done === 0 || done >= S.q.length) {
+        S.called = {};
+        S.i = 0;
+      } else {
+        const sess = loadSession();
+        let i = (sess && typeof sess.i === 'number') ? sess.i : 0;
+        if (i < 0 || i > S.q.length) i = 0;
+        while (i < S.q.length && S.called[normNum(S.q[i])] === 'called') i++;
+        if (i >= S.q.length) {
+          S.called = {};
+          S.i = 0;
+        } else {
+          S.i = i;
+        }
+      }
+
+      S.run = true;
+      $('start').classList.add('hide');
+      $('stop').classList.remove('hide');
+      setNumsDisabled(true);
+      highlightNumRow(S.i);
+      saveNums();
+      saveSession();
+      call();
+    }
+
+    function applyPaste(pasted) {
+      if (!pasted) return;
+      const existing = getNumsRaw();
+      const incoming = String(pasted).split(/[\n,;\t]+/).map(l => l.trim()).filter(Boolean);
+      const cleaned = [];
+      const seen = new Set();
+      for (const raw of [...existing, ...incoming]) {
+        const n = tel(raw);
+        if (localDigitCount(n) < 9) continue;
+        const key = normNum(n);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        cleaned.push(formatPhoneDisplay(n));
+      }
+      const rows = Math.max(NUM_ROWS_START, cleaned.length + 1);
+      renderNumRows(rows);
+      getNumInputs().forEach((inp, i) => { inp.value = cleaned[i] || ''; });
+      onNumsChange();
+      setStatus(cleaned.length ? `ჩასმულია · ${cleaned.length} ნომერი` : 'ნომერი ვერ მოიძებნა');
+    }
+
+    function finishCall() {
+      if (!S.run || !S.wait) return;
+      dialWatch = null;
+      S.wait = false;
+      const n = S.q[S.i];
+      S.called[normNum(n)] = 'called';
+      markNumRows();
+      setLastCalled(n);
+      addHist(n);
+      setStatus('');
+      S.i++;
+      saveSession();
+      if (S.run) showAfterCall(n);
+    }
+
+    function goNextCall() {
+      $('after-call-modal').classList.add('hide');
+      if (S.run && S.i < S.q.length) call();
+      else done();
+    }
+
+    function reset() {
+      $('start').classList.remove('hide');
+      $('stop').classList.add('hide');
+      setNumsDisabled(false);
+      markNumRows();
+      $('after-call-modal').classList.add('hide');
+      $('time-modal').classList.add('hide');
+    }
+
+    function done() {
+      dialWatch = null;
+      S.run = false; S.wait = false;
+      reset();
+      syncFromDial();
+      saveSession();
+      updateStartBtn();
+      setStatus('დასრულდა ✓');
+    }
+
+    function stopAll() {
+      dialWatch = null;
+      S.run = false; S.wait = false;
+      reset();
+      saveSession();
+      updateStartBtn();
+      const q = parse(getNumsText());
+      const doneN = calledCountInList(q);
+      setStatus(doneN > 0 && doneN < q.length
+        ? `გაჩერებულია · განაგრძე ${doneN}/${q.length}-დან`
+        : 'გაჩერებულია');
+    }
+
+    function introMsg(lang) {
+      if (lang === 'en') return INTRO_EN;
+      if (lang === 'both') return INTRO_KA + '\n\n' + INTRO_EN;
+      return INTRO_KA;
+    }
+
+    function sendSmsTo(num, msg) {
+      location.href = 'sms:' + num + '?body=' + encodeURIComponent(msg);
+    }
+
+    function sendWaTo(num, msg) {
+      let n = String(num || '').replace(/\D/g, '');
+      if (n.length === 9 && n.startsWith('5')) n = '995' + n;
+      location.href = 'https://wa.me/' + n + '?text=' + encodeURIComponent(msg);
+    }
+
+    function showTemplatePicker(num, type) {
+      pendingTpl.num = tel(num || '');
+      pendingTpl.type = type === 'wa' ? 'wa' : 'sms';
+      $('tpl-picker-num').textContent = formatPhoneDisplay(num);
+      $('tpl-picker-channel').textContent = type === 'wa' ? 'WhatsApp' : 'SMS';
+      $('tpl-picker-modal').classList.remove('hide');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function hideTemplatePicker() {
+      $('tpl-picker-modal').classList.add('hide');
+      document.body.style.overflow = '';
+    }
+
+    function pickTemplate(tpl) {
+      const num = pendingTpl.num;
+      const type = pendingTpl.type;
+      let msg = '';
+      let title = '';
+      if (tpl === 'intro-ka') { msg = introMsg('ka'); title = 'პატარა SMS (ქართული)'; }
+      else if (tpl === 'intro-en') { msg = introMsg('en'); title = 'პატარა SMS (ინგლისური)'; }
+      else if (tpl === 'intro-both') { msg = introMsg('both'); title = 'პატარა SMS (ორივე)'; }
+      else if (tpl === 'noanswer') { msg = NO_ANSWER_MSG; title = 'არ პასუხობს'; }
+      else if (tpl === 'tariff') { msg = TARIFF_MSG; title = 'ტარიფის დაანგარიშება'; }
+      else if (tpl === 'aldagi') { msg = buildAldagiMsg(); title = 'სრული შეთავაზება'; }
+      else return;
+      hideTemplatePicker();
+      showSendConfirm(num, msg, type, title);
+    }
+
+    function showSendConfirm(num, msg, type, title) {
+      pendingSend.num = num ? tel(num) : '';
+      pendingSend.msg = msg;
+      pendingSend.type = type;
+      $('send-title').textContent = title || 'გაგზავნა';
+      const numEl = $('send-num');
+      if (num) {
+        numEl.textContent = formatPhoneDisplay(num);
+        numEl.classList.remove('missing');
+      } else {
+        numEl.textContent = 'ნომერი არ არის — შეიყვანე ზემოთ';
+        numEl.classList.add('missing');
+      }
+      $('send-preview').textContent = msg;
+      const btn = $('send-go');
+      btn.textContent = type === 'wa' ? 'დიახ, WhatsApp' : 'დიახ, SMS';
+      btn.className = type === 'wa' ? 'btn-wa' : '';
+      $('send-modal').classList.remove('hide');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeSendModal() {
+      $('send-modal').classList.add('hide');
+      document.body.style.overflow = '';
+    }
+
+    function confirmSend() {
+      if (!pendingSend.num) {
+        $('send-num').textContent = 'შეიყვანე ტელეფონის ნომერი!';
+        $('send-num').classList.add('missing');
+        return;
+      }
+      const num = pendingSend.num;
+      const msg = pendingSend.msg;
+      const type = pendingSend.type;
+      closeSendModal();
+      if (type === 'wa') sendWaTo(num, msg);
+      else sendSmsTo(num, msg);
+    }
+
+    function openSendFromBtn(btn) {
+      const card = btn.closest('.sms-card');
+      const title = card?.querySelector('h3')?.textContent || 'გაგზავნა';
+      const n = getPhone();
+      const action = btn.dataset.send;
+      if (action === 'intro-sms') showSendConfirm(n, introMsg(langPick.intro), 'sms', title);
+      else if (action === 'noanswer-sms') showSendConfirm(n, NO_ANSWER_MSG, 'sms', title);
+      else if (action === 'noanswer-wa') showSendConfirm(n, NO_ANSWER_MSG, 'wa', title);
+      else if (action === 'tariff-sms') showSendConfirm(n, TARIFF_MSG, 'sms', title);
+      else if (action === 'tariff-wa') showSendConfirm(n, TARIFF_MSG, 'wa', title);
+      else if (action === 'aldagi-sms') showSendConfirm(n, buildAldagiMsg(), 'sms', title);
+      else if (action === 'aldagi-wa') showSendConfirm(n, buildAldagiMsg(), 'wa', title);
+    }
+
+    function showAfterCall(n) {
+      const hasNext = S.run && S.i < S.q.length;
+      const next = hasNext ? S.q[S.i] : n;
+      $('after-call-num').textContent = formatPhoneDisplay(next);
+      $('after-call-num').dataset.raw = tel(next);
+      $('after-call-note').textContent = '';
+      $('after-call-note').classList.add('hide');
+      $('after-call-next').classList.toggle('hide', !hasNext);
+      $('after-call-done').classList.toggle('hide', false);
+      if (hasNext) $('after-call-next').textContent = `დიახ, შემდეგი (${S.i + 1}/${S.q.length})`;
+      else $('after-call-next').classList.add('hide');
+      $('after-call-modal').classList.remove('hide');
+    }
+
+    function renderSmsList() {
+      let html = `
+        <div class="sms-card" data-id="intro">
+          <h3>პატარა SMS-ის დატოვება</h3>
+          <div class="lang-pick">
+            <button type="button" class="on" data-lang="ka">ქართული</button>
+            <button type="button" data-lang="en">ინგლისური</button>
+            <button type="button" data-lang="both">ორივე</button>
+          </div>
+          <div class="sms-text" id="intro-preview">${introMsg('ka')}</div>
+          <button type="button" data-send="intro-sms">გაგზავნა SMS</button>
+        </div>
+        <div class="sms-card" data-id="noanswer">
+          <h3>არ პასუხობს</h3>
+          <div class="sms-text">${NO_ANSWER_MSG.replace(/</g, '&lt;')}</div>
+          <div class="send-row">
+            <button type="button" data-send="noanswer-sms">SMS</button>
+            <button type="button" class="btn-wa" data-send="noanswer-wa">WhatsApp</button>
+          </div>
+        </div>
+        <div class="sms-card" data-id="tariff">
+          <h3>ტარიფის დაანგარიშება</h3>
+          <div class="sms-text">${TARIFF_MSG.replace(/</g, '&lt;')}</div>
+          <div class="send-row">
+            <button type="button" data-send="tariff-sms">SMS</button>
+            <button type="button" class="btn-wa" data-send="tariff-wa">WhatsApp</button>
+          </div>
+        </div>
+        <div class="sms-card" data-id="aldagi">
+          <h3>სრული შეთავაზება</h3>
+          <div class="offer-fields">
+            <span class="field-label">ტარიფი ($)</span>
+            <input class="field-inp" id="offer-tariff" type="text" inputmode="decimal" placeholder="მაგ: 150$">
+            <span class="field-label">ავტომობილი ($)</span>
+            <input class="field-inp" id="offer-car" type="text" inputmode="decimal" placeholder="მაგ: 10000$">
+            <span class="field-label">მესამე პირი</span>
+            <div class="lim-pick" id="offer-third">
+              ${OFFER_LIMITS.third.map(v => `<button type="button" data-k="third" data-val="${v}" class="${v === offerPick.third ? 'on' : ''}">${v}</button>`).join('')}
+            </div>
+            <span class="field-label">მძღოლისა და მგზავრების ჯანმრთელობა</span>
+            <div class="lim-pick" id="offer-health">
+              ${OFFER_LIMITS.health.map(v => `<button type="button" data-k="health" data-val="${v}" class="${v === offerPick.health ? 'on' : ''}">${v}</button>`).join('')}
+            </div>
+          </div>
+          <div class="sms-text long" id="aldagi-preview"></div>
+          <div class="send-row">
+            <button type="button" data-send="aldagi-sms">SMS</button>
+            <button type="button" class="btn-wa" data-send="aldagi-wa">WhatsApp</button>
+          </div>
+        </div>`;
+
+      $('sms-list').innerHTML = html;
+      updateAldagiPreview();
+    }
+
+    function formatUsd(val) {
+      const v = val.trim();
+      if (!v) return '—';
+      if (v.includes('$')) return v;
+      return v + '$';
+    }
+
+    function parseUsdAmount(val) {
+      const n = parseFloat(String(val || '').replace(/[^\d.]/g, ''));
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function buildAldagiExtras(carRaw) {
+      const car = parseUsdAmount(carRaw);
+      const lines = [];
+      if (car >= 10000) lines.push(ALDAGI_REPLACEMENT);
+      if (car >= 20000) lines.push(ALDAGI_NEGLIGENCE);
+      return lines.length ? lines.join('\n\n') + '\n\n' : '';
+    }
+
+    function buildAldagiMsg() {
+      const tariff = formatUsd($('offer-tariff')?.value || '');
+      const carRaw = $('offer-car')?.value || '';
+      const car = formatUsd(carRaw);
+      const extras = buildAldagiExtras(carRaw);
+      return `${ALDAGI_HEAD}
+
+ტარიფი: ${tariff}
+ავტომობილი: ${car}
+მესამე პირი: ${offerPick.third}
+მძღოლისა და მგზავრების ჯანმრთელობა: ${offerPick.health}
+
+${extras}${ALDAGI_BENEFITS}`;
+    }
+
+    function updateAldagiPreview() {
+      const el = $('aldagi-preview');
+      if (el) el.textContent = buildAldagiMsg();
+    }
+
+    function initOfferFields() {
+      $('offer-tariff')?.addEventListener('input', updateAldagiPreview);
+      $('offer-car')?.addEventListener('input', updateAldagiPreview);
+      document.querySelectorAll('.lim-pick button').forEach(b => {
+        b.onclick = () => {
+          const k = b.dataset.k;
+          offerPick[k] = b.dataset.val;
+          b.parentElement.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+          updateAldagiPreview();
+        };
+      });
+    }
+
+    $('sms-list').addEventListener('click', e => {
+      const langBtn = e.target.closest('[data-lang]');
+      if (langBtn) {
+        const card = langBtn.closest('[data-id="intro"]');
+        card.querySelectorAll('[data-lang]').forEach(b => b.classList.toggle('on', b === langBtn));
+        langPick.intro = langBtn.dataset.lang;
+        $('intro-preview').textContent = introMsg(langPick.intro);
+        return;
+      }
+
+      const btn = e.target.closest('[data-send]');
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      openSendFromBtn(btn);
+    });
+
+    renderSmsList();
+    initOfferFields();
+    initNumList();
+
+    $('start').onclick = start;
+    $('stop').onclick = stopAll;
+    $('after-call-next').onclick = goNextCall;
+    // «არა» — მხოლოდ მოდალის დახურვა; გაჩერება = ქვედა «გაჩერება»
+    $('after-call-done').onclick = () => {
+      $('after-call-modal').classList.add('hide');
+    };
+    $('send-go').onclick = confirmSend;
+    $('send-cancel').onclick = closeSendModal;
+    $('send-modal').onclick = e => { if (e.target === $('send-modal')) closeSendModal(); };
+    $('tpl-picker-cancel').onclick = hideTemplatePicker;
+    $('tpl-picker-modal').onclick = e => {
+      if (e.target === $('tpl-picker-modal')) hideTemplatePicker();
+      const tplBtn = e.target.closest('[data-tpl]');
+      if (tplBtn) {
+        e.preventDefault();
+        pickTemplate(tplBtn.dataset.tpl);
+      }
+    };
+    $('perm-allow').onclick = () => {
+      $('perm-modal').classList.add('hide');
+      if ('Notification' in window) Notification.requestPermission();
+    };
+    $('perm-skip').onclick = () => $('perm-modal').classList.add('hide');
+    function saveNums() {
+      localStorage.setItem('nums', getNumsText());
+    }
+
+    $('paste').onclick = async () => {
+      try {
+        const t = await navigator.clipboard.readText();
+        if (t) applyPaste(t);
+      } catch { setStatus('ჩასმა ვერ მოხერხდა'); }
+    };
+    $('clear').onclick = () => {
+      S.called = {};
+      S.i = 0;
+      setNumsFromList([]);
+      syncSmsNum('');
+      localStorage.removeItem('nums');
+      clearSession();
+      updateStartBtn();
+    };
+    $('clr-hist').onclick = () => { localStorage.removeItem('hist'); showHist(); };
+
+    $('hist').addEventListener('click', e => {
+      const btn = e.target.closest('[data-hist-send]');
+      if (!btn) return;
+      e.preventDefault();
+      const row = btn.closest('.hist');
+      const num = tel(row?.dataset.num || '');
+      if (!num) return;
+      const type = btn.dataset.histSend;
+      showTemplatePicker(num, type);
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') noteDialLeftApp();
+      if (document.visibilityState === 'visible') onAppVisible();
+    });
+    window.addEventListener('pagehide', noteDialLeftApp);
+    window.addEventListener('pageshow', onAppVisible);
+    window.addEventListener('focus', () => {
+      if (document.visibilityState === 'visible') onAppVisible();
+    });
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').then(reg => {
+        reg.update();
+        setInterval(() => reg.update(), 60000);
+      }).catch(() => {});
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (refreshing) return;
+        refreshing = true;
+        location.reload();
+      });
+    }
+
+    const saved = localStorage.getItem('nums');
+    if (saved) setNumsFromList(saved.split(/[\n,;]+/).map(l => l.trim()).filter(Boolean));
+    else count();
+    restoreSession();
+    pruneCalledToList();
+    markNumRows();
+    updateStartBtn();
+    syncFromDial();
+    showHist();
+    if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) $('ios-note').classList.remove('hide');
+    if (!localStorage.getItem('permAsked')) {
+      $('perm-modal').classList.remove('hide');
+      localStorage.setItem('permAsked', '1');
+    }
+    const resumeDone = calledCountInList(parse(getNumsText()));
+    const resumeTotal = parse(getNumsText()).length;
+    if (resumeDone > 0 && resumeDone < resumeTotal) {
+      setStatus(`შენახულია · განაგრძე ${resumeDone}/${resumeTotal}-დან`);
+    }
+  </script>
+</body>
+</html>
