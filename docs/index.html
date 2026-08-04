@@ -11,7 +11,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>Cold Caller v75</title>
+  <title>Cold Caller v76</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '75';
+    window.__CC_VER = '76';
     (function () {
       function go(v) {
         try {
@@ -623,7 +623,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v75</div>
+      <div class="ver">v76</div>
     </header>
 
     <div class="tabs">
@@ -905,9 +905,6 @@
       clearActiveMarks();
       if (S.run && idx >= 0 && S.q[idx]) {
         S.called[normNum(S.q[idx])] = 'active';
-        // გალურჯებულზე თითი → SMS-იც იმაზე (ხელით ჩაწერილი აღარ რჩება)
-        S.smsManual = false;
-        setLastCalled(S.q[idx]);
       }
       markNumRows();
     }
@@ -1098,16 +1095,17 @@
     function fillSmsTarget() {
       // თუ SMS გრაფაში ხელით ჩაწერა/შეცვლა — ნუ გადააწერ
       if (S.smsManual) return;
-      const n = getBlueOrActiveNumber() || S.last || firstNumFromText() || '';
+      // ბოლო ✓ (დარეკილი) ნომერი — პრიორიტეტი SMS-ში
+      const n = S.last || getBlueOrActiveNumber() || firstNumFromText() || '';
       $('sms-num').value = n ? formatPhoneDisplay(n) : '';
     }
 
-    /** SMS/WA: ჯერ გრაფა (რაც ჩაწერე), მერე ლურჯი / ბოლო */
+    /** SMS/WA: ჯერ გრაფა (რაც ჩაწერე), მერე ბოლო ✓ / ლურჯი */
     function getPhone() {
       const fromField = tel($('sms-num').value || '');
       if (fromField.replace(/\D/g, '').length >= 9) return fromField;
       if (S.smsManual) return fromField; // ხელით ცარიელი/არასრული — იმასვე გამოიყენე
-      return tel(getBlueOrActiveNumber() || S.last || '');
+      return tel(S.last || getBlueOrActiveNumber() || '');
     }
 
     function setLastCalled(n) {
@@ -1167,6 +1165,7 @@
         localStorage.setItem(SESSION_KEY, JSON.stringify({
           i: S.i,
           called,
+          last: S.last || '',
           updated: Date.now()
         }));
       } catch {}
@@ -1179,6 +1178,7 @@
       if (!sess || !sess.called) return;
       S.called = { ...sess.called };
       if (typeof sess.i === 'number' && sess.i >= 0) S.i = sess.i;
+      if (sess.last) S.last = tel(sess.last);
     }
     function pruneCalledToList() {
       const keys = new Set(parse(getNumsText()).map(normNum));
@@ -1367,6 +1367,8 @@
       const n = S.q[S.i];
       S.called[normNum(n)] = 'called';
       markNumRows();
+      // ბოლო ✓ → SMS ველში (ხელით შეცვლილს აღარ ვტოვებთ)
+      S.smsManual = false;
       setLastCalled(n);
       addHist(n);
       setStatus('');
