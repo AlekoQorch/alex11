@@ -8,10 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v105</title>
+  <title>დოკუმენტების ატვირთვა v106</title>
   <script>
     (function () {
-      var VER = '105';
+      var VER = '106';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -106,6 +106,12 @@
       width: 100%; background: #101012; border: 1px solid var(--line); border-radius: 10px;
       color: var(--text); padding: 11px 12px; font-size: 16px;
     }
+    .field-inp.invalid { border-color: #ef4444; }
+    .field-inp:read-only { color: #c4c4c8; }
+    .field-err {
+      display: none; color: #f87171; font-size: 12px; margin: 5px 0 2px; line-height: 1.35;
+    }
+    .field-err.show { display: block; }
     .btn {
       border: none; border-radius: 12px; padding: 12px 14px; font-size: 15px; font-weight: 700;
       background: var(--teal); color: #042f2e; width: 100%;
@@ -256,9 +262,11 @@
       <p class="sub">შეიყვანეთ მონაცემები, შემდეგ გადაიღეთ პირადობის, მართვის მოწმობისა და ტექპასპორტის ორივე მხარე.</p>
       <div class="card">
         <label class="field-label">ტელეფონის ნომერი</label>
-        <input class="field-inp" id="phone" type="tel" inputmode="tel" placeholder="5XX XX XX XX">
+        <input class="field-inp" id="phone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="5XX XX XX XX" maxlength="12">
+        <p class="field-err" id="phone-err">შეიყვანეთ სწორი ნომერი (მაგ. 577 92 04 71)</p>
         <label class="field-label">სახელი და გვარი</label>
         <input class="field-inp" id="fullname" type="text" placeholder="სახელი და გვარი" autocomplete="name">
+        <p class="field-err" id="fullname-err">შეიყვანეთ სახელი და გვარი</p>
         <div class="row-btns">
           <button class="btn" id="start-btn" type="button">შემდეგი</button>
         </div>
@@ -362,16 +370,82 @@
     };
 
     const params = new URLSearchParams(location.search);
-    if (params.get('n')) $('phone').value = formatPhone(params.get('n'));
+    const phoneFromLink = params.get('n');
 
+    /** 577920471 → 577 92 04 71 (9 ციფრი, იწყება 5-ით) */
     function formatPhone(raw) {
       let d = String(raw || '').replace(/\D/g, '');
       if (d.startsWith('995') && d.length > 9) d = d.slice(3);
+      if (d.startsWith('0') && d.length === 10) d = d.slice(1);
+      d = d.slice(0, 9);
       if (!d) return '';
       let out = d.slice(0, 3);
       for (let i = 3; i < d.length; i += 2) out += ' ' + d.slice(i, i + 2);
       return out;
     }
+
+    function phoneDigits(raw) {
+      let d = String(raw || '').replace(/\D/g, '');
+      if (d.startsWith('995') && d.length > 9) d = d.slice(3);
+      if (d.startsWith('0') && d.length === 10) d = d.slice(1);
+      return d.slice(0, 9);
+    }
+
+    function isValidPhone(raw) {
+      const d = phoneDigits(raw);
+      return d.length === 9 && d.startsWith('5');
+    }
+
+    function letterCount(s) {
+      return (String(s || '').match(/[\u10D0-\u10FFa-zA-Z]/g) || []).length;
+    }
+
+    function isValidFullName(raw) {
+      const t = String(raw || '').trim().replace(/\s+/g, ' ');
+      if (!t.includes(' ')) return false;
+      const parts = t.split(' ');
+      if (parts.length < 2) return false;
+      if (letterCount(parts[0]) < 3) return false;
+      if (letterCount(parts[1]) < 4) return false;
+      return true;
+    }
+
+    function setFieldError(inpId, errId, show) {
+      const inp = $(inpId);
+      const err = $(errId);
+      inp.classList.toggle('invalid', !!show);
+      err.classList.toggle('show', !!show);
+    }
+
+    if (phoneFromLink) {
+      const formatted = formatPhone(phoneFromLink);
+      $('phone').value = formatted;
+      if (isValidPhone(formatted)) {
+        $('phone').readOnly = true;
+        $('phone').title = 'ნომერი ლინკიდანაა და ვერ შეიცვლება';
+      }
+    }
+
+    $('phone').addEventListener('input', () => {
+      if ($('phone').readOnly) return;
+      const cur = $('phone').value;
+      const next = formatPhone(cur);
+      if (cur !== next) {
+        $('phone').value = next;
+        try { $('phone').setSelectionRange(next.length, next.length); } catch (_) {}
+      }
+      if (isValidPhone(next)) setFieldError('phone', 'phone-err', false);
+    });
+
+    $('phone').addEventListener('keydown', (e) => {
+      if ($('phone').readOnly && !['Tab', 'ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key) && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+      }
+    });
+
+    $('fullname').addEventListener('input', () => {
+      if (isValidFullName($('fullname').value)) setFieldError('fullname', 'fullname-err', false);
+    });
 
     function setProgress(p) {
       $('bar').style.width = Math.max(0, Math.min(100, p)) + '%';
@@ -476,10 +550,20 @@
     }
 
     $('start-btn').onclick = () => {
-      state.phone = $('phone').value.trim();
-      state.name = $('fullname').value.trim();
-      if (!state.phone.replace(/\D/g, '').length) { $('phone').focus(); return; }
-      if (!state.name) { $('fullname').focus(); return; }
+      const phoneVal = formatPhone($('phone').value);
+      $('phone').value = phoneVal;
+      const nameVal = $('fullname').value.trim().replace(/\s+/g, ' ');
+      $('fullname').value = nameVal;
+
+      const phoneOk = isValidPhone(phoneVal);
+      const nameOk = isValidFullName(nameVal);
+      setFieldError('phone', 'phone-err', !phoneOk);
+      setFieldError('fullname', 'fullname-err', !nameOk);
+      if (!phoneOk) { $('phone').focus(); return; }
+      if (!nameOk) { $('fullname').focus(); return; }
+
+      state.phone = phoneVal;
+      state.name = nameVal;
       state.groupIndex = 0;
       show('group');
       renderGroup();
