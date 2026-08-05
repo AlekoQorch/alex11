@@ -8,7 +8,35 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v101</title>
+  <title>დოკუმენტების ატვირთვა v102</title>
+  <script>
+    (function () {
+      var VER = '102';
+      try {
+        var k = 'cc_verify_v';
+        if (localStorage.getItem(k) !== VER) {
+          localStorage.setItem(k, VER);
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function (regs) {
+              regs.forEach(function (r) { r.unregister(); });
+            });
+          }
+          if (window.caches) {
+            caches.keys().then(function (keys) {
+              keys.forEach(function (key) { caches.delete(key); });
+            });
+          }
+          if (location.search.indexOf('v=' + VER) === -1) {
+            var u = new URL(location.href);
+            u.searchParams.set('v', VER);
+            location.replace(u.toString());
+            return;
+          }
+          location.reload(true);
+        }
+      } catch (e) {}
+    })();
+  </script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     :root {
@@ -389,18 +417,18 @@
     }
 
     function svgTechBack() {
-      // უკანა — შავი ტექსტის ხაზები + QR კვადრატი მარჯვნივ
+      // უკანა — ფოტოსებრ: რამდენიმე შავი ხაზი + QR კვადრატი მარჯვნივ
       return `<svg viewBox="0 0 220 138" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <rect x="6" y="8" width="208" height="122" rx="8" stroke="#9ca3af" stroke-width="2" stroke-dasharray="5 4"/>
-        <line x1="72" y1="26" x2="142" y2="26" stroke="#9ca3af" stroke-width="2.3" stroke-linecap="round"/>
-        <line x1="72" y1="38" x2="132" y2="38" stroke="#9ca3af" stroke-width="2.3" stroke-linecap="round"/>
-        <line x1="72" y1="50" x2="152" y2="50" stroke="#9ca3af" stroke-width="2.3" stroke-linecap="round"/>
-        <line x1="72" y1="62" x2="150" y2="62" stroke="#9ca3af" stroke-width="2.3" stroke-linecap="round"/>
-        <line x1="72" y1="82" x2="108" y2="82" stroke="#9ca3af" stroke-width="2.3" stroke-linecap="round"/>
-        <line x1="72" y1="94" x2="148" y2="94" stroke="#9ca3af" stroke-width="2.3" stroke-linecap="round"/>
-        <rect x="158" y="36" width="48" height="48" rx="3" stroke="#d1d5db" stroke-width="2"/>
-        <line x1="16" y1="118" x2="88" y2="118" stroke="#9ca3af" stroke-width="3.4" stroke-linecap="round"/>
-        <line x1="100" y1="118" x2="172" y2="118" stroke="#9ca3af" stroke-width="2.3" stroke-linecap="round"/>
+        <line x1="68" y1="24" x2="140" y2="24" stroke="#9ca3af" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="68" y1="36" x2="128" y2="36" stroke="#9ca3af" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="68" y1="48" x2="148" y2="48" stroke="#9ca3af" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="68" y1="60" x2="146" y2="60" stroke="#9ca3af" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="68" y1="80" x2="104" y2="80" stroke="#9ca3af" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="68" y1="92" x2="144" y2="92" stroke="#9ca3af" stroke-width="2.5" stroke-linecap="round"/>
+        <rect x="156" y="28" width="52" height="52" rx="4" stroke="#d1d5db" stroke-width="2.2"/>
+        <line x1="14" y1="118" x2="86" y2="118" stroke="#9ca3af" stroke-width="3.6" stroke-linecap="round"/>
+        <line x1="98" y1="118" x2="170" y2="118" stroke="#9ca3af" stroke-width="2.5" stroke-linecap="round"/>
       </svg>`;
     }
 
