@@ -11,7 +11,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>Cold Caller v76</title>
+  <title>Cold Caller v77</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '76';
+    window.__CC_VER = '77';
     (function () {
       function go(v) {
         try {
@@ -623,7 +623,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v76</div>
+      <div class="ver">v77</div>
     </header>
 
     <div class="tabs">
@@ -649,7 +649,7 @@
 
       <div class="page" id="p-sms">
         <input type="tel" id="sms-num" placeholder="ტელეფონის ნომერი" inputmode="tel">
-        <p class="sms-hint">4 შაბლონი: პატარა SMS · არ პასუხობს · ტარიფი · სრული შეთავაზება</p>
+        <p class="sms-hint">შაბლონები: პატარა SMS · არ პასუხობს · ტარიფი · შეთავაზება · დოკუმენტების ლინკი</p>
         <div id="sms-list"></div>
       </div>
 
@@ -698,6 +698,7 @@
       <button type="button" class="tpl-btn" data-tpl="noanswer">არ პასუხობს</button>
       <button type="button" class="tpl-btn" data-tpl="tariff">ტარიფის დაანგარიშება</button>
       <button type="button" class="tpl-btn" data-tpl="aldagi">სრული შეთავაზება</button>
+      <button type="button" class="tpl-btn" data-tpl="docs">დოკუმენტების ლინკი</button>
       <button type="button" class="skip" id="tpl-picker-cancel">გაუქმება</button>
     </div>
   </div>
@@ -770,6 +771,22 @@
 8) რამდენი ხანია რაც მართვის გამოცდილება გაქვთ`;
 
     const NO_ANSWER_MSG = `გამარჯობა, ავტომობილის დაზღვევასთან დაკავშირებით გირეკავდით, სადაზღვეო კომპანია ალდაგიდან თუ დაინტერესდებით ამ ნომერზე დამიკავშირდით.`;
+
+    function docsVerifyUrl(num) {
+      const base = new URL('verify.html', location.href).href.split('?')[0];
+      const n = tel(num || getPhone() || '').replace(/\D/g, '');
+      return n ? `${base}?n=${encodeURIComponent(n)}` : base;
+    }
+    function buildDocsLinkMsg(num) {
+      const link = docsVerifyUrl(num);
+      return `გამარჯობა, ალექსანდრე ქორჩაშვილი გწერთ სადაზღვეო კომპანია ალდაგიდან.
+
+დოკუმენტების (პირადობა, მართვის მოწმობა, ტექპასპორტი) და სახის ფოტოს ასატვირთად გთხოვთ გადახვიდეთ ლინკზე:
+
+${link}
+
+მადლობა.`;
+    }
 
     const langPick = { intro: 'ka' };
     const S = { q: [], i: 0, run: false, wait: false, last: '', called: {}, smsManual: false };
@@ -1098,6 +1115,7 @@
       // ბოლო ✓ (დარეკილი) ნომერი — პრიორიტეტი SMS-ში
       const n = S.last || getBlueOrActiveNumber() || firstNumFromText() || '';
       $('sms-num').value = n ? formatPhoneDisplay(n) : '';
+      updateDocsPreview();
     }
 
     /** SMS/WA: ჯერ გრაფა (რაც ჩაწერე), მერე ბოლო ✓ / ლურჯი */
@@ -1141,6 +1159,7 @@
       S.smsManual = true;
       const t = tel($('sms-num').value);
       if (localDigitCount(t) >= 9) S.last = t;
+      updateDocsPreview();
     });
 
     function parse(t) {
@@ -1456,6 +1475,7 @@
       else if (tpl === 'noanswer') { msg = NO_ANSWER_MSG; title = 'არ პასუხობს'; }
       else if (tpl === 'tariff') { msg = TARIFF_MSG; title = 'ტარიფის დაანგარიშება'; }
       else if (tpl === 'aldagi') { msg = buildAldagiMsg(); title = 'სრული შეთავაზება'; }
+      else if (tpl === 'docs') { msg = buildDocsLinkMsg(num); title = 'დოკუმენტების ლინკი'; }
       else return;
       hideTemplatePicker();
       showSendConfirm(num, msg, type, title);
@@ -1513,6 +1533,8 @@
       else if (action === 'tariff-wa') showSendConfirm(n, TARIFF_MSG, 'wa', title);
       else if (action === 'aldagi-sms') showSendConfirm(n, buildAldagiMsg(), 'sms', title);
       else if (action === 'aldagi-wa') showSendConfirm(n, buildAldagiMsg(), 'wa', title);
+      else if (action === 'docs-sms') showSendConfirm(n, buildDocsLinkMsg(n), 'sms', title);
+      else if (action === 'docs-wa') showSendConfirm(n, buildDocsLinkMsg(n), 'wa', title);
     }
 
     function showAfterCall(n) {
@@ -1578,10 +1600,25 @@
             <button type="button" data-send="aldagi-sms">SMS</button>
             <button type="button" class="btn-wa" data-send="aldagi-wa">WhatsApp</button>
           </div>
+        </div>
+        <div class="sms-card" data-id="docs">
+          <h3>დოკუმენტების ლინკი</h3>
+          <p class="sms-hint" style="margin:0 0 8px">პირადობა · მართვის მოწმობა · ტექპასპორტი · სახის ფოტო (ჩარჩო)</p>
+          <div class="sms-text" id="docs-preview"></div>
+          <div class="send-row">
+            <button type="button" data-send="docs-sms">SMS</button>
+            <button type="button" class="btn-wa" data-send="docs-wa">WhatsApp</button>
+          </div>
         </div>`;
 
       $('sms-list').innerHTML = html;
       updateAldagiPreview();
+      updateDocsPreview();
+    }
+
+    function updateDocsPreview() {
+      const el = $('docs-preview');
+      if (el) el.textContent = buildDocsLinkMsg(getPhone());
     }
 
     function formatUsd(val) {
