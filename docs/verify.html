@@ -28,71 +28,106 @@
     .app {
       max-width: 480px;
       margin: 0 auto;
-      min-height: 100dvh;
-      padding: calc(16px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));
+      height: 100dvh;
+      max-height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      padding: calc(10px + env(safe-area-inset-top)) 14px calc(12px + env(safe-area-inset-bottom));
     }
     .topbar {
       display: flex;
       align-items: center;
       gap: 10px;
-      margin-bottom: 14px;
+      margin-bottom: 8px;
+      flex-shrink: 0;
     }
     .back {
-      width: 36px; height: 36px; border-radius: 10px;
+      width: 34px; height: 34px; border-radius: 10px;
       border: 1px solid var(--line); background: var(--surface);
-      color: var(--text); font-size: 18px;
+      color: var(--text); font-size: 18px; flex-shrink: 0;
     }
     .topbar h1 {
       font-size: 17px;
       font-weight: 700;
-      line-height: 1.25;
+      line-height: 1.2;
       flex: 1;
       min-width: 0;
     }
     .sub {
       color: var(--dim);
-      font-size: 13px;
-      margin-bottom: 16px;
-      line-height: 1.4;
+      font-size: 12px;
+      margin-bottom: 10px;
+      line-height: 1.35;
+      flex-shrink: 0;
     }
     .progress {
-      height: 4px; background: var(--line); border-radius: 99px; overflow: hidden; margin-bottom: 18px;
+      height: 3px; background: var(--line); border-radius: 99px; overflow: hidden;
+      margin-bottom: 10px; flex-shrink: 0;
     }
     .progress > i { display: block; height: 100%; width: 0; background: var(--teal); transition: width .25s ease; }
     .card {
       background: var(--surface); border: 1px solid var(--line);
-      border-radius: 14px; padding: 16px; margin-bottom: 14px;
+      border-radius: 14px; padding: 14px; margin-bottom: 14px;
     }
-    .field-label { display: block; font-size: 12px; color: var(--dim); margin: 10px 0 6px; }
+    .field-label { display: block; font-size: 12px; color: var(--dim); margin: 8px 0 5px; }
     .field-inp {
       width: 100%; background: #101012; border: 1px solid var(--line); border-radius: 10px;
-      color: var(--text); padding: 12px; font-size: 16px;
+      color: var(--text); padding: 11px 12px; font-size: 16px;
     }
     .btn {
-      border: none; border-radius: 12px; padding: 13px 14px; font-size: 16px; font-weight: 700;
+      border: none; border-radius: 12px; padding: 12px 14px; font-size: 15px; font-weight: 700;
       background: var(--teal); color: #042f2e; width: 100%;
     }
     .btn:disabled { opacity: 0.35; }
     .btn.secondary { background: transparent; border: 1px solid var(--line); color: var(--text); }
     .btn.green { background: var(--green); color: #052e16; }
-    .row-btns { display: flex; gap: 8px; margin-top: 14px; }
+    .row-btns { display: flex; gap: 8px; margin-top: 12px; }
     .row-btns .btn { flex: 1; }
     .hide { display: none !important; }
 
-    #group-slots { margin-bottom: 8px; }
-    .slot-block { margin-bottom: 18px; }
+    #step-intro, #step-review, #step-done, #step-group {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    #step-intro.hide, #step-review.hide, #step-done.hide, #step-group.hide {
+      display: none !important;
+    }
+    #step-intro, #step-review, #step-done { overflow: auto; }
+
+    #group-slots {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-rows: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .slot-block {
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
     .slot-label {
-      font-size: 14px; font-weight: 600; margin: 0 0 8px; color: var(--text);
+      font-size: 13px; font-weight: 600; color: var(--text); flex-shrink: 0;
     }
     .slot {
       position: relative;
       border: 1.5px solid var(--line);
-      border-radius: 14px;
+      border-radius: 12px;
       background: #101012;
-      aspect-ratio: 1.586;
       overflow: hidden;
-      margin-bottom: 10px;
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+      cursor: pointer;
+      -webkit-user-select: none;
+      user-select: none;
     }
+    .slot:active { transform: scale(0.995); }
     .slot.has-photo { border-color: rgba(20,184,166,.55); }
     .slot img.preview {
       width: 100%; height: 100%; object-fit: cover; display: block;
@@ -103,7 +138,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 12px 14px;
+      padding: 8px 10px;
       pointer-events: none;
     }
     .slot .schematic svg {
@@ -113,27 +148,17 @@
       opacity: 0.6;
       display: block;
     }
-    .slot-actions {
-      display: flex;
-      justify-content: flex-end;
-      align-items: center;
-      gap: 8px;
-      min-height: 44px;
+    .slot-tap-hint {
+      position: absolute;
+      left: 8px;
+      bottom: 7px;
+      font-size: 11px;
+      color: rgba(255,255,255,.55);
+      pointer-events: none;
+      z-index: 1;
     }
-    .cam-fab {
-      width: 44px; height: 44px; border-radius: 50%;
-      border: none; background: var(--teal); color: #042f2e;
-      display: grid; place-items: center;
-      box-shadow: 0 4px 14px rgba(0,0,0,.35);
-      flex-shrink: 0;
-    }
-    .cam-fab svg { width: 20px; height: 20px; display: block; }
-    .slot-hint {
-      font-size: 12px;
-      color: var(--dim);
-      margin-right: auto;
-    }
-    #group-next { margin-top: 8px; margin-bottom: 8px; }
+    .slot.has-photo .slot-tap-hint { color: rgba(255,255,255,.8); text-shadow: 0 1px 3px rgba(0,0,0,.6); }
+    #group-next { flex-shrink: 0; }
     .status-pill { font-size: 12px; color: var(--dim); margin-top: 8px; }
     .done-list { display: grid; gap: 8px; }
     .done-item {
@@ -205,7 +230,7 @@
         <button class="back" id="group-back" type="button" aria-label="უკან">←</button>
         <h1 id="group-title">პირადობა</h1>
       </div>
-      <p class="sub" id="group-sub">გადაიღეთ წინა და უკანა მხარის მკაფიო ფოტოები. ორივე საჭიროა შემდეგზე გადასასვლელად.</p>
+      <p class="sub" id="group-sub">წინა და უკანა · ჩარჩოზე დააჭირეთ გადასაღებად</p>
       <div id="group-slots"></div>
       <button class="btn" id="group-next" type="button" disabled>შემდეგი</button>
     </section>
@@ -255,7 +280,7 @@
       {
         id: 'id',
         title: 'პირადობა',
-        sub: 'გადაიღეთ პირადობის წინა და უკანა მხარის მკაფიო ფოტოები. ორივე საჭიროა შემდეგზე გადასასვლელად.',
+        sub: 'წინა და უკანა · ჩარჩოზე დააჭირეთ გადასაღებად',
         sides: [
           { key: 'id_front', label: 'წინა', side: 'front', camTitle: 'გადაიღეთ პირადობის წინა მხარე' },
           { key: 'id_back', label: 'უკანა', side: 'back', camTitle: 'გადაიღეთ პირადობის უკანა მხარე' }
@@ -264,7 +289,7 @@
       {
         id: 'license',
         title: 'მართვის მოწმობა',
-        sub: 'გადაიღეთ მართვის მოწმობის წინა და უკანა მხარის მკაფიო ფოტოები. ორივე საჭიროა შემდეგზე გადასასვლელად.',
+        sub: 'წინა და უკანა · ჩარჩოზე დააჭირეთ გადასაღებად',
         sides: [
           { key: 'license_front', label: 'წინა', side: 'front', camTitle: 'გადაიღეთ მართვის მოწმობის წინა მხარე' },
           { key: 'license_back', label: 'უკანა', side: 'back', camTitle: 'გადაიღეთ მართვის მოწმობის უკანა მხარე' }
@@ -273,7 +298,7 @@
       {
         id: 'tech',
         title: 'ტექპასპორტი',
-        sub: 'გადაიღეთ ტექპასპორტის წინა და უკანა მხარის მკაფიო ფოტოები. ორივე საჭიროა შემდეგზე გადასასვლელად.',
+        sub: 'წინა და უკანა · ჩარჩოზე დააჭირეთ გადასაღებად',
         sides: [
           { key: 'tech_front', label: 'წინა', side: 'front', camTitle: 'გადაიღეთ ტექპასპორტის წინა მხარე' },
           { key: 'tech_back', label: 'უკანა', side: 'back', camTitle: 'გადაიღეთ ტექპასპორტის უკანა მხარე' }
@@ -337,13 +362,6 @@
       </svg>`;
     }
 
-    function camIcon() {
-      return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-        <path d="M4 8h3l2-2h6l2 2h3v11H4V8z" stroke-linejoin="round"/>
-        <circle cx="12" cy="13" r="3.2"/>
-      </svg>`;
-    }
-
     function renderGroup() {
       const g = GROUPS[state.groupIndex];
       $('group-title').textContent = g.title;
@@ -353,15 +371,12 @@
         return `
           <div class="slot-block">
             <div class="slot-label">${s.label}</div>
-            <div class="slot ${photo ? 'has-photo' : ''}" data-key="${s.key}">
+            <button type="button" class="slot ${photo ? 'has-photo' : ''}" data-capture="${s.key}" aria-label="${s.label} გადაღება">
               ${photo
                 ? `<img class="preview" src="${photo}" alt="">`
                 : `<div class="schematic">${s.side === 'front' ? svgFront() : svgBack()}</div>`}
-            </div>
-            <div class="slot-actions">
-              <span class="slot-hint">${photo ? 'გადაღებულია · თავიდან გადასაღებად დააჭირეთ' : 'დააჭირეთ კამერას'}</span>
-              <button class="cam-fab" type="button" data-capture="${s.key}" aria-label="კამერა">${camIcon()}</button>
-            </div>
+              <span class="slot-tap-hint">${photo ? 'თავიდან გადაღება' : 'დააჭირეთ გადასაღებად'}</span>
+            </button>
           </div>`;
       }).join('');
 
