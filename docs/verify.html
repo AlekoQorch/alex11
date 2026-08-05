@@ -224,6 +224,8 @@
     }
     .cam-top h3 { font-size: 17px; font-weight: 700; line-height: 1.3; padding-right: 8px; }
     .cam-top p { font-size: 13px; color: rgba(255,255,255,.75); margin-top: 4px; line-height: 1.35; max-width: 36rem; }
+    .cam-top p.ok { color: #4ade80; font-weight: 600; }
+    .take.ready { background: #22c55e; color: #052e16; }
     .cam-stage { flex: 1; position: relative; overflow: hidden; background: #000; }
     .cam-stage video, .cam-stage canvas.guide {
       position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
@@ -352,7 +354,11 @@
       captureKey: '',
       captureSide: 'front',
       captureGuide: 'id',
-      stream: null
+      stream: null,
+      alignOk: false,
+      alignStreak: 0,
+      alignTimer: null,
+      autoShot: false
     };
 
     const params = new URLSearchParams(location.search);
@@ -601,15 +607,22 @@
       state.captureKey = side.key;
       state.captureSide = side.side;
       state.captureGuide = side.guide || (side.side === 'front' ? 'id' : 'back');
+      state.alignOk = false;
+      state.alignStreak = 0;
+      state.autoShot = false;
       $('cam-title').textContent = side.camTitle;
-      $('cam-sub').textContent = 'დარწმუნდით, რომ განათება საკმარისია და ტექსტი იკითხება.';
+      $('cam-sub').textContent = 'ჩარჩოში მოათავსეთ დოკუმენტი — გასწორებისას თავისით გადაიღებს.';
+      $('cam-sub').classList.remove('ok');
+      $('cam-shutter').classList.remove('ready');
       $('cam').classList.remove('hide');
       document.body.style.overflow = 'hidden';
       try {
         await startStream();
         resizeGuide();
         drawGuide();
+        startAlignLoop();
       } catch {
+        stopAlignLoop();
         $('cam-sub').textContent = 'კამერა ვერ გაიხსნა — სცადეთ გალერეიდან ატვირთვა.';
       }
     }
@@ -633,9 +646,12 @@
     }
 
     function closeCamera() {
+      stopAlignLoop();
       stopStream();
       $('cam').classList.add('hide');
       document.body.style.overflow = '';
+      $('cam-sub').classList.remove('ok');
+      $('cam-shutter').classList.remove('ready');
     }
 
     $('cam-close').onclick = closeCamera;
@@ -663,6 +679,124 @@
       return { x: (w - rw) / 2, y: (h - rh) / 2 - h * 0.02, rw, rh };
     }
 
+    function startAlignLoop() {
+      stopAlignLoop();
+      state.alignTimer = setInterval(tickAlign, 120);
+    }
+
+    function stopAlignLoop() {
+      if (state.alignTimer) {
+        clearInterval(state.alignTimer);
+        state.alignTimer = null;
+      }
+      state.alignStreak = 0;
+      state.alignOk = false;
+    }
+
+    function lumaAt(data, w, x, y) {
+      const xi = Math.max(0, Math.min(w - 1, x | 0));
+      const yi = Math.max(0, Math.min((data.length / (w * 4)) - 1, y | 0));
+      const i = (yi * w + xi) * 4;
+      return 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+    }
+
+    function edgeContrast(data, w, x0, y0, x1, y1, inwardX, inwardY) {
+      const steps = 18;
+      let sum = 0;
+      for (let i = 0; i <= steps; i++) {
+        const t = i / steps;
+        const x = x0 + (x1 - x0) * t;
+        const y = y0 + (y1 - y0) * t;
+        const inside = lumaAt(data, w, x + inwardX, y + inwardY);
+        const outside = lumaAt(data, w, x - inwardX, y - inwardY);
+        sum += Math.abs(inside - outside);
+      }
+      return sum / (steps + 1);
+    }
+
+    function scoreDocumentInFrame(video, cw, ch) {
+      if (!video.videoWidth) return 0;
+      const aw = Math.min(320, cw);
+      const ah = Math.max(1, Math.round(ch * (aw / cw)));
+      const canvas = document.createElement('canvas');
+      canvas.width = aw;
+      canvas.height = ah;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      const vw = video.videoWidth;
+      const vh = video.videoHeight;
+      const scale = Math.max(aw / vw, ah / vh);
+      const dw = vw * scale;
+      const dh = vh * scale;
+      ctx.drawImage(video, (aw - dw) / 2, (ah - dh) / 2, dw, dh);
+      const { x, y, rw, rh } = cardRect(aw, ah);
+      const img = ctx.getImageData(0, 0, aw, ah);
+      const data = img.data;
+      const pad = Math.max(3, Math.round(Math.min(rw, rh) * 0.035));
+
+      const top = edgeContrast(data, aw, x, y, x + rw, y, 0, pad);
+      const bot = edgeContrast(data, aw, x, y + rh, x + rw, y + rh, 0, -pad);
+      const left = edgeContrast(data, aw, x, y, x, y + rh, pad, 0);
+      const right = edgeContrast(data, aw, x + rw, y, x + rw, y + rh, -pad, 0);
+      const edgeScore = (top + bot + left + right) / 4;
+
+      // interior brightness + texture
+      let sum = 0;
+      let sumSq = 0;
+      let n = 0;
+      const stepX = Math.max(2, Math.floor(rw / 24));
+      const stepY = Math.max(2, Math.floor(rh / 16));
+      for (let yy = y + pad * 2; yy < y + rh - pad * 2; yy += stepY) {
+        for (let xx = x + pad * 2; xx < x + rw - pad * 2; xx += stepX) {
+          const L = lumaAt(data, aw, xx, yy);
+          sum += L;
+          sumSq += L * L;
+          n++;
+        }
+      }
+      if (!n) return 0;
+      const mean = sum / n;
+      const variance = Math.max(0, sumSq / n - mean * mean);
+      const brightOk = mean > 55 && mean < 230 ? 1 : mean > 40 ? 0.5 : 0.15;
+      const textureOk = variance > 180 ? 1 : variance > 80 ? 0.6 : 0.2;
+
+      // normalize edge (~0-40 typical) into 0-1
+      const edgeOk = Math.max(0, Math.min(1, (edgeScore - 12) / 28));
+      return edgeOk * 0.55 + brightOk * 0.25 + textureOk * 0.20;
+    }
+
+    function tickAlign() {
+      if ($('cam').classList.contains('hide') || state.autoShot) return;
+      const video = $('cam-video');
+      const canvas = $('cam-guide');
+      if (!video.videoWidth || !canvas.width) return;
+
+      const score = scoreDocumentInFrame(video, canvas.width, canvas.height);
+      const good = score >= 0.62;
+      if (good) state.alignStreak += 1;
+      else state.alignStreak = Math.max(0, state.alignStreak - 2);
+
+      const wasOk = state.alignOk;
+      state.alignOk = state.alignStreak >= 3;
+      if (state.alignOk !== wasOk) {
+        drawGuide();
+        if (state.alignOk) {
+          $('cam-sub').textContent = 'კარგია — ჩარჩოშია ✓  იღებს...';
+          $('cam-sub').classList.add('ok');
+          $('cam-shutter').classList.add('ready');
+        } else {
+          $('cam-sub').textContent = 'ჩარჩოში მოათავსეთ დოკუმენტი — გასწორებისას თავისით გადაიღებს.';
+          $('cam-sub').classList.remove('ok');
+          $('cam-shutter').classList.remove('ready');
+        }
+      }
+
+      // ~1s hold when aligned
+      if (state.alignStreak >= 8 && !state.autoShot) {
+        state.autoShot = true;
+        captureFromVideo();
+      }
+    }
+
     function drawGuide() {
       const canvas = $('cam-guide');
       const ctx = canvas.getContext('2d');
@@ -676,16 +810,34 @@
       ctx.fillRect(0, 0, w, h);
       ctx.clearRect(x, y, rw, rh);
 
-      // dashed outer card
-      ctx.strokeStyle = 'rgba(255,255,255,0.95)';
-      ctx.lineWidth = Math.max(2, w * 0.004);
+      // dashed outer card — მწვანე როცა გასწორებულია
+      const ok = state.alignOk;
+      ctx.strokeStyle = ok ? 'rgba(74,222,128,0.98)' : 'rgba(255,255,255,0.95)';
+      ctx.lineWidth = Math.max(ok ? 3 : 2, w * (ok ? 0.0055 : 0.004));
       ctx.setLineDash([10, 8]);
       roundRect(ctx, x, y, rw, rh, Math.min(14, rw * 0.04));
       ctx.stroke();
       ctx.setLineDash([]);
 
+      if (ok) {
+        // solid green corners for clarity
+        ctx.strokeStyle = 'rgba(34,197,94,1)';
+        ctx.lineWidth = Math.max(3.5, w * 0.006);
+        const c = Math.min(rw, rh) * 0.12;
+        [
+          [x, y, 1, 1], [x + rw, y, -1, 1],
+          [x, y + rh, 1, -1], [x + rw, y + rh, -1, -1]
+        ].forEach(([cx, cy, sx, sy]) => {
+          ctx.beginPath();
+          ctx.moveTo(cx, cy + sy * c);
+          ctx.lineTo(cx, cy);
+          ctx.lineTo(cx + sx * c, cy);
+          ctx.stroke();
+        });
+      }
+
       ctx.lineCap = 'round';
-      ctx.strokeStyle = 'rgba(255,255,255,0.82)';
+      ctx.strokeStyle = ok ? 'rgba(134,239,172,0.75)' : 'rgba(255,255,255,0.82)';
 
       if (state.captureGuide === 'tech-front') {
         // შავი ტექსტი ზუსტად მოწმობის განლაგებით
@@ -746,7 +898,7 @@
         const py = y + rh * 0.24;
         const pw = rw * 0.30;
         const ph = rh * 0.56;
-        ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+        ctx.strokeStyle = ok ? 'rgba(134,239,172,0.9)' : 'rgba(255,255,255,0.9)';
         ctx.lineWidth = Math.max(1.5, w * 0.0028);
         roundRect(ctx, px, py, pw, ph, 6);
         ctx.stroke();
@@ -774,7 +926,7 @@
         ];
         ctx.lineWidth = Math.max(2.5, w * 0.0045);
         ctx.lineCap = 'round';
-        ctx.strokeStyle = 'rgba(255,255,255,0.78)';
+        ctx.strokeStyle = ok ? 'rgba(134,239,172,0.7)' : 'rgba(255,255,255,0.78)';
         lines.forEach((ln) => {
           ctx.beginPath();
           ctx.moveTo(lx, ln.y);
@@ -784,7 +936,7 @@
       } else {
         // back schematic: mag stripe + lines + square
         const stripeY = y + rh * 0.16;
-        ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+        ctx.strokeStyle = ok ? 'rgba(134,239,172,0.85)' : 'rgba(255,255,255,0.85)';
         ctx.lineWidth = Math.max(1.5, w * 0.0028);
         roundRect(ctx, x + rw * 0.06, stripeY, rw * 0.88, rh * 0.14, 4);
         ctx.stroke();
@@ -818,12 +970,13 @@
     }
 
     function acceptPhoto(dataUrl) {
+      stopAlignLoop();
       state.photos[state.captureKey] = dataUrl;
       closeCamera();
       renderGroup();
     }
 
-    $('cam-shutter').onclick = () => {
+    function captureFromVideo() {
       const video = $('cam-video');
       if (!video.videoWidth) return;
       const src = document.createElement('canvas');
@@ -836,6 +989,11 @@
       out.height = Math.round(rh);
       out.getContext('2d').drawImage(src, x, y, rw, rh, 0, 0, out.width, out.height);
       acceptPhoto(out.toDataURL('image/jpeg', 0.92));
+    }
+
+    $('cam-shutter').onclick = () => {
+      state.autoShot = true;
+      captureFromVideo();
     };
 
     $('cam-upload').onclick = () => $('file-input').click();
