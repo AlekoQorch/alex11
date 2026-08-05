@@ -222,10 +222,8 @@
       <div class="card">
         <label class="field-label">ტელეფონის ნომერი</label>
         <input class="field-inp" id="phone" type="tel" inputmode="tel" placeholder="5XX XX XX XX">
-        <label class="field-label">სახელი</label>
-        <input class="field-inp" id="first" type="text" placeholder="სახელი" autocomplete="given-name">
-        <label class="field-label">გვარი</label>
-        <input class="field-inp" id="last" type="text" placeholder="გვარი" autocomplete="family-name">
+        <label class="field-label">სახელი და გვარი</label>
+        <input class="field-inp" id="fullname" type="text" placeholder="სახელი და გვარი" autocomplete="name">
         <div class="row-btns">
           <button class="btn" id="start-btn" type="button">შემდეგი</button>
         </div>
@@ -315,7 +313,7 @@
 
     const $ = (id) => document.getElementById(id);
     const state = {
-      phone: '', first: '', last: '',
+      phone: '', name: '',
       photos: {},
       groupIndex: 0,
       captureKey: '',
@@ -401,11 +399,9 @@
 
     $('start-btn').onclick = () => {
       state.phone = $('phone').value.trim();
-      state.first = $('first').value.trim();
-      state.last = $('last').value.trim();
+      state.name = $('fullname').value.trim();
       if (!state.phone.replace(/\D/g, '').length) { $('phone').focus(); return; }
-      if (!state.first) { $('first').focus(); return; }
-      if (!state.last) { $('last').focus(); return; }
+      if (!state.name) { $('fullname').focus(); return; }
       state.groupIndex = 0;
       show('group');
       renderGroup();
@@ -467,9 +463,7 @@
     async function saveSubmission() {
       const payload = {
         phone: state.phone,
-        name: `${state.first} ${state.last}`.trim(),
-        first: state.first,
-        last: state.last,
+        name: state.name,
         photos: state.photos,
         at: new Date().toISOString()
       };
@@ -511,11 +505,11 @@
         if (navigator.canShare && navigator.canShare({ files })) {
           await navigator.share({
             title: 'დოკუმენტები',
-            text: `${state.first} ${state.last} ${state.phone}`.trim(),
+            text: `${state.name} ${state.phone}`.trim(),
             files
           });
         } else {
-          await navigator.share?.({ title: 'დოკუმენტები', text: `${state.first} ${state.last}` });
+          await navigator.share?.({ title: 'დოკუმენტები', text: state.name });
         }
       } catch {}
     };
