@@ -8,7 +8,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v100</title>
+  <title>დოკუმენტების ატვირთვა v101</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     :root {
@@ -389,20 +389,18 @@
     }
 
     function svgTechBack() {
-      // უკანა — მხოლოდ შავი ტექსტი: ორი სვეტი ველები + დიდი ნომერი ქვემოთ
+      // უკანა — შავი ტექსტის ხაზები + QR კვადრატი მარჯვნივ
       return `<svg viewBox="0 0 220 138" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <rect x="6" y="8" width="208" height="122" rx="8" stroke="#9ca3af" stroke-width="2" stroke-dasharray="5 4"/>
-        <line x1="18" y1="28" x2="98" y2="28" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"/>
-        <line x1="18" y1="40" x2="92" y2="40" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"/>
-        <line x1="18" y1="52" x2="96" y2="52" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"/>
-        <line x1="18" y1="64" x2="88" y2="64" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"/>
-        <line x1="18" y1="76" x2="84" y2="76" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"/>
-        <line x1="112" y1="28" x2="168" y2="28" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"/>
-        <line x1="112" y1="40" x2="164" y2="40" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"/>
-        <line x1="112" y1="52" x2="160" y2="52" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"/>
-        <line x1="112" y1="64" x2="156" y2="64" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"/>
-        <line x1="112" y1="76" x2="150" y2="76" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"/>
-        <line x1="18" y1="108" x2="110" y2="108" stroke="#9ca3af" stroke-width="3.2" stroke-linecap="round"/>
+        <line x1="72" y1="26" x2="142" y2="26" stroke="#9ca3af" stroke-width="2.3" stroke-linecap="round"/>
+        <line x1="72" y1="38" x2="132" y2="38" stroke="#9ca3af" stroke-width="2.3" stroke-linecap="round"/>
+        <line x1="72" y1="50" x2="152" y2="50" stroke="#9ca3af" stroke-width="2.3" stroke-linecap="round"/>
+        <line x1="72" y1="62" x2="150" y2="62" stroke="#9ca3af" stroke-width="2.3" stroke-linecap="round"/>
+        <line x1="72" y1="82" x2="108" y2="82" stroke="#9ca3af" stroke-width="2.3" stroke-linecap="round"/>
+        <line x1="72" y1="94" x2="148" y2="94" stroke="#9ca3af" stroke-width="2.3" stroke-linecap="round"/>
+        <rect x="158" y="36" width="48" height="48" rx="3" stroke="#d1d5db" stroke-width="2"/>
+        <line x1="16" y1="118" x2="88" y2="118" stroke="#9ca3af" stroke-width="3.4" stroke-linecap="round"/>
+        <line x1="100" y1="118" x2="172" y2="118" stroke="#9ca3af" stroke-width="2.3" stroke-linecap="round"/>
       </svg>`;
     }
 
@@ -680,22 +678,39 @@
           ctx.stroke();
         });
       } else if (state.captureGuide === 'tech-back') {
-        // უკანა — ორი სვეტი შავი ტექსტი + დიდი ნომერი
-        ctx.lineWidth = Math.max(2, w * 0.0035);
-        [0.18, 0.28, 0.38, 0.48, 0.58].forEach((fy, i) => {
-          const leftEnd = 0.42 - i * 0.012;
-          const rightEnd = 0.74 - i * 0.012;
+        // უკანა — რამდენიმე შავი ხაზი + QR კვადრატი
+        ctx.lineWidth = Math.max(2.2, w * 0.004);
+        [
+          { x0: 0.30, x1: 0.62, y: 0.16 },
+          { x0: 0.30, x1: 0.58, y: 0.26 },
+          { x0: 0.30, x1: 0.68, y: 0.36 },
+          { x0: 0.30, x1: 0.67, y: 0.46 },
+          { x0: 0.30, x1: 0.48, y: 0.60 },
+          { x0: 0.30, x1: 0.66, y: 0.70 }
+        ].forEach((ln) => {
           ctx.beginPath();
-          ctx.moveTo(x + rw * 0.06, y + rh * fy);
-          ctx.lineTo(x + rw * leftEnd, y + rh * fy);
-          ctx.moveTo(x + rw * 0.50, y + rh * fy);
-          ctx.lineTo(x + rw * rightEnd, y + rh * fy);
+          ctx.moveTo(x + rw * ln.x0, y + rh * ln.y);
+          ctx.lineTo(x + rw * ln.x1, y + rh * ln.y);
           ctx.stroke();
         });
-        ctx.lineWidth = Math.max(3, w * 0.0055);
+
+        const qx = x + rw * 0.72;
+        const qy = y + rh * 0.24;
+        const qw = rw * 0.22;
+        ctx.lineWidth = Math.max(1.8, w * 0.003);
+        roundRect(ctx, qx, qy, qw, qw, 4);
+        ctx.stroke();
+
+        ctx.lineWidth = Math.max(3.2, w * 0.0055);
         ctx.beginPath();
-        ctx.moveTo(x + rw * 0.06, y + rh * 0.82);
-        ctx.lineTo(x + rw * 0.48, y + rh * 0.82);
+        ctx.moveTo(x + rw * 0.05, y + rh * 0.88);
+        ctx.lineTo(x + rw * 0.38, y + rh * 0.88);
+        ctx.stroke();
+
+        ctx.lineWidth = Math.max(2.2, w * 0.004);
+        ctx.beginPath();
+        ctx.moveTo(x + rw * 0.44, y + rh * 0.88);
+        ctx.lineTo(x + rw * 0.76, y + rh * 0.88);
         ctx.stroke();
       } else if (state.captureSide === 'front') {
         // left portrait silhouette box
