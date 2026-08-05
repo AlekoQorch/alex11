@@ -8,10 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v108</title>
+  <title>დოკუმენტების ატვირთვა v109</title>
   <script>
     (function () {
-      var VER = '108';
+      var VER = '109';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -211,9 +211,38 @@
       display: flex; gap: 10px; align-items: center; background: #101012;
       border-radius: 10px; padding: 8px;
     }
-    .done-item img { width: 64px; height: 40px; object-fit: cover; border-radius: 6px; }
-    .done-item div { font-size: 13px; }
-    .done-item small { color: var(--dim); }
+    .done-item img { width: 64px; height: 40px; object-fit: cover; border-radius: 6px; flex-shrink: 0; }
+    .done-item .done-meta { flex: 1; min-width: 0; font-size: 13px; }
+    .done-item small { color: var(--dim); display: inline-flex; align-items: center; gap: 6px; margin-top: 2px; }
+    .done-item small.ok { color: #4ade80; font-weight: 600; }
+    .check-draw {
+      width: 16px; height: 16px; flex-shrink: 0;
+    }
+    .check-draw .ring {
+      fill: none;
+      stroke: #22c55e;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-dasharray: 50;
+      stroke-dashoffset: 50;
+      animation: check-ring .45s ease-out forwards;
+    }
+    .check-draw .tick {
+      fill: none;
+      stroke: #22c55e;
+      stroke-width: 2.4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: 20;
+      stroke-dashoffset: 20;
+      animation: check-tick .35s ease-out .28s forwards;
+    }
+    @keyframes check-ring {
+      to { stroke-dashoffset: 0; }
+    }
+    @keyframes check-tick {
+      to { stroke-dashoffset: 0; }
+    }
 
     .cam-overlay {
       position: fixed; inset: 0; z-index: 50; background: #000;
@@ -607,17 +636,30 @@
       renderGroup();
     };
 
+    function checkSvg(delayMs) {
+      const d = Number(delayMs) || 0;
+      return `<svg class="check-draw" viewBox="0 0 20 20" aria-hidden="true" style="animation-delay:0s">
+        <circle class="ring" cx="10" cy="10" r="8" style="animation-delay:${d}ms"></circle>
+        <path class="tick" d="M6 10.2l2.6 2.6L14.2 7" style="animation-delay:${d + 280}ms"></path>
+      </svg>`;
+    }
+
     function renderReview() {
       const items = GROUPS.flatMap((g) => g.sides.map((s) => ({
         key: s.key,
         title: `${g.title} · ${s.label}`
       })));
-      $('review-list').innerHTML = items.map((it) => `
-        <div class="done-item">
+      $('review-list').innerHTML = items.map((it, i) => {
+        const ready = !!state.photos[it.key];
+        const status = ready
+          ? `<small class="ok">${checkSvg(i * 90)}მზადაა</small>`
+          : `<small>აკლია</small>`;
+        return `
+        <div class="done-item${ready ? ' ready' : ''}">
           <img src="${state.photos[it.key] || ''}" alt="">
-          <div><div>${it.title}</div><small>${state.photos[it.key] ? 'მზადაა' : 'აკლია'}</small></div>
-        </div>
-      `).join('');
+          <div class="done-meta"><div>${it.title}</div>${status}</div>
+        </div>`;
+      }).join('');
     }
 
     $('finish-btn').onclick = async () => {
