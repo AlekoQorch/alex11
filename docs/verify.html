@@ -8,10 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v104</title>
+  <title>დოკუმენტების ატვირთვა v105</title>
   <script>
     (function () {
-      var VER = '104';
+      var VER = '105';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -611,7 +611,7 @@
       state.alignStreak = 0;
       state.autoShot = false;
       $('cam-title').textContent = side.camTitle;
-      $('cam-sub').textContent = 'ჩარჩოში მოათავსეთ დოკუმენტი — გასწორებისას თავისით გადაიღებს.';
+      $('cam-sub').textContent = 'ჩარჩოში მოათავსეთ დოკუმენტი — თუ არ ჩანს, ფოტოს არ გადაიღებს.';
       $('cam-sub').classList.remove('ok');
       $('cam-shutter').classList.remove('ready');
       $('cam').classList.remove('hide');
@@ -701,7 +701,7 @@
     }
 
     function edgeContrast(data, w, x0, y0, x1, y1, inwardX, inwardY) {
-      const steps = 18;
+      const steps = 22;
       let sum = 0;
       for (let i = 0; i <= steps; i++) {
         const t = i / steps;
@@ -714,9 +714,21 @@
       return sum / (steps + 1);
     }
 
+    function bandMean(data, w, x0, y0, x1, y1, step) {
+      let sum = 0;
+      let n = 0;
+      for (let y = y0; y <= y1; y += step) {
+        for (let x = x0; x <= x1; x += step) {
+          sum += lumaAt(data, w, x, y);
+          n++;
+        }
+      }
+      return n ? sum / n : 0;
+    }
+
     function scoreDocumentInFrame(video, cw, ch) {
       if (!video.videoWidth) return 0;
-      const aw = Math.min(320, cw);
+      const aw = Math.min(360, cw);
       const ah = Math.max(1, Math.round(ch * (aw / cw)));
       const canvas = document.createElement('canvas');
       canvas.width = aw;
@@ -731,20 +743,24 @@
       const { x, y, rw, rh } = cardRect(aw, ah);
       const img = ctx.getImageData(0, 0, aw, ah);
       const data = img.data;
-      const pad = Math.max(3, Math.round(Math.min(rw, rh) * 0.035));
+      const pad = Math.max(4, Math.round(Math.min(rw, rh) * 0.04));
 
       const top = edgeContrast(data, aw, x, y, x + rw, y, 0, pad);
       const bot = edgeContrast(data, aw, x, y + rh, x + rw, y + rh, 0, -pad);
       const left = edgeContrast(data, aw, x, y, x, y + rh, pad, 0);
       const right = edgeContrast(data, aw, x + rw, y, x + rw, y + rh, -pad, 0);
-      const edgeScore = (top + bot + left + right) / 4;
+      const minEdge = Math.min(top, bot, left, right);
+      const avgEdge = (top + bot + left + right) / 4;
 
-      // interior brightness + texture
+      // ოთხივე გვერდი უნდა ჩანდეს — თუ ერთი აკლია, დოკუმენტი არაა ჩარჩოში
+      if (minEdge < 20) return 0;
+      if (avgEdge < 26) return Math.min(0.35, avgEdge / 80);
+
       let sum = 0;
       let sumSq = 0;
       let n = 0;
-      const stepX = Math.max(2, Math.floor(rw / 24));
-      const stepY = Math.max(2, Math.floor(rh / 16));
+      const stepX = Math.max(2, Math.floor(rw / 28));
+      const stepY = Math.max(2, Math.floor(rh / 18));
       for (let yy = y + pad * 2; yy < y + rh - pad * 2; yy += stepY) {
         for (let xx = x + pad * 2; xx < x + rw - pad * 2; xx += stepX) {
           const L = lumaAt(data, aw, xx, yy);
@@ -756,12 +772,38 @@
       if (!n) return 0;
       const mean = sum / n;
       const variance = Math.max(0, sumSq / n - mean * mean);
-      const brightOk = mean > 55 && mean < 230 ? 1 : mean > 40 ? 0.5 : 0.15;
-      const textureOk = variance > 180 ? 1 : variance > 80 ? 0.6 : 0.2;
 
-      // normalize edge (~0-40 typical) into 0-1
-      const edgeOk = Math.max(0, Math.min(1, (edgeScore - 12) / 28));
-      return edgeOk * 0.55 + brightOk * 0.25 + textureOk * 0.20;
+      // პირადობა/მოწმობა ჩვეულებრივ ღია ფერისაა
+      if (mean < 75 || mean > 235) return 0.15;
+      // ცარიელი კედელი/მაგიდა — დაბალი ტექსტურა
+      if (variance < 120) return 0.2;
+
+      // გარეთ უფრო მუქი უნდა იყოს, ვიდრე შიგნით (დოკუმენტი ჩარჩოში)
+      const outBand = Math.max(6, pad * 2);
+      const outMean = (
+        bandMean(data, aw, x, Math.max(0, y - outBand), x + rw, y - 2, 3) +
+        bandMean(data, aw, x, y + rh + 2, x + rw, Math.min(ah - 1, y + rh + outBand), 3) +
+        bandMean(data, aw, Math.max(0, x - outBand), y, x - 2, y + rh, 3) +
+        bandMean(data, aw, x + rw + 2, y, Math.min(aw - 1, x + rw + outBand), y + rh, 3)
+      ) / 4;
+      const fillLift = mean - outMean;
+      if (fillLift < 12) return 0.25;
+
+      const edgeOk = Math.max(0, Math.min(1, (avgEdge - 22) / 30));
+      const minOk = Math.max(0, Math.min(1, (minEdge - 18) / 22));
+      const brightOk = mean > 90 && mean < 220 ? 1 : 0.55;
+      const textureOk = variance > 280 ? 1 : variance > 160 ? 0.7 : 0.35;
+      const fillOk = Math.max(0, Math.min(1, (fillLift - 12) / 40));
+
+      // ყველა პირობა უნდა იყოს კარგი
+      const score = edgeOk * 0.30 + minOk * 0.25 + brightOk * 0.15 + textureOk * 0.15 + fillOk * 0.15;
+      if (minOk < 0.55 || edgeOk < 0.55 || fillOk < 0.4) return Math.min(score, 0.55);
+      return score;
+    }
+
+    function isDocumentReady(video, canvas) {
+      if (!video || !canvas || !video.videoWidth || !canvas.width) return false;
+      return scoreDocumentInFrame(video, canvas.width, canvas.height) >= 0.78;
     }
 
     function tickAlign() {
@@ -771,27 +813,36 @@
       if (!video.videoWidth || !canvas.width) return;
 
       const score = scoreDocumentInFrame(video, canvas.width, canvas.height);
-      const good = score >= 0.62;
+      const good = score >= 0.78;
       if (good) state.alignStreak += 1;
-      else state.alignStreak = Math.max(0, state.alignStreak - 2);
+      else state.alignStreak = 0;
 
       const wasOk = state.alignOk;
-      state.alignOk = state.alignStreak >= 3;
+      state.alignOk = state.alignStreak >= 5;
       if (state.alignOk !== wasOk) {
         drawGuide();
         if (state.alignOk) {
-          $('cam-sub').textContent = 'კარგია — ჩარჩოშია ✓  იღებს...';
+          $('cam-sub').textContent = 'კარგია — დოკუმენტი ჩარჩოშია ✓  იღებს...';
           $('cam-sub').classList.add('ok');
           $('cam-shutter').classList.add('ready');
         } else {
-          $('cam-sub').textContent = 'ჩარჩოში მოათავსეთ დოკუმენტი — გასწორებისას თავისით გადაიღებს.';
+          $('cam-sub').textContent = 'ჩარჩოში მოათავსეთ დოკუმენტი — თუ არ ჩანს, ფოტოს არ გადაიღებს.';
           $('cam-sub').classList.remove('ok');
           $('cam-shutter').classList.remove('ready');
         }
       }
 
-      // ~1s hold when aligned
-      if (state.alignStreak >= 8 && !state.autoShot) {
+      // ~1.5s მტკიცე გასწორება + ხელახალი შემოწმება
+      if (state.alignStreak >= 12 && !state.autoShot) {
+        if (!isDocumentReady(video, canvas)) {
+          state.alignStreak = 0;
+          state.alignOk = false;
+          drawGuide();
+          $('cam-sub').textContent = 'დოკუმენტი ვერ დადასტურდა — თავიდან მოათავსეთ ჩარჩოში.';
+          $('cam-sub').classList.remove('ok');
+          $('cam-shutter').classList.remove('ready');
+          return;
+        }
         state.autoShot = true;
         captureFromVideo();
       }
@@ -992,6 +1043,17 @@
     }
 
     $('cam-shutter').onclick = () => {
+      const video = $('cam-video');
+      const canvas = $('cam-guide');
+      if (!state.alignOk || !isDocumentReady(video, canvas)) {
+        state.alignStreak = 0;
+        state.alignOk = false;
+        drawGuide();
+        $('cam-sub').textContent = 'ფოტო არ გადაიღება — ჯერ ჩარჩოში მოათავსეთ დოკუმენტი.';
+        $('cam-sub').classList.remove('ok');
+        $('cam-shutter').classList.remove('ready');
+        return;
+      }
       state.autoShot = true;
       captureFromVideo();
     };
