@@ -348,13 +348,13 @@
     function svgFront() {
       return `<svg viewBox="0 0 200 126" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <rect x="6" y="8" width="188" height="110" rx="10" stroke="#9ca3af" stroke-width="2" stroke-dasharray="5 4"/>
-        <rect x="18" y="30" width="48" height="64" rx="4" stroke="#d1d5db" stroke-width="2"/>
-        <circle cx="42" cy="48" r="9" stroke="#d1d5db" stroke-width="2"/>
-        <path d="M26 82c4-9 28-9 32 0" stroke="#d1d5db" stroke-width="2" stroke-linecap="round"/>
-        <line x1="82" y1="36" x2="172" y2="36" stroke="#9ca3af" stroke-width="2.5" stroke-linecap="round"/>
-        <line x1="82" y1="52" x2="164" y2="52" stroke="#9ca3af" stroke-width="2.5" stroke-linecap="round"/>
-        <line x1="82" y1="68" x2="154" y2="68" stroke="#9ca3af" stroke-width="2.5" stroke-linecap="round"/>
-        <line x1="82" y1="84" x2="142" y2="84" stroke="#9ca3af" stroke-width="2.5" stroke-linecap="round"/>
+        <rect x="16" y="28" width="46" height="66" rx="4" stroke="#d1d5db" stroke-width="2"/>
+        <circle cx="39" cy="52" r="9" stroke="#d1d5db" stroke-width="2"/>
+        <path d="M24 76c5-8 25-8 30 0" stroke="#d1d5db" stroke-width="2" stroke-linecap="round"/>
+        <line x1="78" y1="36" x2="172" y2="36" stroke="#9ca3af" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="78" y1="52" x2="164" y2="52" stroke="#9ca3af" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="78" y1="68" x2="154" y2="68" stroke="#9ca3af" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="78" y1="84" x2="142" y2="84" stroke="#9ca3af" stroke-width="2.5" stroke-linecap="round"/>
       </svg>`;
     }
 
@@ -618,42 +618,43 @@
 
       if (state.captureSide === 'front') {
         // left portrait silhouette box
-        const px = x + rw * 0.06;
-        const py = y + rh * 0.20;
-        const pw = rw * 0.26;
-        const ph = rh * 0.56;
+        const px = x + rw * 0.055;
+        const py = y + rh * 0.18;
+        const pw = rw * 0.25;
+        const ph = rh * 0.58;
         ctx.strokeStyle = 'rgba(255,255,255,0.9)';
         ctx.lineWidth = Math.max(1.5, w * 0.0028);
         roundRect(ctx, px, py, pw, ph, 6);
         ctx.stroke();
 
-        // head + shoulders
+        // head + shoulders — თავი უფრო ახლოს ტანთან
         const cx = px + pw / 2;
-        const headR = pw * 0.22;
-        const headY = py + ph * 0.32;
+        const headR = pw * 0.24;
+        const headY = py + ph * 0.40;
         ctx.beginPath();
         ctx.arc(cx, headY, headR, 0, Math.PI * 2);
         ctx.stroke();
+        const shoulderY = py + ph * 0.78;
         ctx.beginPath();
-        ctx.moveTo(px + pw * 0.18, py + ph * 0.82);
-        ctx.quadraticCurveTo(cx, py + ph * 0.55, px + pw * 0.82, py + ph * 0.82);
+        ctx.moveTo(px + pw * 0.14, shoulderY);
+        ctx.quadraticCurveTo(cx, py + ph * 0.58, px + pw * 0.86, shoulderY);
         ctx.stroke();
 
-        // text lines on the right
-        const lx = x + rw * 0.40;
+        // ტექსტის ხაზები — ფოტოს ჩარჩოს მარჯვნივ, შიგნით არ შედის
+        const lx = px + pw + rw * 0.06;
         const lines = [
-          { y: y + rh * 0.28, w: rw * 0.48 },
-          { y: y + rh * 0.40, w: rw * 0.44 },
-          { y: y + rh * 0.52, w: rw * 0.40 },
-          { y: y + rh * 0.64, w: rw * 0.36 }
+          { y: y + rh * 0.30, w: rw * 0.46 },
+          { y: y + rh * 0.42, w: rw * 0.42 },
+          { y: y + rh * 0.54, w: rw * 0.38 },
+          { y: y + rh * 0.66, w: rw * 0.34 }
         ];
-        ctx.lineWidth = Math.max(3, w * 0.005);
+        ctx.lineWidth = Math.max(2.5, w * 0.0045);
         ctx.lineCap = 'round';
         ctx.strokeStyle = 'rgba(255,255,255,0.78)';
         lines.forEach((ln) => {
           ctx.beginPath();
           ctx.moveTo(lx, ln.y);
-          ctx.lineTo(lx + ln.w, ln.y);
+          ctx.lineTo(Math.min(lx + ln.w, x + rw * 0.94), ln.y);
           ctx.stroke();
         });
       } else {
