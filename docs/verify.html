@@ -120,7 +120,7 @@
 
     <section class="card" id="step-intro">
       <h2>გამარჯობა</h2>
-      <p class="hint">ატვირთეთ პირადობა, მართვის მოწმობა და ტექპასპორტი (წინა/უკანა). პირადობასა და მართვის მოწმობაზე პიროვნების ფოტოსთვის გამოჩნდება მართკუთხა ჩარჩო.</p>
+      <p class="hint">ატვირთეთ პირადობა, მართვის მოწმობა და ტექპასპორტი (წინა/უკანა). პირადობისა და მართვის მოწმობის წინა მხარეზე ჩარჩოში მარცხნივ გამოჩნდება პიროვნების ფოტოს ადგილი.</p>
       <label class="field-label">ტელეფონის ნომერი</label>
       <input class="field-inp" id="phone" type="tel" inputmode="tel" placeholder="5XX XX XX XX">
       <label class="field-label">სახელი და გვარი</label>
@@ -168,13 +168,11 @@
   </div>
 
   <script>
-    /** frame: card = დოკუმენტი განივად; photo = პიროვნების ფოტო მართკუთხედი */
+    /** frame: card = მხოლოდ დოკუმენტი; id = დოკუმენტი + მარცხნივ პიროვნების ფოტოს ჩარჩო */
     const STEPS = [
-      { key: 'id_front', title: 'პირადობა · წინა', hint: 'პირადობის წინა მხარე', frame: 'card' },
-      { key: 'id_photo', title: 'პირადობა · პიროვნების ფოტო', hint: 'მოათავსეთ პირადობაზე არსებული პიროვნების ფოტო მართკუთხა ჩარჩოში', frame: 'photo' },
+      { key: 'id_front', title: 'პირადობა · წინა', hint: 'პირადობის წინა მხარე — მარცხნივ ფოტო ჩარჩოში მოათავსეთ', frame: 'id' },
       { key: 'id_back', title: 'პირადობა · უკანა', hint: 'პირადობის უკანა მხარე', frame: 'card' },
-      { key: 'license_front', title: 'მართვის მოწმობა · წინა', hint: 'მართვის მოწმობის წინა მხარე', frame: 'card' },
-      { key: 'license_photo', title: 'მართვის მოწმობა · პიროვნების ფოტო', hint: 'მოათავსეთ მოწმობაზე არსებული პიროვნების ფოტო მართკუთხა ჩარჩოში', frame: 'photo' },
+      { key: 'license_front', title: 'მართვის მოწმობა · წინა', hint: 'მართვის მოწმობის წინა მხარე — მარცხნივ ფოტო ჩარჩოში მოათავსეთ', frame: 'id' },
       { key: 'license_back', title: 'მართვის მოწმობა · უკანა', hint: 'მართვის მოწმობის უკანა მხარე', frame: 'card' },
       { key: 'tech_front', title: 'ტექპასპორტი · წინა', hint: 'ტექპასპორტის წინა მხარე', frame: 'card' },
       { key: 'tech_back', title: 'ტექპასპორტი · უკანა', hint: 'ტექპასპორტის უკანა მხარე', frame: 'card' }
@@ -208,16 +206,22 @@
       });
     }
 
-    function frameRect(w, h, frame) {
-      if (frame === 'photo') {
-        // პირადობის/მოწმობის პიროვნების ფოტო — პორტრეტი ~3.5×4.5
-        const rh = h * 0.58;
-        const rw = rh * (3.5 / 4.5);
-        return { x: (w - rw) / 2, y: (h - rh) / 2 - h * 0.03, rw, rh };
-      }
+    function frameRect(w, h) {
       const rw = w * 0.86;
       const rh = rw * 0.63;
-      return { x: (w - rw) / 2, y: (h - rh) / 2 - h * 0.04, rw, rh };
+      const x = (w - rw) / 2;
+      const y = (h - rh) / 2 - h * 0.04;
+      return { x, y, rw, rh };
+    }
+
+    /** პირადობის/მოწმობის პიროვნების ფოტო — მარცხნივ, ჩარჩოში */
+    function photoInset(card) {
+      const { x, y, rw, rh } = card;
+      const pw = rw * 0.27;
+      const ph = rh * 0.58;
+      const px = x + rw * 0.045;
+      const py = y + rh * 0.20;
+      return { x: px, y: py, rw: pw, rh: ph };
     }
 
     function renderDocsStep() {
@@ -227,7 +231,7 @@
       el.innerHTML = `
         <h2>${s.title}</h2>
         <p class="hint">${s.hint}</p>
-        <div class="shot ${s.frame === 'photo' ? 'portrait' : ''}">
+        <div class="shot">
           ${img ? `<img src="${img}" alt="">` : '<span>ფოტო ჯერ არ არის</span>'}
           <button type="button" id="doc-capture">${img ? 'თავიდან გადაღება' : 'ფოტოს გადაღება'}</button>
         </div>
@@ -369,12 +373,10 @@
 
     async function openCamera(step) {
       state.frame = step.frame || 'card';
-      $('cam-title').textContent = state.frame === 'photo'
-        ? 'მოათავსეთ პიროვნების ფოტო მართკუთხა ჩარჩოში'
-        : step.title;
-      $('cam-hint').textContent = state.frame === 'photo'
-        ? 'პიროვნების ფოტო ჩარჩოში'
-        : 'დოკუმენტი ჩარჩოში';
+      $('cam-title').textContent = step.title;
+      $('cam-hint').textContent = state.frame === 'id'
+        ? 'ფოტო მარცხნივ ჩარჩოში · გადაიღეთ მკაფიო ფოტო'
+        : 'გადაიღეთ მკაფიო ფოტო';
       $('cam').classList.remove('hide');
       state.facing = 'environment';
       document.body.style.overflow = 'hidden';
@@ -439,16 +441,34 @@
       const ctx = canvas.getContext('2d');
       const w = canvas.width;
       const h = canvas.height;
-      const { x, y, rw, rh } = frameRect(w, h, state.frame);
+      const card = frameRect(w, h);
+      const { x, y, rw, rh } = card;
       ctx.clearRect(0, 0, w, h);
       ctx.fillStyle = 'rgba(0,0,0,0.55)';
       ctx.fillRect(0, 0, w, h);
       ctx.clearRect(x, y, rw, rh);
-      ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+
+      // გარე ჩარჩო — მთელი დოკუმენტი
+      ctx.strokeStyle = 'rgba(255,255,255,0.92)';
       ctx.lineWidth = Math.max(2, w * 0.004);
       const r = Math.min(12, rw * 0.04);
       roundRect(ctx, x, y, rw, rh, r);
       ctx.stroke();
+
+      // შიდა ჩარჩო — პიროვნების ფოტო მარცხნივ (პირადობა / მოწმობა)
+      if (state.frame === 'id') {
+        const p = photoInset(card);
+        ctx.strokeStyle = 'rgba(255,255,255,0.95)';
+        ctx.lineWidth = Math.max(2, w * 0.0035);
+        const pr = Math.min(6, p.rw * 0.06);
+        roundRect(ctx, p.x, p.y, p.rw, p.rh, pr);
+        ctx.stroke();
+        // მსუბუქი მონიშვნა შიგნით
+        ctx.strokeStyle = 'rgba(59,130,246,0.55)';
+        ctx.lineWidth = Math.max(1, w * 0.002);
+        roundRect(ctx, p.x + 3, p.y + 3, p.rw - 6, p.rh - 6, Math.max(2, pr - 1));
+        ctx.stroke();
+      }
     }
 
     function roundRect(ctx, x, y, w, h, r) {
@@ -470,7 +490,7 @@
       src.width = video.videoWidth;
       src.height = video.videoHeight;
       src.getContext('2d').drawImage(video, 0, 0);
-      const out = cropByFrame(src, state.frame);
+      const out = cropByFrame(src);
       const dataUrl = out.toDataURL('image/jpeg', 0.92);
       const key = STEPS[state.docIndex].key;
       state.photos[key] = dataUrl;
@@ -478,16 +498,11 @@
       closeCamera();
     }
 
-    function cropByFrame(src, frame) {
-      const { x, y, rw, rh } = frameRect(src.width, src.height, frame);
+    function cropByFrame(src) {
+      const { x, y, rw, rh } = frameRect(src.width, src.height);
       const out = document.createElement('canvas');
-      if (frame === 'photo') {
-        out.width = 700;
-        out.height = Math.round(700 / (3.5 / 4.5));
-      } else {
-        out.width = Math.round(rw);
-        out.height = Math.round(rh);
-      }
+      out.width = Math.round(rw);
+      out.height = Math.round(rh);
       out.getContext('2d').drawImage(src, x, y, rw, rh, 0, 0, out.width, out.height);
       return out;
     }
