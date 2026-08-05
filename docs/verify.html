@@ -8,10 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v107</title>
+  <title>დოკუმენტების ატვირთვა v108</title>
   <script>
     (function () {
-      var VER = '107';
+      var VER = '108';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -410,11 +410,20 @@
       return true;
     }
 
-    function setFieldError(inpId, errId, show) {
+    function nameErrorMessage(raw) {
+      const t = String(raw || '').trim();
+      if (!t) return 'შეიყვანეთ სახელი და გვარი';
+      // გადაბმულად / გამოტოვების გარეშე
+      if (!/\s/.test(t)) return 'გამოტოვე სახელსა და გვარს შორის';
+      return 'შეიყვანეთ სახელი და გვარი';
+    }
+
+    function setFieldError(inpId, errId, show, msg) {
       const inp = $(inpId);
       const err = $(errId);
       inp.classList.toggle('invalid', !!show);
       err.classList.toggle('show', !!show);
+      if (show && msg) err.textContent = msg;
     }
 
     if (phoneFromLink) {
@@ -558,7 +567,7 @@
       const phoneOk = isValidPhone(phoneVal);
       const nameOk = isValidFullName(nameVal);
       setFieldError('phone', 'phone-err', !phoneOk);
-      setFieldError('fullname', 'fullname-err', !nameOk);
+      setFieldError('fullname', 'fullname-err', !nameOk, nameOk ? '' : nameErrorMessage(nameVal));
       if (!phoneOk) { $('phone').focus(); return; }
       if (!nameOk) { $('fullname').focus(); return; }
 
