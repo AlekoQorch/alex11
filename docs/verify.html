@@ -362,8 +362,8 @@
       return `<svg viewBox="0 0 200 126" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <rect x="6" y="8" width="188" height="110" rx="10" stroke="#9ca3af" stroke-width="2" stroke-dasharray="5 4"/>
         <rect x="20" y="24" width="160" height="16" rx="3" stroke="#9ca3af" stroke-width="2"/>
-        <line x1="26" y1="58" x2="118" y2="58" stroke="#9ca3af" stroke-width="2.5" stroke-linecap="round"/>
-        <line x1="26" y1="74" x2="146" y2="74" stroke="#9ca3af" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="26" y1="58" x2="120" y2="58" stroke="#9ca3af" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="26" y1="74" x2="128" y2="74" stroke="#9ca3af" stroke-width="2.5" stroke-linecap="round"/>
         <line x1="26" y1="90" x2="108" y2="90" stroke="#9ca3af" stroke-width="2.5" stroke-linecap="round"/>
         <rect x="144" y="58" width="32" height="32" rx="4" stroke="#d1d5db" stroke-width="2"/>
       </svg>`;
@@ -664,14 +664,21 @@
         ctx.lineWidth = Math.max(1.5, w * 0.0028);
         roundRect(ctx, x + rw * 0.06, stripeY, rw * 0.88, rh * 0.14, 4);
         ctx.stroke();
+        const sqX = x + rw * 0.72;
+        const sqY = y + rh * 0.42;
+        const sqW = rw * 0.16;
+        const sqH = rh * 0.28;
         const lx = x + rw * 0.08;
+        const lineMax = sqX - rw * 0.04; // კვადრატამდე არ მივიდეს
+        const widths = [0.50, 0.54, 0.42];
         [0.42, 0.54, 0.66].forEach((fy, i) => {
+          const end = Math.min(lx + rw * widths[i], lineMax);
           ctx.beginPath();
           ctx.moveTo(lx, y + rh * fy);
-          ctx.lineTo(lx + rw * (0.55 - i * 0.06), y + rh * fy);
+          ctx.lineTo(end, y + rh * fy);
           ctx.stroke();
         });
-        roundRect(ctx, x + rw * 0.72, y + rh * 0.42, rw * 0.16, rh * 0.28, 4);
+        roundRect(ctx, sqX, sqY, sqW, sqH, 4);
         ctx.stroke();
       }
     }
