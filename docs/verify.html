@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0b0b0c">
+  <title>დოკუმენტების ატვირთვა</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    :root {
+      --bg: #0b0b0c;
+      --surface: #17171a;
+      --line: #2a2a2e;
+      --text: #f2f2f2;
+      --dim: #9a9aa0;
+      --blue: #3b82f6;
+      --green: #22c55e;
+      --red: #ef4444;
+      --warn: #f59e0b;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      line-height: 1.45;
+    }
+    .app {
+      max-width: 480px;
+      margin: 0 auto;
+      min-height: 100dvh;
+      padding: calc(16px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));
+    }
+    .brand {
+      text-align: center;
+      margin-bottom: 18px;
+    }
+    .brand h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .brand p { color: var(--dim); font-size: 14px; margin-top: 6px; }
+    .progress {
+      height: 4px;
+      background: var(--line);
+      border-radius: 99px;
+      overflow: hidden;
+      margin-bottom: 18px;
+    }
+    .progress > i {
+      display: block;
+      height: 100%;
+      background: var(--blue);
+      width: 0%;
+      transition: width .25s ease;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .card h2 { font-size: 17px; margin-bottom: 6px; }
+    .card .hint { color: var(--dim); font-size: 13px; margin-bottom: 12px; }
+    .field-label {
+      display: block;
+      font-size: 12px;
+      color: var(--dim);
+      margin: 10px 0 6px;
+    }
+    .field-inp {
+      width: 100%;
+      background: #101012;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      color: var(--text);
+      padding: 12px 12px;
+      font-size: 16px;
+    }
+    .shots {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .shot {
+      background: #101012;
+      border: 1px dashed #3a3a40;
+      border-radius: 12px;
+      min-height: 120px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .shot img {
+      width: 100%;
+      height: 110px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+    .shot span { font-size: 12px; color: var(--dim); }
+    .shot button, .btn {
+      border: none;
+      border-radius: 10px;
+      padding: 11px 14px;
+      font-size: 15px;
+      font-weight: 600;
+      background: var(--blue);
+      color: #fff;
+      width: 100%;
+    }
+    .shot button.secondary, .btn.secondary {
+      background: transparent;
+      border: 1px solid var(--line);
+      color: var(--text);
+    }
+    .btn.green { background: var(--green); color: #06210f; }
+    .btn:disabled { opacity: 0.4; }
+    .row-btns { display: flex; gap: 8px; margin-top: 14px; }
+    .row-btns .btn { flex: 1; }
+    .hide { display: none !important; }
+    .done-list { display: grid; gap: 8px; }
+    .done-item {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      background: #101012;
+      border-radius: 10px;
+      padding: 8px;
+    }
+    .done-item img {
+      width: 56px;
+      height: 56px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+    .done-item div { font-size: 13px; }
+    .done-item small { color: var(--dim); }
+
+    /* Face / doc camera overlay */
+    .cam-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+    }
+    .cam-top {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      z-index: 3;
+      padding: calc(14px + env(safe-area-inset-top)) 16px 10px;
+      text-align: center;
+      background: linear-gradient(180deg, rgba(0,0,0,.75), transparent);
+    }
+    .cam-top h3 {
+      font-size: 15px;
+      font-weight: 600;
+      line-height: 1.35;
+    }
+    .cam-stage {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background: #000;
+    }
+    .cam-stage video, .cam-stage canvas.guide {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .cam-stage video { transform: scaleX(-1); }
+    .cam-stage.no-mirror video { transform: none; }
+    .cam-hint {
+      position: absolute;
+      left: 50%;
+      bottom: 28%;
+      transform: translateX(-50%);
+      z-index: 3;
+      background: rgba(0,0,0,.62);
+      border: 1px solid rgba(255,255,255,.12);
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 600;
+      white-space: nowrap;
+      max-width: 92%;
+      text-align: center;
+    }
+    .cam-hint.ok { border-color: rgba(34,197,94,.5); color: #86efac; }
+    .cam-hint.warn { border-color: rgba(245,158,11,.45); color: #fde68a; }
+    .cam-bottom {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      z-index: 3;
+      padding: 16px 16px calc(18px + env(safe-area-inset-bottom));
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      background: linear-gradient(0deg, rgba(0,0,0,.8), transparent);
+    }
+    .cam-bottom .btn { flex: 1; }
+    .shutter {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      border: 3px solid #fff;
+      background: rgba(255,255,255,.15);
+      flex: 0 0 auto;
+    }
+    .shutter.on {
+      background: #fff;
+      box-shadow: 0 0 0 4px rgba(34,197,94,.35);
+    }
+    .shutter:disabled { opacity: 0.35; }
+    .status-pill {
+      display: inline-block;
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--dim);
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="brand">
+      <h1>დოკუმენტების ატვირთვა</h1>
+      <p id="sub">ალდაგი · ავტოდაზღვევა</p>
+    </header>
+    <div class="progress"><i id="bar"></i></div>
+
+    <section class="card" id="step-intro">
+      <h2>გამარჯობა</h2>
+      <p class="hint">გთხოვთ ატვირთოთ პირადობის, მართვის მოწმობისა და ტექპასპორტის ფოტოები (წინა და უკანა), ასევე სახის ფოტო ვერიფიკაციისთვის.</p>
+      <label class="field-label">ტელეფონის ნომერი</label>
+      <input class="field-inp" id="phone" type="tel" inputmode="tel" placeholder="5XX XX XX XX">
+      <label class="field-label">სახელი და გვარი</label>
+      <input class="field-inp" id="fullname" type="text" placeholder="მაგ: გიორგი ბერიძე" autocomplete="name">
+      <div class="row-btns">
+        <button class="btn" id="start-btn" type="button">დაწყება</button>
+      </div>
+    </section>
+
+    <section class="card hide" id="step-docs"></section>
+
+    <section class="card hide" id="step-face">
+      <h2>სახის ფოტო</h2>
+      <p class="hint">გადაიღეთ პასპორტის სტანდარტის სახის ფოტო. კამერა შეამოწმებს განთავსებას.</p>
+      <div class="shot" id="face-preview">
+        <span>სახის ფოტო ჯერ არ არის</span>
+        <button type="button" id="face-open">ფოტოს გადაღება</button>
+      </div>
+      <div class="row-btns">
+        <button class="btn secondary" type="button" data-back="docs">უკან</button>
+        <button class="btn" type="button" id="to-review" disabled>შემდეგი</button>
+      </div>
+    </section>
+
+    <section class="card hide" id="step-review">
+      <h2>შემოწმება</h2>
+      <p class="hint">გადაამოწმეთ ფოტოები და დაასრულეთ ატვირთვა.</p>
+      <div class="done-list" id="review-list"></div>
+      <div class="row-btns">
+        <button class="btn secondary" type="button" data-back="face">უკან</button>
+        <button class="btn green" type="button" id="finish-btn">დასრულება</button>
+      </div>
+      <p class="status-pill" id="finish-status"></p>
+    </section>
+
+    <section class="card hide" id="step-done">
+      <h2>მადლობა</h2>
+      <p class="hint">დოკუმენტები შენახულია ამ მოწყობილობაზე. საჭიროების შემთხვევაში გააზიარეთ ან გადმოწერეთ ფაილები.</p>
+      <div class="row-btns">
+        <button class="btn" type="button" id="share-btn">გაზიარება</button>
+        <button class="btn secondary" type="button" id="download-btn">გადმოწერა</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="cam-overlay hide" id="cam">
+    <div class="cam-top"><h3 id="cam-title">კამერა</h3></div>
+    <div class="cam-stage" id="cam-stage">
+      <video id="cam-video" playsinline muted autoplay></video>
+      <canvas class="guide" id="cam-guide"></canvas>
+      <div class="cam-hint warn" id="cam-hint">მოემზადეთ</div>
+    </div>
+    <div class="cam-bottom">
+      <button class="btn secondary" type="button" id="cam-close">გაუქმება</button>
+      <button class="shutter" type="button" id="cam-shutter" disabled aria-label="გადაღება"></button>
+      <button class="btn secondary" type="button" id="cam-switch">შეცვლა</button>
+    </div>
+  </div>
+
+  <script type="module">
+    const STEPS_DOCS = [
+      { key: 'id_front', title: 'პირადობა · წინა', hint: 'გადაიღეთ პირადობის მოწმობის წინა მხარე' },
+      { key: 'id_back', title: 'პირადობა · უკანა', hint: 'გადაიღეთ პირადობის მოწმობის უკანა მხარე' },
+      { key: 'license_front', title: 'მართვის მოწმობა · წინა', hint: 'გადაიღეთ მართვის მოწმობის წინა მხარე' },
+      { key: 'license_back', title: 'მართვის მოწმობა · უკანა', hint: 'გადაიღეთ მართვის მოწმობის უკანა მხარე' },
+      { key: 'tech_front', title: 'ტექპასპორტი · წინა', hint: 'გადაიღეთ ტექპასპორტის წინა მხარე' },
+      { key: 'tech_back', title: 'ტექპასპორტი · უკანა', hint: 'გადაიღეთ ტექპასპორტის უკანა მხარე' }
+    ];
+
+    const $ = (id) => document.getElementById(id);
+    const state = {
+      phone: '',
+      name: '',
+      photos: {},
+      docIndex: 0,
+      facing: 'environment',
+      mode: 'doc', // doc | face
+      stream: null,
+      landmarker: null,
+      raf: 0,
+      ready: false,
+      lastBox: null
+    };
+
+    const params = new URLSearchParams(location.search);
+    if (params.get('n')) $('phone').value = formatPhone(params.get('n'));
+
+    function formatPhone(raw) {
+      let d = String(raw || '').replace(/\D/g, '');
+      if (d.startsWith('995') && d.length > 9) d = d.slice(3);
+      if (!d) return '';
+      let out = d.slice(0, 3);
+      for (let i = 3; i < d.length; i += 2) out += ' ' + d.slice(i, i + 2);
+      return out;
+    }
+
+    function setProgress(p) {
+      $('bar').style.width = Math.max(0, Math.min(100, p)) + '%';
+    }
+
+    function showStep(id) {
+      ['intro', 'docs', 'face', 'review', 'done'].forEach((k) => {
+        $('step-' + k).classList.toggle('hide', k !== id);
+      });
+    }
+
+    function allDocsDone() {
+      return STEPS_DOCS.every((s) => !!state.photos[s.key]);
+    }
+
+    function renderDocsStep() {
+      const s = STEPS_DOCS[state.docIndex];
+      const el = $('step-docs');
+      const img = state.photos[s.key];
+      el.innerHTML = `
+        <h2>${s.title}</h2>
+        <p class="hint">${s.hint}</p>
+        <div class="shot">
+          ${img ? `<img src="${img}" alt="">` : '<span>ფოტო ჯერ არ არის</span>'}
+          <button type="button" id="doc-capture">${img ? 'თავიდან გადაღება' : 'ფოტოს გადაღება'}</button>
+        </div>
+        <div class="row-btns">
+          <button class="btn secondary" type="button" id="doc-back">${state.docIndex === 0 ? 'უკან' : 'წინა'}</button>
+          <button class="btn" type="button" id="doc-next" ${img ? '' : 'disabled'}>შემდეგი</button>
+        </div>
+        <p class="status-pill">${state.docIndex + 1} / ${STEPS_DOCS.length}</p>
+      `;
+      $('doc-capture').onclick = () => openCamera('doc', s.title);
+      $('doc-back').onclick = () => {
+        if (state.docIndex === 0) {
+          showStep('intro');
+          setProgress(5);
+          return;
+        }
+        state.docIndex -= 1;
+        renderDocsStep();
+        setProgress(10 + state.docIndex * 10);
+      };
+      $('doc-next').onclick = () => {
+        if (!state.photos[s.key]) return;
+        if (state.docIndex < STEPS_DOCS.length - 1) {
+          state.docIndex += 1;
+          renderDocsStep();
+          setProgress(10 + state.docIndex * 10);
+        } else {
+          showStep('face');
+          setProgress(75);
+        }
+      };
+    }
+
+    $('start-btn').onclick = () => {
+      state.phone = $('phone').value.trim();
+      state.name = $('fullname').value.trim();
+      if (!state.phone.replace(/\D/g, '').length) {
+        $('phone').focus();
+        return;
+      }
+      state.docIndex = 0;
+      showStep('docs');
+      renderDocsStep();
+      setProgress(10);
+    };
+
+    document.querySelectorAll('[data-back]').forEach((b) => {
+      b.addEventListener('click', () => {
+        const to = b.dataset.back;
+        if (to === 'docs') {
+          state.docIndex = STEPS_DOCS.length - 1;
+          showStep('docs');
+          renderDocsStep();
+          setProgress(70);
+        } else if (to === 'face') {
+          showStep('face');
+          setProgress(80);
+        }
+      });
+    });
+
+    $('face-open').onclick = () => openCamera('face', 'სახის ფოტო');
+    $('to-review').onclick = () => {
+      if (!state.photos.face) return;
+      renderReview();
+      showStep('review');
+      setProgress(92);
+    };
+
+    function renderReview() {
+      const items = [
+        ...STEPS_DOCS.map((s) => ({ key: s.key, title: s.title })),
+        { key: 'face', title: 'სახის ფოტო' }
+      ];
+      $('review-list').innerHTML = items.map((it) => `
+        <div class="done-item">
+          <img src="${state.photos[it.key] || ''}" alt="">
+          <div><div>${it.title}</div><small>${state.photos[it.key] ? 'მზადაა' : 'აკლია'}</small></div>
+        </div>
+      `).join('');
+    }
+
+    $('finish-btn').onclick = async () => {
+      try {
+        await saveSubmission();
+        $('finish-status').textContent = 'შენახულია ✓';
+        showStep('done');
+        setProgress(100);
+      } catch (e) {
+        $('finish-status').textContent = 'შენახვა ვერ მოხერხდა';
+      }
+    };
+
+    async function saveSubmission() {
+      const payload = {
+        phone: state.phone,
+        name: state.name,
+        photos: state.photos,
+        at: new Date().toISOString()
+      };
+      const db = await openDb();
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction('subs', 'readwrite');
+        tx.objectStore('subs').put(payload, payload.phone || payload.at);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+      try {
+        localStorage.setItem('cc_last_verify', JSON.stringify({
+          phone: payload.phone,
+          name: payload.name,
+          at: payload.at,
+          keys: Object.keys(payload.photos)
+        }));
+      } catch {}
+    }
+
+    function openDb() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open('cc_verify', 1);
+        req.onupgradeneeded = () => req.result.createObjectStore('subs');
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    function dataUrlToFile(dataUrl, name) {
+      const [meta, b64] = dataUrl.split(',');
+      const mime = (meta.match(/data:(.*?);/) || [])[1] || 'image/jpeg';
+      const bin = atob(b64);
+      const arr = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+      return new File([arr], name, { type: mime });
+    }
+
+    $('share-btn').onclick = async () => {
+      const files = Object.entries(state.photos).map(([k, v]) => dataUrlToFile(v, k + '.jpg'));
+      try {
+        if (navigator.canShare && navigator.canShare({ files })) {
+          await navigator.share({
+            title: 'დოკუმენტები',
+            text: `${state.name || ''} ${state.phone || ''}`.trim(),
+            files
+          });
+        } else {
+          await navigator.share?.({
+            title: 'დოკუმენტები',
+            text: `${state.name || ''} ${state.phone || ''} — ფოტოები ამ მოწყობილობაზეა შენახული`
+          });
+        }
+      } catch {}
+    };
+
+    $('download-btn').onclick = () => {
+      Object.entries(state.photos).forEach(([k, v], i) => {
+        setTimeout(() => {
+          const a = document.createElement('a');
+          a.href = v;
+          a.download = `${(state.phone || 'docs').replace(/\s/g, '')}_${k}.jpg`;
+          a.click();
+        }, i * 250);
+      });
+    };
+
+    /* ---------- Camera ---------- */
+    async function openCamera(mode, title) {
+      state.mode = mode;
+      state.ready = false;
+      state.lastBox = null;
+      $('cam-title').textContent = mode === 'face'
+        ? 'მოათავსეთ სახე ჩარჩოში და გაიხედეთ პირდაპირ კამერაში.'
+        : title;
+      $('cam-hint').textContent = mode === 'face' ? 'იტვირთება...' : 'მოათავსეთ დოკუმენტი ჩარჩოში';
+      $('cam-hint').className = 'cam-hint warn';
+      $('cam-shutter').disabled = mode === 'face';
+      $('cam-shutter').classList.toggle('on', false);
+      $('cam').classList.remove('hide');
+      $('cam-stage').classList.toggle('no-mirror', mode !== 'face');
+      state.facing = mode === 'face' ? 'user' : 'environment';
+      document.body.style.overflow = 'hidden';
+      await startStream();
+      resizeGuide();
+      if (mode === 'face') {
+        await ensureLandmarker();
+        loopFace();
+      } else {
+        drawDocGuide();
+        $('cam-shutter').disabled = false;
+        $('cam-shutter').classList.add('on');
+        $('cam-hint').textContent = 'გადაიღეთ მკაფიო ფოტო';
+        $('cam-hint').className = 'cam-hint ok';
+      }
+    }
+
+    async function startStream() {
+      stopStream();
+      const constraints = {
+        audio: false,
+        video: {
+          facingMode: { ideal: state.facing },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      };
+      state.stream = await navigator.mediaDevices.getUserMedia(constraints);
+      const video = $('cam-video');
+      video.srcObject = state.stream;
+      await video.play();
+    }
+
+    function stopStream() {
+      cancelAnimationFrame(state.raf);
+      state.raf = 0;
+      if (state.stream) {
+        state.stream.getTracks().forEach((t) => t.stop());
+        state.stream = null;
+      }
+    }
+
+    function closeCamera() {
+      stopStream();
+      $('cam').classList.add('hide');
+      document.body.style.overflow = '';
+    }
+
+    $('cam-close').onclick = closeCamera;
+    $('cam-switch').onclick = async () => {
+      state.facing = state.facing === 'user' ? 'environment' : 'user';
+      await startStream();
+      if (state.mode === 'face') loopFace();
+      else drawDocGuide();
+    };
+
+    window.addEventListener('resize', () => {
+      if ($('cam').classList.contains('hide')) return;
+      resizeGuide();
+      if (state.mode === 'doc') drawDocGuide();
+    });
+
+    function resizeGuide() {
+      const stage = $('cam-stage');
+      const canvas = $('cam-guide');
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.floor(stage.clientWidth * dpr);
+      canvas.height = Math.floor(stage.clientHeight * dpr);
+      canvas.style.width = stage.clientWidth + 'px';
+      canvas.style.height = stage.clientHeight + 'px';
+    }
+
+    function ovalMetrics(w, h) {
+      const ow = w * 0.62;
+      const oh = h * 0.46;
+      return { cx: w / 2, cy: h * 0.42, ow, oh };
+    }
+
+    function drawDocGuide() {
+      const canvas = $('cam-guide');
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
+      ctx.fillRect(0, 0, w, h);
+      const rw = w * 0.86;
+      const rh = rw * 0.63;
+      const x = (w - rw) / 2;
+      const y = (h - rh) / 2 - h * 0.04;
+      ctx.clearRect(x, y, rw, rh);
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x, y, rw, rh);
+      ctx.clip();
+      ctx.clearRect(0, 0, w, h);
+      ctx.restore();
+      ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+      ctx.lineWidth = Math.max(2, w * 0.004);
+      ctx.strokeRect(x, y, rw, rh);
+    }
+
+    function drawFaceGuide(ok) {
+      const canvas = $('cam-guide');
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+      const { cx, cy, ow, oh } = ovalMetrics(w, h);
+      ctx.clearRect(0, 0, w, h);
+
+      // dim outside oval
+      ctx.fillStyle = 'rgba(0,0,0,0.58)';
+      ctx.fillRect(0, 0, w, h);
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, ow / 2, oh / 2, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalCompositeOperation = 'source-over';
+
+      // oval stroke
+      ctx.strokeStyle = ok ? 'rgba(34,197,94,0.95)' : 'rgba(255,255,255,0.88)';
+      ctx.lineWidth = Math.max(2, w * 0.005);
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, ow / 2, oh / 2, 0, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // eye alignment lines
+      const eyeY = cy - oh * 0.08;
+      const eyeSpan = ow * 0.28;
+      ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+      ctx.lineWidth = Math.max(1, w * 0.0025);
+      ctx.setLineDash([6, 6]);
+      ctx.beginPath();
+      ctx.moveTo(cx - eyeSpan, eyeY);
+      ctx.lineTo(cx - eyeSpan * 0.28, eyeY);
+      ctx.moveTo(cx + eyeSpan * 0.28, eyeY);
+      ctx.lineTo(cx + eyeSpan, eyeY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    async function ensureLandmarker() {
+      if (state.landmarker) return state.landmarker;
+      try {
+        const vision = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/+esm');
+        const { FaceLandmarker, FilesetResolver } = vision;
+        const fileset = await FilesetResolver.forVisionTasks(
+          'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm'
+        );
+        state.landmarker = await FaceLandmarker.createFromOptions(fileset, {
+          baseOptions: {
+            modelAssetPath:
+              'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+            delegate: 'GPU'
+          },
+          runningMode: 'VIDEO',
+          numFaces: 2,
+          outputFacialTransformationMatrixes: true
+        });
+        return state.landmarker;
+      } catch (e) {
+        state.landmarker = null;
+        return null;
+      }
+    }
+
+    function loopFace() {
+      cancelAnimationFrame(state.raf);
+      const tick = () => {
+        if ($('cam').classList.contains('hide') || state.mode !== 'face') return;
+        analyzeFace();
+        state.raf = requestAnimationFrame(tick);
+      };
+      state.raf = requestAnimationFrame(tick);
+    }
+
+    function analyzeFace() {
+      const video = $('cam-video');
+      if (!video.videoWidth) return;
+      const canvas = $('cam-guide');
+      const { cx, cy, ow, oh } = ovalMetrics(canvas.width, canvas.height);
+
+      if (!state.landmarker) {
+        drawFaceGuide(false);
+        $('cam-hint').textContent = 'მოათავსეთ სახე ჩარჩოში და გაიხედეთ პირდაპირ კამერაში.';
+        $('cam-hint').className = 'cam-hint warn';
+        // fallback: allow after guide shown (model failed)
+        state.ready = true;
+        $('cam-shutter').disabled = false;
+        $('cam-shutter').classList.add('on');
+        return;
+      }
+
+      const result = state.landmarker.detectForVideo(video, performance.now());
+      const faces = result.faceLandmarks || [];
+
+      if (faces.length === 0) {
+        drawFaceGuide(false);
+        setFaceFeedback('მოათავსეთ სახე ცენტრში', false);
+        return;
+      }
+      if (faces.length > 1) {
+        drawFaceGuide(false);
+        setFaceFeedback('ეკრანზე მხოლოდ ერთი სახე უნდა ჩანდეს', false);
+        return;
+      }
+
+      const lm = faces[0];
+      // mirrored video → flip x for comparison with oval drawn on canvas
+      const pts = lm.map((p) => ({
+        x: (1 - p.x) * canvas.width,
+        y: p.y * canvas.height
+      }));
+
+      const xs = pts.map((p) => p.x);
+      const ys = pts.map((p) => p.y);
+      const minX = Math.min(...xs);
+      const maxX = Math.max(...xs);
+      const minY = Math.min(...ys);
+      const maxY = Math.max(...ys);
+      const fw = maxX - minX;
+      const fh = maxY - minY;
+      const fcx = (minX + maxX) / 2;
+      const fcy = (minY + maxY) / 2;
+
+      state.lastBox = { minX, maxX, minY, maxY, fcx, fcy, fw, fh };
+
+      // distance via face height vs oval
+      const fill = fh / oh;
+      if (fill > 0.98) {
+        drawFaceGuide(false);
+        setFaceFeedback('დაიწიეთ ოდნავ უკან', false);
+        return;
+      }
+      if (fill < 0.55) {
+        drawFaceGuide(false);
+        setFaceFeedback('მოდით უფრო ახლოს', false);
+        return;
+      }
+
+      // center
+      const dx = Math.abs(fcx - cx) / (ow / 2);
+      const dy = Math.abs(fcy - cy) / (oh / 2);
+      if (dx > 0.28 || dy > 0.28) {
+        drawFaceGuide(false);
+        setFaceFeedback('მოათავსეთ სახე ცენტრში', false);
+        return;
+      }
+
+      // head tilt / looking straight — eyes horizontal + matrix yaw/pitch if present
+      const leftEye = pts[33] || pts[133];
+      const rightEye = pts[263] || pts[362];
+      if (leftEye && rightEye) {
+        const angle = Math.abs(Math.atan2(rightEye.y - leftEye.y, rightEye.x - leftEye.x) * 180 / Math.PI);
+        if (angle > 10) {
+          drawFaceGuide(false);
+          setFaceFeedback('გაიხედეთ პირდაპირ', false);
+          return;
+        }
+      }
+
+      const mats = result.facialTransformationMatrixes || [];
+      if (mats[0] && mats[0].data) {
+        const m = mats[0].data;
+        // rough pitch/yaw from rotation matrix
+        const pitch = Math.asin(Math.max(-1, Math.min(1, -m[9]))) * 180 / Math.PI;
+        const yaw = Math.atan2(m[8], m[10]) * 180 / Math.PI;
+        if (Math.abs(pitch) > 14 || Math.abs(yaw) > 14) {
+          drawFaceGuide(false);
+          setFaceFeedback('გაიხედეთ პირდაპირ', false);
+          return;
+        }
+      }
+
+      drawFaceGuide(true);
+      setFaceFeedback('მზადაა · გადაიღეთ', true);
+    }
+
+    function setFaceFeedback(msg, ok) {
+      $('cam-hint').textContent = msg;
+      $('cam-hint').className = 'cam-hint ' + (ok ? 'ok' : 'warn');
+      state.ready = !!ok;
+      $('cam-shutter').disabled = !ok;
+      $('cam-shutter').classList.toggle('on', !!ok);
+    }
+
+    $('cam-shutter').onclick = () => {
+      if (state.mode === 'face' && !state.ready) return;
+      capture();
+    };
+
+    function capture() {
+      const video = $('cam-video');
+      if (!video.videoWidth) return;
+      const src = document.createElement('canvas');
+      src.width = video.videoWidth;
+      src.height = video.videoHeight;
+      const sctx = src.getContext('2d');
+      if (state.mode === 'face') {
+        // un-mirror for saved photo
+        sctx.translate(src.width, 0);
+        sctx.scale(-1, 1);
+      }
+      sctx.drawImage(video, 0, 0);
+
+      let out;
+      if (state.mode === 'face') out = cropPassportFace(src);
+      else out = cropDoc(src);
+
+      const dataUrl = out.toDataURL('image/jpeg', 0.92);
+      if (state.mode === 'face') {
+        state.photos.face = dataUrl;
+        const prev = $('face-preview');
+        prev.innerHTML = `<img src="${dataUrl}" alt=""><button type="button" id="face-open">თავიდან გადაღება</button>`;
+        $('face-open').onclick = () => openCamera('face', 'სახის ფოტო');
+        $('to-review').disabled = false;
+      } else {
+        const key = STEPS_DOCS[state.docIndex].key;
+        state.photos[key] = dataUrl;
+        renderDocsStep();
+      }
+      closeCamera();
+    }
+
+    function cropDoc(src) {
+      const w = src.width;
+      const h = src.height;
+      const rw = w * 0.86;
+      const rh = rw * 0.63;
+      const x = (w - rw) / 2;
+      const y = (h - rh) / 2 - h * 0.04;
+      const out = document.createElement('canvas');
+      out.width = Math.round(rw);
+      out.height = Math.round(rh);
+      out.getContext('2d').drawImage(src, x, y, rw, rh, 0, 0, out.width, out.height);
+      return out;
+    }
+
+    /** პასპორტის სტანდარტი ~3.5x4.5, თავი ცენტრში */
+    function cropPassportFace(src) {
+      const ratio = 3.5 / 4.5;
+      let cx = src.width / 2;
+      let cy = src.height * 0.42;
+      let faceH = src.height * 0.42;
+      if (state.lastBox) {
+        // lastBox was in mirrored canvas coords — convert to video pixels
+        const scaleX = src.width / $('cam-guide').width;
+        const scaleY = src.height / $('cam-guide').height;
+        cx = state.lastBox.fcx * scaleX;
+        cy = state.lastBox.fcy * scaleY;
+        faceH = state.lastBox.fh * scaleY;
+      }
+      // head ~70-80% of photo height in ID photos
+      let cropH = faceH / 0.72;
+      let cropW = cropH * ratio;
+      if (cropW > src.width * 0.98) {
+        cropW = src.width * 0.98;
+        cropH = cropW / ratio;
+      }
+      let x = cx - cropW / 2;
+      let y = cy - cropH * 0.42;
+      x = Math.max(0, Math.min(src.width - cropW, x));
+      y = Math.max(0, Math.min(src.height - cropH, y));
+      const out = document.createElement('canvas');
+      out.width = 700;
+      out.height = Math.round(700 / ratio);
+      out.getContext('2d').drawImage(src, x, y, cropW, cropH, 0, 0, out.width, out.height);
+      return out;
+    }
+
+    setProgress(3);
+  </script>
+</body>
+</html>
