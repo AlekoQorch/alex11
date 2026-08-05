@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '99';
+    window.__CC_VER = '100';
     (function () {
       function go(v) {
         try {
@@ -775,7 +775,7 @@
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '99';
+      const v = window.__CC_VER || '100';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
