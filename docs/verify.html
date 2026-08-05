@@ -11,10 +11,11 @@
     :root {
       --bg: #0b0b0c;
       --surface: #17171a;
-      --line: #2a2a2e;
-      --text: #f2f2f2;
-      --dim: #9a9aa0;
+      --line: #2f2f34;
+      --text: #f3f3f3;
+      --dim: #9b9ba1;
       --blue: #3b82f6;
+      --teal: #14b8a6;
       --green: #22c55e;
     }
     body {
@@ -30,51 +31,81 @@
       min-height: 100dvh;
       padding: calc(16px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));
     }
-    .brand { text-align: center; margin-bottom: 18px; }
-    .brand h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
-    .brand p { color: var(--dim); font-size: 14px; margin-top: 6px; }
+    .topbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .back {
+      width: 36px; height: 36px; border-radius: 10px;
+      border: 1px solid var(--line); background: var(--surface);
+      color: var(--text); font-size: 18px;
+    }
+    .topbar h1 { font-size: 18px; font-weight: 700; }
+    .sub { color: var(--dim); font-size: 13px; margin-bottom: 16px; }
     .progress {
       height: 4px; background: var(--line); border-radius: 99px; overflow: hidden; margin-bottom: 18px;
     }
-    .progress > i { display: block; height: 100%; background: var(--blue); width: 0%; transition: width .25s ease; }
+    .progress > i { display: block; height: 100%; width: 0; background: var(--teal); transition: width .25s ease; }
     .card {
-      background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
-      padding: 16px; margin-bottom: 14px;
+      background: var(--surface); border: 1px solid var(--line);
+      border-radius: 14px; padding: 16px; margin-bottom: 14px;
     }
-    .card h2 { font-size: 17px; margin-bottom: 6px; }
-    .card .hint { color: var(--dim); font-size: 13px; margin-bottom: 12px; }
     .field-label { display: block; font-size: 12px; color: var(--dim); margin: 10px 0 6px; }
     .field-inp {
       width: 100%; background: #101012; border: 1px solid var(--line); border-radius: 10px;
       color: var(--text); padding: 12px; font-size: 16px;
     }
-    .shot {
-      background: #101012; border: 1px dashed #3a3a40; border-radius: 12px; min-height: 120px;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 8px; padding: 10px; text-align: center; overflow: hidden;
+    .btn {
+      border: none; border-radius: 12px; padding: 13px 14px; font-size: 16px; font-weight: 700;
+      background: var(--teal); color: #042f2e; width: 100%;
     }
-    .shot img { width: 100%; height: 140px; object-fit: cover; border-radius: 8px; }
-    .shot.portrait img { height: 180px; object-fit: contain; background: #000; }
-    .shot span { font-size: 12px; color: var(--dim); }
-    .shot button, .btn {
-      border: none; border-radius: 10px; padding: 11px 14px; font-size: 15px; font-weight: 600;
-      background: var(--blue); color: #fff; width: 100%;
-    }
+    .btn:disabled { opacity: 0.35; }
     .btn.secondary { background: transparent; border: 1px solid var(--line); color: var(--text); }
-    .btn.green { background: var(--green); color: #06210f; }
-    .btn:disabled { opacity: 0.4; }
+    .btn.green { background: var(--green); color: #052e16; }
     .row-btns { display: flex; gap: 8px; margin-top: 14px; }
     .row-btns .btn { flex: 1; }
     .hide { display: none !important; }
+
+    .slot-label {
+      font-size: 14px; font-weight: 600; margin: 4px 0 8px; color: var(--text);
+    }
+    .slot {
+      position: relative;
+      border: 1.5px solid var(--line);
+      border-radius: 14px;
+      background: #101012;
+      aspect-ratio: 1.586;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .slot.has-photo { border-color: rgba(20,184,166,.55); }
+    .slot img.preview {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+    }
+    .slot .schematic {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      padding: 10%;
+    }
+    .slot .schematic svg { width: 100%; height: auto; opacity: 0.55; }
+    .cam-fab {
+      position: absolute; right: 10px; bottom: 10px;
+      width: 42px; height: 42px; border-radius: 50%;
+      border: none; background: var(--teal); color: #042f2e;
+      display: grid; place-items: center; font-size: 18px;
+      box-shadow: 0 4px 14px rgba(0,0,0,.35);
+    }
+    .status-pill { font-size: 12px; color: var(--dim); margin-top: 8px; }
     .done-list { display: grid; gap: 8px; }
     .done-item {
       display: flex; gap: 10px; align-items: center; background: #101012;
       border-radius: 10px; padding: 8px;
     }
-    .done-item img { width: 56px; height: 56px; object-fit: cover; border-radius: 8px; }
+    .done-item img { width: 64px; height: 40px; object-fit: cover; border-radius: 6px; }
     .done-item div { font-size: 13px; }
     .done-item small { color: var(--dim); }
-    .status-pill { display: inline-block; margin-top: 8px; font-size: 12px; color: var(--dim); }
 
     .cam-overlay {
       position: fixed; inset: 0; z-index: 50; background: #000;
@@ -82,106 +113,145 @@
     }
     .cam-top {
       position: absolute; top: 0; left: 0; right: 0; z-index: 3;
-      padding: calc(14px + env(safe-area-inset-top)) 16px 10px; text-align: center;
-      background: linear-gradient(180deg, rgba(0,0,0,.75), transparent);
+      padding: calc(12px + env(safe-area-inset-top)) 16px 12px;
+      background: linear-gradient(180deg, rgba(0,0,0,.78), transparent);
     }
-    .cam-top h3 { font-size: 15px; font-weight: 600; line-height: 1.35; }
+    .cam-top .close {
+      border: none; background: transparent; color: #fff; font-size: 15px; font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .cam-top h3 { font-size: 17px; font-weight: 700; }
+    .cam-top p { font-size: 13px; color: rgba(255,255,255,.75); margin-top: 4px; line-height: 1.35; }
     .cam-stage { flex: 1; position: relative; overflow: hidden; background: #000; }
     .cam-stage video, .cam-stage canvas.guide {
       position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
     }
-    .cam-hint {
-      position: absolute; left: 50%; bottom: 26%; transform: translateX(-50%); z-index: 3;
-      background: rgba(0,0,0,.62); border: 1px solid rgba(255,255,255,.12); color: #fff;
-      padding: 10px 14px; border-radius: 999px; font-size: 14px; font-weight: 600;
-      white-space: nowrap; max-width: 92%; text-align: center;
-    }
-    .cam-hint.ok { border-color: rgba(34,197,94,.5); color: #86efac; }
     .cam-bottom {
       position: absolute; left: 0; right: 0; bottom: 0; z-index: 3;
-      padding: 16px 16px calc(18px + env(safe-area-inset-bottom));
-      display: flex; gap: 10px; align-items: center;
-      background: linear-gradient(0deg, rgba(0,0,0,.8), transparent);
+      padding: 16px 16px calc(20px + env(safe-area-inset-bottom));
+      display: flex; flex-direction: column; gap: 10px; align-items: center;
+      background: linear-gradient(0deg, rgba(0,0,0,.85), transparent);
     }
-    .cam-bottom .btn { flex: 1; }
-    .shutter {
-      width: 72px; height: 72px; border-radius: 50%; border: 3px solid #fff;
-      background: #fff; flex: 0 0 auto; box-shadow: 0 0 0 4px rgba(34,197,94,.35);
+    .take {
+      width: min(100%, 360px);
+      border: none; border-radius: 14px; padding: 15px;
+      background: var(--teal); color: #042f2e; font-size: 16px; font-weight: 800;
+    }
+    .upload-link {
+      border: none; background: transparent; color: rgba(255,255,255,.8);
+      font-size: 14px; text-decoration: underline; padding: 4px;
     }
   </style>
 </head>
 <body>
   <div class="app">
-    <header class="brand">
-      <h1>დოკუმენტების ატვირთვა</h1>
-      <p>ალდაგი · ავტოდაზღვევა</p>
-    </header>
     <div class="progress"><i id="bar"></i></div>
 
-    <section class="card" id="step-intro">
-      <h2>გამარჯობა</h2>
-      <p class="hint">ატვირთეთ პირადობა, მართვის მოწმობა და ტექპასპორტი (წინა/უკანა). პირადობისა და მართვის მოწმობის წინა მხარეზე ჩარჩოში მარცხნივ გამოჩნდება პიროვნების ფოტოს ადგილი.</p>
-      <label class="field-label">ტელეფონის ნომერი</label>
-      <input class="field-inp" id="phone" type="tel" inputmode="tel" placeholder="5XX XX XX XX">
-      <label class="field-label">სახელი და გვარი</label>
-      <input class="field-inp" id="fullname" type="text" placeholder="მაგ: გიორგი ბერიძე" autocomplete="name">
-      <div class="row-btns">
-        <button class="btn" id="start-btn" type="button">დაწყება</button>
+    <section id="step-intro">
+      <div class="topbar"><h1>დოკუმენტების ატვირთვა</h1></div>
+      <p class="sub">შეიყვანეთ მონაცემები, შემდეგ გადაიღეთ პირადობის, მართვის მოწმობისა და ტექპასპორტის ორივე მხარე.</p>
+      <div class="card">
+        <label class="field-label">ტელეფონის ნომერი</label>
+        <input class="field-inp" id="phone" type="tel" inputmode="tel" placeholder="5XX XX XX XX">
+        <label class="field-label">სახელი</label>
+        <input class="field-inp" id="first" type="text" placeholder="სახელი" autocomplete="given-name">
+        <label class="field-label">გვარი</label>
+        <input class="field-inp" id="last" type="text" placeholder="გვარი" autocomplete="family-name">
+        <div class="row-btns">
+          <button class="btn" id="start-btn" type="button">შემდეგი</button>
+        </div>
       </div>
     </section>
 
-    <section class="card hide" id="step-docs"></section>
+    <section id="step-group" class="hide">
+      <div class="topbar">
+        <button class="back" id="group-back" type="button" aria-label="უკან">←</button>
+        <h1 id="group-title">პირადობა</h1>
+      </div>
+      <p class="sub" id="group-sub">გადაიღეთ მკაფიო ფოტო წინა და უკანა მხარის. ორივე საჭიროა შემდეგზე გადასასვლელად.</p>
+      <div id="group-slots"></div>
+      <button class="btn" id="group-next" type="button" disabled>შემდეგი</button>
+    </section>
 
-    <section class="card hide" id="step-review">
-      <h2>შემოწმება</h2>
-      <p class="hint">გადაამოწმეთ ფოტოები და დაასრულეთ ატვირთვა.</p>
+    <section id="step-review" class="hide">
+      <div class="topbar">
+        <button class="back" id="review-back" type="button" aria-label="უკან">←</button>
+        <h1>შემოწმება</h1>
+      </div>
+      <p class="sub">გადაამოწმეთ ფოტოები და დაასრულეთ.</p>
       <div class="done-list" id="review-list"></div>
       <div class="row-btns">
-        <button class="btn secondary" type="button" id="review-back">უკან</button>
-        <button class="btn green" type="button" id="finish-btn">დასრულება</button>
+        <button class="btn green" id="finish-btn" type="button">დასრულება</button>
       </div>
       <p class="status-pill" id="finish-status"></p>
     </section>
 
-    <section class="card hide" id="step-done">
-      <h2>მადლობა</h2>
-      <p class="hint">დოკუმენტები შენახულია ამ მოწყობილობაზე. საჭიროების შემთხვევაში გააზიარეთ ან გადმოწერეთ.</p>
+    <section id="step-done" class="hide">
+      <div class="topbar"><h1>მადლობა</h1></div>
+      <p class="sub">დოკუმენტები შენახულია ამ მოწყობილობაზე.</p>
       <div class="row-btns">
-        <button class="btn" type="button" id="share-btn">გაზიარება</button>
-        <button class="btn secondary" type="button" id="download-btn">გადმოწერა</button>
+        <button class="btn" id="share-btn" type="button">გაზიარება</button>
+        <button class="btn secondary" id="download-btn" type="button">გადმოწერა</button>
       </div>
     </section>
   </div>
 
   <div class="cam-overlay hide" id="cam">
-    <div class="cam-top"><h3 id="cam-title">კამერა</h3></div>
+    <div class="cam-top">
+      <button class="close" id="cam-close" type="button">დახურვა</button>
+      <h3 id="cam-title">გადაიღეთ პირადობა</h3>
+      <p id="cam-sub">დარწმუნდით, რომ განათება საკმარისია და ტექსტი იკითხება.</p>
+    </div>
     <div class="cam-stage" id="cam-stage">
       <video id="cam-video" playsinline muted autoplay></video>
       <canvas class="guide" id="cam-guide"></canvas>
-      <div class="cam-hint ok" id="cam-hint">მოათავსეთ ჩარჩოში</div>
     </div>
     <div class="cam-bottom">
-      <button class="btn secondary" type="button" id="cam-close">გაუქმება</button>
-      <button class="shutter" type="button" id="cam-shutter" aria-label="გადაღება"></button>
-      <button class="btn secondary" type="button" id="cam-switch">შეცვლა</button>
+      <button class="take" id="cam-shutter" type="button">ფოტოს გადაღება</button>
+      <button class="upload-link" id="cam-upload" type="button">ატვირთვა გალერეიდან</button>
+      <input id="file-input" type="file" accept="image/*" capture="environment" class="hide">
     </div>
   </div>
 
   <script>
-    /** frame: card = მხოლოდ დოკუმენტი; id = დოკუმენტი + მარცხნივ პიროვნების ფოტოს ჩარჩო */
-    const STEPS = [
-      { key: 'id_front', title: 'პირადობა · წინა', hint: 'პირადობის წინა მხარე — მარცხნივ ფოტო ჩარჩოში მოათავსეთ', frame: 'id' },
-      { key: 'id_back', title: 'პირადობა · უკანა', hint: 'პირადობის უკანა მხარე', frame: 'card' },
-      { key: 'license_front', title: 'მართვის მოწმობა · წინა', hint: 'მართვის მოწმობის წინა მხარე — მარცხნივ ფოტო ჩარჩოში მოათავსეთ', frame: 'id' },
-      { key: 'license_back', title: 'მართვის მოწმობა · უკანა', hint: 'მართვის მოწმობის უკანა მხარე', frame: 'card' },
-      { key: 'tech_front', title: 'ტექპასპორტი · წინა', hint: 'ტექპასპორტის წინა მხარე', frame: 'card' },
-      { key: 'tech_back', title: 'ტექპასპორტი · უკანა', hint: 'ტექპასპორტის უკანა მხარე', frame: 'card' }
+    const GROUPS = [
+      {
+        id: 'id',
+        title: 'პირადობის გადაღება',
+        sub: 'გადაიღეთ პირადობის მოწმობის წინა და უკანა მხარე. ორივე საჭიროა შემდეგზე გადასასვლელად.',
+        sides: [
+          { key: 'id_front', label: 'წინა', side: 'front', camTitle: 'გადაიღეთ პირადობის წინა მხარე' },
+          { key: 'id_back', label: 'უკანა', side: 'back', camTitle: 'გადაიღეთ პირადობის უკანა მხარე' }
+        ]
+      },
+      {
+        id: 'license',
+        title: 'მართვის მოწმობის გადაღება',
+        sub: 'გადაიღეთ მართვის მოწმობის წინა და უკანა მხარე. ორივე საჭიროა შემდეგზე გადასასვლელად.',
+        sides: [
+          { key: 'license_front', label: 'წინა', side: 'front', camTitle: 'გადაიღეთ მართვის მოწმობის წინა მხარე' },
+          { key: 'license_back', label: 'უკანა', side: 'back', camTitle: 'გადაიღეთ მართვის მოწმობის უკანა მხარე' }
+        ]
+      },
+      {
+        id: 'tech',
+        title: 'ტექპასპორტის გადაღება',
+        sub: 'გადაიღეთ ტექპასპორტის წინა და უკანა მხარე. ორივე საჭიროა შემდეგზე გადასასვლელად.',
+        sides: [
+          { key: 'tech_front', label: 'წინა', side: 'front', camTitle: 'გადაიღეთ ტექპასპორტის წინა მხარე' },
+          { key: 'tech_back', label: 'უკანა', side: 'back', camTitle: 'გადაიღეთ ტექპასპორტის უკანა მხარე' }
+        ]
+      }
     ];
 
     const $ = (id) => document.getElementById(id);
     const state = {
-      phone: '', name: '', photos: {}, docIndex: 0,
-      facing: 'environment', frame: 'card', stream: null
+      phone: '', first: '', last: '',
+      photos: {},
+      groupIndex: 0,
+      captureKey: '',
+      captureSide: 'front',
+      stream: null
     };
 
     const params = new URLSearchParams(location.search);
@@ -200,94 +270,111 @@
       $('bar').style.width = Math.max(0, Math.min(100, p)) + '%';
     }
 
-    function showStep(id) {
-      ['intro', 'docs', 'review', 'done'].forEach((k) => {
+    function show(id) {
+      ['intro', 'group', 'review', 'done'].forEach((k) => {
         $('step-' + k).classList.toggle('hide', k !== id);
       });
     }
 
-    function frameRect(w, h) {
-      const rw = w * 0.86;
-      const rh = rw * 0.63;
-      const x = (w - rw) / 2;
-      const y = (h - rh) / 2 - h * 0.04;
-      return { x, y, rw, rh };
+    function svgFront() {
+      return `<svg viewBox="0 0 200 126" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect x="4" y="4" width="192" height="118" rx="10" stroke="#9ca3af" stroke-width="2" stroke-dasharray="5 4"/>
+        <rect x="16" y="28" width="52" height="68" rx="4" stroke="#d1d5db" stroke-width="2"/>
+        <circle cx="42" cy="48" r="10" stroke="#d1d5db" stroke-width="2"/>
+        <path d="M24 84c4-10 32-10 36 0" stroke="#d1d5db" stroke-width="2" stroke-linecap="round"/>
+        <line x1="84" y1="34" x2="176" y2="34" stroke="#9ca3af" stroke-width="3" stroke-linecap="round"/>
+        <line x1="84" y1="50" x2="168" y2="50" stroke="#9ca3af" stroke-width="3" stroke-linecap="round"/>
+        <line x1="84" y1="66" x2="158" y2="66" stroke="#9ca3af" stroke-width="3" stroke-linecap="round"/>
+        <line x1="84" y1="82" x2="148" y2="82" stroke="#9ca3af" stroke-width="3" stroke-linecap="round"/>
+      </svg>`;
     }
 
-    /** პირადობის/მოწმობის პიროვნების ფოტო — მარცხნივ, ჩარჩოში */
-    function photoInset(card) {
-      const { x, y, rw, rh } = card;
-      const pw = rw * 0.27;
-      const ph = rh * 0.58;
-      const px = x + rw * 0.045;
-      const py = y + rh * 0.20;
-      return { x: px, y: py, rw: pw, rh: ph };
+    function svgBack() {
+      return `<svg viewBox="0 0 200 126" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect x="4" y="4" width="192" height="118" rx="10" stroke="#9ca3af" stroke-width="2" stroke-dasharray="5 4"/>
+        <rect x="18" y="22" width="164" height="18" rx="3" stroke="#9ca3af" stroke-width="2"/>
+        <line x1="24" y1="56" x2="120" y2="56" stroke="#9ca3af" stroke-width="3" stroke-linecap="round"/>
+        <line x1="24" y1="72" x2="150" y2="72" stroke="#9ca3af" stroke-width="3" stroke-linecap="round"/>
+        <line x1="24" y1="88" x2="110" y2="88" stroke="#9ca3af" stroke-width="3" stroke-linecap="round"/>
+        <rect x="140" y="54" width="36" height="36" rx="4" stroke="#d1d5db" stroke-width="2"/>
+      </svg>`;
     }
 
-    function renderDocsStep() {
-      const s = STEPS[state.docIndex];
-      const el = $('step-docs');
-      const img = state.photos[s.key];
-      el.innerHTML = `
-        <h2>${s.title}</h2>
-        <p class="hint">${s.hint}</p>
-        <div class="shot">
-          ${img ? `<img src="${img}" alt="">` : '<span>ფოტო ჯერ არ არის</span>'}
-          <button type="button" id="doc-capture">${img ? 'თავიდან გადაღება' : 'ფოტოს გადაღება'}</button>
-        </div>
-        <div class="row-btns">
-          <button class="btn secondary" type="button" id="doc-back">${state.docIndex === 0 ? 'უკან' : 'წინა'}</button>
-          <button class="btn" type="button" id="doc-next" ${img ? '' : 'disabled'}>შემდეგი</button>
-        </div>
-        <p class="status-pill">${state.docIndex + 1} / ${STEPS.length}</p>
-      `;
-      $('doc-capture').onclick = () => openCamera(s);
-      $('doc-back').onclick = () => {
-        if (state.docIndex === 0) {
-          showStep('intro');
-          setProgress(5);
-          return;
-        }
-        state.docIndex -= 1;
-        renderDocsStep();
-        setProgress(8 + state.docIndex * (80 / STEPS.length));
-      };
-      $('doc-next').onclick = () => {
-        if (!state.photos[s.key]) return;
-        if (state.docIndex < STEPS.length - 1) {
-          state.docIndex += 1;
-          renderDocsStep();
-          setProgress(8 + state.docIndex * (80 / STEPS.length));
-        } else {
-          renderReview();
-          showStep('review');
-          setProgress(92);
-        }
-      };
+    function renderGroup() {
+      const g = GROUPS[state.groupIndex];
+      $('group-title').textContent = g.title;
+      $('group-sub').textContent = g.sub;
+      $('group-slots').innerHTML = g.sides.map((s) => {
+        const photo = state.photos[s.key];
+        return `
+          <div class="slot-label">${s.label}</div>
+          <div class="slot ${photo ? 'has-photo' : ''}" data-key="${s.key}">
+            ${photo
+              ? `<img class="preview" src="${photo}" alt="">`
+              : `<div class="schematic">${s.side === 'front' ? svgFront() : svgBack()}</div>`}
+            <button class="cam-fab" type="button" data-capture="${s.key}" aria-label="კამერა">📷</button>
+          </div>`;
+      }).join('');
+
+      $('group-slots').querySelectorAll('[data-capture]').forEach((btn) => {
+        btn.onclick = () => {
+          const side = g.sides.find((x) => x.key === btn.dataset.capture);
+          openCamera(side);
+        };
+      });
+
+      const both = g.sides.every((s) => !!state.photos[s.key]);
+      $('group-next').disabled = !both;
+      setProgress(12 + state.groupIndex * 28 + (both ? 12 : 4));
     }
 
     $('start-btn').onclick = () => {
       state.phone = $('phone').value.trim();
-      state.name = $('fullname').value.trim();
-      if (!state.phone.replace(/\D/g, '').length) {
-        $('phone').focus();
+      state.first = $('first').value.trim();
+      state.last = $('last').value.trim();
+      if (!state.phone.replace(/\D/g, '').length) { $('phone').focus(); return; }
+      if (!state.first) { $('first').focus(); return; }
+      if (!state.last) { $('last').focus(); return; }
+      state.groupIndex = 0;
+      show('group');
+      renderGroup();
+    };
+
+    $('group-back').onclick = () => {
+      if (state.groupIndex === 0) {
+        show('intro');
+        setProgress(5);
         return;
       }
-      state.docIndex = 0;
-      showStep('docs');
-      renderDocsStep();
-      setProgress(10);
+      state.groupIndex -= 1;
+      renderGroup();
+    };
+
+    $('group-next').onclick = () => {
+      const g = GROUPS[state.groupIndex];
+      if (!g.sides.every((s) => !!state.photos[s.key])) return;
+      if (state.groupIndex < GROUPS.length - 1) {
+        state.groupIndex += 1;
+        renderGroup();
+      } else {
+        renderReview();
+        show('review');
+        setProgress(92);
+      }
     };
 
     $('review-back').onclick = () => {
-      state.docIndex = STEPS.length - 1;
-      showStep('docs');
-      renderDocsStep();
-      setProgress(85);
+      state.groupIndex = GROUPS.length - 1;
+      show('group');
+      renderGroup();
     };
 
     function renderReview() {
-      $('review-list').innerHTML = STEPS.map((it) => `
+      const items = GROUPS.flatMap((g) => g.sides.map((s) => ({
+        key: s.key,
+        title: `${g.title.replace('გადაღება', '').trim()} · ${s.label}`
+      })));
+      $('review-list').innerHTML = items.map((it) => `
         <div class="done-item">
           <img src="${state.photos[it.key] || ''}" alt="">
           <div><div>${it.title}</div><small>${state.photos[it.key] ? 'მზადაა' : 'აკლია'}</small></div>
@@ -299,7 +386,7 @@
       try {
         await saveSubmission();
         $('finish-status').textContent = 'შენახულია ✓';
-        showStep('done');
+        show('done');
         setProgress(100);
       } catch {
         $('finish-status').textContent = 'შენახვა ვერ მოხერხდა';
@@ -308,7 +395,12 @@
 
     async function saveSubmission() {
       const payload = {
-        phone: state.phone, name: state.name, photos: state.photos, at: new Date().toISOString()
+        phone: state.phone,
+        name: `${state.first} ${state.last}`.trim(),
+        first: state.first,
+        last: state.last,
+        photos: state.photos,
+        at: new Date().toISOString()
       };
       const db = await openDb();
       await new Promise((resolve, reject) => {
@@ -348,14 +440,11 @@
         if (navigator.canShare && navigator.canShare({ files })) {
           await navigator.share({
             title: 'დოკუმენტები',
-            text: `${state.name || ''} ${state.phone || ''}`.trim(),
+            text: `${state.first} ${state.last} ${state.phone}`.trim(),
             files
           });
         } else {
-          await navigator.share?.({
-            title: 'დოკუმენტები',
-            text: `${state.name || ''} ${state.phone || ''}`
-          });
+          await navigator.share?.({ title: 'დოკუმენტები', text: `${state.first} ${state.last}` });
         }
       } catch {}
     };
@@ -371,29 +460,27 @@
       });
     };
 
-    async function openCamera(step) {
-      state.frame = step.frame || 'card';
-      $('cam-title').textContent = step.title;
-      $('cam-hint').textContent = state.frame === 'id'
-        ? 'ფოტო მარცხნივ ჩარჩოში · გადაიღეთ მკაფიო ფოტო'
-        : 'გადაიღეთ მკაფიო ფოტო';
+    async function openCamera(side) {
+      state.captureKey = side.key;
+      state.captureSide = side.side;
+      $('cam-title').textContent = side.camTitle;
+      $('cam-sub').textContent = 'დარწმუნდით, რომ განათება საკმარისია და ტექსტი იკითხება.';
       $('cam').classList.remove('hide');
-      state.facing = 'environment';
       document.body.style.overflow = 'hidden';
-      await startStream();
-      resizeGuide();
-      drawGuide();
+      try {
+        await startStream();
+        resizeGuide();
+        drawGuide();
+      } catch {
+        $('cam-sub').textContent = 'კამერა ვერ გაიხსნა — სცადეთ გალერეიდან ატვირთვა.';
+      }
     }
 
     async function startStream() {
       stopStream();
       state.stream = await navigator.mediaDevices.getUserMedia({
         audio: false,
-        video: {
-          facingMode: { ideal: state.facing },
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        }
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
       });
       const video = $('cam-video');
       video.srcObject = state.stream;
@@ -414,11 +501,6 @@
     }
 
     $('cam-close').onclick = closeCamera;
-    $('cam-switch').onclick = async () => {
-      state.facing = state.facing === 'user' ? 'environment' : 'user';
-      await startStream();
-      drawGuide();
-    };
 
     window.addEventListener('resize', () => {
       if ($('cam').classList.contains('hide')) return;
@@ -436,37 +518,88 @@
       canvas.style.height = stage.clientHeight + 'px';
     }
 
+    function cardRect(w, h) {
+      const rw = w * 0.88;
+      const rh = rw * 0.63;
+      return { x: (w - rw) / 2, y: (h - rh) / 2 - h * 0.02, rw, rh };
+    }
+
     function drawGuide() {
       const canvas = $('cam-guide');
       const ctx = canvas.getContext('2d');
       const w = canvas.width;
       const h = canvas.height;
-      const card = frameRect(w, h);
-      const { x, y, rw, rh } = card;
+      const { x, y, rw, rh } = cardRect(w, h);
       ctx.clearRect(0, 0, w, h);
+
+      // dim outside
       ctx.fillStyle = 'rgba(0,0,0,0.55)';
       ctx.fillRect(0, 0, w, h);
       ctx.clearRect(x, y, rw, rh);
 
-      // გარე ჩარჩო — მთელი დოკუმენტი
-      ctx.strokeStyle = 'rgba(255,255,255,0.92)';
+      // dashed outer card
+      ctx.strokeStyle = 'rgba(255,255,255,0.95)';
       ctx.lineWidth = Math.max(2, w * 0.004);
-      const r = Math.min(12, rw * 0.04);
-      roundRect(ctx, x, y, rw, rh, r);
+      ctx.setLineDash([10, 8]);
+      roundRect(ctx, x, y, rw, rh, Math.min(14, rw * 0.04));
       ctx.stroke();
+      ctx.setLineDash([]);
 
-      // შიდა ჩარჩო — პიროვნების ფოტო მარცხნივ (პირადობა / მოწმობა)
-      if (state.frame === 'id') {
-        const p = photoInset(card);
-        ctx.strokeStyle = 'rgba(255,255,255,0.95)';
-        ctx.lineWidth = Math.max(2, w * 0.0035);
-        const pr = Math.min(6, p.rw * 0.06);
-        roundRect(ctx, p.x, p.y, p.rw, p.rh, pr);
+      if (state.captureSide === 'front') {
+        // left portrait silhouette box
+        const px = x + rw * 0.06;
+        const py = y + rh * 0.20;
+        const pw = rw * 0.26;
+        const ph = rh * 0.56;
+        ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+        ctx.lineWidth = Math.max(1.5, w * 0.0028);
+        roundRect(ctx, px, py, pw, ph, 6);
         ctx.stroke();
-        // მსუბუქი მონიშვნა შიგნით
-        ctx.strokeStyle = 'rgba(59,130,246,0.55)';
-        ctx.lineWidth = Math.max(1, w * 0.002);
-        roundRect(ctx, p.x + 3, p.y + 3, p.rw - 6, p.rh - 6, Math.max(2, pr - 1));
+
+        // head + shoulders
+        const cx = px + pw / 2;
+        const headR = pw * 0.22;
+        const headY = py + ph * 0.32;
+        ctx.beginPath();
+        ctx.arc(cx, headY, headR, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(px + pw * 0.18, py + ph * 0.82);
+        ctx.quadraticCurveTo(cx, py + ph * 0.55, px + pw * 0.82, py + ph * 0.82);
+        ctx.stroke();
+
+        // text lines on the right
+        const lx = x + rw * 0.40;
+        const lines = [
+          { y: y + rh * 0.28, w: rw * 0.48 },
+          { y: y + rh * 0.40, w: rw * 0.44 },
+          { y: y + rh * 0.52, w: rw * 0.40 },
+          { y: y + rh * 0.64, w: rw * 0.36 }
+        ];
+        ctx.lineWidth = Math.max(3, w * 0.005);
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = 'rgba(255,255,255,0.78)';
+        lines.forEach((ln) => {
+          ctx.beginPath();
+          ctx.moveTo(lx, ln.y);
+          ctx.lineTo(lx + ln.w, ln.y);
+          ctx.stroke();
+        });
+      } else {
+        // back schematic: mag stripe + lines + square
+        const stripeY = y + rh * 0.16;
+        ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+        ctx.lineWidth = Math.max(1.5, w * 0.0028);
+        roundRect(ctx, x + rw * 0.06, stripeY, rw * 0.88, rh * 0.14, 4);
+        ctx.stroke();
+        const lx = x + rw * 0.08;
+        [0.42, 0.54, 0.66].forEach((fy, i) => {
+          ctx.beginPath();
+          ctx.moveTo(lx, y + rh * fy);
+          ctx.lineTo(lx + rw * (0.55 - i * 0.06), y + rh * fy);
+          ctx.stroke();
+        });
+        roundRect(ctx, x + rw * 0.72, y + rh * 0.42, rw * 0.16, rh * 0.28, 4);
         ctx.stroke();
       }
     }
@@ -481,31 +614,36 @@
       ctx.closePath();
     }
 
-    $('cam-shutter').onclick = () => capture();
+    function acceptPhoto(dataUrl) {
+      state.photos[state.captureKey] = dataUrl;
+      closeCamera();
+      renderGroup();
+    }
 
-    function capture() {
+    $('cam-shutter').onclick = () => {
       const video = $('cam-video');
       if (!video.videoWidth) return;
       const src = document.createElement('canvas');
       src.width = video.videoWidth;
       src.height = video.videoHeight;
       src.getContext('2d').drawImage(video, 0, 0);
-      const out = cropByFrame(src);
-      const dataUrl = out.toDataURL('image/jpeg', 0.92);
-      const key = STEPS[state.docIndex].key;
-      state.photos[key] = dataUrl;
-      renderDocsStep();
-      closeCamera();
-    }
-
-    function cropByFrame(src) {
-      const { x, y, rw, rh } = frameRect(src.width, src.height);
+      const { x, y, rw, rh } = cardRect(src.width, src.height);
       const out = document.createElement('canvas');
       out.width = Math.round(rw);
       out.height = Math.round(rh);
       out.getContext('2d').drawImage(src, x, y, rw, rh, 0, 0, out.width, out.height);
-      return out;
-    }
+      acceptPhoto(out.toDataURL('image/jpeg', 0.92));
+    };
+
+    $('cam-upload').onclick = () => $('file-input').click();
+    $('file-input').onchange = () => {
+      const file = $('file-input').files && $('file-input').files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => acceptPhoto(String(reader.result || ''));
+      reader.readAsDataURL(file);
+      $('file-input').value = '';
+    };
 
     setProgress(3);
   </script>
