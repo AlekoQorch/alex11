@@ -749,7 +749,6 @@
       const bot = edgeContrast(data, aw, x, y + rh, x + rw, y + rh, 0, -pad);
       const left = edgeContrast(data, aw, x, y, x, y + rh, pad, 0);
       const right = edgeContrast(data, aw, x + rw, y, x + rw, y + rh, -pad, 0);
-      const edges = [top, bot, left, right];
       const minEdge = Math.min(top, bot, left, right);
       const avgEdge = (top + bot + left + right) / 4;
 
