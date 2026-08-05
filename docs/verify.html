@@ -8,7 +8,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v100</title>
+  <title>დოკუმენტების ატვირთვა v101</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     :root {
@@ -678,22 +678,39 @@
           ctx.stroke();
         });
       } else if (state.captureGuide === 'tech-back') {
-        // უკანა — ორი სვეტი შავი ტექსტი + დიდი ნომერი
-        ctx.lineWidth = Math.max(2, w * 0.0035);
-        [0.18, 0.28, 0.38, 0.48, 0.58].forEach((fy, i) => {
-          const leftEnd = 0.42 - i * 0.012;
-          const rightEnd = 0.74 - i * 0.012;
+        // უკანა — რამდენიმე შავი ხაზი + QR კვადრატი
+        ctx.lineWidth = Math.max(2.2, w * 0.004);
+        [
+          { x0: 0.30, x1: 0.62, y: 0.16 },
+          { x0: 0.30, x1: 0.58, y: 0.26 },
+          { x0: 0.30, x1: 0.68, y: 0.36 },
+          { x0: 0.30, x1: 0.67, y: 0.46 },
+          { x0: 0.30, x1: 0.48, y: 0.60 },
+          { x0: 0.30, x1: 0.66, y: 0.70 }
+        ].forEach((ln) => {
           ctx.beginPath();
-          ctx.moveTo(x + rw * 0.06, y + rh * fy);
-          ctx.lineTo(x + rw * leftEnd, y + rh * fy);
-          ctx.moveTo(x + rw * 0.50, y + rh * fy);
-          ctx.lineTo(x + rw * rightEnd, y + rh * fy);
+          ctx.moveTo(x + rw * ln.x0, y + rh * ln.y);
+          ctx.lineTo(x + rw * ln.x1, y + rh * ln.y);
           ctx.stroke();
         });
-        ctx.lineWidth = Math.max(3, w * 0.0055);
+
+        const qx = x + rw * 0.72;
+        const qy = y + rh * 0.24;
+        const qw = rw * 0.22;
+        ctx.lineWidth = Math.max(1.8, w * 0.003);
+        roundRect(ctx, qx, qy, qw, qw, 4);
+        ctx.stroke();
+
+        ctx.lineWidth = Math.max(3.2, w * 0.0055);
         ctx.beginPath();
-        ctx.moveTo(x + rw * 0.06, y + rh * 0.82);
-        ctx.lineTo(x + rw * 0.48, y + rh * 0.82);
+        ctx.moveTo(x + rw * 0.05, y + rh * 0.88);
+        ctx.lineTo(x + rw * 0.38, y + rh * 0.88);
+        ctx.stroke();
+
+        ctx.lineWidth = Math.max(2.2, w * 0.004);
+        ctx.beginPath();
+        ctx.moveTo(x + rw * 0.44, y + rh * 0.88);
+        ctx.lineTo(x + rw * 0.76, y + rh * 0.88);
         ctx.stroke();
       } else if (state.captureSide === 'front') {
         // left portrait silhouette box
