@@ -431,9 +431,7 @@
       const cur = $('phone').value;
       const next = formatPhone(cur);
       if (cur !== next) {
-        const pos = $('phone').selectionStart;
         $('phone').value = next;
-        // კურსორი ბოლოში — ფორმატირებისას უფრო სტაბილურია
         try { $('phone').setSelectionRange(next.length, next.length); } catch (_) {}
       }
       if (isValidPhone(next)) setFieldError('phone', 'phone-err', false);
