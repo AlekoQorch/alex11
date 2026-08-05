@@ -8,7 +8,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v92</title>
+  <title>დოკუმენტების ატვირთვა v93</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     :root {
@@ -310,8 +310,8 @@
         title: 'ტექპასპორტი',
         sub: 'წინა და უკანა · ჩარჩოზე დააჭირეთ გადასაღებად',
         sides: [
-          { key: 'tech_front', label: 'წინა', side: 'front', guide: 'tech', camTitle: 'გადაიღეთ ტექპასპორტის წინა მხარე' },
-          { key: 'tech_back', label: 'უკანა', side: 'back', guide: 'tech', camTitle: 'გადაიღეთ ტექპასპორტის უკანა მხარე' }
+          { key: 'tech_front', label: 'წინა', side: 'front', guide: 'tech-front', camTitle: 'გადაიღეთ ტექპასპორტის წინა მხარე' },
+          { key: 'tech_back', label: 'უკანა', side: 'back', guide: 'tech-back', camTitle: 'გადაიღეთ ტექპასპორტის უკანა მხარე' }
         ]
       }
     ];
@@ -373,19 +373,42 @@
       </svg>`;
     }
 
-    function svgTech() {
-      return `<svg viewBox="0 0 200 126" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <rect x="6" y="8" width="188" height="110" rx="10" stroke="#9ca3af" stroke-width="2" stroke-dasharray="5 4"/>
-        <line x1="22" y1="32" x2="178" y2="32" stroke="#9ca3af" stroke-width="2.5" stroke-linecap="round"/>
-        <line x1="22" y1="50" x2="168" y2="50" stroke="#9ca3af" stroke-width="2.5" stroke-linecap="round"/>
-        <line x1="22" y1="68" x2="158" y2="68" stroke="#9ca3af" stroke-width="2.5" stroke-linecap="round"/>
-        <line x1="22" y1="86" x2="148" y2="86" stroke="#9ca3af" stroke-width="2.5" stroke-linecap="round"/>
-        <line x1="22" y1="104" x2="132" y2="104" stroke="#9ca3af" stroke-width="2.5" stroke-linecap="round"/>
+    function svgTechFront() {
+      // წინა: GE + ჰედერი, ცარიელი კვადრატი მარცხნივ, 5 ველის ხაზი მარჯვნივ, ბეჭედი
+      return `<svg viewBox="0 0 220 138" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect x="6" y="8" width="208" height="122" rx="8" stroke="#9ca3af" stroke-width="2" stroke-dasharray="5 4"/>
+        <circle cx="26" cy="26" r="11" stroke="#9ca3af" stroke-width="1.8"/>
+        <line x1="46" y1="20" x2="168" y2="20" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"/>
+        <line x1="46" y1="30" x2="148" y2="30" stroke="#9ca3af" stroke-width="1.6" stroke-linecap="round"/>
+        <rect x="16" y="48" width="40" height="40" rx="4" stroke="#d1d5db" stroke-width="2"/>
+        <line x1="68" y1="52" x2="188" y2="52" stroke="#9ca3af" stroke-width="2.2" stroke-linecap="round"/>
+        <line x1="68" y1="64" x2="176" y2="64" stroke="#9ca3af" stroke-width="2.2" stroke-linecap="round"/>
+        <line x1="68" y1="76" x2="170" y2="76" stroke="#9ca3af" stroke-width="2.2" stroke-linecap="round"/>
+        <line x1="68" y1="88" x2="182" y2="88" stroke="#9ca3af" stroke-width="2.2" stroke-linecap="round"/>
+        <line x1="68" y1="100" x2="160" y2="100" stroke="#9ca3af" stroke-width="2.2" stroke-linecap="round"/>
+        <circle cx="186" cy="112" r="12" stroke="#d1d5db" stroke-width="2"/>
+      </svg>`;
+    }
+
+    function svgTechBack() {
+      // უკანა: ორი სვეტი + QR + ნომრის ჩარჩო — წინასგან განსხვავებული
+      return `<svg viewBox="0 0 220 138" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect x="6" y="8" width="208" height="122" rx="8" stroke="#9ca3af" stroke-width="2" stroke-dasharray="5 4"/>
+        <circle cx="24" cy="26" r="10" stroke="#d1d5db" stroke-width="1.8"/>
+        <line x1="16" y1="48" x2="92" y2="48" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"/>
+        <line x1="16" y1="62" x2="86" y2="62" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"/>
+        <line x1="16" y1="76" x2="80" y2="76" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"/>
+        <line x1="102" y1="48" x2="148" y2="48" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"/>
+        <line x1="102" y1="62" x2="144" y2="62" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"/>
+        <line x1="102" y1="76" x2="140" y2="76" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"/>
+        <rect x="158" y="38" width="48" height="48" rx="4" stroke="#d1d5db" stroke-width="2"/>
+        <rect x="16" y="98" width="78" height="22" rx="4" stroke="#d1d5db" stroke-width="2"/>
       </svg>`;
     }
 
     function schematicFor(side) {
-      if (side.guide === 'tech') return svgTech();
+      if (side.guide === 'tech-front') return svgTechFront();
+      if (side.guide === 'tech-back') return svgTechBack();
       if (side.side === 'front') return svgFront();
       return svgBack();
     }
@@ -608,8 +631,9 @@
     }
 
     function cardRect(w, h) {
-      const rw = w * 0.88;
-      const rh = rw * 0.63;
+      const isTech = state.captureGuide === 'tech-front' || state.captureGuide === 'tech-back';
+      const rw = w * (isTech ? 0.90 : 0.88);
+      const rh = rw * (isTech ? 0.58 : 0.63);
       return { x: (w - rw) / 2, y: (h - rh) / 2 - h * 0.02, rw, rh };
     }
 
@@ -634,25 +658,74 @@
       ctx.stroke();
       ctx.setLineDash([]);
 
-      if (state.captureGuide === 'tech') {
-        // მხოლოდ მართკუთხედი + ტექსტის ხაზები (ფოტოს სილუეტი არა)
-        const lx = x + rw * 0.08;
-        const lines = [
-          { y: y + rh * 0.24, w: rw * 0.82 },
-          { y: y + rh * 0.38, w: rw * 0.76 },
-          { y: y + rh * 0.52, w: rw * 0.70 },
-          { y: y + rh * 0.66, w: rw * 0.64 },
-          { y: y + rh * 0.80, w: rw * 0.56 }
-        ];
-        ctx.lineWidth = Math.max(2.5, w * 0.0045);
-        ctx.lineCap = 'round';
-        ctx.strokeStyle = 'rgba(255,255,255,0.78)';
-        lines.forEach((ln) => {
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = 'rgba(255,255,255,0.82)';
+
+      if (state.captureGuide === 'tech-front') {
+        // წინა: ლოგო, ჰედერი, ცარიელი კვადრატი, 5 ხაზი (ქვედა არა), ბეჭედი
+        ctx.lineWidth = Math.max(1.6, w * 0.0028);
+        ctx.beginPath();
+        ctx.arc(x + rw * 0.09, y + rh * 0.15, Math.min(rw, rh) * 0.055, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x + rw * 0.18, y + rh * 0.11);
+        ctx.lineTo(x + rw * 0.72, y + rh * 0.11);
+        ctx.moveTo(x + rw * 0.18, y + rh * 0.19);
+        ctx.lineTo(x + rw * 0.62, y + rh * 0.19);
+        ctx.stroke();
+
+        const boxX = x + rw * 0.05;
+        const boxY = y + rh * 0.30;
+        const boxW = rw * 0.18;
+        const boxH = rh * 0.32;
+        roundRect(ctx, boxX, boxY, boxW, boxH, 5);
+        ctx.stroke();
+
+        ctx.lineWidth = Math.max(2.2, w * 0.004);
+        const lx = boxX + boxW + rw * 0.04;
+        // მხოლოდ ზედა/შუა ველები — ქვედა ხაზები მოშორებული
+        [
+          { y: 0.34, w: 0.58 },
+          { y: 0.44, w: 0.52 },
+          { y: 0.54, w: 0.48 },
+          { y: 0.64, w: 0.54 },
+          { y: 0.74, w: 0.42 }
+        ].forEach((ln) => {
           ctx.beginPath();
-          ctx.moveTo(lx, ln.y);
-          ctx.lineTo(Math.min(lx + ln.w, x + rw * 0.94), ln.y);
+          ctx.moveTo(lx, y + rh * ln.y);
+          ctx.lineTo(Math.min(lx + rw * ln.w, x + rw * 0.90), y + rh * ln.y);
           ctx.stroke();
         });
+
+        ctx.lineWidth = Math.max(1.8, w * 0.003);
+        ctx.beginPath();
+        ctx.arc(x + rw * 0.86, y + rh * 0.82, Math.min(rw, rh) * 0.075, 0, Math.PI * 2);
+        ctx.stroke();
+      } else if (state.captureGuide === 'tech-back') {
+        // უკანა: ორი სვეტი + QR + ნომერი
+        ctx.lineWidth = Math.max(1.6, w * 0.0028);
+        ctx.beginPath();
+        ctx.arc(x + rw * 0.08, y + rh * 0.14, Math.min(rw, rh) * 0.05, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.lineWidth = Math.max(2, w * 0.0035);
+        [0.32, 0.44, 0.56].forEach((fy) => {
+          ctx.beginPath();
+          ctx.moveTo(x + rw * 0.05, y + rh * fy);
+          ctx.lineTo(x + rw * 0.38, y + rh * fy);
+          ctx.moveTo(x + rw * 0.44, y + rh * fy);
+          ctx.lineTo(x + rw * 0.66, y + rh * fy);
+          ctx.stroke();
+        });
+
+        const qx = x + rw * 0.72;
+        const qy = y + rh * 0.26;
+        const qw = rw * 0.20;
+        roundRect(ctx, qx, qy, qw, qw, 4);
+        ctx.stroke();
+
+        roundRect(ctx, x + rw * 0.05, y + rh * 0.72, rw * 0.34, rh * 0.16, 4);
+        ctx.stroke();
       } else if (state.captureSide === 'front') {
         // left portrait silhouette box
         const px = x + rw * 0.055;
