@@ -8,7 +8,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v86</title>
+  <title>დოკუმენტების ატვირთვა v89</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     :root {
@@ -146,26 +146,28 @@
       position: absolute;
       inset: 0;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
-      padding: 8px 10px;
+      padding: 10px 12px 42px;
       pointer-events: none;
     }
     .slot .schematic svg {
       width: 100%;
-      max-height: 100%;
+      max-height: calc(100% - 8px);
       height: auto;
       opacity: 0.6;
       display: block;
     }
     .slot-tap-hint {
       position: absolute;
-      left: 8px;
-      bottom: 7px;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 14px;
       font-size: 11px;
       color: rgba(255,255,255,.55);
       pointer-events: none;
       z-index: 1;
+      white-space: nowrap;
     }
     .slot.has-photo .slot-tap-hint { color: rgba(255,255,255,.8); text-shadow: 0 1px 3px rgba(0,0,0,.6); }
     #group-next { flex-shrink: 0; }
