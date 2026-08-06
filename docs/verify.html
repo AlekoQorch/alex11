@@ -8,10 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v113</title>
+  <title>დოკუმენტების ატვირთვა v114</title>
   <script>
     (function () {
-      var VER = '113';
+      var VER = '114';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -401,10 +401,10 @@
           { key: 'car_rear', label: 'უკანა', side: 'back', guide: 'car-rear', camTitle: 'უკანა მხარე', camHint: 'მანქანა მოათავსეთ კონტურში — უკანა ხედი.' },
           { key: 'car_left', label: 'მარცხენა გვერდი', side: 'side', guide: 'car-left', camTitle: 'მარცხენა გვერდი', camHint: 'გადაიღეთ მთლიანი მარცხენა გვერდი.' },
           { key: 'car_right', label: 'მარჯვენა გვერდი', side: 'side', guide: 'car-right', camTitle: 'მარჯვენა გვერდი', camHint: 'გადაიღეთ მთლიანი მარჯვენა გვერდი.' },
-          { key: 'car_fl', label: 'წინა · მარცხენა კუთხე', side: 'corner', guide: 'car-fl', camTitle: 'წინა-მარცხენა კუთხე', camHint: '¾ ხედი — წინა და მარცხენა გვერდი.' },
-          { key: 'car_fr', label: 'წინა · მარჯვენა კუთხე', side: 'corner', guide: 'car-fr', camTitle: 'წინა-მარჯვენა კუთხე', camHint: '¾ ხედი — წინა და მარჯვენა გვერდი.' },
-          { key: 'car_rl', label: 'უკანა · მარცხენა კუთხე', side: 'corner', guide: 'car-rl', camTitle: 'უკანა-მარცხენა კუთხე', camHint: '¾ ხედი — უკანა და მარცხენა გვერდი.' },
-          { key: 'car_rr', label: 'უკანა · მარჯვენა კუთხე', side: 'corner', guide: 'car-rr', camTitle: 'უკანა-მარჯვენა კუთხე', camHint: '¾ ხედი — უკანა და მარჯვენა გვერდი.' },
+          { key: 'car_fl', label: 'წინა · მარცხენა კუთხე', side: 'corner', guide: 'car-fl', camTitle: 'წინა-მარცხენა კუთხე', camHint: '3/4 ხედი — წინა და მარცხენა გვერდი.' },
+          { key: 'car_fr', label: 'წინა · მარჯვენა კუთხე', side: 'corner', guide: 'car-fr', camTitle: 'წინა-მარჯვენა კუთხე', camHint: '3/4 ხედი — წინა და მარჯვენა გვერდი.' },
+          { key: 'car_rl', label: 'უკანა · მარცხენა კუთხე', side: 'corner', guide: 'car-rl', camTitle: 'უკანა-მარცხენა კუთხე', camHint: '3/4 ხედი — უკანა და მარცხენა გვერდი.' },
+          { key: 'car_rr', label: 'უკანა · მარჯვენა კუთხე', side: 'corner', guide: 'car-rr', camTitle: 'უკანა-მარჯვენა კუთხე', camHint: '3/4 ხედი — უკანა და მარჯვენა გვერდი.' },
           { key: 'car_odo', label: 'გარბენი', side: 'detail', guide: 'car-odo', camTitle: 'გარბენი (ოდომეტრი)', camHint: 'გადაიღეთ დაფა ისე, რომ გარბენი იკითხებოდეს.' },
           { key: 'car_glass', label: 'საქარე მინა · უკნიდან', side: 'detail', guide: 'car-glass', camTitle: 'საქარე მინა უკნიდან', camHint: 'უკანა მხრიდან გადაიღეთ საქარე მინა.' }
         ]
@@ -622,7 +622,7 @@
     }
 
     function svgCarCorner(kind) {
-      // fl / fr / rl / rr — მარტივი ¾ კონტური
+      // fl / fr / rl / rr — მარტივი 3/4 კონტური
       const flipX = kind === 'fr' || kind === 'rr';
       const rear = kind === 'rl' || kind === 'rr';
       const t = flipX ? 'transform="translate(220 0) scale(-1 1)"' : '';
