@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ავტოდაილერი">
+  <meta name="theme-color" content="#0f172a" id="meta-theme">
+  <title>ავტოდაილერი</title>
+      <style>:root {
+  --primary: #3b82f6;
+  --primary-dark: #2563eb;
+  --success: #22c55e;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --bg: #f1f5f9;
+  --bg-card: #ffffff;
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --border: #e2e8f0;
+  --shadow: 0 4px 24px rgba(15, 23, 42, 0.08);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --header-h: auto;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --ring-c: 326.7;
+}
+
+[data-theme="dark"] {
+  --bg: #0f172a;
+  --bg-card: #1e293b;
+  --text: #f1f5f9;
+  --text-muted: #94a3b8;
+  --border: #334155;
+  --shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  padding-bottom: calc(80px + var(--safe-b));
+  overflow-x: hidden;
+  transition: background 0.3s, color 0.3s;
+}
+
+.app-bg {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(59, 130, 246, 0.15), transparent),
+    var(--bg);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* ── Header ── */
+.header {
+  padding: calc(env(safe-area-inset-top, 12px) + 12px) 16px 12px;
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #0ea5e9 100%);
+  color: white;
+}
+
+[data-theme="dark"] .header {
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #1e40af 100%);
+}
+
+.header-top { display: flex; align-items: center; justify-content: space-between; }
+
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand-icon {
+  width: 44px; height: 44px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 12px;
+  display: grid; place-items: center;
+  backdrop-filter: blur(8px);
+}
+.brand-icon svg { width: 22px; height: 22px; }
+.brand h1 { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.02em; }
+.subtitle { font-size: 0.8rem; opacity: 0.85; margin-top: 2px; }
+
+.icon-btn {
+  width: 40px; height: 40px;
+  border: none; border-radius: 12px;
+  background: rgba(255,255,255,0.15);
+  color: white; cursor: pointer;
+  display: grid; place-items: center;
+}
+.icon-btn svg { width: 20px; height: 20px; }
+
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255,255,255,0.2);
+}
+.stat { text-align: center; }
+.stat-val { display: block; font-size: 1.25rem; font-weight: 700; }
+.stat-val.stat-green { color: #86efac; }
+.stat-val.stat-red { color: #fca5a5; }
+.stat-lbl { font-size: 0.65rem; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.04em; }
+
+/* ── Tabs ── */
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 12px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.tab {
+  flex: 1;
+  min-width: max-content;
+  padding: 10px 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+.tab.active {
+  background: var(--primary);
+  color: white;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35);
+}
+
+/* ── Main ── */
+.main { padding: 12px 16px; max-width: 480px; margin: 0 auto; }
+.panel { display: none; animation: fadeIn 0.3s ease; }
+.panel.active { display: block; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+
+.card h2 { font-size: 0.95rem; font-weight: 700; margin-bottom: 12px; }
+.card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.card-head h2 { margin-bottom: 0; }
+.card-head.standalone { padding: 0 0 12px; }
+.card-actions { display: flex; gap: 6px; }
+
+/* ── Hero status ── */
+.hero-card { padding: 20px; }
+.hero-status { display: flex; align-items: center; gap: 16px; }
+
+.ring-wrap {
+  position: relative;
+  width: 100px; height: 100px;
+  flex-shrink: 0;
+}
+.ring { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring-bg { fill: none; stroke: var(--border); stroke-width: 8; }
+.ring-fill {
+  fill: none;
+  stroke: var(--primary);
+  stroke-width: 8;
+  stroke-linecap: round;
+  stroke-dasharray: var(--ring-c) var(--ring-c);
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 0.3s linear;
+}
+.ring-center {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+.ring-time { font-size: 1.75rem; font-weight: 800; line-height: 1; color: var(--primary); }
+.ring-label { font-size: 0.7rem; color: var(--text-muted); }
+
+.status-info { flex: 1; min-width: 0; }
+.status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+.status-badge.idle { background: var(--border); color: var(--text-muted); }
+.status-badge.calling { background: rgba(59,130,246,0.15); color: var(--primary); animation: pulse 1.5s infinite; }
+.status-badge.answered { background: rgba(34,197,94,0.15); color: var(--success); }
+.status-badge.missed { background: rgba(239,68,68,0.15); color: var(--danger); }
+.status-badge.paused { background: rgba(245,158,11,0.15); color: var(--warning); }
+.status-badge.done { background: rgba(34,197,94,0.2); color: var(--success); }
+
+.status-text { font-size: 0.9rem; line-height: 1.4; color: var(--text-muted); }
+.status-number { font-size: 1.1rem; font-weight: 700; margin-top: 4px; word-break: break-all; }
+
+.progress-track {
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  margin-top: 16px;
+  overflow: hidden;
+}
+.progress-track .progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), #0ea5e9);
+  border-radius: 3px;
+  transition: width 0.4s ease;
+  width: 0%;
+}
+.queue-label { text-align: center; font-size: 0.75rem; color: var(--text-muted); margin-top: 6px; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* ── Inputs ── */
+textarea, .input, .select {
+  width: 100%;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-size: 16px;
+  font-family: inherit;
+  background: var(--bg);
+  color: var(--text);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
+textarea:focus, .input:focus, .select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+textarea:disabled { opacity: 0.6; }
+
+.input-row { display: flex; gap: 8px; }
+.input-row .input { flex: 1; }
+
+.hint { font-size: 0.78rem; color: var(--text-muted); margin-top: 8px; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.chip {
+  padding: 5px 10px;
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--primary);
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+.chip.done { background: rgba(34,197,94,0.1); color: var(--success); border-color: rgba(34,197,94,0.2); }
+.chip.current { background: var(--primary); color: white; border-color: var(--primary); }
+
+.chip-btn {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+.chip-btn:active { transform: scale(0.96); }
+.chip-danger { color: var(--danger); border-color: rgba(239,68,68,0.3); }
+
+/* ── Buttons ── */
+.action-bar { margin: 8px 0 16px; }
+.action-row { display: flex; gap: 8px; margin-top: 8px; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 20px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+}
+.btn:active:not(:disabled) { transform: scale(0.97); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn svg { width: 20px; height: 20px; }
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: white;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+}
+.btn-secondary {
+  background: var(--bg-card);
+  color: var(--text);
+  border: 1.5px solid var(--border);
+  flex: 1;
+}
+.btn-danger {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
+  border: 1.5px solid rgba(239, 68, 68, 0.3);
+  flex: 1;
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--text-muted);
+  flex: 1;
+  font-size: 0.85rem;
+  padding: 10px;
+}
+.btn-xl { width: 100%; padding: 16px; font-size: 1.05rem; border-radius: 14px; }
+.btn-block { width: 100%; }
+
+/* ── Help ── */
+.help-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.help-card summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text);
+  list-style: none;
+}
+.help-card summary::-webkit-details-marker { display: none; }
+.help-card ol { margin-top: 10px; padding-left: 20px; line-height: 1.7; }
+
+/* ── SMS ── */
+.sms-list { display: flex; flex-direction: column; gap: 10px; }
+.sms-card {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.sms-card.selected {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+.sms-card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.sms-radio {
+  width: 20px; height: 20px;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: grid; place-items: center;
+}
+.sms-card.selected .sms-radio {
+  border-color: var(--primary);
+  background: var(--primary);
+}
+.sms-card.selected .sms-radio::after {
+  content: '';
+  width: 8px; height: 8px;
+  background: white;
+  border-radius: 50%;
+}
+.sms-title { font-weight: 700; font-size: 0.95rem; }
+.sms-preview {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+  margin-bottom: 10px;
+  padding-left: 30px;
+}
+.sms-footer { display: flex; align-items: center; justify-content: space-between; padding-left: 30px; }
+.sms-chars { font-size: 0.72rem; color: var(--text-muted); }
+.btn-send {
+  padding: 8px 16px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* ── History ── */
+.history-list { display: flex; flex-direction: column; gap: 8px; }
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.history-icon {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  display: grid; place-items: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+.history-icon.answered { background: rgba(34,197,94,0.15); }
+.history-icon.missed { background: rgba(239,68,68,0.15); }
+.history-icon.skipped { background: rgba(245,158,11,0.15); }
+.history-body { flex: 1; min-width: 0; }
+.history-num { font-weight: 700; font-size: 0.95rem; }
+.history-meta { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+.history-actions { display: flex; gap: 4px; }
+.history-actions button {
+  width: 36px; height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  font-size: 1rem;
+  cursor: pointer;
+}
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* ── Settings ── */
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+.setting-row:last-child { border-bottom: none; }
+.setting-row .select { width: auto; min-width: 110px; padding: 8px 12px; font-size: 0.9rem; }
+
+.setting-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.setting-toggle input { display: none; }
+.toggle {
+  width: 48px; height: 28px;
+  background: var(--border);
+  border-radius: 14px;
+  position: relative;
+  transition: background 0.2s;
+}
+.toggle::after {
+  content: '';
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 22px; height: 22px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.setting-toggle input:checked + .toggle { background: var(--primary); }
+.setting-toggle input:checked + .toggle::after { transform: translateX(20px); }
+
+/* ── Modals ── */
+.modal {
+  position: fixed; inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 16px;
+  animation: fadeIn 0.25s ease;
+}
+.modal-sheet {
+  background: var(--bg-card);
+  border-radius: 20px 20px 16px 16px;
+  padding: 20px 20px calc(20px + var(--safe-b));
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+  animation: slideUp 0.3s ease;
+}
+.modal-alert { padding-top: 28px; }
+.modal-handle {
+  width: 36px; height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  margin: 0 auto 16px;
+}
+.modal-label { font-size: 0.85rem; color: var(--text-muted); }
+.modal-number { font-size: 1.5rem; font-weight: 800; margin: 8px 0 16px; color: var(--primary); word-break: break-all; }
+.modal-countdown { margin-bottom: 16px; }
+.countdown-bar {
+  height: 4px;
+  background: var(--primary);
+  border-radius: 2px;
+  width: 100%;
+  transition: width 0.1s linear;
+}
+.alert-icon { font-size: 3rem; margin-bottom: 8px; }
+.modal-sheet h3 { font-size: 1.2rem; margin-bottom: 8px; }
+.modal-sheet p { color: var(--text-muted); line-height: 1.5; margin-bottom: 20px; font-size: 0.9rem; }
+
+.install-steps { text-align: left; padding-left: 20px; margin: 16px 0 20px; line-height: 1.8; font-size: 0.9rem; }
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+/* ── Toast ── */
+.toast {
+  position: fixed;
+  bottom: calc(24px + var(--safe-b));
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text);
+  color: var(--bg);
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  z-index: 300;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  animation: toastIn 0.3s ease;
+  max-width: 90%;
+  text-align: center;
+}
+[data-theme="dark"] .toast { background: #f1f5f9; color: #0f172a; }
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+  <div class="app-bg"></div>
+
+  <div id="toast" class="toast hidden" role="status"></div>
+
+  <header class="header">
+    <div class="header-top">
+      <div class="brand">
+        <div class="brand-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+        </div>
+        <div>
+          <h1>ავტოდაილერი</h1>
+          <p class="subtitle" id="header-subtitle">მზად ხარ</p>
+        </div>
+      </div>
+      <button class="icon-btn" id="btn-theme" aria-label="თემის შეცვლა">
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        <svg class="icon-moon hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+      </button>
+    </div>
+
+    <div class="stats-row hidden" id="stats-row">
+      <div class="stat"><span class="stat-val" id="stat-done">0</span><span class="stat-lbl">დასრულ.</span></div>
+      <div class="stat"><span class="stat-val stat-green" id="stat-answered">0</span><span class="stat-lbl">პასუხი</span></div>
+      <div class="stat"><span class="stat-val stat-red" id="stat-missed">0</span><span class="stat-lbl">გამოტოვ.</span></div>
+      <div class="stat"><span class="stat-val" id="stat-left">0</span><span class="stat-lbl">დარჩა</span></div>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-tab="dialer" role="tab">📞 დარეკვა</button>
+    <button class="tab" data-tab="sms" role="tab">💬 SMS</button>
+    <button class="tab" data-tab="history" role="tab">📋 ისტორია</button>
+    <button class="tab" data-tab="settings" role="tab">⚙️</button>
+  </nav>
+
+  <main class="main">
+    <!-- DIALER -->
+    <section class="panel active" id="panel-dialer" role="tabpanel">
+      <div class="card hero-card" id="status-card">
+        <div class="hero-status">
+          <div class="ring-wrap hidden" id="ring-wrap">
+            <svg class="ring" viewBox="0 0 120 120">
+              <circle class="ring-bg" cx="60" cy="60" r="52"/>
+              <circle class="ring-fill" id="ring-fill" cx="60" cy="60" r="52"/>
+            </svg>
+            <div class="ring-center">
+              <span class="ring-time" id="ring-time">30</span>
+              <span class="ring-label">წამი</span>
+            </div>
+          </div>
+          <div class="status-info" id="status-info">
+            <span class="status-badge idle" id="status-badge">მზად</span>
+            <p class="status-text" id="status-text">ჩასვი ნომრები და დააჭირე დაწყებას</p>
+            <p class="status-number hidden" id="status-number"></p>
+          </div>
+        </div>
+        <div class="progress-track hidden" id="queue-progress">
+          <div class="progress-fill" id="queue-fill"></div>
+        </div>
+        <p class="queue-label hidden" id="queue-label">0 / 0</p>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2>ნომრების სია</h2>
+          <div class="card-actions">
+            <button class="chip-btn" id="btn-paste" type="button">ჩასმა</button>
+            <button class="chip-btn chip-danger" id="btn-clear" type="button">გასუფთ.</button>
+          </div>
+        </div>
+        <textarea id="numbers-input" rows="5" placeholder="თითო ხაზზე ერთი ნომერი&#10;&#10;599123456&#10;555123456&#10;+995591234567"></textarea>
+        <div class="chips" id="number-chips"></div>
+        <p class="hint"><span id="numbers-count">0</span> ნომერი</p>
+      </div>
+
+      <div class="action-bar" id="action-bar">
+        <button class="btn btn-primary btn-xl" id="btn-start" type="button">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          დაწყება
+        </button>
+        <div class="action-row hidden" id="action-row">
+          <button class="btn btn-secondary" id="btn-pause" type="button">⏸ პაუზა</button>
+          <button class="btn btn-danger" id="btn-stop" type="button">■ გაჩერება</button>
+          <button class="btn btn-ghost" id="btn-skip-current" type="button">გამოტოვება</button>
+        </div>
+      </div>
+
+      <details class="help-card">
+        <summary>როგორ მუშაობს?</summary>
+        <ol>
+          <li>ჩასვი ნომრები ან დააჭირე <strong>ჩასმა</strong></li>
+          <li><strong>დაწყება</strong> → რიგრიგობით ირეკავს</li>
+          <li><span id="help-timeout">30</span> წმ-ში პასუხის გარეშე → გათიშე → დაბრუნდი აპში</li>
+          <li>ავტომატურად გადავა შემდეგ ნომერზე</li>
+        </ol>
+      </details>
+    </section>
+
+    <!-- SMS -->
+    <section class="panel" id="panel-sms" role="tabpanel">
+      <div class="card">
+        <h2>SMS მიმღები</h2>
+        <div class="input-row">
+          <input type="tel" id="sms-number" class="input" placeholder="ნომერი" inputmode="tel">
+          <button class="chip-btn" id="btn-sms-current" type="button">მიმდინარე</button>
+        </div>
+      </div>
+      <div id="sms-templates" class="sms-list"></div>
+    </section>
+
+    <!-- HISTORY -->
+    <section class="panel" id="panel-history" role="tabpanel">
+      <div class="card-head standalone">
+        <h2>დარეკვის ისტორია</h2>
+        <button class="chip-btn chip-danger" id="btn-clear-history" type="button">გასუფთავება</button>
+      </div>
+      <div id="history-list" class="history-list">
+        <p class="empty-state">ისტორია ცარიელია</p>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="panel" id="panel-settings" role="tabpanel">
+      <div class="card">
+        <h2>ზარის პარამეტრები</h2>
+        <label class="setting-row">
+          <span>ტაიმაუტი (წმ)</span>
+          <select id="setting-timeout" class="select">
+            <option value="15">15 წმ</option>
+            <option value="30" selected>30 წმ</option>
+            <option value="45">45 წმ</option>
+            <option value="60">60 წმ</option>
+          </select>
+        </label>
+        <label class="setting-row">
+          <span>შემდეგ ზამდე (წმ)</span>
+          <select id="setting-delay" class="select">
+            <option value="1">1 წმ</option>
+            <option value="2">2 წმ</option>
+            <option value="3" selected>3 წმ</option>
+            <option value="5">5 წმ</option>
+          </select>
+        </label>
+        <label class="setting-toggle">
+          <span>ავტომატური შემდეგი ზარი</span>
+          <input type="checkbox" id="setting-auto-next" checked>
+          <span class="toggle"></span>
+        </label>
+        <label class="setting-toggle">
+          <span>ვიბრაცია გაფრთხილებაზე</span>
+          <input type="checkbox" id="setting-vibrate" checked>
+          <span class="toggle"></span>
+        </label>
+      </div>
+      <div class="card">
+        <h2>აპი</h2>
+        <p class="hint">ვერსია 2.0 · iPhone PWA</p>
+        <button class="btn btn-secondary btn-block" id="btn-install-hint" type="button">📲 Home Screen-ზე დამატება</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Next call modal -->
+  <div class="modal hidden" id="next-call-modal" role="dialog">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <p class="modal-label" id="modal-label">შემდეგი ნომერი</p>
+      <p class="modal-number" id="modal-number"></p>
+      <div class="modal-countdown" id="modal-countdown">
+        <div class="countdown-bar" id="countdown-bar"></div>
+      </div>
+      <button class="btn btn-primary btn-xl" id="btn-call-next" type="button">📞 დარეკვა ახლა</button>
+      <button class="btn btn-ghost btn-block" id="btn-skip-next" type="button">გამოტოვება</button>
+    </div>
+  </div>
+
+  <!-- Timeout modal -->
+  <div class="modal hidden" id="timeout-modal" role="dialog">
+    <div class="modal-sheet modal-alert">
+      <div class="alert-icon">⏱</div>
+      <h3>დრო ამოიწურა</h3>
+      <p>გათიშე ზარი ტელეფონში და დაბრუნდი აპში — შემდეგ ნომერზე გადავალთ.</p>
+      <button class="btn btn-primary btn-block" id="btn-timeout-ok" type="button">გასაგებია</button>
+    </div>
+  </div>
+
+  <!-- Install hint -->
+  <div class="modal hidden" id="install-modal" role="dialog">
+    <div class="modal-sheet">
+      <h3>📲 აპის დამატება</h3>
+      <ol class="install-steps">
+        <li>Safari-ში Share ⬆️ დააჭირე</li>
+        <li><strong>Add to Home Screen</strong></li>
+        <li><strong>Add</strong></li>
+      </ol>
+      <button class="btn btn-primary btn-block" id="btn-install-close" type="button">გასაგებია</button>
+    </div>
+  </div>
+
+  <script>/* ── SMS Templates ── */
+const SMS_TEMPLATES = [
+  { id: 1, title: 'ზარის მოთხოვნა', message: 'გამარჯობა! გთხოვთ დაგვიბრუნოთ ზარი, როცა შეძლებთ. გმადლობთ!' },
+  { id: 2, title: 'შეხსენება', message: 'გამარჯობა! გიგზავნით შეხსენებას — გთხოვთ დაგვიკავშირდეთ დღესვე. გმადლობთ!' },
+  { id: 3, title: 'ვიზიტის დადასტურება', message: 'გამარჯობა! თქვენი ვიზიტი დადასტურებულია. დამატებითი კითხვებისთვის დაგვიკავშირდით.' },
+  { id: 4, title: 'გადახდის შეხსენება', message: 'გამარჯობა! გიგზავნით შეხსენებას გადასახადის გადახდის შესახებ. გმადლობთ ყურადღებისთვის!' },
+  { id: 5, title: 'მადლობა', message: 'გმადლობთ ჩვენთან კავშირისთვის! საჭიროების შემთხვევაში ნებისმიერ დროს დაგვიკავშირდით.' }
+];
+
+const RING_C = 326.7;
+const $ = (id) => document.getElementById(id);
+
+const state = {
+  queue: [],
+  index: 0,
+  running: false,
+  paused: false,
+  callStartTime: null,
+  timerInterval: null,
+  countdownInterval: null,
+  selectedSmsId: 1,
+  waitingReturn: false,
+  timeoutShown: false,
+  stats: { answered: 0, missed: 0, skipped: 0 },
+  history: []
+};
+
+/* ── Settings ── */
+const settings = {
+  timeout: 30,
+  delay: 3,
+  autoNext: true,
+  vibrate: true,
+  theme: 'light'
+};
+
+function loadSettings() {
+  try {
+    const s = JSON.parse(localStorage.getItem('settings') || '{}');
+    Object.assign(settings, s);
+  } catch (_) {}
+  $('setting-timeout').value = settings.timeout;
+  $('setting-delay').value = settings.delay;
+  $('setting-auto-next').checked = settings.autoNext;
+  $('setting-vibrate').checked = settings.vibrate;
+  $('help-timeout').textContent = settings.timeout;
+  applyTheme(settings.theme);
+}
+
+function saveSettings() {
+  settings.timeout = +$('setting-timeout').value;
+  settings.delay = +$('setting-delay').value;
+  settings.autoNext = $('setting-auto-next').checked;
+  settings.vibrate = $('setting-vibrate').checked;
+  $('help-timeout').textContent = settings.timeout;
+  localStorage.setItem('settings', JSON.stringify(settings));
+}
+
+function loadHistory() {
+  try {
+    state.history = JSON.parse(localStorage.getItem('callHistory') || '[]');
+  } catch (_) {
+    state.history = [];
+  }
+}
+
+function saveHistory() {
+  localStorage.setItem('callHistory', JSON.stringify(state.history.slice(0, 100)));
+}
+
+/* ── Utils ── */
+function parseNumbers(text) {
+  return text
+    .split(/[\n,;]+/)
+    .map(n => n.trim().replace(/[\s\-()]/g, ''))
+    .filter(n => n.replace(/\D/g, '').length >= 9)
+    .filter((n, i, arr) => arr.indexOf(n) === i);
+}
+
+function normalizeTel(num) {
+  return num.replace(/[^\d+]/g, '');
+}
+
+function formatDisplay(num) {
+  const d = num.replace(/\D/g, '');
+  if (d.length === 9) return d.replace(/(\d{3})(\d{3})(\d{3})/, '$1 $2 $3');
+  return num;
+}
+
+function vibrate() {
+  if (settings.vibrate && navigator.vibrate) navigator.vibrate([100, 50, 100]);
+}
+
+let toastTimer;
+function toast(msg) {
+  const el = $('toast');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.add('hidden'), 2500);
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  $('meta-theme').content = theme === 'dark' ? '#0f172a' : '#1e40af';
+  document.querySelector('.icon-sun').classList.toggle('hidden', theme === 'dark');
+  document.querySelector('.icon-moon').classList.toggle('hidden', theme !== 'dark');
+}
+
+/* ── Tabs ── */
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    $(`panel-${tab.dataset.tab}`).classList.add('active');
+  });
+});
+
+/* ── Theme ── */
+$('btn-theme').addEventListener('click', () => {
+  settings.theme = settings.theme === 'dark' ? 'light' : 'dark';
+  applyTheme(settings.theme);
+  localStorage.setItem('settings', JSON.stringify(settings));
+});
+
+/* ── Numbers UI ── */
+const numbersInput = $('numbers-input');
+
+function updateNumbersUI() {
+  const nums = parseNumbers(numbersInput.value);
+  $('numbers-count').textContent = nums.length;
+  const chips = $('number-chips');
+  if (!nums.length) {
+    chips.innerHTML = '';
+    return;
+  }
+  chips.innerHTML = nums.slice(0, 20).map((n, i) => {
+    let cls = 'chip';
+    if (state.running && i < state.index) cls += ' done';
+    if (state.running && i === state.index) cls += ' current';
+    return `<span class="${cls}">${formatDisplay(n)}</span>`;
+  }).join('') + (nums.length > 20 ? `<span class="chip">+${nums.length - 20}</span>` : '');
+}
+
+numbersInput.addEventListener('input', () => {
+  updateNumbersUI();
+  localStorage.setItem('savedNumbers', numbersInput.value);
+});
+
+$('btn-paste').addEventListener('click', async () => {
+  try {
+    const text = await navigator.clipboard.readText();
+    if (!text.trim()) { toast('ბუფერი ცარიელია'); return; }
+    numbersInput.value = numbersInput.value ? numbersInput.value + '\n' + text : text;
+    updateNumbersUI();
+    localStorage.setItem('savedNumbers', numbersInput.value);
+    toast(`${parseNumbers(text).length} ნომერი ჩაირთო`);
+  } catch (_) {
+    toast('ჩასმა ვერ მოხერხდა — ხელით ჩასვი');
+  }
+});
+
+$('btn-clear').addEventListener('click', () => {
+  if (state.running) return;
+  numbersInput.value = '';
+  updateNumbersUI();
+  localStorage.removeItem('savedNumbers');
+  toast('გასუფთავდა');
+});
+
+/* ── Status UI ── */
+function setBadge(type, text) {
+  const badge = $('status-badge');
+  badge.className = `status-badge ${type}`;
+  badge.textContent = { idle: 'მზად', calling: 'ირეკება', answered: 'პასუხი', missed: 'არ მიპასუხეს', paused: 'პაუზა', done: 'დასრულდა' }[type] || type;
+  $('status-text').textContent = text;
+}
+
+function updateStats() {
+  const total = state.queue.length;
+  const done = state.index;
+  const left = Math.max(0, total - done);
+  $('stats-row').classList.toggle('hidden', !state.running && done === 0);
+  $('stat-done').textContent = done;
+  $('stat-answered').textContent = state.stats.answered;
+  $('stat-missed').textContent = state.stats.missed;
+  $('stat-left').textContent = left;
+  $('header-subtitle').textContent = state.running
+    ? `${done}/${total} ნომერი`
+    : 'მზად ხარ';
+}
+
+function updateQueueProgress() {
+  const total = state.queue.length;
+  if (!total) return;
+  const pct = (state.index / total) * 100;
+  $('queue-fill').style.width = `${pct}%`;
+  $('queue-label').textContent = `${state.index} / ${total}`;
+  $('queue-progress').classList.remove('hidden');
+  $('queue-label').classList.remove('hidden');
+}
+
+function showRing(show) {
+  $('ring-wrap').classList.toggle('hidden', !show);
+  $('status-info').style.display = show ? 'none' : 'block';
+}
+
+function updateRing() {
+  if (!state.callStartTime) return;
+  const elapsed = (Date.now() - state.callStartTime) / 1000;
+  const remaining = Math.max(0, settings.timeout - elapsed);
+  const pct = remaining / settings.timeout;
+  $('ring-fill').style.strokeDashoffset = RING_C * (1 - pct);
+  $('ring-time').textContent = Math.ceil(remaining);
+}
+
+function startTimer() {
+  stopTimer();
+  state.callStartTime = Date.now();
+  state.timeoutShown = false;
+  showRing(true);
+  updateRing();
+
+  state.timerInterval = setInterval(() => {
+    updateRing();
+    const elapsed = (Date.now() - state.callStartTime) / 1000;
+    if (elapsed >= settings.timeout && !state.timeoutShown) {
+      state.timeoutShown = true;
+      $('timeout-modal').classList.remove('hidden');
+      vibrate();
+    }
+  }, 200);
+}
+
+function stopTimer() {
+  if (state.timerInterval) clearInterval(state.timerInterval);
+  state.timerInterval = null;
+  showRing(false);
+}
+
+/* ── Dialer ── */
+function dialNumber(num) {
+  window.location.href = `tel:${normalizeTel(num)}`;
+}
+
+function setRunningUI(running) {
+  $('btn-start').classList.toggle('hidden', running);
+  $('action-row').classList.toggle('hidden', !running);
+  numbersInput.disabled = running;
+  $('btn-pause').textContent = state.paused ? '▶ გაგრძელება' : '⏸ პაუზა';
+}
+
+function addHistory(num, status) {
+  state.history.unshift({
+    num,
+    status,
+    time: new Date().toISOString()
+  });
+  saveHistory();
+  renderHistory();
+}
+
+function startQueue() {
+  state.queue = parseNumbers(numbersInput.value);
+  if (!state.queue.length) {
+    toast('შეიყვანე მაინც ერთი ნომერი');
+    return;
+  }
+  state.index = 0;
+  state.running = true;
+  state.paused = false;
+  state.stats = { answered: 0, missed: 0, skipped: 0 };
+  setRunningUI(true);
+  updateStats();
+  localStorage.setItem('savedNumbers', numbersInput.value);
+  callCurrent();
+}
+
+function callCurrent() {
+  if (!state.running || state.paused) return;
+
+  if (state.index >= state.queue.length) {
+    finishQueue();
+    return;
+  }
+
+  const num = state.queue[state.index];
+  setBadge('calling', `ირეკება ${state.index + 1} / ${state.queue.length}`);
+  $('status-number').textContent = formatDisplay(num);
+  $('status-number').classList.remove('hidden');
+  state.waitingReturn = true;
+  updateNumbersUI();
+  updateQueueProgress();
+
+  startTimer();
+  dialNumber(num);
+}
+
+function onReturnFromCall() {
+  if (!state.running || !state.waitingReturn || state.paused) return;
+  state.waitingReturn = false;
+  stopTimer();
+
+  const num = state.queue[state.index];
+  const elapsed = state.callStartTime ? (Date.now() - state.callStartTime) / 1000 : 0;
+  const answered = elapsed > 8 && elapsed < settings.timeout;
+  const timedOut = elapsed >= settings.timeout;
+
+  let status;
+  if (answered) {
+    status = 'answered';
+    state.stats.answered++;
+    setBadge('answered', 'მიპასუხეს!');
+  } else {
+    status = 'missed';
+    state.stats.missed++;
+    setBadge('missed', timedOut ? `არ მიპასუხეს (${settings.timeout} წმ)` : 'არ მიპასუხეს');
+  }
+  addHistory(num, status);
+  $('timeout-modal').classList.add('hidden');
+
+  state.index++;
+  updateStats();
+  updateNumbersUI();
+  updateQueueProgress();
+
+  if (state.running && state.index < state.queue.length) {
+    if (settings.autoNext) {
+      showNextModal(state.queue[state.index]);
+    } else {
+      setBadge('idle', 'დააჭირე გაგრძელებას');
+      toast('შემდეგი ნომერი მზადაა');
+    }
+  } else if (state.running) {
+    finishQueue();
+  }
+}
+
+function showNextModal(num) {
+  $('modal-number').textContent = formatDisplay(num);
+  $('modal-label').textContent = `შემდეგი (${state.index + 1}/${state.queue.length})`;
+  $('next-call-modal').classList.remove('hidden');
+
+  let left = settings.delay;
+  const bar = $('countdown-bar');
+  bar.style.width = '100%';
+
+  if (state.countdownInterval) clearInterval(state.countdownInterval);
+  state.countdownInterval = setInterval(() => {
+    left -= 0.1;
+    bar.style.width = `${(left / settings.delay) * 100}%`;
+    if (left <= 0) {
+      clearInterval(state.countdownInterval);
+      hideNextModal();
+      callCurrent();
+    }
+  }, 100);
+}
+
+function hideNextModal() {
+  if (state.countdownInterval) clearInterval(state.countdownInterval);
+  $('next-call-modal').classList.add('hidden');
+}
+
+function finishQueue() {
+  state.running = false;
+  state.paused = false;
+  state.waitingReturn = false;
+  stopTimer();
+  hideNextModal();
+  setRunningUI(false);
+  setBadge('done', 'ყველა ნომერზე დასრულდა 🎉');
+  $('status-number').classList.add('hidden');
+  $('queue-progress').classList.add('hidden');
+  $('queue-label').classList.add('hidden');
+  updateNumbersUI();
+  vibrate();
+  toast(`დასრულდა: ${state.stats.answered} პასუხი, ${state.stats.missed} გამოტოვება`);
+}
+
+function stopQueue() {
+  state.running = false;
+  state.paused = false;
+  state.waitingReturn = false;
+  stopTimer();
+  hideNextModal();
+  $('timeout-modal').classList.add('hidden');
+  setRunningUI(false);
+  setBadge('idle', 'გაჩერებულია');
+  $('status-number').classList.add('hidden');
+  updateNumbersUI();
+}
+
+function skipCurrent() {
+  if (!state.running) return;
+  if (state.waitingReturn) {
+    state.waitingReturn = false;
+    stopTimer();
+    const num = state.queue[state.index];
+    state.stats.skipped++;
+    addHistory(num, 'skipped');
+    state.index++;
+    updateStats();
+    updateNumbersUI();
+    updateQueueProgress();
+    $('timeout-modal').classList.add('hidden');
+  }
+  hideNextModal();
+  if (state.index >= state.queue.length) {
+    finishQueue();
+  } else {
+    callCurrent();
+  }
+  toast('გამოტოვებულია');
+}
+
+/* ── Events: dialer ── */
+$('btn-start').addEventListener('click', startQueue);
+$('btn-stop').addEventListener('click', stopQueue);
+$('btn-pause').addEventListener('click', () => {
+  if (!state.running) return;
+  state.paused = !state.paused;
+  $('btn-pause').textContent = state.paused ? '▶ გაგრძელება' : '⏸ პაუზა';
+  if (state.paused) {
+    stopTimer();
+    hideNextModal();
+    setBadge('paused', 'დაპაუზებულია');
+    toast('პაუზა');
+  } else if (!state.waitingReturn) {
+    callCurrent();
+  } else {
+    setBadge('calling', 'განახლდი ზარზე');
+  }
+});
+$('btn-skip-current').addEventListener('click', skipCurrent);
+$('btn-call-next').addEventListener('click', () => { hideNextModal(); callCurrent(); });
+$('btn-skip-next').addEventListener('click', skipCurrent);
+$('btn-timeout-ok').addEventListener('click', () => $('timeout-modal').classList.add('hidden'));
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') setTimeout(onReturnFromCall, 400);
+});
+window.addEventListener('pageshow', (e) => {
+  if (e.persisted) setTimeout(onReturnFromCall, 400);
+});
+
+/* ── SMS ── */
+function renderSmsTemplates() {
+  $('sms-templates').innerHTML = SMS_TEMPLATES.map(t => `
+    <div class="sms-card ${t.id === state.selectedSmsId ? 'selected' : ''}" data-id="${t.id}">
+      <div class="sms-card-head">
+        <div class="sms-radio"></div>
+        <span class="sms-title">${t.title}</span>
+      </div>
+      <p class="sms-preview">${t.message}</p>
+      <div class="sms-footer">
+        <span class="sms-chars">${t.message.length} სიმბოლო</span>
+        <button class="btn-send" data-id="${t.id}" type="button">გაგზავნა</button>
+      </div>
+    </div>
+  `).join('');
+
+  $('sms-templates').querySelectorAll('.sms-card').forEach(card => {
+    card.addEventListener('click', e => {
+      if (e.target.classList.contains('btn-send')) return;
+      state.selectedSmsId = +card.dataset.id;
+      renderSmsTemplates();
+    });
+  });
+  $('sms-templates').querySelectorAll('.btn-send').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const tmpl = SMS_TEMPLATES.find(t => t.id === +btn.dataset.id);
+      sendSms(tmpl);
+    });
+  });
+}
+
+function getSmsTarget() {
+  const manual = $('sms-number').value.trim();
+  if (manual) return normalizeTel(manual);
+  if (state.running && state.queue[state.index]) return normalizeTel(state.queue[state.index]);
+  if (state.index > 0 && state.queue[state.index - 1]) return normalizeTel(state.queue[state.index - 1]);
+  const first = parseNumbers(numbersInput.value)[0];
+  return first ? normalizeTel(first) : '';
+}
+
+function sendSms(tmpl) {
+  const num = getSmsTarget();
+  if (!num) { toast('მიუთითე ნომერი'); return; }
+  window.location.href = `sms:${num}?body=${encodeURIComponent(tmpl.message)}`;
+}
+
+$('btn-sms-current').addEventListener('click', () => {
+  const num = getSmsTarget();
+  if (num) {
+    $('sms-number').value = formatDisplay(num);
+    toast('ნომერი ჩაირთო');
+  } else {
+    toast('მიმდინარე ნომერი არ არის');
+  }
+});
+
+/* ── History ── */
+function renderHistory() {
+  const list = $('history-list');
+  if (!state.history.length) {
+    list.innerHTML = '<p class="empty-state">ისტორია ცარიელია</p>';
+    return;
+  }
+  list.innerHTML = state.history.map(h => {
+    const icon = h.status === 'answered' ? '✓' : h.status === 'skipped' ? '⏭' : '✕';
+    const label = h.status === 'answered' ? 'მიპასუხეს' : h.status === 'skipped' ? 'გამოტოვებული' : 'არ მიპასუხეს';
+    const time = new Date(h.time).toLocaleString('ka-GE', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    return `
+      <div class="history-item">
+        <div class="history-icon ${h.status}">${icon}</div>
+        <div class="history-body">
+          <div class="history-num">${formatDisplay(h.num)}</div>
+          <div class="history-meta">${label} · ${time}</div>
+        </div>
+        <div class="history-actions">
+          <button type="button" data-action="call" data-num="${h.num}" title="დარეკვა">📞</button>
+          <button type="button" data-action="sms" data-num="${h.num}" title="SMS">💬</button>
+        </div>
+      </div>`;
+  }).join('');
+
+  list.querySelectorAll('[data-action="call"]').forEach(btn => {
+    btn.addEventListener('click', () => dialNumber(btn.dataset.num));
+  });
+  list.querySelectorAll('[data-action="sms"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      $('sms-number').value = formatDisplay(btn.dataset.num);
+      document.querySelector('[data-tab="sms"]').click();
+    });
+  });
+}
+
+$('btn-clear-history').addEventListener('click', () => {
+  state.history = [];
+  saveHistory();
+  renderHistory();
+  toast('ისტორია გასუფთავდა');
+});
+
+/* ── Settings ── */
+['setting-timeout', 'setting-delay', 'setting-auto-next', 'setting-vibrate'].forEach(id => {
+  $(id).addEventListener('change', saveSettings);
+});
+
+$('btn-install-hint').addEventListener('click', () => $('install-modal').classList.remove('hidden'));
+$('btn-install-close').addEventListener('click', () => $('install-modal').classList.add('hidden'));
+
+document.querySelectorAll('.modal').forEach(modal => {
+  modal.addEventListener('click', e => {
+    if (e.target === modal) modal.classList.add('hidden');
+  });
+});
+
+/* ── Init ── */
+document.documentElement.style.setProperty('--ring-c', RING_C);
+$('ring-fill').style.strokeDasharray = `${RING_C} ${RING_C}`;
+
+loadSettings();
+loadHistory();
+const saved = localStorage.getItem('savedNumbers');
+if (saved) numbersInput.value = saved;
+updateNumbersUI();
+renderSmsTemplates();
+renderHistory();
+setBadge('idle', 'ჩასვი ნომრები და დააჭირე დაწყებას');
+
+if (!localStorage.getItem('installDismissed') && /iPhone|iPad/.test(navigator.userAgent)) {
+  const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  if (!standalone) setTimeout(() => $('install-modal').classList.remove('hidden'), 1500);
+}
+$('btn-install-close').addEventListener('click', () => localStorage.setItem('installDismissed', '1'));
+</script>
+  
+</body>
+</html>
