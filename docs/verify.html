@@ -8,10 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v110</title>
+  <title>დოკუმენტების ატვირთვა v111</title>
   <script>
     (function () {
-      var VER = '110';
+      var VER = '111';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -142,6 +142,17 @@
       gap: 10px;
       margin-bottom: 10px;
     }
+    #group-slots.multi {
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: none;
+      grid-auto-rows: minmax(118px, 26vw);
+      align-content: start;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 4px;
+    }
+    #group-slots.multi .slot-label { font-size: 12px; }
+    #group-slots.multi .slot-tap-hint { font-size: 10px; bottom: 10px; }
     .slot-block {
       min-height: 0;
       display: flex;
@@ -288,7 +299,7 @@
 
     <section id="step-intro">
       <div class="topbar"><h1>დოკუმენტების ატვირთვა</h1></div>
-      <p class="sub">შეიყვანეთ მონაცემები, შემდეგ გადაიღეთ პირადობის, მართვის მოწმობისა და ტექპასპორტის ორივე მხარე.</p>
+      <p class="sub">შეიყვანეთ მონაცემები, შემდეგ გადაიღეთ პირადობა, მართვის მოწმობა, ტექპასპორტი და ავტომობილის ყველა მხარე/კუთხე.</p>
       <div class="card">
         <label class="field-label">ტელეფონის ნომერი</label>
         <input class="field-inp" id="phone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="5XX XX XX XX" maxlength="12">
@@ -379,6 +390,23 @@
         sides: [
           { key: 'tech_front', label: 'წინა', side: 'front', guide: 'tech-front', camTitle: 'გადაიღეთ ტექპასპორტის წინა მხარე' },
           { key: 'tech_back', label: 'უკანა', side: 'back', guide: 'tech-back', camTitle: 'გადაიღეთ ტექპასპორტის უკანა მხარე' }
+        ]
+      },
+      {
+        id: 'car',
+        title: 'ავტომობილი',
+        sub: 'ყველა გვერდი და კუთხე · კონტურის მიხედვით გადაიღეთ',
+        sides: [
+          { key: 'car_front', label: 'წინა', side: 'front', guide: 'car-front', camTitle: 'წინა მხარე', camHint: 'მანქანა მოათავსეთ კონტურში — წინა ხედი.' },
+          { key: 'car_rear', label: 'უკანა', side: 'back', guide: 'car-rear', camTitle: 'უკანა მხარე', camHint: 'მანქანა მოათავსეთ კონტურში — უკანა ხედი.' },
+          { key: 'car_left', label: 'მარცხენა გვერდი', side: 'side', guide: 'car-left', camTitle: 'მარცხენა გვერდი', camHint: 'გადაიღეთ მთლიანი მარცხენა გვერდი.' },
+          { key: 'car_right', label: 'მარჯვენა გვერდი', side: 'side', guide: 'car-right', camTitle: 'მარჯვენა გვერდი', camHint: 'გადაიღეთ მთლიანი მარჯვენა გვერდი.' },
+          { key: 'car_fl', label: 'წინა · მარცხენა კუთხე', side: 'corner', guide: 'car-fl', camTitle: 'წინა-მარცხენა კუთხე', camHint: '¾ ხედი — წინა და მარცხენა გვერდი.' },
+          { key: 'car_fr', label: 'წინა · მარჯვენა კუთხე', side: 'corner', guide: 'car-fr', camTitle: 'წინა-მარჯვენა კუთხე', camHint: '¾ ხედი — წინა და მარჯვენა გვერდი.' },
+          { key: 'car_rl', label: 'უკანა · მარცხენა კუთხე', side: 'corner', guide: 'car-rl', camTitle: 'უკანა-მარცხენა კუთხე', camHint: '¾ ხედი — უკანა და მარცხენა გვერდი.' },
+          { key: 'car_rr', label: 'უკანა · მარჯვენა კუთხე', side: 'corner', guide: 'car-rr', camTitle: 'უკანა-მარჯვენა კუთხე', camHint: '¾ ხედი — უკანა და მარჯვენა გვერდი.' },
+          { key: 'car_odo', label: 'გარბენი', side: 'detail', guide: 'car-odo', camTitle: 'გარბენი (ოდომეტრი)', camHint: 'გადაიღეთ დაფა ისე, რომ გარბენი იკითხებოდეს.' },
+          { key: 'car_glass', label: 'საქარე მინა · უკნიდან', side: 'detail', guide: 'car-glass', camTitle: 'საქარე მინა უკნიდან', camHint: 'უკანა მხრიდან გადაიღეთ საქარე მინა.' }
         ]
       }
     ];
@@ -550,9 +578,104 @@
       </svg>`;
     }
 
+    function svgCarFront() {
+      return `<svg viewBox="0 0 220 130" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect x="6" y="8" width="208" height="114" rx="10" stroke="#9ca3af" stroke-width="2" stroke-dasharray="5 4"/>
+        <path d="M48 88 L62 58 H158 L172 88 Z" stroke="#d1d5db" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M40 88 H180" stroke="#9ca3af" stroke-width="2.2" stroke-linecap="round"/>
+        <rect x="52" y="90" width="28" height="12" rx="3" stroke="#9ca3af" stroke-width="1.8"/>
+        <rect x="140" y="90" width="28" height="12" rx="3" stroke="#9ca3af" stroke-width="1.8"/>
+        <rect x="78" y="64" width="64" height="18" rx="3" stroke="#d1d5db" stroke-width="1.8"/>
+        <circle cx="70" cy="74" r="5" stroke="#9ca3af" stroke-width="1.6"/>
+        <circle cx="150" cy="74" r="5" stroke="#9ca3af" stroke-width="1.6"/>
+      </svg>`;
+    }
+
+    function svgCarRear() {
+      return `<svg viewBox="0 0 220 130" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect x="6" y="8" width="208" height="114" rx="10" stroke="#9ca3af" stroke-width="2" stroke-dasharray="5 4"/>
+        <path d="M48 88 L62 56 H158 L172 88 Z" stroke="#d1d5db" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M40 88 H180" stroke="#9ca3af" stroke-width="2.2" stroke-linecap="round"/>
+        <rect x="52" y="90" width="28" height="12" rx="3" stroke="#9ca3af" stroke-width="1.8"/>
+        <rect x="140" y="90" width="28" height="12" rx="3" stroke="#9ca3af" stroke-width="1.8"/>
+        <rect x="74" y="62" width="72" height="20" rx="3" stroke="#d1d5db" stroke-width="1.8"/>
+        <rect x="58" y="78" width="22" height="8" rx="2" stroke="#9ca3af" stroke-width="1.6"/>
+        <rect x="140" y="78" width="22" height="8" rx="2" stroke="#9ca3af" stroke-width="1.6"/>
+      </svg>`;
+    }
+
+    function svgCarSide(flip) {
+      const t = flip ? 'transform="translate(220 0) scale(-1 1)"' : '';
+      return `<svg viewBox="0 0 220 130" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect x="6" y="8" width="208" height="114" rx="10" stroke="#9ca3af" stroke-width="2" stroke-dasharray="5 4"/>
+        <g ${t}>
+          <path d="M28 92 L42 70 L78 62 L118 48 L168 52 L192 70 L198 92 Z" stroke="#d1d5db" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M82 62 L118 50 L160 54 L168 62 Z" stroke="#9ca3af" stroke-width="1.7" stroke-linejoin="round"/>
+          <circle cx="64" cy="92" r="12" stroke="#9ca3af" stroke-width="2"/>
+          <circle cx="164" cy="92" r="12" stroke="#9ca3af" stroke-width="2"/>
+          <path d="M28 92 H198" stroke="#9ca3af" stroke-width="1.8" stroke-linecap="round"/>
+        </g>
+      </svg>`;
+    }
+
+    function svgCarCorner(kind) {
+      // fl / fr / rl / rr — მარტივი ¾ კონტური
+      const flipX = kind === 'fr' || kind === 'rr';
+      const rear = kind === 'rl' || kind === 'rr';
+      const t = flipX ? 'transform="translate(220 0) scale(-1 1)"' : '';
+      const cabin = rear
+        ? 'M70 70 L108 52 L158 58 L170 78 L78 82 Z'
+        : 'M78 78 L108 50 L162 56 L176 78 L86 84 Z';
+      return `<svg viewBox="0 0 220 130" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect x="6" y="8" width="208" height="114" rx="10" stroke="#9ca3af" stroke-width="2" stroke-dasharray="5 4"/>
+        <g ${t}>
+          <path d="M36 96 L54 72 L92 58 L148 52 L188 68 L196 96 Z" stroke="#d1d5db" stroke-width="2" stroke-linejoin="round"/>
+          <path d="${cabin}" stroke="#9ca3af" stroke-width="1.7" stroke-linejoin="round"/>
+          <ellipse cx="72" cy="96" rx="14" ry="11" stroke="#9ca3af" stroke-width="2"/>
+          <ellipse cx="168" cy="96" rx="12" ry="10" stroke="#9ca3af" stroke-width="2"/>
+        </g>
+      </svg>`;
+    }
+
+    function svgCarOdo() {
+      return `<svg viewBox="0 0 220 130" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect x="6" y="8" width="208" height="114" rx="10" stroke="#9ca3af" stroke-width="2" stroke-dasharray="5 4"/>
+        <rect x="28" y="28" width="164" height="74" rx="10" stroke="#d1d5db" stroke-width="2"/>
+        <rect x="54" y="48" width="112" height="28" rx="4" stroke="#9ca3af" stroke-width="2"/>
+        <line x1="66" y1="62" x2="78" y2="62" stroke="#9ca3af" stroke-width="2.4" stroke-linecap="round"/>
+        <line x1="86" y1="62" x2="98" y2="62" stroke="#9ca3af" stroke-width="2.4" stroke-linecap="round"/>
+        <line x1="106" y1="62" x2="118" y2="62" stroke="#9ca3af" stroke-width="2.4" stroke-linecap="round"/>
+        <line x1="126" y1="62" x2="138" y2="62" stroke="#9ca3af" stroke-width="2.4" stroke-linecap="round"/>
+        <line x1="146" y1="62" x2="154" y2="62" stroke="#9ca3af" stroke-width="2.4" stroke-linecap="round"/>
+        <circle cx="48" cy="90" r="6" stroke="#9ca3af" stroke-width="1.6"/>
+        <circle cx="172" cy="90" r="6" stroke="#9ca3af" stroke-width="1.6"/>
+      </svg>`;
+    }
+
+    function svgCarGlass() {
+      return `<svg viewBox="0 0 220 130" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect x="6" y="8" width="208" height="114" rx="10" stroke="#9ca3af" stroke-width="2" stroke-dasharray="5 4"/>
+        <path d="M40 100 L58 46 H162 L180 100 Z" stroke="#d1d5db" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M62 52 H158 L148 92 H72 Z" stroke="#9ca3af" stroke-width="2" stroke-linejoin="round"/>
+        <line x1="110" y1="52" x2="110" y2="92" stroke="#9ca3af" stroke-width="1.5" stroke-dasharray="3 3"/>
+        <path d="M48 100 H172" stroke="#9ca3af" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>`;
+    }
+
     function schematicFor(side) {
-      if (side.guide === 'tech-front') return svgTechFront();
-      if (side.guide === 'tech-back') return svgTechBack();
+      const g = side.guide || '';
+      if (g === 'tech-front') return svgTechFront();
+      if (g === 'tech-back') return svgTechBack();
+      if (g === 'car-front') return svgCarFront();
+      if (g === 'car-rear') return svgCarRear();
+      if (g === 'car-left') return svgCarSide(false);
+      if (g === 'car-right') return svgCarSide(true);
+      if (g === 'car-fl') return svgCarCorner('fl');
+      if (g === 'car-fr') return svgCarCorner('fr');
+      if (g === 'car-rl') return svgCarCorner('rl');
+      if (g === 'car-rr') return svgCarCorner('rr');
+      if (g === 'car-odo') return svgCarOdo();
+      if (g === 'car-glass') return svgCarGlass();
       if (side.side === 'front') return svgFront();
       return svgBack();
     }
@@ -561,7 +684,9 @@
       const g = GROUPS[state.groupIndex];
       $('group-title').textContent = g.title;
       $('group-sub').textContent = g.sub;
-      $('group-slots').innerHTML = g.sides.map((s) => {
+      const slotsEl = $('group-slots');
+      slotsEl.classList.toggle('multi', g.sides.length > 2);
+      slotsEl.innerHTML = g.sides.map((s) => {
         const photo = state.photos[s.key];
         return `
           <div class="slot-block">
@@ -575,7 +700,7 @@
           </div>`;
       }).join('');
 
-      $('group-slots').querySelectorAll('[data-capture]').forEach((btn) => {
+      slotsEl.querySelectorAll('[data-capture]').forEach((btn) => {
         btn.onclick = () => {
           const side = g.sides.find((x) => x.key === btn.dataset.capture);
           openCamera(side);
@@ -584,7 +709,8 @@
 
       const both = g.sides.every((s) => !!state.photos[s.key]);
       $('group-next').disabled = !both;
-      setProgress(12 + state.groupIndex * 28 + (both ? 12 : 4));
+      const base = (state.groupIndex + (both ? 0.85 : 0.25)) / GROUPS.length;
+      setProgress(Math.round(8 + base * 80));
     }
 
     $('start-btn').onclick = () => {
@@ -738,6 +864,10 @@
       });
     };
 
+    function isCarCapture() {
+      return String(state.captureGuide || '').startsWith('car-');
+    }
+
     async function openCamera(side) {
       state.captureKey = side.key;
       state.captureSide = side.side;
@@ -746,19 +876,33 @@
       state.alignStreak = 0;
       state.autoShot = false;
       $('cam-title').textContent = side.camTitle;
-      $('cam-sub').textContent = 'ჩარჩოში მოათავსეთ დოკუმენტი — თუ არ ჩანს, ფოტოს არ გადაიღებს.';
-      $('cam-sub').classList.remove('ok');
-      $('cam-shutter').classList.remove('ready');
+      const car = String(state.captureGuide).startsWith('car-');
+      $('cam-sub').textContent = car
+        ? (side.camHint || 'მოათავსეთ მანქანა კონტურის მიხედვით და გადაიღეთ.')
+        : 'ჩარჩოში მოათავსეთ დოკუმენტი — თუ არ ჩანს, ფოტოს არ გადაიღებს.';
+      $('cam-sub').classList.toggle('ok', car);
+      $('cam-shutter').classList.toggle('ready', car);
+      if (car) state.alignOk = true;
       $('cam').classList.remove('hide');
       document.body.style.overflow = 'hidden';
       try {
         await startStream();
         resizeGuide();
         drawGuide();
-        startAlignLoop();
+        if (!car) startAlignLoop();
+        else {
+          stopAlignLoop();
+          state.alignOk = true;
+          $('cam-sub').classList.add('ok');
+          $('cam-shutter').classList.add('ready');
+          drawGuide();
+        }
       } catch {
         stopAlignLoop();
         $('cam-sub').textContent = 'კამერა ვერ გაიხსნა — სცადეთ გალერეიდან ატვირთვა.';
+        $('cam-sub').classList.remove('ok');
+        $('cam-shutter').classList.remove('ready');
+        state.alignOk = false;
       }
     }
 
@@ -808,9 +952,22 @@
     }
 
     function cardRect(w, h) {
-      const isTech = state.captureGuide === 'tech-front' || state.captureGuide === 'tech-back';
-      const rw = w * (isTech ? 0.90 : 0.88);
-      const rh = rw * (isTech ? 0.58 : 0.63);
+      const g = state.captureGuide;
+      const isTech = g === 'tech-front' || g === 'tech-back';
+      const isCar = String(g || '').startsWith('car-');
+      const isDetail = g === 'car-odo' || g === 'car-glass';
+      let rw;
+      let rh;
+      if (isCar && isDetail) {
+        rw = w * 0.86;
+        rh = rw * 0.70;
+      } else if (isCar) {
+        rw = w * 0.92;
+        rh = rw * 0.52;
+      } else {
+        rw = w * (isTech ? 0.90 : 0.88);
+        rh = rw * (isTech ? 0.58 : 0.63);
+      }
       return { x: (w - rw) / 2, y: (h - rh) / 2 - h * 0.02, rw, rh };
     }
 
@@ -1025,7 +1182,9 @@
       ctx.lineCap = 'round';
       ctx.strokeStyle = ok ? 'rgba(134,239,172,0.75)' : 'rgba(255,255,255,0.82)';
 
-      if (state.captureGuide === 'tech-front') {
+      if (isCarCapture()) {
+        drawCarGuide(ctx, x, y, rw, rh, state.captureGuide, ok, w);
+      } else if (state.captureGuide === 'tech-front') {
         // შავი ტექსტი ზუსტად მოწმობის განლაგებით
         ctx.lineWidth = Math.max(2.3, w * 0.0042);
         [
@@ -1145,6 +1304,112 @@
       }
     }
 
+    function drawCarGuide(ctx, x, y, rw, rh, guide, ok, w) {
+      const stroke = ok ? 'rgba(134,239,172,0.9)' : 'rgba(255,255,255,0.88)';
+      const soft = ok ? 'rgba(134,239,172,0.55)' : 'rgba(255,255,255,0.45)';
+      ctx.strokeStyle = stroke;
+      ctx.fillStyle = soft;
+      ctx.lineWidth = Math.max(2.2, w * 0.004);
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+
+      const px = (nx) => x + rw * nx;
+      const py = (ny) => y + rh * ny;
+      const path = (pts, close) => {
+        if (!pts.length) return;
+        ctx.beginPath();
+        ctx.moveTo(px(pts[0][0]), py(pts[0][1]));
+        for (let i = 1; i < pts.length; i++) ctx.lineTo(px(pts[i][0]), py(pts[i][1]));
+        if (close) ctx.closePath();
+        ctx.stroke();
+      };
+      const oval = (nx, ny, rx, ry) => {
+        ctx.beginPath();
+        ctx.ellipse(px(nx), py(ny), rw * rx, rh * ry, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      };
+      const box = (nx, ny, nw, nh, r) => {
+        roundRect(ctx, px(nx), py(ny), rw * nw, rh * nh, r || 4);
+        ctx.stroke();
+      };
+
+      const flipX = (pts) => pts.map(([a, b]) => [1 - a, b]);
+      const g = guide;
+
+      if (g === 'car-front') {
+        path([[0.18, 0.72], [0.26, 0.42], [0.74, 0.42], [0.82, 0.72]], true);
+        path([[0.30, 0.48], [0.70, 0.48], [0.66, 0.62], [0.34, 0.62]], true);
+        path([[0.14, 0.72], [0.86, 0.72]]);
+        box(0.20, 0.74, 0.14, 0.12, 3);
+        box(0.66, 0.74, 0.14, 0.12, 3);
+        oval(0.30, 0.56, 0.035, 0.06);
+        oval(0.70, 0.56, 0.035, 0.06);
+      } else if (g === 'car-rear') {
+        path([[0.18, 0.72], [0.26, 0.40], [0.74, 0.40], [0.82, 0.72]], true);
+        path([[0.28, 0.46], [0.72, 0.46], [0.68, 0.64], [0.32, 0.64]], true);
+        path([[0.14, 0.72], [0.86, 0.72]]);
+        box(0.20, 0.74, 0.14, 0.12, 3);
+        box(0.66, 0.74, 0.14, 0.12, 3);
+        box(0.22, 0.62, 0.12, 0.08, 2);
+        box(0.66, 0.62, 0.12, 0.08, 2);
+      } else if (g === 'car-left' || g === 'car-right') {
+        let body = [[0.08, 0.76], [0.16, 0.52], [0.34, 0.42], [0.52, 0.28], [0.78, 0.34], [0.92, 0.52], [0.94, 0.76]];
+        let cabin = [[0.36, 0.42], [0.52, 0.30], [0.74, 0.36], [0.78, 0.46], [0.38, 0.48]];
+        if (g === 'car-right') {
+          body = flipX(body);
+          cabin = flipX(cabin);
+        }
+        path(body, true);
+        path(cabin, true);
+        path([[0.08, 0.76], [0.94, 0.76]]);
+        if (g === 'car-left') {
+          oval(0.28, 0.76, 0.07, 0.12);
+          oval(0.74, 0.76, 0.07, 0.12);
+        } else {
+          oval(0.72, 0.76, 0.07, 0.12);
+          oval(0.26, 0.76, 0.07, 0.12);
+        }
+      } else if (g === 'car-fl' || g === 'car-fr' || g === 'car-rl' || g === 'car-rr') {
+        const rear = g === 'car-rl' || g === 'car-rr';
+        let body = [[0.10, 0.80], [0.20, 0.52], [0.40, 0.36], [0.70, 0.30], [0.90, 0.48], [0.94, 0.80]];
+        let cabin = rear
+          ? [[0.30, 0.52], [0.48, 0.34], [0.74, 0.40], [0.80, 0.62], [0.34, 0.64]]
+          : [[0.34, 0.58], [0.48, 0.32], [0.76, 0.38], [0.84, 0.60], [0.38, 0.66]];
+        if (g === 'car-fr' || g === 'car-rr') {
+          body = flipX(body);
+          cabin = flipX(cabin);
+        }
+        path(body, true);
+        path(cabin, true);
+        if (g === 'car-fl' || g === 'car-rl') {
+          oval(0.30, 0.80, 0.08, 0.11);
+          oval(0.76, 0.80, 0.07, 0.10);
+        } else {
+          oval(0.70, 0.80, 0.08, 0.11);
+          oval(0.24, 0.80, 0.07, 0.10);
+        }
+      } else if (g === 'car-odo') {
+        box(0.10, 0.16, 0.80, 0.68, 12);
+        box(0.22, 0.34, 0.56, 0.28, 6);
+        ctx.lineWidth = Math.max(2.6, w * 0.005);
+        [[0.28, 0.48], [0.38, 0.48], [0.48, 0.48], [0.58, 0.48], [0.68, 0.48]].forEach(([nx, ny]) => {
+          ctx.beginPath();
+          ctx.moveTo(px(nx), py(ny));
+          ctx.lineTo(px(nx + 0.06), py(ny));
+          ctx.stroke();
+        });
+        oval(0.18, 0.78, 0.04, 0.06);
+        oval(0.82, 0.78, 0.04, 0.06);
+      } else if (g === 'car-glass') {
+        path([[0.14, 0.86], [0.24, 0.28], [0.76, 0.28], [0.86, 0.86]], true);
+        path([[0.28, 0.34], [0.72, 0.34], [0.68, 0.78], [0.32, 0.78]], true);
+        ctx.setLineDash([6, 5]);
+        path([[0.50, 0.34], [0.50, 0.78]]);
+        ctx.setLineDash([]);
+        path([[0.18, 0.86], [0.82, 0.86]]);
+      }
+    }
+
     function roundRect(ctx, x, y, w, h, r) {
       ctx.beginPath();
       ctx.moveTo(x + r, y);
@@ -1178,6 +1443,11 @@
     }
 
     $('cam-shutter').onclick = () => {
+      if (isCarCapture()) {
+        state.autoShot = true;
+        captureFromVideo();
+        return;
+      }
       const video = $('cam-video');
       const canvas = $('cam-guide');
       if (!state.alignOk || !isDocumentReady(video, canvas)) {
