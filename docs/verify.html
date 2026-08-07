@@ -8,10 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v130</title>
+  <title>დოკუმენტების ატვირთვა v131</title>
   <script>
     (function () {
-      var VER = '130';
+      var VER = '131';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -273,7 +273,15 @@
     .cam-overlay {
       position: fixed; inset: 0; z-index: 50; background: #000;
       display: flex; flex-direction: column;
+      width: 100%;
+      width: 100vw;
+      height: 100%;
+      height: 100dvh;
+      max-width: none;
+      margin: 0;
     }
+    .cam-overlay.car-mode .cam-top p { max-width: none; }
+    .cam-overlay.car-mode .take { width: min(100%, 520px); }
     .cam-top {
       position: absolute; top: 0; left: 0; right: 0; z-index: 3;
       padding: calc(12px + env(safe-area-inset-top)) 16px 12px;
@@ -287,9 +295,13 @@
     .cam-top p { font-size: 13px; color: rgba(255,255,255,.75); margin-top: 4px; line-height: 1.35; max-width: 36rem; }
     .cam-top p.ok { color: #4ade80; font-weight: 600; }
     .take.ready { background: #22c55e; color: #052e16; }
-    .cam-stage { flex: 1; position: relative; overflow: hidden; background: #000; }
+    .cam-stage {
+      flex: 1; position: relative; overflow: hidden; background: #000;
+      width: 100%; min-height: 0;
+    }
     .cam-stage video, .cam-stage canvas.guide {
-      position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; object-position: center;
     }
     .cam-bottom {
       position: absolute; left: 0; right: 0; bottom: 0; z-index: 3;
@@ -862,8 +874,16 @@
       $('cam-shutter').classList.toggle('ready', car);
       if (car) state.alignOk = true;
       $('cam').classList.remove('hide');
+      $('cam').classList.toggle('car-mode', car);
       document.body.style.overflow = 'hidden';
       try {
+        // true fullscreen when supported (esp. landscape car capture)
+        const root = $('cam');
+        if (car && root.requestFullscreen) {
+          try { await root.requestFullscreen({ navigationUI: 'hide' }); } catch (_) {}
+        } else if (car && root.webkitRequestFullscreen) {
+          try { root.webkitRequestFullscreen(); } catch (_) {}
+        }
         await startStream();
         resizeGuide();
         drawGuide();
@@ -911,7 +931,13 @@
     function closeCamera() {
       stopAlignLoop();
       stopStream();
+      if (document.fullscreenElement) {
+        try { document.exitFullscreen(); } catch (_) {}
+      } else if (document.webkitFullscreenElement) {
+        try { document.webkitExitFullscreen(); } catch (_) {}
+      }
       $('cam').classList.add('hide');
+      $('cam').classList.remove('car-mode');
       document.body.style.overflow = '';
       $('cam-sub').classList.remove('ok');
       $('cam-shutter').classList.remove('ready');
@@ -943,13 +969,13 @@
       let rw;
       let rh;
       if (isCar && isDetail) {
-        // large landscape frame for dash / glass
-        rw = Math.min(w * 0.96, h * 1.6);
-        rh = Math.min(h * 0.55, rw * 0.58);
+        // near full-screen landscape frame
+        rw = w * 0.96;
+        rh = h * 0.62;
       } else if (isCar) {
-        // large wide horizontal guide
-        rw = Math.min(w * 0.96, h * 1.7);
-        rh = Math.min(h * 0.52, rw * 0.52);
+        // full-bleed horizontal guide (no side letterbox)
+        rw = w * 0.96;
+        rh = h * 0.58;
       } else {
         rw = w * (isTech ? 0.90 : 0.88);
         rh = rw * (isTech ? 0.58 : 0.63);
@@ -1332,20 +1358,17 @@
       const img = getCarMaskImage(guide, ok);
       const paint = () => {
         if (!img.naturalWidth) return;
-        // fill most of the camera guide frame (large overlay)
-        const maxW = Math.max(rw * 0.96, w * 0.82);
-        const maxH = Math.max(rh * 0.92, (ctx.canvas.height || rh) * 0.46);
+        // fill most of the full-screen camera frame
+        const maxW = rw * 0.94;
+        const maxH = rh * 0.88;
         const aspect = (img.naturalWidth && img.naturalHeight)
           ? (img.naturalWidth / img.naturalHeight)
           : (96 / 64);
         let dw = maxW;
         let dh = dw / aspect;
         if (dh > maxH) { dh = maxH; dw = dh * aspect; }
-        // center on full canvas when larger than frame
-        const cx = w * 0.5;
-        const cy = (ctx.canvas.height || (y + rh / 2)) * 0.48;
-        const ix = cx - dw / 2;
-        const iy = cy - dh / 2;
+        const ix = x + (rw - dw) / 2;
+        const iy = y + (rh - dh) / 2;
         ctx.save();
         ctx.shadowColor = 'rgba(0,0,0,0.5)';
         ctx.shadowBlur = Math.max(16, w * 0.028);
