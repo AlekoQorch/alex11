@@ -8,10 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v127</title>
+  <title>დოკუმენტების ატვირთვა v128</title>
   <script>
     (function () {
-      var VER = '127';
+      var VER = '128';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -943,13 +943,13 @@
       let rw;
       let rh;
       if (isCar && isDetail) {
-        // landscape frame for dash / glass
-        rw = Math.min(w * 0.92, h * 1.35);
-        rh = Math.min(h * 0.42, rw * 0.56);
+        // large landscape frame for dash / glass
+        rw = Math.min(w * 0.96, h * 1.6);
+        rh = Math.min(h * 0.55, rw * 0.58);
       } else if (isCar) {
-        // wide horizontal guide — phone held landscape
-        rw = Math.min(w * 0.94, h * 1.55);
-        rh = Math.min(h * 0.38, rw * 0.48);
+        // large wide horizontal guide
+        rw = Math.min(w * 0.96, h * 1.7);
+        rh = Math.min(h * 0.52, rw * 0.52);
       } else {
         rw = w * (isTech ? 0.90 : 0.88);
         rh = rw * (isTech ? 0.58 : 0.63);
@@ -1332,21 +1332,25 @@
       const img = getCarMaskImage(guide, ok);
       const paint = () => {
         if (!img.naturalWidth) return;
-        const maxW = rw * 0.88;
-        const maxH = rh * 0.78;
+        // fill most of the camera guide frame (large overlay)
+        const maxW = Math.max(rw * 0.96, w * 0.82);
+        const maxH = Math.max(rh * 0.92, (ctx.canvas.height || rh) * 0.46);
         const aspect = (img.naturalWidth && img.naturalHeight)
           ? (img.naturalWidth / img.naturalHeight)
           : (96 / 64);
         let dw = maxW;
         let dh = dw / aspect;
         if (dh > maxH) { dh = maxH; dw = dh * aspect; }
-        const ix = x + (rw - dw) / 2;
-        const iy = y + (rh - dh) / 2;
+        // center on full canvas when larger than frame
+        const cx = w * 0.5;
+        const cy = (ctx.canvas.height || (y + rh / 2)) * 0.48;
+        const ix = cx - dw / 2;
+        const iy = cy - dh / 2;
         ctx.save();
-        ctx.shadowColor = 'rgba(0,0,0,0.45)';
-        ctx.shadowBlur = Math.max(14, w * 0.022);
-        ctx.shadowOffsetY = Math.max(3, w * 0.005);
-        ctx.globalAlpha = 0.95;
+        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+        ctx.shadowBlur = Math.max(16, w * 0.028);
+        ctx.shadowOffsetY = Math.max(4, w * 0.006);
+        ctx.globalAlpha = 0.97;
         ctx.drawImage(img, ix, iy, dw, dh);
         ctx.restore();
       };
