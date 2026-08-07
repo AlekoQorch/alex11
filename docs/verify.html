@@ -8,10 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v122</title>
+  <title>დოკუმენტების ატვირთვა v123</title>
   <script>
     (function () {
-      var VER = '122';
+      var VER = '123';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -604,28 +604,29 @@
       const g = guide || '';
 
       // Shared viewBox 0 0 96 64
+      // Front icon matching user reference (windshield, mirrors, almond lights, grille, fog cutouts)
       const front =
-        // outer body
-        '<path d="M18 44 L22 34 L30 20 L48 14 L66 20 L74 34 L78 44 L72 50 H24 Z"/>' +
-        // windshield
-        '<path d="M34 26 L42 18 L54 18 L62 26 L58 34 H38 Z"/>' +
-        // hood crease
-        '<path d="M38 34 H58"/>' +
-        // bumper
-        '<path d="M26 44 H70"/>' +
-        // grille
-        '<rect x="40" y="37" width="16" height="5" rx="1"/>' +
-        // headlights
-        '<ellipse cx="30" cy="38" rx="5" ry="3"/>' +
-        '<ellipse cx="66" cy="38" rx="5" ry="3"/>' +
-        // plate
-        '<rect x="42" y="44.5" width="12" height="4" rx="0.8"/>' +
-        // mirrors
-        '<path d="M30 24 L22 28"/>' +
-        '<path d="M66 24 L74 28"/>' +
-        // tire arcs
-        '<path d="M26 50 A6 6 0 0 1 38 50"/>' +
-        '<path d="M58 50 A6 6 0 0 1 70 50"/>';
+        // body silhouette
+        '<path d="M20 46 L24 36 L32 22 L40 16 H56 L64 22 L72 36 L76 46 L70 52 H26 Z"/>' +
+        // windshield (wide trapezoid)
+        '<path d="M34 28 L40 18 H56 L62 28 L58 34 H38 Z"/>' +
+        // side mirrors (rounded rect stubs)
+        '<rect x="14" y="30" width="8" height="5" rx="1.5"/>' +
+        '<rect x="74" y="30" width="8" height="5" rx="1.5"/>' +
+        '<path d="M22 32 H28"/>' +
+        '<path d="M74 32 H68"/>' +
+        // almond headlights
+        '<path d="M26 36 Q30 32 36 34 Q38 36 36 39 Q30 41 26 38 Z"/>' +
+        '<path d="M70 36 Q66 32 60 34 Q58 36 60 39 Q66 41 70 38 Z"/>' +
+        // central grille (trapezoid)
+        '<path d="M40 36 L56 36 L54 42 H42 Z"/>' +
+        // lower bumper intakes: fog L/R + center
+        '<path d="M26 44 Q30 42 34 44 Q34 47 30 48 Q26 47 26 44 Z"/>' +
+        '<path d="M70 44 Q66 42 62 44 Q62 47 66 48 Q70 47 70 44 Z"/>' +
+        '<path d="M38 45 H58 Q60 45 60 48 H36 Q36 45 38 45 Z"/>' +
+        // front tire stubs
+        '<rect x="28" y="51" width="8" height="4" rx="1.2"/>' +
+        '<rect x="60" y="51" width="8" height="4" rx="1.2"/>';
 
       const rear =
         '<path d="M18 44 L22 34 L30 20 L48 14 L66 20 L74 34 L78 44 L72 50 H24 Z"/>' +
