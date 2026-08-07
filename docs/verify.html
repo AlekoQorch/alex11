@@ -8,10 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v123</title>
+  <title>დოკუმენტების ატვირთვა v125</title>
   <script>
     (function () {
-      var VER = '123';
+      var VER = '125';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -208,13 +208,15 @@
       justify-content: center;
       padding: 10px 12px 34px;
     }
-    .slot .schematic.car-ico svg {
+    .slot .schematic.car-ico svg,
+    .slot .schematic.car-ico img.car-png {
       width: 78%;
       max-width: 120px;
       max-height: 84px;
       height: auto;
       opacity: 0.95;
       filter: drop-shadow(0 4px 10px rgba(0,0,0,.35));
+      object-fit: contain;
     }
     .slot-tap-hint {
       position: absolute;
@@ -721,7 +723,9 @@
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" width="240" height="160">${inner}</svg>`;
     }
 
-    function svgCarFront() { return carMaskSvg('car-front', { cam: false }); }
+    function svgCarFront() {
+      return '<img class="car-png" src="icons/car-front.png" alt="" width="140" height="100">';
+    }
     function svgCarRear() { return carMaskSvg('car-rear', { cam: false }); }
     function svgCarSide(flip) { return carMaskSvg(flip ? 'car-right' : 'car-left', { cam: false }); }
     function svgCarCorner(kind) { return carMaskSvg('car-' + kind, { cam: false }); }
@@ -734,7 +738,11 @@
       if (_carMaskImgs[key]) return _carMaskImgs[key];
       const img = new Image();
       img.decoding = 'async';
-      img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(carMaskSvg(guide, { cam: true, ok: !!ok }));
+      if (guide === 'car-front') {
+        img.src = 'icons/car-front.png';
+      } else {
+        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(carMaskSvg(guide, { cam: true, ok: !!ok }));
+      }
       _carMaskImgs[key] = img;
       return img;
     }
@@ -1431,9 +1439,12 @@
         if (!img.naturalWidth) return;
         const maxW = rw * 0.72;
         const maxH = rh * 0.48;
+        const aspect = (img.naturalWidth && img.naturalHeight)
+          ? (img.naturalWidth / img.naturalHeight)
+          : (96 / 64);
         let dw = maxW;
-        let dh = dw * (64 / 96);
-        if (dh > maxH) { dh = maxH; dw = dh * (96 / 64); }
+        let dh = dw / aspect;
+        if (dh > maxH) { dh = maxH; dw = dh * aspect; }
         const ix = x + (rw - dw) / 2;
         const iy = y + (rh - dh) / 2;
         ctx.save();
