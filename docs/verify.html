@@ -8,10 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v126</title>
+  <title>დოკუმენტების ატვირთვა v127</title>
   <script>
     (function () {
-      var VER = '126';
+      var VER = '127';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -145,7 +145,7 @@
     #group-slots.multi {
       grid-template-columns: 1fr 1fr;
       grid-template-rows: none;
-      grid-auto-rows: minmax(118px, 26vw);
+      grid-auto-rows: minmax(148px, 34vw);
       align-content: start;
       overflow: auto;
       -webkit-overflow-scrolling: touch;
@@ -206,13 +206,13 @@
     .slot .schematic.car-ico {
       align-items: center;
       justify-content: center;
-      padding: 10px 12px 34px;
+      padding: 8px 10px 32px;
     }
     .slot .schematic.car-ico svg,
     .slot .schematic.car-ico img.car-png {
-      width: 78%;
-      max-width: 120px;
-      max-height: 84px;
+      width: 92%;
+      max-width: 168px;
+      max-height: 112px;
       height: auto;
       opacity: 0.95;
       filter: drop-shadow(0 4px 10px rgba(0,0,0,.35));
@@ -410,18 +410,18 @@
       {
         id: 'car',
         title: 'ავტომობილი',
-        sub: 'ყველა გვერდი და კუთხე · კონტურის მიხედვით გადაიღეთ',
+        sub: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ · კონტურის მიხედვით გადაიღეთ',
         sides: [
-          { key: 'car_front', label: 'წინა', side: 'front', guide: 'car-front', camTitle: 'წინა მხარე', camHint: 'მანქანა მოათავსეთ კონტურში — წინა ხედი.' },
-          { key: 'car_rear', label: 'უკანა', side: 'back', guide: 'car-rear', camTitle: 'უკანა მხარე', camHint: 'მანქანა მოათავსეთ კონტურში — უკანა ხედი.' },
-          { key: 'car_left', label: 'მარცხენა გვერდი', side: 'side', guide: 'car-left', camTitle: 'მარცხენა გვერდი', camHint: 'გადაიღეთ მთლიანი მარცხენა გვერდი.' },
-          { key: 'car_right', label: 'მარჯვენა გვერდი', side: 'side', guide: 'car-right', camTitle: 'მარჯვენა გვერდი', camHint: 'გადაიღეთ მთლიანი მარჯვენა გვერდი.' },
-          { key: 'car_fl', label: 'წინა · მარცხენა კუთხე', side: 'corner', guide: 'car-fl', camTitle: 'წინა-მარცხენა კუთხე', camHint: '3/4 ხედი — წინა და მარცხენა გვერდი.' },
-          { key: 'car_fr', label: 'წინა · მარჯვენა კუთხე', side: 'corner', guide: 'car-fr', camTitle: 'წინა-მარჯვენა კუთხე', camHint: '3/4 ხედი — წინა და მარჯვენა გვერდი.' },
-          { key: 'car_rl', label: 'უკანა · მარცხენა კუთხე', side: 'corner', guide: 'car-rl', camTitle: 'უკანა-მარცხენა კუთხე', camHint: '3/4 ხედი — უკანა და მარცხენა გვერდი.' },
-          { key: 'car_rr', label: 'უკანა · მარჯვენა კუთხე', side: 'corner', guide: 'car-rr', camTitle: 'უკანა-მარჯვენა კუთხე', camHint: '3/4 ხედი — უკანა და მარჯვენა გვერდი.' },
-          { key: 'car_odo', label: 'გარბენი', side: 'detail', guide: 'car-odo', camTitle: 'გარბენი (ოდომეტრი)', camHint: 'გადაიღეთ დაფა ისე, რომ გარბენი იკითხებოდეს.' },
-          { key: 'car_glass', label: 'საქარე მინა · უკნიდან', side: 'detail', guide: 'car-glass', camTitle: 'საქარე მინა უკნიდან', camHint: 'უკანა მხრიდან გადაიღეთ საქარე მინა.' }
+          { key: 'car_front', label: 'წინა', side: 'front', guide: 'car-front', camTitle: 'წინა მხარე', camHint: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — მანქანა ჩარჩოში, წინა ხედი.' },
+          { key: 'car_rear', label: 'უკანა', side: 'back', guide: 'car-rear', camTitle: 'უკანა მხარე', camHint: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — მანქანა ჩარჩოში, უკანა ხედი.' },
+          { key: 'car_left', label: 'მარცხენა გვერდი', side: 'side', guide: 'car-left', camTitle: 'მარცხენა გვერდი', camHint: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — მთლიანი მარცხენა გვერდი.' },
+          { key: 'car_right', label: 'მარჯვენა გვერდი', side: 'side', guide: 'car-right', camTitle: 'მარჯვენა გვერდი', camHint: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — მთლიანი მარჯვენა გვერდი.' },
+          { key: 'car_fl', label: 'წინა · მარცხენა კუთხე', side: 'corner', guide: 'car-fl', camTitle: 'წინა-მარცხენა კუთხე', camHint: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — წინა-მარცხენა 3/4 ხედი.' },
+          { key: 'car_fr', label: 'წინა · მარჯვენა კუთხე', side: 'corner', guide: 'car-fr', camTitle: 'წინა-მარჯვენა კუთხე', camHint: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — წინა-მარჯვენა 3/4 ხედი.' },
+          { key: 'car_rl', label: 'უკანა · მარცხენა კუთხე', side: 'corner', guide: 'car-rl', camTitle: 'უკანა-მარცხენა კუთხე', camHint: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — უკანა-მარცხენა 3/4 ხედი.' },
+          { key: 'car_rr', label: 'უკანა · მარჯვენა კუთხე', side: 'corner', guide: 'car-rr', camTitle: 'უკანა-მარჯვენა კუთხე', camHint: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — უკანა-მარჯვენა 3/4 ხედი.' },
+          { key: 'car_odo', label: 'გარბენი', side: 'detail', guide: 'car-odo', camTitle: 'გარბენი (ოდომეტრი)', camHint: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — დაფა ისე, რომ გარბენი იკითხებოდეს.' },
+          { key: 'car_glass', label: 'საქარე მინა · უკნიდან', side: 'detail', guide: 'car-glass', camTitle: 'საქარე მინა უკნიდან', camHint: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — საქარე მინა უკნიდან.' }
         ]
       }
     ];
@@ -856,7 +856,7 @@
       $('cam-title').textContent = side.camTitle;
       const car = String(state.captureGuide).startsWith('car-');
       $('cam-sub').textContent = car
-        ? (side.camHint || 'მოათავსეთ მანქანა კონტურის მიხედვით და გადაიღეთ.')
+        ? (side.camHint || 'ტელეფონი ჰორიზონტალურად დაიჭირეთ და მანქანა ჩარჩოში მოათავსეთ.')
         : 'ჩარჩოში მოათავსეთ დოკუმენტი — თუ არ ჩანს, ფოტოს არ გადაიღებს.';
       $('cam-sub').classList.toggle('ok', car);
       $('cam-shutter').classList.toggle('ready', car);
@@ -889,7 +889,12 @@
       stopStream();
       state.stream = await navigator.mediaDevices.getUserMedia({
         audio: false,
-        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+          aspectRatio: { ideal: 16 / 9 }
+        }
       });
       const video = $('cam-video');
       video.srcObject = state.stream;
@@ -938,11 +943,13 @@
       let rw;
       let rh;
       if (isCar && isDetail) {
-        rw = w * 0.86;
-        rh = rw * 0.70;
+        // landscape frame for dash / glass
+        rw = Math.min(w * 0.92, h * 1.35);
+        rh = Math.min(h * 0.42, rw * 0.56);
       } else if (isCar) {
-        rw = w * 0.94;
-        rh = Math.min(h * 0.52, rw * 0.62);
+        // wide horizontal guide — phone held landscape
+        rw = Math.min(w * 0.94, h * 1.55);
+        rh = Math.min(h * 0.38, rw * 0.48);
       } else {
         rw = w * (isTech ? 0.90 : 0.88);
         rh = rw * (isTech ? 0.58 : 0.63);
@@ -1325,8 +1332,8 @@
       const img = getCarMaskImage(guide, ok);
       const paint = () => {
         if (!img.naturalWidth) return;
-        const maxW = rw * 0.72;
-        const maxH = rh * 0.48;
+        const maxW = rw * 0.88;
+        const maxH = rh * 0.78;
         const aspect = (img.naturalWidth && img.naturalHeight)
           ? (img.naturalWidth / img.naturalHeight)
           : (96 / 64);
