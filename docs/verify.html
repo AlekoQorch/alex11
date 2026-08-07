@@ -8,10 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v125</title>
+  <title>დოკუმენტების ატვირთვა v126</title>
   <script>
     (function () {
-      var VER = '125';
+      var VER = '126';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -596,141 +596,31 @@
       </svg>`;
     }
 
-    // Outline car sheet — front / side / rear / 3-4 / top (matching reference layout)
-    function carMaskSvg(guide, opts) {
-      opts = opts || {};
-      const cam = !!opts.cam;
-      const ok = !!opts.ok;
-      const ink = ok ? 'rgba(167,243,208,0.98)' : (cam ? 'rgba(255,255,255,0.97)' : '#e8eaed');
-      const sw = cam ? 2.2 : 2.05;
-      const g = guide || '';
+    // Line-art PNG guides (same style set)
+    const CAR_PNG = {
+      'car-front': 'icons/car-front.png',
+      'car-rear': 'icons/car-rear.png',
+      'car-left': 'icons/car-left.png',
+      'car-right': 'icons/car-right.png',
+      'car-fl': 'icons/car-fl.png',
+      'car-fr': 'icons/car-fr.png',
+      'car-rl': 'icons/car-rl.png',
+      'car-rr': 'icons/car-rr.png',
+      'car-odo': 'icons/car-odo.png',
+      'car-glass': 'icons/car-glass.png'
+    };
 
-      // Shared viewBox 0 0 96 64
-      // Front icon matching user reference (windshield, mirrors, almond lights, grille, fog cutouts)
-      const front =
-        // body silhouette
-        '<path d="M20 46 L24 36 L32 22 L40 16 H56 L64 22 L72 36 L76 46 L70 52 H26 Z"/>' +
-        // windshield (wide trapezoid)
-        '<path d="M34 28 L40 18 H56 L62 28 L58 34 H38 Z"/>' +
-        // side mirrors (rounded rect stubs)
-        '<rect x="14" y="30" width="8" height="5" rx="1.5"/>' +
-        '<rect x="74" y="30" width="8" height="5" rx="1.5"/>' +
-        '<path d="M22 32 H28"/>' +
-        '<path d="M74 32 H68"/>' +
-        // almond headlights
-        '<path d="M26 36 Q30 32 36 34 Q38 36 36 39 Q30 41 26 38 Z"/>' +
-        '<path d="M70 36 Q66 32 60 34 Q58 36 60 39 Q66 41 70 38 Z"/>' +
-        // central grille (trapezoid)
-        '<path d="M40 36 L56 36 L54 42 H42 Z"/>' +
-        // lower bumper intakes: fog L/R + center
-        '<path d="M26 44 Q30 42 34 44 Q34 47 30 48 Q26 47 26 44 Z"/>' +
-        '<path d="M70 44 Q66 42 62 44 Q62 47 66 48 Q70 47 70 44 Z"/>' +
-        '<path d="M38 45 H58 Q60 45 60 48 H36 Q36 45 38 45 Z"/>' +
-        // front tire stubs
-        '<rect x="28" y="51" width="8" height="4" rx="1.2"/>' +
-        '<rect x="60" y="51" width="8" height="4" rx="1.2"/>';
-
-      const rear =
-        '<path d="M18 44 L22 34 L30 20 L48 14 L66 20 L74 34 L78 44 L72 50 H24 Z"/>' +
-        '<path d="M34 26 L42 18 L54 18 L62 26 L57 35 H39 Z"/>' +
-        '<path d="M39 35 H57"/>' +
-        // taillights
-        '<path d="M22 36 L32 34 L32 42 L22 40 Z"/>' +
-        '<path d="M74 36 L64 34 L64 42 L74 40 Z"/>' +
-        '<rect x="42" y="44.5" width="12" height="4" rx="0.8"/>' +
-        '<path d="M30 24 L22 28"/>' +
-        '<path d="M66 24 L74 28"/>' +
-        '<path d="M26 50 A6 6 0 0 1 38 50"/>' +
-        '<path d="M58 50 A6 6 0 0 1 70 50"/>';
-
-      const side =
-        // nose left
-        '<path d="M6 42 L10 36 L16 26 L28 22 L38 12 L58 10 L70 16 L78 26 L86 32 L90 40 L86 48 H14 L6 46 Z"/>' +
-        // cabin windows
-        '<path d="M40 22 L44 14 L56 13 L64 18 L65 24 H41 Z"/>' +
-        '<path d="M30 24 L36 22 L40 22 L41 24 Z"/>' +
-        // door seam + handle
-        '<path d="M52 24 V46"/>' +
-        '<path d="M48 34 H52"/>' +
-        // mirror
-        '<path d="M36 22 L30 16 L28 22"/>' +
-        // wheels
-        '<circle cx="24" cy="48" r="8"/>' +
-        '<circle cx="24" cy="48" r="3"/>' +
-        '<circle cx="72" cy="48" r="8"/>' +
-        '<circle cx="72" cy="48" r="3"/>';
-
-      const qFront =
-        '<path d="M14 48 L22 40 L30 26 L46 18 L66 20 L82 30 L88 42 L84 50 H28 Z"/>' +
-        '<path d="M40 30 L50 22 L64 24 L70 32 L62 40 H42 Z"/>' +
-        '<path d="M62 32 L74 28 L82 36 L76 44 L64 42 Z"/>' +
-        '<path d="M32 40 L44 34 L60 36"/>' +
-        '<ellipse cx="26" cy="42" rx="5" ry="3"/>' +
-        '<path d="M36 24 L28 22"/>' +
-        '<ellipse cx="34" cy="50" rx="9" ry="6"/>' +
-        '<circle cx="34" cy="50" r="2.5"/>' +
-        '<ellipse cx="68" cy="50" rx="7" ry="5"/>' +
-        '<circle cx="68" cy="50" r="2"/>';
-
-      const qRear =
-        '<path d="M16 48 L24 38 L36 22 L54 16 L74 22 L86 36 L90 48 L82 52 H28 Z"/>' +
-        '<path d="M40 32 L50 22 L64 24 L70 34 L60 42 H42 Z"/>' +
-        '<path d="M60 34 L72 28 L82 36 L76 46 L62 44 Z"/>' +
-        '<path d="M24 40 L34 38 L34 46 L22 44 Z"/>' +
-        '<ellipse cx="38" cy="52" rx="8" ry="5.5"/>' +
-        '<circle cx="38" cy="52" r="2.2"/>' +
-        '<ellipse cx="70" cy="52" rx="6.5" ry="4.5"/>' +
-        '<circle cx="70" cy="52" r="2"/>';
-
-      const top =
-        // bird's-eye — used for glass (roof + windshield from above)
-        '<path d="M28 8 H68 L74 16 V48 L68 56 H28 L22 48 V16 Z"/>' +
-        '<path d="M32 14 H64 L68 20 V28 H28 V20 Z"/>' + // windshield
-        '<path d="M28 28 H68"/>' +
-        '<path d="M30 30 H66 V42 H30 Z"/>' + // roof
-        '<path d="M28 42 H68 V48 L64 52 H32 L28 48 Z"/>' + // rear glass
-        '<path d="M22 24 H16"/>' + // mirrors
-        '<path d="M74 24 H80"/>' +
-        '<path d="M48 14 V52" opacity="0.35"/>';
-
-      const odo =
-        '<path d="M10 14 H86 Q92 14 92 20 V46 Q92 52 86 52 H10 Q4 52 4 46 V20 Q4 14 10 14 Z"/>' +
-        '<path d="M14 20 H82 Q84 20 84 22 V44 Q84 46 82 46 H14 Q12 46 12 44 V22 Q12 20 14 20 Z"/>' +
-        '<path d="M24 42 A12 12 0 0 1 44 30"/>' +
-        '<path d="M52 30 A12 12 0 0 1 72 42"/>' +
-        '<path d="M30 38 L36 30"/>' +
-        '<path d="M66 38 L60 30"/>' +
-        '<rect x="38" y="36" width="20" height="7" rx="1.2"/>';
-
-      let art = side;
-      let flip = false;
-      let vb = '0 0 96 64';
-
-      if (g === 'car-front') art = front;
-      else if (g === 'car-rear') art = rear;
-      else if (g === 'car-left') art = side;
-      else if (g === 'car-right') { art = side; flip = true; }
-      else if (g === 'car-fl') art = qFront;
-      else if (g === 'car-fr') { art = qFront; flip = true; }
-      else if (g === 'car-rl') art = qRear;
-      else if (g === 'car-rr') { art = qRear; flip = true; }
-      else if (g === 'car-odo') art = odo;
-      else if (g === 'car-glass') art = top;
-
-      const tf = flip ? ' transform="translate(96 0) scale(-1 1)"' : '';
-      const inner =
-        `<g fill="none" stroke="${ink}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"${tf}>${art}</g>`;
-      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" width="240" height="160">${inner}</svg>`;
+    function carPngImg(guide) {
+      const src = CAR_PNG[guide] || CAR_PNG['car-front'];
+      return `<img class="car-png" src="${src}" alt="" decoding="async">`;
     }
 
-    function svgCarFront() {
-      return '<img class="car-png" src="icons/car-front.png" alt="" width="140" height="100">';
-    }
-    function svgCarRear() { return carMaskSvg('car-rear', { cam: false }); }
-    function svgCarSide(flip) { return carMaskSvg(flip ? 'car-right' : 'car-left', { cam: false }); }
-    function svgCarCorner(kind) { return carMaskSvg('car-' + kind, { cam: false }); }
-    function svgCarOdo() { return carMaskSvg('car-odo', { cam: false }); }
-    function svgCarGlass() { return carMaskSvg('car-glass', { cam: false }); }
+    function svgCarFront() { return carPngImg('car-front'); }
+    function svgCarRear() { return carPngImg('car-rear'); }
+    function svgCarSide(flip) { return carPngImg(flip ? 'car-right' : 'car-left'); }
+    function svgCarCorner(kind) { return carPngImg('car-' + kind); }
+    function svgCarOdo() { return carPngImg('car-odo'); }
+    function svgCarGlass() { return carPngImg('car-glass'); }
 
     const _carMaskImgs = {};
     function getCarMaskImage(guide, ok) {
@@ -738,11 +628,9 @@
       if (_carMaskImgs[key]) return _carMaskImgs[key];
       const img = new Image();
       img.decoding = 'async';
-      if (guide === 'car-front') {
-        img.src = 'icons/car-front.png';
-      } else {
-        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(carMaskSvg(guide, { cam: true, ok: !!ok }));
-      }
+      img.src = CAR_PNG[guide] || ('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"/>'
+      ));
       _carMaskImgs[key] = img;
       return img;
     }
