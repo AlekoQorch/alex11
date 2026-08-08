@@ -4,35 +4,45 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="theme-color" content="#0b0b0c">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="დოკუმენტები">
+  <meta name="theme-color" content="#000000">
+  <link rel="manifest" href="manifest-verify.json">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v117</title>
+  <title>დოკუმენტების ატვირთვა v150</title>
   <script>
     (function () {
-      var VER = '117';
+      var VER = '150';
       try {
         var k = 'cc_verify_v';
-        if (localStorage.getItem(k) !== VER) {
+        var need = localStorage.getItem(k) !== VER;
+        // also bust broken SW after tunnel hostname / fetch failures
+        if (need || /respondWith|Returned response is null/i.test(String(location.hash || ''))) {
           localStorage.setItem(k, VER);
+          var done = Promise.resolve();
           if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(function (regs) {
-              regs.forEach(function (r) { r.unregister(); });
+            done = navigator.serviceWorker.getRegistrations().then(function (regs) {
+              return Promise.all(regs.map(function (r) { return r.unregister(); }));
             });
           }
           if (window.caches) {
-            caches.keys().then(function (keys) {
-              keys.forEach(function (key) { caches.delete(key); });
+            done = done.then(function () {
+              return caches.keys().then(function (keys) {
+                return Promise.all(keys.map(function (key) { return caches.delete(key); }));
+              });
             });
           }
-          if (location.search.indexOf('v=' + VER) === -1) {
+          done.finally(function () {
             var u = new URL(location.href);
             u.searchParams.set('v', VER);
+            u.hash = '';
             location.replace(u.toString());
-            return;
-          }
-          location.reload(true);
+          });
+          return;
         }
       } catch (e) {}
     })();
@@ -119,8 +129,15 @@
     .btn:disabled { opacity: 0.35; }
     .btn.secondary { background: transparent; border: 1px solid var(--line); color: var(--text); }
     .btn.green { background: var(--green); color: #052e16; }
-    .row-btns { display: flex; gap: 8px; margin-top: 12px; }
-    .row-btns .btn { flex: 1; }
+    .row-btns { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+    .row-btns .btn { flex: 1; min-width: 140px; }
+    .test-pill {
+      display: none; align-self: flex-start; margin: 0 0 8px;
+      font-size: 11px; font-weight: 700; letter-spacing: .02em;
+      color: #052e16; background: #86efac; border-radius: 999px;
+      padding: 4px 10px;
+    }
+    .test-pill.show { display: inline-flex; }
     .hide { display: none !important; }
 
     #step-intro, #step-review, #step-done, #step-group {
@@ -145,14 +162,14 @@
     #group-slots.multi {
       grid-template-columns: 1fr 1fr;
       grid-template-rows: none;
-      grid-auto-rows: minmax(118px, 26vw);
+      grid-auto-rows: minmax(126px, 28vw);
       align-content: start;
       overflow: auto;
       -webkit-overflow-scrolling: touch;
       padding-bottom: 4px;
     }
-    #group-slots.multi .slot-label { font-size: 12px; }
-    #group-slots.multi .slot-tap-hint { font-size: 10px; bottom: 10px; }
+    #group-slots.multi .slot-label { font-size: 11px; font-weight: 600; }
+    #group-slots.multi .slot-tap-hint { font-size: 10px; bottom: 8px; }
     .slot-block {
       min-height: 0;
       display: flex;
@@ -202,6 +219,21 @@
       height: auto;
       opacity: 0.85;
       display: block;
+    }
+    .slot .schematic.car-ico {
+      align-items: center;
+      justify-content: center;
+      padding: 10px 14px 34px;
+    }
+    .slot .schematic.car-ico svg,
+    .slot .schematic.car-ico img.car-png {
+      width: 68%;
+      max-width: 112px;
+      max-height: 72px;
+      height: auto;
+      opacity: 0.92;
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,.3));
+      object-fit: contain;
     }
     .slot-tap-hint {
       position: absolute;
@@ -258,6 +290,46 @@
     .cam-overlay {
       position: fixed; inset: 0; z-index: 50; background: #000;
       display: flex; flex-direction: column;
+      width: 100%;
+      width: 100vw;
+      height: 100%;
+      height: 100dvh;
+      max-width: none;
+      margin: 0;
+      overflow: hidden;
+    }
+    .cam-overlay.car-mode .cam-top p { max-width: 28rem; }
+    .cam-overlay.car-mode .take { width: 96px; height: 96px; }
+    .cam-overlay.car-mode .take .shutter-core { width: 74px; height: 74px; }
+    .cam-overlay.car-mode .cam-top {
+      padding: calc(6px + env(safe-area-inset-top)) 12px 6px;
+      background: linear-gradient(180deg, rgba(0,0,0,.45), transparent);
+    }
+    .cam-overlay.car-mode .cam-bottom {
+      padding: 8px 12px calc(10px + env(safe-area-inset-bottom));
+      background: linear-gradient(0deg, rgba(0,0,0,.55), transparent);
+      gap: 4px;
+    }
+    .cam-overlay.car-mode .cam-top p { font-size: 12px; }
+    .cam-overlay.car-mode .upload-link { font-size: 12px; opacity: .75; }
+    .cam-overlay.native-capture .cam-stage video { visibility: hidden; }
+    .cam-overlay.native-capture .cam-stage {
+      background: #0a0a0c;
+    }
+    @media (orientation: landscape) {
+      .cam-overlay.car-mode .cam-top h3 { font-size: 14px; }
+      .cam-overlay.car-mode .cam-top p { font-size: 11px; margin-top: 2px; max-width: 70%; }
+      .cam-overlay.car-mode .cam-top .close { margin-bottom: 0; font-size: 13px; }
+      .cam-overlay.car-mode .take { width: 88px; height: 88px; }
+      .cam-overlay.car-mode .take .shutter-core { width: 68px; height: 68px; }
+      .cam-overlay.car-mode .cam-bottom { gap: 2px; padding-top: 6px; }
+      .cam-overlay.car-mode .upload-link { font-size: 11px; }
+      /* Safari landscape side tab bar — keep our UI clear of it */
+      .cam-overlay.car-mode:not(.standalone-cam) .cam-top,
+      .cam-overlay.car-mode:not(.standalone-cam) .cam-bottom {
+        padding-left: max(72px, env(safe-area-inset-left));
+        padding-right: max(16px, env(safe-area-inset-right));
+      }
     }
     .cam-top {
       position: absolute; top: 0; left: 0; right: 0; z-index: 3;
@@ -271,10 +343,24 @@
     .cam-top h3 { font-size: 17px; font-weight: 700; line-height: 1.3; padding-right: 8px; }
     .cam-top p { font-size: 13px; color: rgba(255,255,255,.75); margin-top: 4px; line-height: 1.35; max-width: 36rem; }
     .cam-top p.ok { color: #4ade80; font-weight: 600; }
-    .take.ready { background: #22c55e; color: #052e16; }
-    .cam-stage { flex: 1; position: relative; overflow: hidden; background: #000; }
+    .take.ready { background: #fff; }
+    .take.ready .shutter-core { background: #22c55e; }
+    .cam-stage {
+      flex: 1; position: relative; overflow: hidden; background: #000;
+      width: 100%; min-height: 0;
+    }
     .cam-stage video, .cam-stage canvas.guide {
-      position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      min-width: 100%; min-height: 100%;
+      object-position: center;
+      transform: translateZ(0);
+    }
+    .cam-stage video {
+      object-fit: cover;
+    }
+    .cam-stage canvas.guide {
+      /* bitmap already matches stage — never stretch strokes/icons */
+      object-fit: fill;
     }
     .cam-bottom {
       position: absolute; left: 0; right: 0; bottom: 0; z-index: 3;
@@ -283,19 +369,34 @@
       background: linear-gradient(0deg, rgba(0,0,0,.85), transparent);
     }
     .take {
-      width: min(100%, 360px);
-      border: none; border-radius: 14px; padding: 15px;
-      background: var(--teal); color: #042f2e; font-size: 16px; font-weight: 800;
+      width: 80px; height: 80px; padding: 0;
+      border: 3px solid rgba(255,255,255,.92);
+      border-radius: 50%;
+      background: rgba(255,255,255,.18);
+      display: grid; place-items: center;
+      box-shadow: 0 4px 16px rgba(0,0,0,.35);
+    }
+    .take .shutter-core {
+      width: 62px; height: 62px; border-radius: 50%;
+      background: #fff;
     }
     .upload-link {
       border: none; background: transparent; color: rgba(255,255,255,.8);
       font-size: 14px; text-decoration: underline; padding: 4px;
+    }
+    body.cam-open {
+      overflow: hidden !important;
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
     }
   </style>
 </head>
 <body>
   <div class="app">
     <div class="progress"><i id="bar"></i></div>
+    <div class="test-pill" id="test-pill">ტესტ რეჟიმი · მანქანის ფოტოები</div>
 
     <section id="step-intro">
       <div class="topbar"><h1>დოკუმენტების ატვირთვა</h1></div>
@@ -309,6 +410,7 @@
         <p class="field-err" id="fullname-err">შეიყვანეთ სახელი და გვარი</p>
         <div class="row-btns">
           <button class="btn" id="start-btn" type="button">შემდეგი</button>
+          <button class="btn secondary" id="test-car-btn" type="button">ტესტი: მანქანის ფოტოები</button>
         </div>
       </div>
     </section>
@@ -357,9 +459,10 @@
       <canvas class="guide" id="cam-guide"></canvas>
     </div>
     <div class="cam-bottom">
-      <button class="take" id="cam-shutter" type="button">ფოტოს გადაღება</button>
+      <button class="take" id="cam-shutter" type="button" aria-label="ფოტო"><span class="shutter-core" aria-hidden="true"></span></button>
       <button class="upload-link" id="cam-upload" type="button">ატვირთვა გალერეიდან</button>
-      <input id="file-input" type="file" accept="image/*" capture="environment" class="hide">
+      <input id="file-input" type="file" accept="image/*" class="hide">
+      <input id="file-input-cam" type="file" accept="image/*" capture="environment" class="hide">
     </div>
   </div>
 
@@ -395,18 +498,18 @@
       {
         id: 'car',
         title: 'ავტომობილი',
-        sub: 'ყველა გვერდი და კუთხე · კონტურის მიხედვით გადაიღეთ',
+        sub: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ · კონტურის მიხედვით გადაიღეთ',
         sides: [
-          { key: 'car_front', label: 'წინა', side: 'front', guide: 'car-front', camTitle: 'წინა მხარე', camHint: 'მანქანა მოათავსეთ კონტურში — წინა ხედი.' },
-          { key: 'car_rear', label: 'უკანა', side: 'back', guide: 'car-rear', camTitle: 'უკანა მხარე', camHint: 'მანქანა მოათავსეთ კონტურში — უკანა ხედი.' },
-          { key: 'car_left', label: 'მარცხენა გვერდი', side: 'side', guide: 'car-left', camTitle: 'მარცხენა გვერდი', camHint: 'გადაიღეთ მთლიანი მარცხენა გვერდი.' },
-          { key: 'car_right', label: 'მარჯვენა გვერდი', side: 'side', guide: 'car-right', camTitle: 'მარჯვენა გვერდი', camHint: 'გადაიღეთ მთლიანი მარჯვენა გვერდი.' },
-          { key: 'car_fl', label: 'წინა · მარცხენა კუთხე', side: 'corner', guide: 'car-fl', camTitle: 'წინა-მარცხენა კუთხე', camHint: '3/4 ხედი — წინა და მარცხენა გვერდი.' },
-          { key: 'car_fr', label: 'წინა · მარჯვენა კუთხე', side: 'corner', guide: 'car-fr', camTitle: 'წინა-მარჯვენა კუთხე', camHint: '3/4 ხედი — წინა და მარჯვენა გვერდი.' },
-          { key: 'car_rl', label: 'უკანა · მარცხენა კუთხე', side: 'corner', guide: 'car-rl', camTitle: 'უკანა-მარცხენა კუთხე', camHint: '3/4 ხედი — უკანა და მარცხენა გვერდი.' },
-          { key: 'car_rr', label: 'უკანა · მარჯვენა კუთხე', side: 'corner', guide: 'car-rr', camTitle: 'უკანა-მარჯვენა კუთხე', camHint: '3/4 ხედი — უკანა და მარჯვენა გვერდი.' },
-          { key: 'car_odo', label: 'გარბენი', side: 'detail', guide: 'car-odo', camTitle: 'გარბენი (ოდომეტრი)', camHint: 'გადაიღეთ დაფა ისე, რომ გარბენი იკითხებოდეს.' },
-          { key: 'car_glass', label: 'საქარე მინა · უკნიდან', side: 'detail', guide: 'car-glass', camTitle: 'საქარე მინა უკნიდან', camHint: 'უკანა მხრიდან გადაიღეთ საქარე მინა.' }
+          { key: 'car_front', label: 'წინა', side: 'front', guide: 'car-front', camTitle: 'წინა მხარე', camHint: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — მანქანა ჩარჩოში, წინა ხედი.' },
+          { key: 'car_rear', label: 'უკანა', side: 'back', guide: 'car-rear', camTitle: 'უკანა მხარე', camHint: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — მანქანა ჩარჩოში, უკანა ხედი.' },
+          { key: 'car_left', label: 'მარცხენა გვერდი', side: 'side', guide: 'car-left', camTitle: 'მარცხენა გვერდი', camHint: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — მთლიანი მარცხენა გვერდი.' },
+          { key: 'car_right', label: 'მარჯვენა გვერდი', side: 'side', guide: 'car-right', camTitle: 'მარჯვენა გვერდი', camHint: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — მთლიანი მარჯვენა გვერდი.' },
+          { key: 'car_fl', label: 'წინა · მარცხენა კუთხე', side: 'corner', guide: 'car-fl', camTitle: 'წინა-მარცხენა კუთხე', camHint: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — წინა-მარცხენა 3/4 ხედი.' },
+          { key: 'car_fr', label: 'წინა · მარჯვენა კუთხე', side: 'corner', guide: 'car-fr', camTitle: 'წინა-მარჯვენა კუთხე', camHint: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — წინა-მარჯვენა 3/4 ხედი.' },
+          { key: 'car_rl', label: 'უკანა · მარცხენა კუთხე', side: 'corner', guide: 'car-rl', camTitle: 'უკანა-მარცხენა კუთხე', camHint: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — უკანა-მარცხენა 3/4 ხედი.' },
+          { key: 'car_rr', label: 'უკანა · მარჯვენა კუთხე', side: 'corner', guide: 'car-rr', camTitle: 'უკანა-მარჯვენა კუთხე', camHint: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — უკანა-მარჯვენა 3/4 ხედი.' },
+          { key: 'car_odo', label: 'გარბენი', side: 'detail', guide: 'car-odo', camTitle: 'გარბენი (ოდომეტრი)', camHint: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — დაფა ისე, რომ გარბენი იკითხებოდეს.' },
+          { key: 'car_glass', label: 'საქარე მინა · უკნიდან', side: 'detail', guide: 'car-glass', camTitle: 'საქარე მინა უკნიდან', camHint: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — საქარე მინა უკნიდან.' }
         ]
       }
     ];
@@ -424,13 +527,25 @@
       alignStreak: 0,
       alignTimer: null,
       autoShot: false,
-      jumpId: ''
+      jumpId: '',
+      testMode: false,
+      nativeCapture: false
     };
 
     const params = new URLSearchParams(location.search);
     const phoneFromLink = params.get('n');
     const stepFromLink = String(params.get('step') || params.get('g') || '').toLowerCase();
-    if (stepFromLink === 'car') state.jumpId = 'car';
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+      || window.navigator.standalone === true;
+    // Home Screen / ?test=1 / ?step=car → პირდაპირ მანქანის ფოტოები (ფორმის გარეშე)
+    const wantCarTest = stepFromLink === 'car'
+      || params.get('test') === '1'
+      || params.get('mode') === 'test'
+      || (isStandalone && !phoneFromLink && params.get('full') !== '1');
+    if (wantCarTest) {
+      state.jumpId = 'car';
+      state.testMode = true;
+    }
 
     /** 577920471 → 577 92 04 71 (9 ციფრი, იწყება 5-ით) */
     function formatPhone(raw) {
@@ -581,166 +696,31 @@
       </svg>`;
     }
 
-    // Vehicle masks — filled translucent silhouettes (Solera/CCC guided-capture style)
-    function carMaskSvg(guide, opts) {
-      opts = opts || {};
-      const cam = !!opts.cam;
-      const ok = !!opts.ok;
-      const fill = ok ? 'rgba(74,222,128,0.20)' : (cam ? 'rgba(255,255,255,0.18)' : 'rgba(243,244,246,0.10)');
-      const stroke = ok ? 'rgba(187,247,208,0.98)' : (cam ? 'rgba(255,255,255,0.95)' : '#e5e7eb');
-      const glass = ok ? 'rgba(74,222,128,0.14)' : (cam ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.08)');
-      const ink = stroke;
-      const sw = cam ? 3.2 : 2.4;
-      const g = guide;
-      let inner = '';
+    // Line-art PNG guides (same style set)
+    const CAR_PNG = {
+      'car-front': 'icons/car-front.png?v=150',
+      'car-rear': 'icons/car-rear.png?v=150',
+      'car-left': 'icons/car-left.png?v=150',
+      'car-right': 'icons/car-right.png?v=150',
+      'car-fl': 'icons/car-fl.png?v=150',
+      'car-fr': 'icons/car-fr.png?v=150',
+      'car-rl': 'icons/car-rl.png?v=150',
+      'car-rr': 'icons/car-rr.png?v=150',
+      'car-odo': 'icons/car-odo.png?v=150',
+      'car-glass': 'icons/car-glass.png?v=150'
+    };
 
-      // რეალური სედანის პროპორციები — არა „ბუშტი“
-      if (g === 'car-front') {
-        inner = `
-          <g fill="none" stroke="${ink}" stroke-width="${sw}" stroke-linejoin="round" stroke-linecap="round">
-            <!-- body -->
-            <path fill="${fill}" d="M70 175
-              L85 150 L105 95 L145 72 L255 72 L295 95 L315 150 L330 175
-              L310 188 L90 188 Z"/>
-            <!-- bumper -->
-            <path d="M78 175 H322"/>
-            <path d="M95 188 H305"/>
-            <!-- windshield -->
-            <path fill="${glass}" d="M145 95 L160 78 L240 78 L255 95 L245 128 L155 128 Z"/>
-            <!-- hood line -->
-            <path d="M120 128 H280"/>
-            <!-- grille -->
-            <rect x="165" y="138" width="70" height="22" rx="4" fill="${glass}"/>
-            <!-- headlights -->
-            <ellipse cx="115" cy="145" rx="22" ry="14" fill="${glass}"/>
-            <ellipse cx="285" cy="145" rx="22" ry="14" fill="${glass}"/>
-            <!-- plate -->
-            <rect x="175" y="168" width="50" height="16" rx="3"/>
-            <!-- mirrors -->
-            <path d="M105 100 L85 108"/>
-            <path d="M295 100 L315 108"/>
-          </g>`;
-      } else if (g === 'car-rear') {
-        inner = `
-          <g fill="none" stroke="${ink}" stroke-width="${sw}" stroke-linejoin="round" stroke-linecap="round">
-            <path fill="${fill}" d="M72 175
-              L88 148 L110 92 L150 70 L250 70 L290 92 L312 148 L328 175
-              L308 188 L92 188 Z"/>
-            <path d="M80 175 H320"/>
-            <path d="M95 188 H305"/>
-            <!-- rear glass -->
-            <path fill="${glass}" d="M150 92 L165 76 L235 76 L250 92 L240 130 L160 130 Z"/>
-            <!-- trunk lid -->
-            <path d="M125 130 H275"/>
-            <!-- taillights -->
-            <rect x="92" y="140" width="48" height="20" rx="5" fill="${glass}"/>
-            <rect x="260" y="140" width="48" height="20" rx="5" fill="${glass}"/>
-            <rect x="175" y="168" width="50" height="16" rx="3"/>
-          </g>`;
-      } else if (g === 'car-left' || g === 'car-right') {
-        const flip = g === 'car-right' ? ' transform="translate(400 0) scale(-1 1)"' : '';
-        inner = `<g${flip} fill="none" stroke="${ink}" stroke-width="${sw}" stroke-linejoin="round" stroke-linecap="round">
-          <!-- sedan side: hood + cabin + trunk -->
-          <path fill="${fill}" d="M28 155
-            L42 145 L70 118 L118 108 L150 72 L235 68 L278 78 L305 115 L345 125 L358 148 L355 168
-            L330 175 L48 175 L28 168 Z"/>
-          <!-- windows -->
-          <path fill="${glass}" d="M155 108 L168 78 L230 74 L268 88 L275 115 L158 118 Z"/>
-          <!-- door + handle -->
-          <path d="M210 115 L210 168"/>
-          <path d="M198 138 H208"/>
-          <!-- mirror -->
-          <path d="M150 108 L138 100 L132 108"/>
-          <!-- wheels sitting on ground -->
-          <circle cx="95" cy="175" r="26" fill="${glass}"/>
-          <circle cx="95" cy="175" r="10"/>
-          <circle cx="300" cy="175" r="26" fill="${glass}"/>
-          <circle cx="300" cy="175" r="10"/>
-          <!-- ground hint -->
-          <path d="M40 175 H360" stroke-opacity="0.35"/>
-        </g>`;
-      } else if (g === 'car-fl' || g === 'car-fr' || g === 'car-rl' || g === 'car-rr') {
-        const flip = (g === 'car-fr' || g === 'car-rr') ? ' transform="translate(400 0) scale(-1 1)"' : '';
-        const rear = g === 'car-rl' || g === 'car-rr';
-        if (!rear) {
-          // front 3/4 — hood + side clearly readable
-          inner = `<g${flip} fill="none" stroke="${ink}" stroke-width="${sw}" stroke-linejoin="round" stroke-linecap="round">
-            <path fill="${fill}" d="M55 170
-              L75 150 L95 115 L140 95 L200 78 L270 85 L320 115 L345 145 L350 170
-              L330 182 L70 182 Z"/>
-            <!-- windshield -->
-            <path fill="${glass}" d="M155 118 L185 88 L255 92 L275 125 L250 145 L165 140 Z"/>
-            <!-- side window -->
-            <path fill="${glass}" d="M250 125 L270 100 L310 118 L300 150 L255 148 Z"/>
-            <!-- hood crease -->
-            <path d="M100 145 L165 128 L245 132"/>
-            <!-- headlight -->
-            <ellipse cx="95" cy="155" rx="18" ry="10" fill="${glass}"/>
-            <!-- wheels -->
-            <ellipse cx="125" cy="178" rx="28" ry="22" fill="${glass}"/>
-            <ellipse cx="125" cy="178" rx="10" ry="8"/>
-            <ellipse cx="295" cy="178" rx="22" ry="18" fill="${glass}"/>
-            <ellipse cx="295" cy="178" rx="8" ry="6"/>
-          </g>`;
-        } else {
-          inner = `<g${flip} fill="none" stroke="${ink}" stroke-width="${sw}" stroke-linejoin="round" stroke-linecap="round">
-            <path fill="${fill}" d="M60 170
-              L80 145 L120 100 L190 78 L270 88 L325 125 L348 155 L350 172
-              L325 182 L75 182 Z"/>
-            <path fill="${glass}" d="M150 125 L185 90 L250 95 L275 130 L245 150 L160 145 Z"/>
-            <path fill="${glass}" d="M245 130 L270 105 L310 125 L295 152 L250 148 Z"/>
-            <rect x="85" y="150" width="40" height="16" rx="4" fill="${glass}"/>
-            <ellipse cx="130" cy="178" rx="26" ry="20" fill="${glass}"/>
-            <ellipse cx="130" cy="178" rx="9" ry="7"/>
-            <ellipse cx="290" cy="178" rx="20" ry="16" fill="${glass}"/>
-            <ellipse cx="290" cy="178" rx="7" ry="5"/>
-          </g>`;
-        }
-      } else if (g === 'car-odo') {
-        inner = `
-          <g fill="none" stroke="${ink}" stroke-width="${sw}" stroke-linejoin="round" stroke-linecap="round">
-            <path fill="${fill}" d="M40 50 H360 Q375 50 375 65 V175 Q375 190 360 190 H40 Q25 190 25 175 V65 Q25 50 40 50 Z"/>
-            <!-- cluster -->
-            <rect x="70" y="75" width="260" height="90" rx="14" fill="${glass}"/>
-            <!-- odometer digits -->
-            <g stroke-width="${sw * 1.35}">
-              <line x1="105" y1="120" x2="125" y2="120"/>
-              <line x1="145" y1="120" x2="165" y2="120"/>
-              <line x1="185" y1="120" x2="205" y2="120"/>
-              <line x1="225" y1="120" x2="245" y2="120"/>
-              <line x1="265" y1="120" x2="280" y2="120"/>
-            </g>
-            <text x="200" y="155" text-anchor="middle" fill="${ink}" stroke="none"
-              font-family="system-ui,sans-serif" font-size="14" font-weight="600" opacity="0.85">km</text>
-          </g>`;
-      } else if (g === 'car-glass') {
-        inner = `
-          <g fill="none" stroke="${ink}" stroke-width="${sw}" stroke-linejoin="round" stroke-linecap="round">
-            <!-- cabin looking forward to windshield -->
-            <path fill="${fill}" d="M50 200 L70 70 L330 70 L350 200 Z"/>
-            <path fill="${glass}" d="M95 95 L115 80 L285 80 L305 95 L295 175 L105 175 Z"/>
-            <!-- pillars -->
-            <path d="M95 95 L70 70"/>
-            <path d="M305 95 L330 70"/>
-            <path d="M200 80 V175" stroke-dasharray="6 5"/>
-            <!-- rear seat shelf -->
-            <path d="M60 200 H340"/>
-            <path d="M105 175 H295"/>
-          </g>`;
-      }
-
-      const vb = (g === 'car-odo' || g === 'car-glass' || g === 'car-front' || g === 'car-rear')
-        ? '0 0 400 240'
-        : '0 0 400 220';
-      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" width="800" height="440">${inner}</svg>`;
+    function carPngImg(guide) {
+      const src = CAR_PNG[guide] || CAR_PNG['car-front'];
+      return `<img class="car-png" src="${src}" alt="" decoding="async">`;
     }
 
-    function svgCarFront() { return carMaskSvg('car-front', { cam: false }); }
-    function svgCarRear() { return carMaskSvg('car-rear', { cam: false }); }
-    function svgCarSide(flip) { return carMaskSvg(flip ? 'car-right' : 'car-left', { cam: false }); }
-    function svgCarCorner(kind) { return carMaskSvg('car-' + kind, { cam: false }); }
-    function svgCarOdo() { return carMaskSvg('car-odo', { cam: false }); }
-    function svgCarGlass() { return carMaskSvg('car-glass', { cam: false }); }
+    function svgCarFront() { return carPngImg('car-front'); }
+    function svgCarRear() { return carPngImg('car-rear'); }
+    function svgCarSide(flip) { return carPngImg(flip ? 'car-right' : 'car-left'); }
+    function svgCarCorner(kind) { return carPngImg('car-' + kind); }
+    function svgCarOdo() { return carPngImg('car-odo'); }
+    function svgCarGlass() { return carPngImg('car-glass'); }
 
     const _carMaskImgs = {};
     function getCarMaskImage(guide, ok) {
@@ -748,7 +728,9 @@
       if (_carMaskImgs[key]) return _carMaskImgs[key];
       const img = new Image();
       img.decoding = 'async';
-      img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(carMaskSvg(guide, { cam: true, ok: !!ok }));
+      img.src = CAR_PNG[guide] || ('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"/>'
+      ));
       _carMaskImgs[key] = img;
       return img;
     }
@@ -785,7 +767,7 @@
             <button type="button" class="slot ${photo ? 'has-photo' : ''}" data-capture="${s.key}" aria-label="${s.label} გადაღება">
               ${photo
                 ? `<img class="preview" src="${photo}" alt="">`
-                : `<div class="schematic">${schematicFor(s)}</div>`}
+                : `<div class="schematic${(s.guide || '').indexOf('car-') === 0 ? ' car-ico' : ''}">${schematicFor(s)}</div>`}
               <span class="slot-tap-hint">${photo ? 'თავიდან გადაღება' : 'დააჭირეთ გადასაღებად'}</span>
             </button>
           </div>`;
@@ -964,6 +946,35 @@
       return String(state.captureGuide || '').startsWith('car-');
     }
 
+    function isStandaloneApp() {
+      return window.matchMedia('(display-mode: standalone)').matches
+        || window.matchMedia('(display-mode: fullscreen)').matches
+        || !!window.navigator.standalone;
+    }
+
+    function isIOSDevice() {
+      return /iPad|iPhone|iPod/.test(navigator.userAgent || '')
+        || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }
+
+    /** Native camera only as fallback — outline not available there */
+    function useNativeCapture() {
+      return false;
+    }
+
+    async function exitCaptureFullscreen() {
+      try {
+        if (document.fullscreenElement && document.exitFullscreen) {
+          await document.exitFullscreen();
+        } else if (document.webkitFullscreenElement && document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        }
+      } catch (_) {}
+      try {
+        if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
+      } catch (_) {}
+    }
+
     async function openCamera(side) {
       state.captureKey = side.key;
       state.captureSide = side.side;
@@ -971,15 +982,21 @@
       state.alignOk = false;
       state.alignStreak = 0;
       state.autoShot = false;
+      state.nativeCapture = false;
       $('cam-title').textContent = side.camTitle;
       const car = String(state.captureGuide).startsWith('car-');
+      state.nativeCapture = false;
       $('cam-sub').textContent = car
-        ? (side.camHint || 'მოათავსეთ მანქანა კონტურის მიხედვით და გადაიღეთ.')
+        ? (side.camHint || 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — outline მთლიანად ჩარჩოში.')
         : 'ჩარჩოში მოათავსეთ დოკუმენტი — თუ არ ჩანს, ფოტოს არ გადაიღებს.';
-      $('cam-sub').classList.toggle('ok', car);
-      $('cam-shutter').classList.toggle('ready', car);
+      $('cam-sub').classList.toggle('ok', !!car);
+      $('cam-shutter').classList.toggle('ready', !!car);
       if (car) state.alignOk = true;
       $('cam').classList.remove('hide');
+      $('cam').classList.toggle('car-mode', car);
+      $('cam').classList.remove('native-capture');
+      $('cam').classList.toggle('standalone-cam', isStandaloneApp());
+      document.body.classList.add('cam-open');
       document.body.style.overflow = 'hidden';
       try {
         await startStream();
@@ -996,10 +1013,14 @@
         }
       } catch {
         stopAlignLoop();
-        $('cam-sub').textContent = 'კამერა ვერ გაიხსნა — სცადეთ გალერეიდან ატვირთვა.';
-        $('cam-sub').classList.remove('ok');
-        $('cam-shutter').classList.remove('ready');
-        state.alignOk = false;
+        state.nativeCapture = true;
+        $('cam').classList.add('native-capture');
+        $('cam-sub').textContent = 'დააჭირეთ — გაიხსნება iPhone-ის კამერა სრულ ეკრანზე.';
+        $('cam-sub').classList.add('ok');
+        $('cam-shutter').classList.add('ready');
+        state.alignOk = true;
+        resizeGuide();
+        drawGuide();
       }
     }
 
@@ -1007,7 +1028,12 @@
       stopStream();
       state.stream = await navigator.mediaDevices.getUserMedia({
         audio: false,
-        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+          aspectRatio: { ideal: 16 / 9 }
+        }
       });
       const video = $('cam-video');
       video.srcObject = state.stream;
@@ -1024,48 +1050,92 @@
     function closeCamera() {
       stopAlignLoop();
       stopStream();
-      $('cam').classList.add('hide');
+      exitCaptureFullscreen();
+      const camEl = $('cam');
+      camEl.classList.add('hide');
+      camEl.classList.remove('car-mode');
+      camEl.classList.remove('native-capture');
+      camEl.classList.remove('standalone-cam');
+      camEl.style.width = '';
+      camEl.style.height = '';
+      camEl.style.top = '';
+      camEl.style.left = '';
+      document.body.classList.remove('cam-open');
       document.body.style.overflow = '';
       $('cam-sub').classList.remove('ok');
       $('cam-shutter').classList.remove('ready');
+      state.nativeCapture = false;
     }
 
     $('cam-close').onclick = closeCamera;
 
-    window.addEventListener('resize', () => {
+    function onCamViewportChange() {
       if ($('cam').classList.contains('hide')) return;
       resizeGuide();
       drawGuide();
-    });
+    }
+    window.addEventListener('resize', onCamViewportChange);
+    window.addEventListener('orientationchange', () => setTimeout(onCamViewportChange, 120));
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', onCamViewportChange);
+      window.visualViewport.addEventListener('scroll', onCamViewportChange);
+    }
 
     function resizeGuide() {
+      const cam = $('cam');
       const stage = $('cam-stage');
       const canvas = $('cam-guide');
+      const vv = window.visualViewport;
+      if (cam.classList.contains('car-mode') && vv) {
+        cam.style.width = vv.width + 'px';
+        cam.style.height = vv.height + 'px';
+        cam.style.top = vv.offsetTop + 'px';
+        cam.style.left = vv.offsetLeft + 'px';
+      } else {
+        cam.style.width = '';
+        cam.style.height = '';
+        cam.style.top = '';
+        cam.style.left = '';
+      }
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = Math.floor(stage.clientWidth * dpr);
-      canvas.height = Math.floor(stage.clientHeight * dpr);
-      canvas.style.width = stage.clientWidth + 'px';
-      canvas.style.height = stage.clientHeight + 'px';
+      const sw = Math.max(1, stage.clientWidth);
+      const sh = Math.max(1, stage.clientHeight);
+      canvas.width = Math.floor(sw * dpr);
+      canvas.height = Math.floor(sh * dpr);
+      canvas.style.width = sw + 'px';
+      canvas.style.height = sh + 'px';
     }
 
     function cardRect(w, h) {
       const g = state.captureGuide;
       const isTech = g === 'tech-front' || g === 'tech-back';
       const isCar = String(g || '').startsWith('car-');
-      const isDetail = g === 'car-odo' || g === 'car-glass';
       let rw;
       let rh;
-      if (isCar && isDetail) {
-        rw = w * 0.86;
-        rh = rw * 0.70;
-      } else if (isCar) {
-        rw = w * 0.94;
-        rh = Math.min(h * 0.52, rw * 0.62);
+      if (isCar) {
+        // saved photo crop — almost full frame (guide uses carOverlayRect)
+        rw = w * 0.98;
+        rh = h * 0.92;
       } else {
         rw = w * (isTech ? 0.90 : 0.88);
         rh = rw * (isTech ? 0.58 : 0.63);
       }
-      return { x: (w - rw) / 2, y: (h - rh) / 2 - h * 0.02, rw, rh };
+      const yOff = isCar ? 0 : h * 0.02;
+      return { x: (w - rw) / 2, y: (h - rh) / 2 - yOff, rw, rh };
+    }
+
+    /** Safe area for car outline — above shutter, below title; never over buttons */
+    function carOverlayRect(w, h) {
+      const landscape = w > h;
+      const topPad = h * (landscape ? 0.05 : 0.08);
+      const botPad = h * (landscape ? 0.14 : 0.13);
+      const sidePad = w * (landscape ? 0.03 : 0.02);
+      return {
+        x: sidePad,
+        y: topPad,
+        rw: w - sidePad * 2,
+        rh: Math.max(1, h - topPad - botPad)
+      };
     }
 
     function startAlignLoop() {
@@ -1247,8 +1317,9 @@
       const ok = state.alignOk;
 
       if (isCarCapture()) {
-        drawCarChrome(ctx, w, h, x, y, rw, rh, ok);
-        drawCarGuide(ctx, x, y, rw, rh, state.captureGuide, ok, w);
+        const ov = carOverlayRect(w, h);
+        drawCarChrome(ctx, w, h, ov.x, ov.y, ov.rw, ov.rh, ok);
+        drawCarGuide(ctx, ov.x, ov.y, ov.rw, ov.rh, state.captureGuide, ok, w);
         return;
       }
 
@@ -1406,52 +1477,40 @@
     }
 
     function drawCarChrome(ctx, w, h, x, y, rw, rh, ok) {
-      // Soft full-screen vignette — no dashed document card
+      // Soft edge fade only — no corner brackets (keeps view simple)
       const grd = ctx.createRadialGradient(
-        w * 0.5, h * 0.48, Math.min(w, h) * 0.16,
-        w * 0.5, h * 0.5, Math.max(w, h) * 0.72
+        w * 0.5, h * 0.5, Math.min(w, h) * 0.42,
+        w * 0.5, h * 0.5, Math.max(w, h) * 0.78
       );
       grd.addColorStop(0, 'rgba(0,0,0,0)');
-      grd.addColorStop(0.55, 'rgba(0,0,0,0.18)');
-      grd.addColorStop(1, 'rgba(0,0,0,0.58)');
+      grd.addColorStop(0.75, 'rgba(0,0,0,0.04)');
+      grd.addColorStop(1, 'rgba(0,0,0,0.22)');
       ctx.fillStyle = grd;
       ctx.fillRect(0, 0, w, h);
-
-      // subtle guide bracket corners only
-      const col = ok ? 'rgba(74,222,128,0.85)' : 'rgba(255,255,255,0.55)';
-      ctx.strokeStyle = col;
-      ctx.lineWidth = Math.max(2.2, w * 0.004);
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      const c = Math.min(rw, rh) * 0.09;
-      const inset = 2;
-      [
-        [x + inset, y + inset, 1, 1],
-        [x + rw - inset, y + inset, -1, 1],
-        [x + inset, y + rh - inset, 1, -1],
-        [x + rw - inset, y + rh - inset, -1, -1]
-      ].forEach(([cx, cy, sx, sy]) => {
-        ctx.beginPath();
-        ctx.moveTo(cx, cy + sy * c);
-        ctx.lineTo(cx, cy);
-        ctx.lineTo(cx + sx * c, cy);
-        ctx.stroke();
-      });
     }
 
     function drawCarGuide(ctx, x, y, rw, rh, guide, ok, w) {
       const img = getCarMaskImage(guide, ok);
       const paint = () => {
-        if (!img.naturalWidth) return;
-        const padX = rw * 0.04;
-        const padY = rh * 0.06;
+        const nw = img.naturalWidth || 0;
+        const nh = img.naturalHeight || 0;
+        if (!nw || !nh) return;
+        // Contain: scale proportionally (not width-only stretch)
+        const aspect = nw / nh;
+        const isFrontish = guide === 'car-front' || guide === 'car-rear';
+        const maxW = rw * (isFrontish ? 0.94 : 0.99);
+        const maxH = rh * (isFrontish ? 0.98 : 0.99);
+        let dw = maxW;
+        let dh = dw / aspect;
+        if (dh > maxH) {
+          dh = maxH;
+          dw = dh * aspect;
+        }
+        const ix = x + (rw - dw) / 2;
+        const iy = y + (rh - dh) / 2;
         ctx.save();
-        // soft drop shadow under mask for depth
-        ctx.shadowColor = 'rgba(0,0,0,0.35)';
-        ctx.shadowBlur = Math.max(12, w * 0.02);
-        ctx.shadowOffsetY = Math.max(4, w * 0.006);
-        ctx.globalAlpha = 1;
-        ctx.drawImage(img, x + padX, y + padY, rw - padX * 2, rh - padY * 2);
+        ctx.globalAlpha = ok ? 0.95 : 0.9;
+        ctx.drawImage(img, ix, iy, dw, dh);
         ctx.restore();
       };
       if (img.complete && img.naturalWidth) {
@@ -1496,7 +1555,20 @@
       acceptPhoto(out.toDataURL('image/jpeg', 0.92));
     }
 
+    function readPhotoFile(inp) {
+      const file = inp.files && inp.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => acceptPhoto(String(reader.result || ''));
+      reader.readAsDataURL(file);
+      inp.value = '';
+    }
+
     $('cam-shutter').onclick = () => {
+      if (state.nativeCapture) {
+        $('file-input-cam').click();
+        return;
+      }
       if (isCarCapture()) {
         state.autoShot = true;
         captureFromVideo();
@@ -1518,30 +1590,31 @@
     };
 
     $('cam-upload').onclick = () => $('file-input').click();
-    $('file-input').onchange = () => {
-      const file = $('file-input').files && $('file-input').files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => acceptPhoto(String(reader.result || ''));
-      reader.readAsDataURL(file);
-      $('file-input').value = '';
-    };
+    $('file-input').onchange = () => readPhotoFile($('file-input'));
+    $('file-input-cam').onchange = () => readPhotoFile($('file-input-cam'));
 
     setProgress(3);
 
-    // პირდაპირ ავტომობილის სექცია: ?step=car ან ?g=car
-    if (state.jumpId === 'car') {
+    function enterCarTest() {
       const idx = GROUPS.findIndex((g) => g.id === 'car');
-      if (idx >= 0) {
-        state.phone = phoneDigits($('phone').value) || phoneDigits(phoneFromLink) || '500000000';
-        state.name = ($('fullname').value || '').trim() || 'ტესტი მომხმარებელი';
-        if (!$('phone').value) $('phone').value = formatPhone(state.phone);
-        if (!$('fullname').value) $('fullname').value = state.name;
-        state.groupIndex = idx;
-        show('group');
-        renderGroup();
-      }
+      if (idx < 0) return;
+      state.testMode = true;
+      state.jumpId = 'car';
+      state.phone = phoneDigits($('phone').value) || phoneDigits(phoneFromLink) || '500000000';
+      state.name = ($('fullname').value || '').trim() || 'ტესტი მომხმარებელი';
+      if (!$('phone').value) $('phone').value = formatPhone(state.phone);
+      if (!$('fullname').value) $('fullname').value = state.name;
+      state.groupIndex = idx;
+      const pill = $('test-pill');
+      if (pill) pill.classList.add('show');
+      show('group');
+      renderGroup();
     }
+
+    $('test-car-btn').onclick = () => enterCarTest();
+
+    // პირდაპირ ავტომობილის სექცია: Home Screen, ?step=car, ?test=1
+    if (state.jumpId === 'car') enterCarTest();
   </script>
 </body>
 </html>
