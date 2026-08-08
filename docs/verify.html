@@ -13,10 +13,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v139</title>
+  <title>დოკუმენტების ატვირთვა v140</title>
   <script>
     (function () {
-      var VER = '139';
+      var VER = '140';
       try {
         var k = 'cc_verify_v';
         var need = localStorage.getItem(k) !== VER;
@@ -947,9 +947,9 @@
         || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     }
 
-    /** Safari ტაბში ვებ-fullscreen არ მუშაობს — iOS native კამერა = ნამდვილი სრული ეკრანი */
+    /** Native camera only as fallback — outline not available there */
     function useNativeCapture() {
-      return isIOSDevice() && !isStandaloneApp();
+      return false;
     }
 
     async function exitCaptureFullscreen() {
@@ -975,34 +975,21 @@
       state.nativeCapture = false;
       $('cam-title').textContent = side.camTitle;
       const car = String(state.captureGuide).startsWith('car-');
-      const native = useNativeCapture();
-      state.nativeCapture = native;
-      if (native) {
-        $('cam-sub').textContent = 'ღილაკზე დაჭერით გაიხსნება iPhone-ის კამერა სრულ ეკრანზე.';
-      } else if (car) {
-        $('cam-sub').textContent = side.camHint || 'ტელეფონი ჰორიზონტალურად დაიჭირეთ და მანქანა ჩარჩოში მოათავსეთ.';
-      } else {
-        $('cam-sub').textContent = 'ჩარჩოში მოათავსეთ დოკუმენტი — თუ არ ჩანს, ფოტოს არ გადაიღებს.';
-      }
-      $('cam-sub').classList.toggle('ok', !!(car || native));
-      $('cam-shutter').classList.toggle('ready', !!(car || native));
-      $('cam-shutter').textContent = native ? 'კამერის გახსნა' : 'ფოტოს გადაღება';
-      if (car || native) state.alignOk = true;
+      state.nativeCapture = false;
+      $('cam-sub').textContent = car
+        ? (side.camHint || 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — outline მთლიანად ჩარჩოში.')
+        : 'ჩარჩოში მოათავსეთ დოკუმენტი — თუ არ ჩანს, ფოტოს არ გადაიღებს.';
+      $('cam-sub').classList.toggle('ok', !!car);
+      $('cam-shutter').classList.toggle('ready', !!car);
+      $('cam-shutter').textContent = 'ფოტოს გადაღება';
+      if (car) state.alignOk = true;
       $('cam').classList.remove('hide');
       $('cam').classList.toggle('car-mode', car);
-      $('cam').classList.toggle('native-capture', native);
+      $('cam').classList.remove('native-capture');
       $('cam').classList.toggle('standalone-cam', isStandaloneApp());
       document.body.classList.add('cam-open');
       document.body.style.overflow = 'hidden';
       try {
-        if (native) {
-          stopStream();
-          stopAlignLoop();
-          resizeGuide();
-          try { if (car) getCarMaskImage(state.captureGuide, true); } catch (_) {}
-          drawGuide();
-          return;
-        }
         await startStream();
         resizeGuide();
         drawGuide();
@@ -1133,9 +1120,9 @@
     /** Safe area for car outline — above shutter, below title; never over buttons */
     function carOverlayRect(w, h) {
       const landscape = w > h;
-      const topPad = h * (landscape ? 0.10 : 0.14);
-      const botPad = h * (landscape ? 0.28 : 0.24);
-      const sidePad = w * (landscape ? 0.10 : 0.06);
+      const topPad = h * (landscape ? 0.08 : 0.11);
+      const botPad = h * (landscape ? 0.20 : 0.18);
+      const sidePad = w * (landscape ? 0.06 : 0.04);
       return {
         x: sidePad,
         y: topPad,
@@ -1503,8 +1490,8 @@
         if (!nw || !nh) return;
         // Contain: original PNG aspect only — enlarge/shrink proportionally
         const aspect = nw / nh;
-        const maxW = rw * 0.82;
-        const maxH = rh * 0.82;
+        const maxW = rw * 0.96;
+        const maxH = rh * 0.96;
         let dw = maxW;
         let dh = dw / aspect;
         if (dh > maxH) {
@@ -1570,7 +1557,7 @@
     }
 
     $('cam-shutter').onclick = () => {
-      if (state.nativeCapture || useNativeCapture()) {
+      if (state.nativeCapture) {
         $('file-input-cam').click();
         return;
       }
