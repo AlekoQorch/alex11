@@ -13,10 +13,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v148</title>
+  <title>დოკუმენტების ატვირთვა v147</title>
   <script>
     (function () {
-      var VER = '148';
+      var VER = '147';
       try {
         var k = 'cc_verify_v';
         var need = localStorage.getItem(k) !== VER;
@@ -688,16 +688,16 @@
 
     // Line-art PNG guides (same style set)
     const CAR_PNG = {
-      'car-front': 'icons/car-front.png?v=148',
-      'car-rear': 'icons/car-rear.png?v=148',
-      'car-left': 'icons/car-left.png?v=148',
-      'car-right': 'icons/car-right.png?v=148',
-      'car-fl': 'icons/car-fl.png?v=148',
-      'car-fr': 'icons/car-fr.png?v=148',
-      'car-rl': 'icons/car-rl.png?v=148',
-      'car-rr': 'icons/car-rr.png?v=148',
-      'car-odo': 'icons/car-odo.png?v=148',
-      'car-glass': 'icons/car-glass.png?v=148'
+      'car-front': 'icons/car-front.png?v=147',
+      'car-rear': 'icons/car-rear.png?v=147',
+      'car-left': 'icons/car-left.png?v=147',
+      'car-right': 'icons/car-right.png?v=147',
+      'car-fl': 'icons/car-fl.png?v=147',
+      'car-fr': 'icons/car-fr.png?v=147',
+      'car-rl': 'icons/car-rl.png?v=147',
+      'car-rr': 'icons/car-rr.png?v=147',
+      'car-odo': 'icons/car-odo.png?v=147',
+      'car-glass': 'icons/car-glass.png?v=147'
     };
 
     function carPngImg(guide) {
@@ -981,6 +981,7 @@
         : 'ჩარჩოში მოათავსეთ დოკუმენტი — თუ არ ჩანს, ფოტოს არ გადაიღებს.';
       $('cam-sub').classList.toggle('ok', !!car);
       $('cam-shutter').classList.toggle('ready', !!car);
+      $('cam-shutter').textContent = 'ფოტოს გადაღება';
       if (car) state.alignOk = true;
       $('cam').classList.remove('hide');
       $('cam').classList.toggle('car-mode', car);
@@ -1005,6 +1006,8 @@
         stopAlignLoop();
         state.nativeCapture = true;
         $('cam').classList.add('native-capture');
+        $('cam-shutter').textContent = 'კამერის გახსნა';
+        $('cam-sub').textContent = 'დააჭირეთ — გაი�cam-shutter').textContent = 'კამერის გახსნა';
         $('cam-sub').textContent = 'დააჭირეთ — გაიხსნება iPhone-ის კამერა სრულ ეკრანზე.';
         $('cam-sub').classList.add('ok');
         $('cam-shutter').classList.add('ready');
@@ -1054,6 +1057,7 @@
       document.body.style.overflow = '';
       $('cam-sub').classList.remove('ok');
       $('cam-shutter').classList.remove('ready');
+      $('cam-shutter').textContent = 'ფოტოს გადაღება';
       state.nativeCapture = false;
     }
 
@@ -1117,9 +1121,9 @@
     /** Safe area for car outline — above shutter, below title; never over buttons */
     function carOverlayRect(w, h) {
       const landscape = w > h;
-      const topPad = h * (landscape ? 0.08 : 0.11);
-      const botPad = h * (landscape ? 0.20 : 0.18);
-      const sidePad = w * (landscape ? 0.06 : 0.04);
+      const topPad = h * (landscape ? 0.06 : 0.09);
+      const botPad = h * (landscape ? 0.16 : 0.15);
+      const sidePad = w * (landscape ? 0.04 : 0.03);
       return {
         x: sidePad,
         y: topPad,
