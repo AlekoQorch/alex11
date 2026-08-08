@@ -13,10 +13,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v136</title>
+  <title>დოკუმენტების ატვირთვა v137</title>
   <script>
     (function () {
-      var VER = '136';
+      var VER = '137';
       try {
         var k = 'cc_verify_v';
         var need = localStorage.getItem(k) !== VER;
@@ -298,22 +298,26 @@
       margin: 0;
       overflow: hidden;
     }
-    .cam-overlay.car-mode .cam-top p { max-width: none; }
-    .cam-overlay.car-mode .take { width: min(92vw, 560px); }
+    .cam-overlay.car-mode .cam-top p { max-width: 28rem; }
+    .cam-overlay.car-mode .take { width: min(70vw, 280px); }
     .cam-overlay.car-mode .cam-top {
-      padding: calc(8px + env(safe-area-inset-top)) 14px 8px;
-      background: linear-gradient(180deg, rgba(0,0,0,.55), transparent);
+      padding: calc(6px + env(safe-area-inset-top)) 12px 6px;
+      background: linear-gradient(180deg, rgba(0,0,0,.45), transparent);
     }
     .cam-overlay.car-mode .cam-bottom {
-      padding: 10px 14px calc(12px + env(safe-area-inset-bottom));
-      background: linear-gradient(0deg, rgba(0,0,0,.6), transparent);
+      padding: 8px 12px calc(10px + env(safe-area-inset-bottom));
+      background: linear-gradient(0deg, rgba(0,0,0,.55), transparent);
+      gap: 4px;
     }
+    .cam-overlay.car-mode .cam-top p { font-size: 12px; }
+    .cam-overlay.car-mode .upload-link { font-size: 12px; opacity: .75; }
     @media (orientation: landscape) {
-      .cam-overlay.car-mode .cam-top h3 { font-size: 15px; }
-      .cam-overlay.car-mode .cam-top p { font-size: 12px; margin-top: 2px; }
-      .cam-overlay.car-mode .cam-top .close { margin-bottom: 2px; }
-      .cam-overlay.car-mode .take { padding: 12px; font-size: 15px; }
-      .cam-overlay.car-mode .cam-bottom { gap: 6px; }
+      .cam-overlay.car-mode .cam-top h3 { font-size: 14px; }
+      .cam-overlay.car-mode .cam-top p { display: none; }
+      .cam-overlay.car-mode .cam-top .close { margin-bottom: 0; font-size: 13px; }
+      .cam-overlay.car-mode .take { padding: 10px 14px; font-size: 14px; width: min(42vw, 220px); }
+      .cam-overlay.car-mode .cam-bottom { gap: 2px; padding-top: 6px; }
+      .cam-overlay.car-mode .upload-link { font-size: 11px; }
     }
     .cam-top {
       position: absolute; top: 0; left: 0; right: 0; z-index: 3;
@@ -335,8 +339,15 @@
     .cam-stage video, .cam-stage canvas.guide {
       position: absolute; inset: 0; width: 100%; height: 100%;
       min-width: 100%; min-height: 100%;
-      object-fit: cover; object-position: center;
+      object-position: center;
       transform: translateZ(0);
+    }
+    .cam-stage video {
+      object-fit: cover;
+    }
+    .cam-stage canvas.guide {
+      /* bitmap already matches stage — never stretch strokes/icons */
+      object-fit: fill;
     }
     .cam-bottom {
       position: absolute; left: 0; right: 0; bottom: 0; z-index: 3;
@@ -1133,23 +1144,32 @@
       const g = state.captureGuide;
       const isTech = g === 'tech-front' || g === 'tech-back';
       const isCar = String(g || '').startsWith('car-');
-      const isDetail = g === 'car-odo' || g === 'car-glass';
       let rw;
       let rh;
-      if (isCar && isDetail) {
-        // edge-to-edge (leave thin margin for UI)
+      if (isCar) {
+        // saved photo crop — almost full frame (guide uses carOverlayRect)
         rw = w * 0.98;
-        rh = h * 0.78;
-      } else if (isCar) {
-        // edge-to-edge full bleed guide
-        rw = w * 0.98;
-        rh = h * 0.78;
+        rh = h * 0.92;
       } else {
         rw = w * (isTech ? 0.90 : 0.88);
         rh = rw * (isTech ? 0.58 : 0.63);
       }
       const yOff = isCar ? 0 : h * 0.02;
       return { x: (w - rw) / 2, y: (h - rh) / 2 - yOff, rw, rh };
+    }
+
+    /** Safe area for car outline — above shutter, below title; never over buttons */
+    function carOverlayRect(w, h) {
+      const landscape = w > h;
+      const topPad = h * (landscape ? 0.10 : 0.14);
+      const botPad = h * (landscape ? 0.28 : 0.24);
+      const sidePad = w * (landscape ? 0.10 : 0.06);
+      return {
+        x: sidePad,
+        y: topPad,
+        rw: w - sidePad * 2,
+        rh: Math.max(1, h - topPad - botPad)
+      };
     }
 
     function startAlignLoop() {
@@ -1331,8 +1351,9 @@
       const ok = state.alignOk;
 
       if (isCarCapture()) {
-        drawCarChrome(ctx, w, h, x, y, rw, rh, ok);
-        drawCarGuide(ctx, x, y, rw, rh, state.captureGuide, ok, w);
+        const ov = carOverlayRect(w, h);
+        drawCarChrome(ctx, w, h, ov.x, ov.y, ov.rw, ov.rh, ok);
+        drawCarGuide(ctx, ov.x, ov.y, ov.rw, ov.rh, state.captureGuide, ok, w);
         return;
       }
 
@@ -1490,59 +1511,38 @@
     }
 
     function drawCarChrome(ctx, w, h, x, y, rw, rh, ok) {
-      // Very light edge vignette only — keep camera feed visible full-bleed
+      // Soft edge fade only — no corner brackets (keeps view simple)
       const grd = ctx.createRadialGradient(
-        w * 0.5, h * 0.5, Math.min(w, h) * 0.45,
-        w * 0.5, h * 0.5, Math.max(w, h) * 0.85
+        w * 0.5, h * 0.5, Math.min(w, h) * 0.42,
+        w * 0.5, h * 0.5, Math.max(w, h) * 0.78
       );
       grd.addColorStop(0, 'rgba(0,0,0,0)');
-      grd.addColorStop(0.7, 'rgba(0,0,0,0.05)');
-      grd.addColorStop(1, 'rgba(0,0,0,0.28)');
+      grd.addColorStop(0.75, 'rgba(0,0,0,0.04)');
+      grd.addColorStop(1, 'rgba(0,0,0,0.22)');
       ctx.fillStyle = grd;
       ctx.fillRect(0, 0, w, h);
-
-      // large corner brackets near screen edges
-      const col = ok ? 'rgba(74,222,128,0.9)' : 'rgba(255,255,255,0.65)';
-      ctx.strokeStyle = col;
-      ctx.lineWidth = Math.max(2.6, w * 0.005);
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      const c = Math.min(rw, rh) * 0.11;
-      const inset = Math.max(4, w * 0.01);
-      [
-        [x + inset, y + inset, 1, 1],
-        [x + rw - inset, y + inset, -1, 1],
-        [x + inset, y + rh - inset, 1, -1],
-        [x + rw - inset, y + rh - inset, -1, -1]
-      ].forEach(([cx, cy, sx, sy]) => {
-        ctx.beginPath();
-        ctx.moveTo(cx, cy + sy * c);
-        ctx.lineTo(cx, cy);
-        ctx.lineTo(cx + sx * c, cy);
-        ctx.stroke();
-      });
     }
 
     function drawCarGuide(ctx, x, y, rw, rh, guide, ok, w) {
       const img = getCarMaskImage(guide, ok);
       const paint = () => {
-        if (!img.naturalWidth) return;
-        // fill nearly the entire capture area
-        const maxW = rw * 0.96;
-        const maxH = rh * 0.9;
-        const aspect = (img.naturalWidth && img.naturalHeight)
-          ? (img.naturalWidth / img.naturalHeight)
-          : (96 / 64);
+        const nw = img.naturalWidth || 0;
+        const nh = img.naturalHeight || 0;
+        if (!nw || !nh) return;
+        // Contain: original PNG aspect only — enlarge/shrink proportionally
+        const aspect = nw / nh;
+        const maxW = rw * 0.82;
+        const maxH = rh * 0.82;
         let dw = maxW;
         let dh = dw / aspect;
-        if (dh > maxH) { dh = maxH; dw = dh * aspect; }
+        if (dh > maxH) {
+          dh = maxH;
+          dw = dh * aspect;
+        }
         const ix = x + (rw - dw) / 2;
         const iy = y + (rh - dh) / 2;
         ctx.save();
-        ctx.shadowColor = 'rgba(0,0,0,0.5)';
-        ctx.shadowBlur = Math.max(16, w * 0.028);
-        ctx.shadowOffsetY = Math.max(4, w * 0.006);
-        ctx.globalAlpha = 0.97;
+        ctx.globalAlpha = ok ? 0.95 : 0.9;
         ctx.drawImage(img, ix, iy, dw, dh);
         ctx.restore();
       };
