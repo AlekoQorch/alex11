@@ -13,10 +13,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v141</title>
+  <title>დოკუმენტების ატვირთვა v142</title>
   <script>
     (function () {
-      var VER = '141';
+      var VER = '142';
       try {
         var k = 'cc_verify_v';
         var need = localStorage.getItem(k) !== VER;
@@ -688,16 +688,16 @@
 
     // Line-art PNG guides (same style set)
     const CAR_PNG = {
-      'car-front': 'icons/car-front.png?v=141',
-      'car-rear': 'icons/car-rear.png?v=141',
-      'car-left': 'icons/car-left.png?v=141',
-      'car-right': 'icons/car-right.png?v=141',
-      'car-fl': 'icons/car-fl.png?v=141',
-      'car-fr': 'icons/car-fr.png?v=141',
-      'car-rl': 'icons/car-rl.png?v=141',
-      'car-rr': 'icons/car-rr.png?v=141',
-      'car-odo': 'icons/car-odo.png?v=141',
-      'car-glass': 'icons/car-glass.png?v=141'
+      'car-front': 'icons/car-front.png?v=142',
+      'car-rear': 'icons/car-rear.png?v=142',
+      'car-left': 'icons/car-left.png?v=142',
+      'car-right': 'icons/car-right.png?v=142',
+      'car-fl': 'icons/car-fl.png?v=142',
+      'car-fr': 'icons/car-fr.png?v=142',
+      'car-rl': 'icons/car-rl.png?v=142',
+      'car-rr': 'icons/car-rr.png?v=142',
+      'car-odo': 'icons/car-odo.png?v=142',
+      'car-glass': 'icons/car-glass.png?v=142'
     };
 
     function carPngImg(guide) {
@@ -1491,7 +1491,7 @@
         // Contain with natural aspect; front/rear a bit narrower (not width-stretched look)
         const aspect = nw / nh;
         const isFrontish = guide === 'car-front' || guide === 'car-rear';
-        const maxW = rw * (isFrontish ? 0.62 : 0.92);
+        const maxW = rw * (isFrontish ? 0.55 : 0.92);
         const maxH = rh * (isFrontish ? 0.88 : 0.94);
         let dw = maxW;
         let dh = dw / aspect;
