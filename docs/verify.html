@@ -311,13 +311,23 @@
     }
     .cam-overlay.car-mode .cam-top p { font-size: 12px; }
     .cam-overlay.car-mode .upload-link { font-size: 12px; opacity: .75; }
+    .cam-overlay.native-capture .cam-stage video { visibility: hidden; }
+    .cam-overlay.native-capture .cam-stage {
+      background: #0a0a0c;
+    }
     @media (orientation: landscape) {
       .cam-overlay.car-mode .cam-top h3 { font-size: 14px; }
-      .cam-overlay.car-mode .cam-top p { display: none; }
+      .cam-overlay.car-mode .cam-top p { font-size: 11px; margin-top: 2px; max-width: 70%; }
       .cam-overlay.car-mode .cam-top .close { margin-bottom: 0; font-size: 13px; }
-      .cam-overlay.car-mode .take { padding: 10px 14px; font-size: 14px; width: min(42vw, 220px); }
+      .cam-overlay.car-mode .take { padding: 10px 14px; font-size: 14px; width: min(50vw, 260px); }
       .cam-overlay.car-mode .cam-bottom { gap: 2px; padding-top: 6px; }
       .cam-overlay.car-mode .upload-link { font-size: 11px; }
+      /* Safari landscape side tab bar — keep our UI clear of it */
+      .cam-overlay.car-mode:not(.standalone-cam) .cam-top,
+      .cam-overlay.car-mode:not(.standalone-cam) .cam-bottom {
+        padding-left: max(72px, env(safe-area-inset-left));
+        padding-right: max(16px, env(safe-area-inset-right));
+      }
     }
     .cam-top {
       position: absolute; top: 0; left: 0; right: 0; z-index: 3;
@@ -370,26 +380,6 @@
       inset: 0;
       width: 100%;
       height: 100%;
-    }
-    .cam-fs-tip {
-      display: none;
-      position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-      z-index: 6; width: min(92vw, 420px);
-      background: rgba(10,10,12,.92); border: 1px solid rgba(255,255,255,.18);
-      border-radius: 14px; padding: 14px 14px 12px; color: #fff; text-align: center;
-      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-    }
-    .cam-overlay.car-mode.show-fs-tip .cam-fs-tip { display: block; }
-    .cam-fs-tip h4 { font-size: 15px; font-weight: 700; margin: 0 0 8px; }
-    .cam-fs-tip p { font-size: 13px; color: rgba(255,255,255,.78); line-height: 1.4; margin: 0 0 12px; }
-    .cam-fs-tip .tip-actions { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
-    .cam-fs-tip button {
-      border: none; border-radius: 10px; padding: 10px 14px; font-size: 13px; font-weight: 700;
-    }
-    .cam-fs-tip .tip-go { background: #22c55e; color: #052e16; }
-    .cam-fs-tip .tip-skip { background: rgba(255,255,255,.12); color: #fff; }
-    @media (orientation: landscape) {
-      .cam-overlay.car-mode .cam-fs-tip { top: 46%; }
     }
   </style>
 </head>
@@ -461,16 +451,8 @@
     <div class="cam-bottom">
       <button class="take" id="cam-shutter" type="button">ფოტოს გადაღება</button>
       <button class="upload-link" id="cam-upload" type="button">ატვირთვა გალერეიდან</button>
-      <input id="file-input" type="file" accept="image/*" capture="environment" class="hide">
-    </div>
-    <div class="cam-fs-tip" id="cam-fs-tip" role="dialog" aria-modal="true">
-      <h4>სრული ეკრანი მხოლოდ გადაღებისას</h4>
-      <p>iPhone Safari ტაბში მისამართის ზო� ეკრანი მხოლოდ გადაღებისას</h4>
-      <p>iPhone Safari ტაბში მისამართის ზოლი ვერ იშლება. <b>მხოლოდ ფოტოებისთვის</b>: Share → <b>Add to Home Screen</b> → იქონი <b>დოკუმენტები</b> — იქიდან გახსენი და გადაიღე.</p>
-      <div class="tip-actions">
-        <button type="button" class="tip-go" id="cam-fs-try">სრული ეკრანის ცდა</button>
-        <button type="button" class="tip-skip" id="cam-fs-skip">გაგრძელება ასე</button>
-      </div>
+      <input id="file-input" type="file" accept="image/*" class="hide">
+      <input id="file-input-cam" type="file" accept="image/*" capture="environment" class="hide">
     </div>
   </div>
 
@@ -536,7 +518,8 @@
       alignTimer: null,
       autoShot: false,
       jumpId: '',
-      testMode: false
+      testMode: false,
+      nativeCapture: false
     };
 
     const params = new URLSearchParams(location.search);
@@ -959,8 +942,14 @@
         || !!window.navigator.standalone;
     }
 
-    function isPageFullscreen() {
-      return !!(document.fullscreenElement || document.webkitFullscreenElement);
+    function isIOSDevice() {
+      return /iPad|iPhone|iPod/.test(navigator.userAgent || '')
+        || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }
+
+    /** Safari ტაბში ვებ-fullscreen არ მუშაობს — iOS native კამერა = ნამდვილი სრული ეკრანი */
+    function useNativeCapture() {
+      return isIOSDevice() && !isStandaloneApp();
     }
 
     async function exitCaptureFullscreen() {
@@ -976,51 +965,6 @@
       } catch (_) {}
     }
 
-    /** Fullscreen მხოლოდ კამერის/გადაღების დროს — დახურვისას იხურება */
-    async function tryImmersiveFullscreen() {
-      if (isStandaloneApp()) return true; // Home Screen უკვე ზოლების გარეშეა
-      const root = $('cam') || document.documentElement;
-      try {
-        if (screen.orientation && screen.orientation.lock) {
-          try { await screen.orientation.lock('landscape'); } catch (_) {}
-        }
-      } catch (_) {}
-      try {
-        if (!isPageFullscreen() && root.requestFullscreen) {
-          await root.requestFullscreen({ navigationUI: 'hide' });
-          return isPageFullscreen();
-        }
-      } catch (_) {}
-      try {
-        if (!isPageFullscreen() && root.webkitRequestFullscreen) {
-          root.webkitRequestFullscreen();
-          return true;
-        }
-      } catch (_) {}
-      try {
-        const de = document.documentElement;
-        if (!isPageFullscreen() && de.requestFullscreen) {
-          await de.requestFullscreen({ navigationUI: 'hide' });
-          return isPageFullscreen();
-        }
-      } catch (_) {}
-      return isPageFullscreen();
-    }
-
-    function shouldShowFsTip() {
-      if (isStandaloneApp()) return false;
-      try {
-        if (sessionStorage.getItem('cc_fs_tip_skip') === '1') return false;
-      } catch (_) {}
-      return true;
-    }
-
-    function syncFsTip() {
-      const car = isCarCapture();
-      const show = car && shouldShowFsTip() && window.matchMedia('(orientation: landscape)').matches;
-      $('cam').classList.toggle('show-fs-tip', !!show);
-    }
-
     async function openCamera(side) {
       state.captureKey = side.key;
       state.captureSide = side.side;
@@ -1028,24 +972,36 @@
       state.alignOk = false;
       state.alignStreak = 0;
       state.autoShot = false;
+      state.nativeCapture = false;
       $('cam-title').textContent = side.camTitle;
       const car = String(state.captureGuide).startsWith('car-');
-      $('cam-sub').textContent = car
-        ? (side.camHint || 'ტელეფონი ჰორიზონტალურად დაიჭირეთ და მანქანა ჩარჩოში მოათავსეთ.')
-        : 'ჩარჩოში მოათავსეთ დოკუმენტი — თუ არ ჩანს, ფოტოს არ გადაიღებს.';
-      $('cam-sub').classList.toggle('ok', car);
-      $('cam-shutter').classList.toggle('ready', car);
-      if (car) state.alignOk = true;
+      const native = useNativeCapture();
+      state.nativeCapture = native;
+      if (native) {
+        $('cam-sub').textContent = 'ღილაკზე დაჭერით გაიხსნება iPhone-ის კამერა სრულ ეკრანზე.';
+      } else if (car) {
+        $('cam-sub').textContent = side.camHint || 'ტელეფონი ჰორიზონტალურად დაიჭირეთ და მანქანა ჩარჩოში მოათავსეთ.';
+      } else {
+        $('cam-sub').textContent = 'ჩარჩოში მოათავსეთ დოკუმენტი — თუ არ ჩანს, ფოტოს არ გადაიღებს.';
+      }
+      $('cam-sub').classList.toggle('ok', !!(car || native));
+      $('cam-shutter').classList.toggle('ready', !!(car || native));
+      $('cam-shutter').textContent = native ? 'კამერის გახსნა' : 'ფოტოს გადაღება';
+      if (car || native) state.alignOk = true;
       $('cam').classList.remove('hide');
       $('cam').classList.toggle('car-mode', car);
+      $('cam').classList.toggle('native-capture', native);
+      $('cam').classList.toggle('standalone-cam', isStandaloneApp());
       document.body.classList.add('cam-open');
       document.body.style.overflow = 'hidden';
       try {
-        // Fullscreen მხოლოდ გადაღებისას (კამერა ღიაა)
-        const okFs = await tryImmersiveFullscreen();
-        if (car) {
-          if (!okFs) syncFsTip();
-          else $('cam').classList.remove('show-fs-tip');
+        if (native) {
+          stopStream();
+          stopAlignLoop();
+          resizeGuide();
+          try { if (car) getCarMaskImage(state.captureGuide, true); } catch (_) {}
+          drawGuide();
+          return;
         }
         await startStream();
         resizeGuide();
@@ -1061,10 +1017,15 @@
         }
       } catch {
         stopAlignLoop();
-        $('cam-sub').textContent = 'კამერა ვერ გაიხსნა — სცადეთ გალერეიდან ატვირთვა.';
-        $('cam-sub').classList.remove('ok');
-        $('cam-shutter').classList.remove('ready');
-        state.alignOk = false;
+        state.nativeCapture = true;
+        $('cam').classList.add('native-capture');
+        $('cam-shutter').textContent = 'კამერის გახსნა';
+        $('cam-sub').textContent = 'დააჭირეთ — გაიხსნება iPhone-ის კამერა სრულ ეკრანზე.';
+        $('cam-sub').classList.add('ok');
+        $('cam-shutter').classList.add('ready');
+        state.alignOk = true;
+        resizeGuide();
+        drawGuide();
       }
     }
 
@@ -1098,7 +1059,8 @@
       const camEl = $('cam');
       camEl.classList.add('hide');
       camEl.classList.remove('car-mode');
-      camEl.classList.remove('show-fs-tip');
+      camEl.classList.remove('native-capture');
+      camEl.classList.remove('standalone-cam');
       camEl.style.width = '';
       camEl.style.height = '';
       camEl.style.top = '';
@@ -1107,25 +1069,14 @@
       document.body.style.overflow = '';
       $('cam-sub').classList.remove('ok');
       $('cam-shutter').classList.remove('ready');
+      $('cam-shutter').textContent = 'ფოტოს გადაღება';
+      state.nativeCapture = false;
     }
 
     $('cam-close').onclick = closeCamera;
-    $('cam-fs-skip').onclick = () => {
-      try { sessionStorage.setItem('cc_fs_tip_skip', '1'); } catch (_) {}
-      $('cam').classList.remove('show-fs-tip');
-    };
-    $('cam-fs-try').onclick = async () => {
-      const ok = await tryImmersiveFullscreen();
-      if (ok) $('cam').classList.remove('show-fs-tip');
-      else {
-        $('cam-fs-tip').querySelector('p').innerHTML =
-          'Safari ტაბში ვერ იშლება ზოლები. <b>მხოლოდ გადაღებისთვის</b>: Share → Add to Home Screen → <b>დოკუმენტები</b>, იქიდან გახსენი კამერა.';
-      }
-    };
 
     function onCamViewportChange() {
       if ($('cam').classList.contains('hide')) return;
-      if (isCarCapture()) syncFsTip();
       resizeGuide();
       drawGuide();
     }
@@ -1609,7 +1560,20 @@
       acceptPhoto(out.toDataURL('image/jpeg', 0.92));
     }
 
+    function readPhotoFile(inp) {
+      const file = inp.files && inp.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => acceptPhoto(String(reader.result || ''));
+      reader.readAsDataURL(file);
+      inp.value = '';
+    }
+
     $('cam-shutter').onclick = () => {
+      if (state.nativeCapture || useNativeCapture()) {
+        $('file-input-cam').click();
+        return;
+      }
       if (isCarCapture()) {
         state.autoShot = true;
         captureFromVideo();
@@ -1631,14 +1595,8 @@
     };
 
     $('cam-upload').onclick = () => $('file-input').click();
-    $('file-input').onchange = () => {
-      const file = $('file-input').files && $('file-input').files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => acceptPhoto(String(reader.result || ''));
-      reader.readAsDataURL(file);
-      $('file-input').value = '';
-    };
+    $('file-input').onchange = () => readPhotoFile($('file-input'));
+    $('file-input-cam').onchange = () => readPhotoFile($('file-input-cam'));
 
     setProgress(3);
 
