@@ -13,10 +13,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v143</title>
+  <title>დოკუმენტების ატვირთვა v144</title>
   <script>
     (function () {
-      var VER = '143';
+      var VER = '144';
       try {
         var k = 'cc_verify_v';
         var need = localStorage.getItem(k) !== VER;
@@ -299,7 +299,7 @@
       overflow: hidden;
     }
     .cam-overlay.car-mode .cam-top p { max-width: 28rem; }
-    .cam-overlay.car-mode .take { width: min(70vw, 280px); }
+    .cam-overlay.car-mode .take { width: 72px; }
     .cam-overlay.car-mode .cam-top {
       padding: calc(6px + env(safe-area-inset-top)) 12px 6px;
       background: linear-gradient(180deg, rgba(0,0,0,.45), transparent);
@@ -319,7 +319,7 @@
       .cam-overlay.car-mode .cam-top h3 { font-size: 14px; }
       .cam-overlay.car-mode .cam-top p { font-size: 11px; margin-top: 2px; max-width: 70%; }
       .cam-overlay.car-mode .cam-top .close { margin-bottom: 0; font-size: 13px; }
-      .cam-overlay.car-mode .take { padding: 10px 14px; font-size: 14px; width: min(50vw, 260px); }
+      .cam-overlay.car-mode .take { width: 64px; height: 64px; }
       .cam-overlay.car-mode .cam-bottom { gap: 2px; padding-top: 6px; }
       .cam-overlay.car-mode .upload-link { font-size: 11px; }
       /* Safari landscape side tab bar — keep our UI clear of it */
@@ -341,7 +341,8 @@
     .cam-top h3 { font-size: 17px; font-weight: 700; line-height: 1.3; padding-right: 8px; }
     .cam-top p { font-size: 13px; color: rgba(255,255,255,.75); margin-top: 4px; line-height: 1.35; max-width: 36rem; }
     .cam-top p.ok { color: #4ade80; font-weight: 600; }
-    .take.ready { background: #22c55e; color: #052e16; }
+    .take.ready { background: #fff; }
+    .take.ready .shutter-core { background: #22c55e; }
     .cam-stage {
       flex: 1; position: relative; overflow: hidden; background: #000;
       width: 100%; min-height: 0;
@@ -366,10 +367,18 @@
       background: linear-gradient(0deg, rgba(0,0,0,.85), transparent);
     }
     .take {
-      width: min(100%, 360px);
-      border: none; border-radius: 14px; padding: 15px;
-      background: var(--teal); color: #042f2e; font-size: 16px; font-weight: 800;
+      width: 72px; height: 72px; padding: 0;
+      border: 3px solid rgba(255,255,255,.92);
+      border-radius: 50%;
+      background: rgba(255,255,255,.18);
+      display: grid; place-items: center;
+      box-shadow: 0 4px 16px rgba(0,0,0,.35);
     }
+    .take .shutter-core {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: #fff;
+    }
+    .cam-overlay.car-mode .take .shutter-core { width: 54px; height: 54px; }
     .upload-link {
       border: none; background: transparent; color: rgba(255,255,255,.8);
       font-size: 14px; text-decoration: underline; padding: 4px;
@@ -449,7 +458,7 @@
       <canvas class="guide" id="cam-guide"></canvas>
     </div>
     <div class="cam-bottom">
-      <button class="take" id="cam-shutter" type="button">ფოტოს გადაღება</button>
+      <button class="take" id="cam-shutter" type="button" aria-label="ფოტო"><span class="shutter-core" aria-hidden="true"></span></button>
       <button class="upload-link" id="cam-upload" type="button">ატვირთვა გალერეიდან</button>
       <input id="file-input" type="file" accept="image/*" class="hide">
       <input id="file-input-cam" type="file" accept="image/*" capture="environment" class="hide">
@@ -688,16 +697,16 @@
 
     // Line-art PNG guides (same style set)
     const CAR_PNG = {
-      'car-front': 'icons/car-front.png?v=143',
-      'car-rear': 'icons/car-rear.png?v=143',
-      'car-left': 'icons/car-left.png?v=143',
-      'car-right': 'icons/car-right.png?v=143',
-      'car-fl': 'icons/car-fl.png?v=143',
-      'car-fr': 'icons/car-fr.png?v=143',
-      'car-rl': 'icons/car-rl.png?v=143',
-      'car-rr': 'icons/car-rr.png?v=143',
-      'car-odo': 'icons/car-odo.png?v=143',
-      'car-glass': 'icons/car-glass.png?v=143'
+      'car-front': 'icons/car-front.png?v=144',
+      'car-rear': 'icons/car-rear.png?v=144',
+      'car-left': 'icons/car-left.png?v=144',
+      'car-right': 'icons/car-right.png?v=144',
+      'car-fl': 'icons/car-fl.png?v=144',
+      'car-fr': 'icons/car-fr.png?v=144',
+      'car-rl': 'icons/car-rl.png?v=144',
+      'car-rr': 'icons/car-rr.png?v=144',
+      'car-odo': 'icons/car-odo.png?v=144',
+      'car-glass': 'icons/car-glass.png?v=144'
     };
 
     function carPngImg(guide) {
@@ -981,7 +990,6 @@
         : 'ჩარჩოში მოათავსეთ დოკუმენტი — თუ არ ჩანს, ფოტოს არ გადაიღებს.';
       $('cam-sub').classList.toggle('ok', !!car);
       $('cam-shutter').classList.toggle('ready', !!car);
-      $('cam-shutter').textContent = 'ფოტოს გადაღება';
       if (car) state.alignOk = true;
       $('cam').classList.remove('hide');
       $('cam').classList.toggle('car-mode', car);
@@ -1006,7 +1014,6 @@
         stopAlignLoop();
         state.nativeCapture = true;
         $('cam').classList.add('native-capture');
-        $('cam-shutter').textContent = 'კამერის გახსნა';
         $('cam-sub').textContent = 'დააჭირეთ — გაიხსნება iPhone-ის კამერა სრულ ეკრანზე.';
         $('cam-sub').classList.add('ok');
         $('cam-shutter').classList.add('ready');
@@ -1056,7 +1063,6 @@
       document.body.style.overflow = '';
       $('cam-sub').classList.remove('ok');
       $('cam-shutter').classList.remove('ready');
-      $('cam-shutter').textContent = 'ფოტოს გადაღება';
       state.nativeCapture = false;
     }
 
