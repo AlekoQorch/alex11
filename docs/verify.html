@@ -13,31 +13,36 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v133</title>
+  <title>დოკუმენტების ატვირთვა v134</title>
   <script>
     (function () {
-      var VER = '133';
+      var VER = '134';
       try {
         var k = 'cc_verify_v';
-        if (localStorage.getItem(k) !== VER) {
+        var need = localStorage.getItem(k) !== VER;
+        // also bust broken SW after tunnel hostname / fetch failures
+        if (need || /respondWith|Returned response is null/i.test(String(location.hash || ''))) {
           localStorage.setItem(k, VER);
+          var done = Promise.resolve();
           if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(function (regs) {
-              regs.forEach(function (r) { r.unregister(); });
+            done = navigator.serviceWorker.getRegistrations().then(function (regs) {
+              return Promise.all(regs.map(function (r) { return r.unregister(); }));
             });
           }
           if (window.caches) {
-            caches.keys().then(function (keys) {
-              keys.forEach(function (key) { caches.delete(key); });
+            done = done.then(function () {
+              return caches.keys().then(function (keys) {
+                return Promise.all(keys.map(function (key) { return caches.delete(key); }));
+              });
             });
           }
-          if (location.search.indexOf('v=' + VER) === -1) {
+          done.finally(function () {
             var u = new URL(location.href);
             u.searchParams.set('v', VER);
+            u.hash = '';
             location.replace(u.toString());
-            return;
-          }
-          location.reload(true);
+          });
+          return;
         }
       } catch (e) {}
     })();

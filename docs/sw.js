@@ -1,5 +1,5 @@
-/* Cold Caller — network-first updates (no need for new ?v= links) */
-const CACHE = 'cold-caller-v133';
+/* Cold Caller — network-first updates (never return null from respondWith) */
+const CACHE = 'cold-caller-v134';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -24,18 +24,34 @@ function isFreshNeeded(url) {
   );
 }
 
+function offlineFallback(req) {
+  return caches.match(req).then((cached) => {
+    if (cached) return cached;
+    return new Response('Offline', {
+      status: 503,
+      statusText: 'Service Unavailable',
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+    });
+  });
+}
+
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
 
-  const url = new URL(req.url);
+  let url;
+  try {
+    url = new URL(req.url);
+  } catch (_) {
+    return;
+  }
   if (url.origin !== self.location.origin) return;
 
   if (req.mode === 'navigate' || isFreshNeeded(url)) {
     event.respondWith(
       fetch(req, { cache: 'no-store' })
-        .then((res) => res)
-        .catch(() => caches.match(req))
+        .then((res) => res || offlineFallback(req))
+        .catch(() => offlineFallback(req))
     );
     return;
   }
@@ -43,10 +59,12 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(req)
       .then((res) => {
-        const copy = res.clone();
-        caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
-        return res;
+        if (res && res.ok) {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
+        }
+        return res || offlineFallback(req);
       })
-      .catch(() => caches.match(req))
+      .catch(() => offlineFallback(req))
   );
 });
