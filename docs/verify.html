@@ -13,10 +13,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v135</title>
+  <title>დოკუმენტების ატვირთვა v136</title>
   <script>
     (function () {
-      var VER = '135';
+      var VER = '136';
       try {
         var k = 'cc_verify_v';
         var need = localStorage.getItem(k) !== VER;
@@ -129,8 +129,15 @@
     .btn:disabled { opacity: 0.35; }
     .btn.secondary { background: transparent; border: 1px solid var(--line); color: var(--text); }
     .btn.green { background: var(--green); color: #052e16; }
-    .row-btns { display: flex; gap: 8px; margin-top: 12px; }
-    .row-btns .btn { flex: 1; }
+    .row-btns { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+    .row-btns .btn { flex: 1; min-width: 140px; }
+    .test-pill {
+      display: none; align-self: flex-start; margin: 0 0 8px;
+      font-size: 11px; font-weight: 700; letter-spacing: .02em;
+      color: #052e16; background: #86efac; border-radius: 999px;
+      padding: 4px 10px;
+    }
+    .test-pill.show { display: inline-flex; }
     .hide { display: none !important; }
 
     #step-intro, #step-review, #step-done, #step-group {
@@ -378,6 +385,7 @@
 <body>
   <div class="app">
     <div class="progress"><i id="bar"></i></div>
+    <div class="test-pill" id="test-pill">ტესტ რეჟიმი · მანქანის ფოტოები</div>
 
     <section id="step-intro">
       <div class="topbar"><h1>დოკუმენტების ატვირთვა</h1></div>
@@ -391,6 +399,7 @@
         <p class="field-err" id="fullname-err">შეიყვანეთ სახელი და გვარი</p>
         <div class="row-btns">
           <button class="btn" id="start-btn" type="button">შემდეგი</button>
+          <button class="btn secondary" id="test-car-btn" type="button">ტესტი: მანქანის ფოტოები</button>
         </div>
       </div>
     </section>
@@ -514,13 +523,24 @@
       alignStreak: 0,
       alignTimer: null,
       autoShot: false,
-      jumpId: ''
+      jumpId: '',
+      testMode: false
     };
 
     const params = new URLSearchParams(location.search);
     const phoneFromLink = params.get('n');
     const stepFromLink = String(params.get('step') || params.get('g') || '').toLowerCase();
-    if (stepFromLink === 'car') state.jumpId = 'car';
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+      || window.navigator.standalone === true;
+    // Home Screen / ?test=1 / ?step=car → პირდაპირ მანქანის ფოტოები (ფორმის გარეშე)
+    const wantCarTest = stepFromLink === 'car'
+      || params.get('test') === '1'
+      || params.get('mode') === 'test'
+      || (isStandalone && !phoneFromLink && params.get('full') !== '1');
+    if (wantCarTest) {
+      state.jumpId = 'car';
+      state.testMode = true;
+    }
 
     /** 577920471 → 577 92 04 71 (9 ციფრი, იწყება 5-ით) */
     function formatPhone(raw) {
@@ -1601,19 +1621,26 @@
 
     setProgress(3);
 
-    // პირდაპირ ავტომობილის სექცია: ?step=car ან ?g=car
-    if (state.jumpId === 'car') {
+    function enterCarTest() {
       const idx = GROUPS.findIndex((g) => g.id === 'car');
-      if (idx >= 0) {
-        state.phone = phoneDigits($('phone').value) || phoneDigits(phoneFromLink) || '500000000';
-        state.name = ($('fullname').value || '').trim() || 'ტესტი მომხმარებელი';
-        if (!$('phone').value) $('phone').value = formatPhone(state.phone);
-        if (!$('fullname').value) $('fullname').value = state.name;
-        state.groupIndex = idx;
-        show('group');
-        renderGroup();
-      }
+      if (idx < 0) return;
+      state.testMode = true;
+      state.jumpId = 'car';
+      state.phone = phoneDigits($('phone').value) || phoneDigits(phoneFromLink) || '500000000';
+      state.name = ($('fullname').value || '').trim() || 'ტესტი მომხმარებელი';
+      if (!$('phone').value) $('phone').value = formatPhone(state.phone);
+      if (!$('fullname').value) $('fullname').value = state.name;
+      state.groupIndex = idx;
+      const pill = $('test-pill');
+      if (pill) pill.classList.add('show');
+      show('group');
+      renderGroup();
     }
+
+    $('test-car-btn').onclick = () => enterCarTest();
+
+    // პირდაპირ ავტომობილის სექცია: Home Screen, ?step=car, ?test=1
+    if (state.jumpId === 'car') enterCarTest();
   </script>
 </body>
 </html>
