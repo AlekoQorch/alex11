@@ -958,26 +958,52 @@
         || !!window.navigator.standalone;
     }
 
+    function isPageFullscreen() {
+      return !!(document.fullscreenElement || document.webkitFullscreenElement);
+    }
+
+    async function exitCaptureFullscreen() {
+      try {
+        if (document.fullscreenElement && document.exitFullscreen) {
+          await document.exitFullscreen();
+        } else if (document.webkitFullscreenElement && document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        }
+      } catch (_) {}
+      try {
+        if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
+      } catch (_) {}
+    }
+
+    /** Fullscreen მხოლოდ კამერის/გადაღების დროს — დახურვისას იხურება */
     async function tryImmersiveFullscreen() {
-      const root = document.documentElement;
+      if (isStandaloneApp()) return true; // Home Screen უკვე ზოლების გარეშეა
+      const root = $('cam') || document.documentElement;
       try {
         if (screen.orientation && screen.orientation.lock) {
           try { await screen.orientation.lock('landscape'); } catch (_) {}
         }
       } catch (_) {}
       try {
-        if (!document.fullscreenElement && root.requestFullscreen) {
+        if (!isPageFullscreen() && root.requestFullscreen) {
           await root.requestFullscreen({ navigationUI: 'hide' });
-          return true;
+          return isPageFullscreen();
         }
       } catch (_) {}
       try {
-        if (root.webkitRequestFullscreen) {
+        if (!isPageFullscreen() && root.webkitRequestFullscreen) {
           root.webkitRequestFullscreen();
           return true;
         }
       } catch (_) {}
-      return false;
+      try {
+        const de = document.documentElement;
+        if (!isPageFullscreen() && de.requestFullscreen) {
+          await de.requestFullscreen({ navigationUI: 'hide' });
+          return isPageFullscreen();
+        }
+      } catch (_) {}
+      return isPageFullscreen();
     }
 
     function shouldShowFsTip() {
@@ -1014,8 +1040,9 @@
       document.body.classList.add('cam-open');
       document.body.style.overflow = 'hidden';
       try {
+        // Fullscreen მხოლოდ გადაღებისას (კამერა ღიაა)
+        const okFs = await tryImmersiveFullscreen();
         if (car) {
-          const okFs = await tryImmersiveFullscreen();
           if (!okFs) syncFsTip();
           else $('cam').classList.remove('show-fs-tip');
         }
@@ -1066,11 +1093,7 @@
     function closeCamera() {
       stopAlignLoop();
       stopStream();
-      if (document.fullscreenElement) {
-        try { document.exitFullscreen(); } catch (_) {}
-      } else if (document.webkitFullscreenElement) {
-        try { document.webkitExitFullscreen(); } catch (_) {}
-      }
+      exitCaptureFullscreen();
       const camEl = $('cam');
       camEl.classList.add('hide');
       camEl.classList.remove('car-mode');
@@ -1081,9 +1104,6 @@
       camEl.style.left = '';
       document.body.classList.remove('cam-open');
       document.body.style.overflow = '';
-      try {
-        if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
-      } catch (_) {}
       $('cam-sub').classList.remove('ok');
       $('cam-shutter').classList.remove('ready');
     }
@@ -1098,7 +1118,7 @@
       if (ok) $('cam').classList.remove('show-fs-tip');
       else {
         $('cam-fs-tip').querySelector('p').innerHTML =
-          'ამ ბრაუზერში სრული ეკრანი შეზღუდულია. iPhone-ზე ამ გვერდიდან: <b>Share → Add to Home Screen</b> — იქონი <b>დოკუმენტები</b> (არა Cold Caller).';
+          'Safari ტაბში ვერ იშლება ზოლები. <b>მხოლოდ გადაღებისთვის</b>: Share → Add to Home Screen → <b>დოკუმენტები</b>, იქიდან გახსენი კამერა.';
       }
     };
 
