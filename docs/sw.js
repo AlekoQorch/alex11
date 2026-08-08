@@ -1,5 +1,5 @@
 /* Cold Caller — network-first updates (never return null from respondWith) */
-const CACHE = 'cold-caller-v134';
+const CACHE = 'cold-caller-v135';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -20,6 +20,7 @@ function isFreshNeeded(url) {
     p.endsWith('.html') ||
     p.endsWith('version.json') ||
     p.endsWith('manifest.json') ||
+    p.endsWith('manifest-verify.json') ||
     p.endsWith('sw.js')
   );
 }
