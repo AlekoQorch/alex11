@@ -13,10 +13,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v140</title>
+  <title>დოკუმენტების ატვირთვა v141</title>
   <script>
     (function () {
-      var VER = '140';
+      var VER = '141';
       try {
         var k = 'cc_verify_v';
         var need = localStorage.getItem(k) !== VER;
@@ -688,16 +688,16 @@
 
     // Line-art PNG guides (same style set)
     const CAR_PNG = {
-      'car-front': 'icons/car-front.png',
-      'car-rear': 'icons/car-rear.png',
-      'car-left': 'icons/car-left.png',
-      'car-right': 'icons/car-right.png',
-      'car-fl': 'icons/car-fl.png',
-      'car-fr': 'icons/car-fr.png',
-      'car-rl': 'icons/car-rl.png',
-      'car-rr': 'icons/car-rr.png',
-      'car-odo': 'icons/car-odo.png',
-      'car-glass': 'icons/car-glass.png'
+      'car-front': 'icons/car-front.png?v=141',
+      'car-rear': 'icons/car-rear.png?v=141',
+      'car-left': 'icons/car-left.png?v=141',
+      'car-right': 'icons/car-right.png?v=141',
+      'car-fl': 'icons/car-fl.png?v=141',
+      'car-fr': 'icons/car-fr.png?v=141',
+      'car-rl': 'icons/car-rl.png?v=141',
+      'car-rr': 'icons/car-rr.png?v=141',
+      'car-odo': 'icons/car-odo.png?v=141',
+      'car-glass': 'icons/car-glass.png?v=141'
     };
 
     function carPngImg(guide) {
@@ -1488,10 +1488,11 @@
         const nw = img.naturalWidth || 0;
         const nh = img.naturalHeight || 0;
         if (!nw || !nh) return;
-        // Contain: original PNG aspect only — enlarge/shrink proportionally
+        // Contain with natural aspect; front/rear a bit narrower (not width-stretched look)
         const aspect = nw / nh;
-        const maxW = rw * 0.96;
-        const maxH = rh * 0.96;
+        const isFrontish = guide === 'car-front' || guide === 'car-rear';
+        const maxW = rw * (isFrontish ? 0.62 : 0.92);
+        const maxH = rh * (isFrontish ? 0.88 : 0.94);
         let dw = maxW;
         let dh = dw / aspect;
         if (dh > maxH) {
