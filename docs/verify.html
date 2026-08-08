@@ -13,10 +13,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v145</title>
+  <title>დოკუმენტების ატვირთვა v146</title>
   <script>
     (function () {
-      var VER = '145';
+      var VER = '146';
       try {
         var k = 'cc_verify_v';
         var need = localStorage.getItem(k) !== VER;
@@ -299,7 +299,7 @@
       overflow: hidden;
     }
     .cam-overlay.car-mode .cam-top p { max-width: 28rem; }
-    .cam-overlay.car-mode .take { width: 72px; }
+    .cam-overlay.car-mode .take { width: 88px; height: 88px; }
     .cam-overlay.car-mode .cam-top {
       padding: calc(6px + env(safe-area-inset-top)) 12px 6px;
       background: linear-gradient(180deg, rgba(0,0,0,.45), transparent);
@@ -319,7 +319,7 @@
       .cam-overlay.car-mode .cam-top h3 { font-size: 14px; }
       .cam-overlay.car-mode .cam-top p { font-size: 11px; margin-top: 2px; max-width: 70%; }
       .cam-overlay.car-mode .cam-top .close { margin-bottom: 0; font-size: 13px; }
-      .cam-overlay.car-mode .take { width: 64px; height: 64px; }
+      .cam-overlay.car-mode .take { width: 80px; height: 80px; }
       .cam-overlay.car-mode .cam-bottom { gap: 2px; padding-top: 6px; }
       .cam-overlay.car-mode .upload-link { font-size: 11px; }
       /* Safari landscape side tab bar — keep our UI clear of it */
@@ -367,7 +367,7 @@
       background: linear-gradient(0deg, rgba(0,0,0,.85), transparent);
     }
     .take {
-      width: 72px; height: 72px; padding: 0;
+      width: 88px; height: 88px; padding: 0;
       border: 3px solid rgba(255,255,255,.92);
       border-radius: 50%;
       background: rgba(255,255,255,.18);
@@ -375,10 +375,13 @@
       box-shadow: 0 4px 16px rgba(0,0,0,.35);
     }
     .take .shutter-core {
-      width: 56px; height: 56px; border-radius: 50%;
+      width: 68px; height: 68px; border-radius: 50%;
       background: #fff;
     }
-    .cam-overlay.car-mode .take .shutter-core { width: 54px; height: 54px; }
+    .cam-overlay.car-mode .take .shutter-core { width: 68px; height: 68px; }
+    @media (orientation: landscape) {
+      .cam-overlay.car-mode .take .shutter-core { width: 62px; height: 62px; }
+    }
     .upload-link {
       border: none; background: transparent; color: rgba(255,255,255,.8);
       font-size: 14px; text-decoration: underline; padding: 4px;
@@ -697,16 +700,16 @@
 
     // Line-art PNG guides (same style set)
     const CAR_PNG = {
-      'car-front': 'icons/car-front.png?v=145',
-      'car-rear': 'icons/car-rear.png?v=145',
-      'car-left': 'icons/car-left.png?v=145',
-      'car-right': 'icons/car-right.png?v=145',
-      'car-fl': 'icons/car-fl.png?v=145',
-      'car-fr': 'icons/car-fr.png?v=145',
-      'car-rl': 'icons/car-rl.png?v=145',
-      'car-rr': 'icons/car-rr.png?v=145',
-      'car-odo': 'icons/car-odo.png?v=145',
-      'car-glass': 'icons/car-glass.png?v=145'
+      'car-front': 'icons/car-front.png?v=144',
+      'car-rear': 'icons/car-rear.png?v=144',
+      'car-left': 'icons/car-left.png?v=144',
+      'car-right': 'icons/car-right.png?v=144',
+      'car-fl': 'icons/car-fl.png?v=144',
+      'car-fr': 'icons/car-fr.png?v=144',
+      'car-rl': 'icons/car-rl.png?v=144',
+      'car-rr': 'icons/car-rr.png?v=144',
+      'car-odo': 'icons/car-odo.png?v=144',
+      'car-glass': 'icons/car-glass.png?v=144'
     };
 
     function carPngImg(guide) {
