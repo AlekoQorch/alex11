@@ -13,10 +13,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v164</title>
+  <title>დოკუმენტების ატვირთვა v165</title>
   <script>
     (function () {
-      var VER = '164';
+      var VER = '165';
       try {
         var k = 'cc_verify_v';
         var need = localStorage.getItem(k) !== VER;
@@ -748,16 +748,16 @@
 
     // Line-art PNG guides (same style set)
     const CAR_PNG = {
-      'car-front': 'icons/car-front.png?v=164',
-      'car-rear': 'icons/car-rear.png?v=164',
-      'car-left': 'icons/car-left.png?v=164',
-      'car-right': 'icons/car-right.png?v=164',
-      'car-fl': 'icons/car-fl.png?v=164',
-      'car-fr': 'icons/car-fr.png?v=164',
-      'car-rl': 'icons/car-rl.png?v=164',
-      'car-rr': 'icons/car-rr.png?v=164',
-      'car-odo': 'icons/car-odo.png?v=164',
-      'car-glass': 'icons/car-glass.png?v=164'
+      'car-front': 'icons/car-front.png?v=165',
+      'car-rear': 'icons/car-rear.png?v=165',
+      'car-left': 'icons/car-left.png?v=165',
+      'car-right': 'icons/car-right.png?v=165',
+      'car-fl': 'icons/car-fl.png?v=165',
+      'car-fr': 'icons/car-fr.png?v=165',
+      'car-rl': 'icons/car-rl.png?v=165',
+      'car-rr': 'icons/car-rr.png?v=165',
+      'car-odo': 'icons/car-odo.png?v=165',
+      'car-glass': 'icons/car-glass.png?v=165'
     };
 
     function carPngImg(guide) {
@@ -1570,11 +1570,11 @@
       let fw;
       let fh;
       if (wide) {
-        // Side / corner / glass — wide + taller horizontal frame
+        // Side / corner / glass — almost full width, taller cutout
         fw = Math.min(rw * 0.99, cw * 0.98);
-        fh = Math.min(rh * 0.78, fw * 0.58, ch * 0.70);
-        // keep wider than tall, but allow more height
-        if (fh >= fw * 0.72) fh = fw * 0.55;
+        fh = Math.min(rh * 0.72, ch * 0.52);
+        // keep clearly wider than tall
+        if (fh > fw * 0.85) fh = fw * 0.70;
       } else {
         // Front / rear / odo — large near-square
         const side = Math.min(rw * 0.88, rh * 0.82, cw * 0.86, ch * 0.72);
