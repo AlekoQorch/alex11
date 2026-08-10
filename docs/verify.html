@@ -13,10 +13,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v150</title>
+  <title>დოკუმენტების ატვირთვა v151</title>
   <script>
     (function () {
-      var VER = '150';
+      var VER = '151';
       try {
         var k = 'cc_verify_v';
         var need = localStorage.getItem(k) !== VER;
@@ -223,17 +223,24 @@
     .slot .schematic.car-ico {
       align-items: center;
       justify-content: center;
-      padding: 10px 14px 34px;
+      padding: 0;
     }
     .slot .schematic.car-ico svg,
     .slot .schematic.car-ico img.car-png {
-      width: 68%;
-      max-width: 112px;
-      max-height: 72px;
-      height: auto;
+      position: absolute;
+      top: 8%;
+      left: 10%;
+      right: 10%;
+      bottom: 26%;
+      width: 100%;
+      height: 100%;
+      max-width: none;
+      max-height: none;
       opacity: 0.92;
       filter: drop-shadow(0 2px 6px rgba(0,0,0,.3));
       object-fit: contain;
+      object-position: center center;
+      box-sizing: border-box;
     }
     .slot-tap-hint {
       position: absolute;
@@ -698,16 +705,16 @@
 
     // Line-art PNG guides (same style set)
     const CAR_PNG = {
-      'car-front': 'icons/car-front.png?v=150',
-      'car-rear': 'icons/car-rear.png?v=150',
-      'car-left': 'icons/car-left.png?v=150',
-      'car-right': 'icons/car-right.png?v=150',
-      'car-fl': 'icons/car-fl.png?v=150',
-      'car-fr': 'icons/car-fr.png?v=150',
-      'car-rl': 'icons/car-rl.png?v=150',
-      'car-rr': 'icons/car-rr.png?v=150',
-      'car-odo': 'icons/car-odo.png?v=150',
-      'car-glass': 'icons/car-glass.png?v=150'
+      'car-front': 'icons/car-front.png?v=151',
+      'car-rear': 'icons/car-rear.png?v=151',
+      'car-left': 'icons/car-left.png?v=151',
+      'car-right': 'icons/car-right.png?v=151',
+      'car-fl': 'icons/car-fl.png?v=151',
+      'car-fr': 'icons/car-fr.png?v=151',
+      'car-rl': 'icons/car-rl.png?v=151',
+      'car-rr': 'icons/car-rr.png?v=151',
+      'car-odo': 'icons/car-odo.png?v=151',
+      'car-glass': 'icons/car-glass.png?v=151'
     };
 
     function carPngImg(guide) {
