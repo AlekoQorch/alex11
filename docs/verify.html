@@ -13,10 +13,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v151</title>
+  <title>დოკუმენტების ატვირთვა v152</title>
   <script>
     (function () {
-      var VER = '151';
+      var VER = '152';
       try {
         var k = 'cc_verify_v';
         var need = localStorage.getItem(k) !== VER;
@@ -221,26 +221,32 @@
       display: block;
     }
     .slot .schematic.car-ico {
+      display: flex;
       align-items: center;
       justify-content: center;
-      padding: 0;
+      padding: 10px 12px 34px;
+      box-sizing: border-box;
+    }
+    .slot .schematic.car-ico .car-ico-box {
+      flex: 1 1 auto;
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     .slot .schematic.car-ico svg,
     .slot .schematic.car-ico img.car-png {
-      position: absolute;
-      top: 8%;
-      left: 10%;
-      right: 10%;
-      bottom: 26%;
+      display: block;
       width: 100%;
       height: 100%;
-      max-width: none;
-      max-height: none;
+      max-width: 136px;
+      max-height: 76px;
       opacity: 0.92;
       filter: drop-shadow(0 2px 6px rgba(0,0,0,.3));
       object-fit: contain;
       object-position: center center;
-      box-sizing: border-box;
     }
     .slot-tap-hint {
       position: absolute;
@@ -705,21 +711,21 @@
 
     // Line-art PNG guides (same style set)
     const CAR_PNG = {
-      'car-front': 'icons/car-front.png?v=151',
-      'car-rear': 'icons/car-rear.png?v=151',
-      'car-left': 'icons/car-left.png?v=151',
-      'car-right': 'icons/car-right.png?v=151',
-      'car-fl': 'icons/car-fl.png?v=151',
-      'car-fr': 'icons/car-fr.png?v=151',
-      'car-rl': 'icons/car-rl.png?v=151',
-      'car-rr': 'icons/car-rr.png?v=151',
-      'car-odo': 'icons/car-odo.png?v=151',
-      'car-glass': 'icons/car-glass.png?v=151'
+      'car-front': 'icons/car-front.png?v=152',
+      'car-rear': 'icons/car-rear.png?v=152',
+      'car-left': 'icons/car-left.png?v=152',
+      'car-right': 'icons/car-right.png?v=152',
+      'car-fl': 'icons/car-fl.png?v=152',
+      'car-fr': 'icons/car-fr.png?v=152',
+      'car-rl': 'icons/car-rl.png?v=152',
+      'car-rr': 'icons/car-rr.png?v=152',
+      'car-odo': 'icons/car-odo.png?v=152',
+      'car-glass': 'icons/car-glass.png?v=152'
     };
 
     function carPngImg(guide) {
       const src = CAR_PNG[guide] || CAR_PNG['car-front'];
-      return `<img class="car-png" src="${src}" alt="" decoding="async">`;
+      return `<span class="car-ico-box"><img class="car-png" src="${src}" alt="" decoding="async"></span>`;
     }
 
     function svgCarFront() { return carPngImg('car-front'); }
