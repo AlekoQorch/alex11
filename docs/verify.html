@@ -13,10 +13,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v159</title>
+  <title>დოკუმენტების ატვირთვა v160</title>
   <script>
     (function () {
-      var VER = '159';
+      var VER = '160';
       try {
         var k = 'cc_verify_v';
         var need = localStorage.getItem(k) !== VER;
@@ -748,16 +748,16 @@
 
     // Line-art PNG guides (same style set)
     const CAR_PNG = {
-      'car-front': 'icons/car-front.png?v=159',
-      'car-rear': 'icons/car-rear.png?v=159',
-      'car-left': 'icons/car-left.png?v=159',
-      'car-right': 'icons/car-right.png?v=159',
-      'car-fl': 'icons/car-fl.png?v=159',
-      'car-fr': 'icons/car-fr.png?v=159',
-      'car-rl': 'icons/car-rl.png?v=159',
-      'car-rr': 'icons/car-rr.png?v=159',
-      'car-odo': 'icons/car-odo.png?v=159',
-      'car-glass': 'icons/car-glass.png?v=159'
+      'car-front': 'icons/car-front.png?v=160',
+      'car-rear': 'icons/car-rear.png?v=160',
+      'car-left': 'icons/car-left.png?v=160',
+      'car-right': 'icons/car-right.png?v=160',
+      'car-fl': 'icons/car-fl.png?v=160',
+      'car-fr': 'icons/car-fr.png?v=160',
+      'car-rl': 'icons/car-rl.png?v=160',
+      'car-rr': 'icons/car-rr.png?v=160',
+      'car-odo': 'icons/car-odo.png?v=160',
+      'car-glass': 'icons/car-glass.png?v=160'
     };
 
     function carPngImg(guide) {
@@ -1194,12 +1194,12 @@
       return { x: (w - rw) / 2, y: (h - rh) / 2 - yOff, rw, rh };
     }
 
-    /** Safe area for car outline — above shutter, below title; never over buttons */
+    /** Safe area for car frame — above shutter, below title */
     function carOverlayRect(w, h) {
       const landscape = w > h;
-      const topPad = h * (landscape ? 0.05 : 0.08);
-      const botPad = h * (landscape ? 0.14 : 0.13);
-      const sidePad = w * (landscape ? 0.03 : 0.02);
+      const topPad = h * (landscape ? 0.04 : 0.06);
+      const botPad = h * (landscape ? 0.12 : 0.12);
+      const sidePad = w * (landscape ? 0.02 : 0.03);
       return {
         x: sidePad,
         y: topPad,
@@ -1564,23 +1564,34 @@
 
     function drawCarSquareGuide(ctx, x, y, rw, rh, ok, w, text) {
       const wide = state.frameShape === 'wide';
-      // Square: nearly equal sides. Wide (side/corner): almost full width, shorter height.
+      const cw = ctx.canvas.width;
+      const ch = ctx.canvas.height;
+      const landscape = cw > ch;
+      // Size ≈ Aldagi-style guides: large, dominant cutout
       let fw;
       let fh;
       if (wide) {
-        fw = rw * 0.94;
-        fh = Math.min(rh * 0.52, fw * 0.42);
-      } else {
-        const side = Math.min(rw * 0.92, rh * 0.90);
+        if (landscape) {
+          fw = Math.min(rw * 0.96, cw * 0.92);
+          fh = Math.min(rh * 0.78, ch * 0.72);
+        } else {
+          // portrait side/corner — tall like the sample overlays
+          fw = Math.min(rw * 0.78, cw * 0.72);
+          fh = Math.min(rh * 0.86, ch * 0.78);
+        }
+      } else if (landscape) {
+        const side = Math.min(rw * 0.72, rh * 0.82, cw * 0.52, ch * 0.78);
         fw = side;
         fh = side;
+      } else {
+        // portrait front/rear — ~shoe-guide scale
+        fw = Math.min(rw * 0.86, cw * 0.78);
+        fh = Math.min(rh * 0.78, ch * 0.70, fw * 1.08);
       }
       const sx = x + (rw - fw) / 2;
       const sy = y + (rh - fh) / 2;
-      const radius = Math.min(16, Math.min(fw, fh) * 0.04);
+      const radius = Math.min(18, Math.min(fw, fh) * 0.035);
       const color = ok ? 'rgba(74,222,128,0.98)' : 'rgba(255,255,255,0.95)';
-      const cw = ctx.canvas.width;
-      const ch = ctx.canvas.height;
 
       ctx.save();
       // dim outside the frame; keep inside clear
@@ -1600,7 +1611,7 @@
 
       const label = text || 'აქ მოათავსეთ მანქანა';
       const maxTextW = fw * 0.88;
-      const fontSize = Math.max(14, Math.min(fh * 0.16, w * 0.04));
+      const fontSize = Math.max(14, Math.min(fh * 0.09, fw * 0.065, w * 0.042));
       ctx.font = `600 ${fontSize}px system-ui, -apple-system, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
