@@ -13,10 +13,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v154</title>
+  <title>დოკუმენტების ატვირთვა v158</title>
   <script>
     (function () {
-      var VER = '154';
+      var VER = '158';
       try {
         var k = 'cc_verify_v';
         var need = localStorage.getItem(k) !== VER;
@@ -356,6 +356,40 @@
     .cam-top h3 { font-size: 17px; font-weight: 700; line-height: 1.3; padding-right: 8px; }
     .cam-top p { font-size: 13px; color: rgba(255,255,255,.75); margin-top: 4px; line-height: 1.35; max-width: 36rem; }
     .cam-top p.ok { color: #4ade80; font-weight: 600; }
+    .cam-ref {
+      display: none;
+      margin-top: 8px;
+      width: 88px;
+      height: 52px;
+      border-radius: 8px;
+      border: 1.5px solid rgba(255,255,255,.35);
+      background: rgba(16,16,18,.72);
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .cam-ref.show { display: block; }
+    .cam-ref img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center;
+      display: block;
+      filter: brightness(1.15);
+    }
+    .cam-overlay.car-mode .cam-ref {
+      width: 96px;
+      height: 56px;
+    }
+    @media (orientation: landscape) {
+      .cam-overlay.car-mode .cam-ref {
+        position: absolute;
+        top: calc(6px + env(safe-area-inset-top));
+        right: max(16px, env(safe-area-inset-right));
+        margin-top: 0;
+        width: 110px;
+        height: 62px;
+      }
+    }
     .take.ready { background: #fff; }
     .take.ready .shutter-core { background: #22c55e; }
     .cam-stage {
@@ -466,6 +500,7 @@
       <button class="close" id="cam-close" type="button">დახურვა</button>
       <h3 id="cam-title">გადაიღეთ პირადობა</h3>
       <p id="cam-sub">დარწმუნდით, რომ განათება საკმარისია და ტექსტი იკითხება.</p>
+      <div class="cam-ref" id="cam-ref" aria-hidden="true"><img id="cam-ref-img" alt=""></div>
     </div>
     <div class="cam-stage" id="cam-stage">
       <video id="cam-video" playsinline muted autoplay></video>
@@ -511,18 +546,18 @@
       {
         id: 'car',
         title: 'ავტომობილი',
-        sub: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ · კვადრატში მოათავსეთ',
+        sub: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ · ჩარჩოში მოათავსეთ',
         sides: [
-          { key: 'car_front', label: 'წინა', side: 'front', guide: 'car-front', camTitle: 'წინა მხარე', camHint: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — მანქანის წინა მხარე კვადრატში.', placeText: 'აქ მოათავსეთ მანქანის წინა მხარე' },
-          { key: 'car_rear', label: 'უკანა', side: 'back', guide: 'car-rear', camTitle: 'უკანა მხარე', camHint: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — მანქანის უკანა მხარე კვადრატში.', placeText: 'აქ მოათავსეთ მანქანის უკანა მხარე' },
-          { key: 'car_left', label: 'მარცხენა გვერდი', side: 'side', guide: 'car-left', camTitle: 'მარცხენა გვერდი', camHint: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — მარცხენა გვერდი კვადრატში.', placeText: 'აქ მოათავსეთ მანქანის მარცხენა გვერდი' },
-          { key: 'car_right', label: 'მარჯვენა გვერდი', side: 'side', guide: 'car-right', camTitle: 'მარჯვენა გვერდი', camHint: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — მარჯვენა გვერდი კვადრატში.', placeText: 'აქ მოათავსეთ მანქანის მარჯვენა გვერდი' },
-          { key: 'car_fl', label: 'წინა · მარცხენა კუთხე', side: 'corner', guide: 'car-fl', camTitle: 'წინა-მარცხენა კუთხე', camHint: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — წინა-მარცხენა კუთხე კვადრატში.', placeText: 'აქ მოათავსეთ წინა-მარცხენა კუთხე' },
-          { key: 'car_fr', label: 'წინა · მარჯვენა კუთხე', side: 'corner', guide: 'car-fr', camTitle: 'წინა-მარჯვენა კუთხე', camHint: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — წინა-მარჯვენა კუთხე კვადრატში.', placeText: 'აქ მოათავსეთ წინა-მარჯვენა კუთხე' },
-          { key: 'car_rl', label: 'უკანა · მარცხენა კუთხე', side: 'corner', guide: 'car-rl', camTitle: 'უკანა-მარცხენა კუთხე', camHint: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — უკანა-მარცხენა კუთხე კვადრატში.', placeText: 'აქ მოათავსეთ უკანა-მარცხენა კუთხე' },
-          { key: 'car_rr', label: 'უკანა · მარჯვენა კუთხე', side: 'corner', guide: 'car-rr', camTitle: 'უკანა-მარჯვენა კუთხე', camHint: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — უკანა-მარჯვენა კუთხე კვადრატში.', placeText: 'აქ მოათავსეთ უკანა-მარჯვენა კუთხე' },
-          { key: 'car_odo', label: 'გარბენი', side: 'detail', guide: 'car-odo', camTitle: 'გარბენი (ოდომეტრი)', camHint: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — გარბენი კვადრატში.', placeText: 'აქ მოათავსეთ გარბენი (ოდომეტრი)' },
-          { key: 'car_glass', label: 'საქარე მინა · უკნიდან', side: 'detail', guide: 'car-glass', camTitle: 'საქარე მინა უკნიდან', camHint: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — საქარე მინა კვადრატში.', placeText: 'აქ მოათავსეთ საქარე მინა უკნიდან' }
+          { key: 'car_front', label: 'წინა', side: 'front', guide: 'car-front', frame: 'square', camTitle: 'წინა მხარე', camHint: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — მანქანის წინა მხარე ჩარჩოში.', placeText: 'აქ მოათავსეთ მანქანის წინა მხარე' },
+          { key: 'car_rear', label: 'უკანა', side: 'back', guide: 'car-rear', frame: 'square', camTitle: 'უკანა მხარე', camHint: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — მანქანის უკანა მხარე ჩარჩოში.', placeText: 'აქ მოათავსეთ მანქანის უკანა მხარე' },
+          { key: 'car_left', label: 'მარცხენა გვერდი', side: 'side', guide: 'car-left', frame: 'wide', camTitle: 'მარცხენა გვერდი', camHint: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — მარცხენა გვერდი განიერ ჩარჩოში.', placeText: 'აქ მოათავსეთ მანქანის მარცხენა გვერდი' },
+          { key: 'car_right', label: 'მარჯვენა გვერდი', side: 'side', guide: 'car-right', frame: 'wide', camTitle: 'მარჯვენა გვერდი', camHint: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — მარჯვენა გვერდი განიერ ჩარჩოში.', placeText: 'აქ მოათავსეთ მანქანის მარჯვენა გვერდი' },
+          { key: 'car_fl', label: 'წინა · მარცხენა კუთხე', side: 'corner', guide: 'car-fl', frame: 'wide', camTitle: 'წინა-მარცხენა კუთხე', camHint: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — წინა-მარცხენა კუთხე განიერ ჩარჩოში.', placeText: 'აქ მოათავსეთ წინა-მარცხენა კუთხე' },
+          { key: 'car_fr', label: 'წინა · მარჯვენა კუთხე', side: 'corner', guide: 'car-fr', frame: 'wide', camTitle: 'წინა-მარჯვენა კუთხე', camHint: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — წინა-მარჯვენა კუთხე განიერ ჩარჩოში.', placeText: 'აქ მოათავსეთ წინა-მარჯვენა კუთხე' },
+          { key: 'car_rl', label: 'უკანა · მარცხენა კუთხე', side: 'corner', guide: 'car-rl', frame: 'wide', camTitle: 'უკანა-მარცხენა კუთხე', camHint: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — უკანა-მარცხენა კუთხე განიერ ჩარჩოში.', placeText: 'აქ მოათავსეთ უკანა-მარცხენა კუთხე' },
+          { key: 'car_rr', label: 'უკანა · მარჯვენა კუთხე', side: 'corner', guide: 'car-rr', frame: 'wide', camTitle: 'უკანა-მარჯვენა კუთხე', camHint: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — უკანა-მარჯვენა კუთხე განიერ ჩარჩოში.', placeText: 'აქ მოათავსეთ უკანა-მარჯვენა კუთხე' },
+          { key: 'car_odo', label: 'გარბენი', side: 'detail', guide: 'car-odo', frame: 'square', camTitle: 'გარბენი (ოდომეტრი)', camHint: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — გარბენი ჩარჩოში.', placeText: 'აქ მოათავსეთ გარბენი (ოდომეტრი)' },
+          { key: 'car_glass', label: 'საქარე მინა · უკნიდან', side: 'detail', guide: 'car-glass', frame: 'wide', camTitle: 'საქარე მინა უკნიდან', camHint: 'ტელეფონი ჰორიზონტალურად დაიჭირეთ — საქარე მინა განიერ ჩარჩოში.', placeText: 'აქ მოათავსეთ საქარე მინა უკნიდან' }
         ]
       }
     ];
@@ -536,6 +571,7 @@
       captureSide: 'front',
       captureGuide: 'id',
       placeText: '',
+      frameShape: 'square',
       stream: null,
       alignOk: false,
       alignStreak: 0,
@@ -712,16 +748,16 @@
 
     // Line-art PNG guides (same style set)
     const CAR_PNG = {
-      'car-front': 'icons/car-front.png?v=154',
-      'car-rear': 'icons/car-rear.png?v=154',
-      'car-left': 'icons/car-left.png?v=154',
-      'car-right': 'icons/car-right.png?v=154',
-      'car-fl': 'icons/car-fl.png?v=154',
-      'car-fr': 'icons/car-fr.png?v=154',
-      'car-rl': 'icons/car-rl.png?v=154',
-      'car-rr': 'icons/car-rr.png?v=154',
-      'car-odo': 'icons/car-odo.png?v=154',
-      'car-glass': 'icons/car-glass.png?v=154'
+      'car-front': 'icons/car-front.png?v=158',
+      'car-rear': 'icons/car-rear.png?v=158',
+      'car-left': 'icons/car-left.png?v=158',
+      'car-right': 'icons/car-right.png?v=158',
+      'car-fl': 'icons/car-fl.png?v=158',
+      'car-fr': 'icons/car-fr.png?v=158',
+      'car-rl': 'icons/car-rl.png?v=158',
+      'car-rr': 'icons/car-rr.png?v=158',
+      'car-odo': 'icons/car-odo.png?v=158',
+      'car-glass': 'icons/car-glass.png?v=158'
     };
 
     function carPngImg(guide) {
@@ -994,6 +1030,7 @@
       state.captureSide = side.side;
       state.captureGuide = side.guide || (side.side === 'front' ? 'id' : 'back');
       state.placeText = side.placeText || '';
+      state.frameShape = side.frame || (side.side === 'side' || side.side === 'corner' ? 'wide' : 'square');
       state.alignOk = false;
       state.alignStreak = 0;
       state.autoShot = false;
@@ -1012,6 +1049,17 @@
       $('cam').classList.remove('native-capture');
       $('cam').classList.toggle('standalone-cam', isStandaloneApp());
       document.body.classList.add('cam-open');
+      const refEl = $('cam-ref');
+      const refImg = $('cam-ref-img');
+      if (car && CAR_PNG[state.captureGuide]) {
+        refImg.src = CAR_PNG[state.captureGuide];
+        refEl.classList.add('show');
+        refEl.setAttribute('aria-hidden', 'false');
+      } else {
+        refImg.removeAttribute('src');
+        refEl.classList.remove('show');
+        refEl.setAttribute('aria-hidden', 'true');
+      }
       document.body.style.overflow = 'hidden';
       try {
         await startStream();
@@ -1071,6 +1119,13 @@
       camEl.classList.remove('car-mode');
       camEl.classList.remove('native-capture');
       camEl.classList.remove('standalone-cam');
+      const refEl = $('cam-ref');
+      const refImg = $('cam-ref-img');
+      if (refEl) {
+        refEl.classList.remove('show');
+        refEl.setAttribute('aria-hidden', 'true');
+      }
+      if (refImg) refImg.removeAttribute('src');
       camEl.style.width = '';
       camEl.style.height = '';
       camEl.style.top = '';
@@ -1504,39 +1559,48 @@
     }
 
     function drawCarGuide(ctx, x, y, rw, rh, guide, ok, w) {
-      // Kept for compatibility — live camera uses drawCarSquareGuide for all car slots
       drawCarSquareGuide(ctx, x, y, rw, rh, ok, w, state.placeText || 'აქ მოათავსეთ მანქანა');
     }
 
     function drawCarSquareGuide(ctx, x, y, rw, rh, ok, w, text) {
-      // Nearly full width — only a small gap left/right
-      const side = Math.min(rw * 0.92, rh * 0.90);
-      const sx = x + (rw - side) / 2;
-      const sy = y + (rh - side) / 2;
-      const radius = Math.min(16, side * 0.04);
+      const wide = state.frameShape === 'wide';
+      // Square: nearly equal sides. Wide (side/corner): almost full width, shorter height.
+      let fw;
+      let fh;
+      if (wide) {
+        fw = rw * 0.94;
+        fh = Math.min(rh * 0.52, fw * 0.42);
+      } else {
+        const side = Math.min(rw * 0.92, rh * 0.90);
+        fw = side;
+        fh = side;
+      }
+      const sx = x + (rw - fw) / 2;
+      const sy = y + (rh - fh) / 2;
+      const radius = Math.min(16, Math.min(fw, fh) * 0.04);
       const color = ok ? 'rgba(74,222,128,0.98)' : 'rgba(255,255,255,0.95)';
       const cw = ctx.canvas.width;
       const ch = ctx.canvas.height;
 
       ctx.save();
-      // dim outside the square; keep inside clear
+      // dim outside the frame; keep inside clear
       ctx.fillStyle = 'rgba(0,0,0,0.55)';
       ctx.fillRect(0, 0, cw, ch);
       ctx.globalCompositeOperation = 'destination-out';
-      roundRect(ctx, sx, sy, side, side, radius);
+      roundRect(ctx, sx, sy, fw, fh, radius);
       ctx.fill();
       ctx.globalCompositeOperation = 'source-over';
 
       ctx.strokeStyle = color;
       ctx.lineWidth = Math.max(ok ? 3.2 : 2.4, w * (ok ? 0.0055 : 0.004));
       ctx.setLineDash([12, 9]);
-      roundRect(ctx, sx, sy, side, side, radius);
+      roundRect(ctx, sx, sy, fw, fh, radius);
       ctx.stroke();
       ctx.setLineDash([]);
 
       const label = text || 'აქ მოათავსეთ მანქანა';
-      const maxTextW = side * 0.82;
-      const fontSize = Math.max(15, Math.min(side * 0.078, w * 0.042));
+      const maxTextW = fw * 0.88;
+      const fontSize = Math.max(14, Math.min(fh * 0.16, w * 0.04));
       ctx.font = `600 ${fontSize}px system-ui, -apple-system, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -1561,13 +1625,13 @@
 
       const lineH = fontSize * 1.28;
       const totalH = lines.length * lineH;
-      let ty = sy + side / 2 - totalH / 2 + lineH / 2;
+      let ty = sy + fh / 2 - totalH / 2 + lineH / 2;
       lines.forEach((ln) => {
         ctx.shadowColor = 'rgba(0,0,0,0.75)';
         ctx.shadowBlur = 6;
         ctx.shadowOffsetY = 1;
         ctx.fillStyle = color;
-        ctx.fillText(ln, sx + side / 2, ty);
+        ctx.fillText(ln, sx + fw / 2, ty);
         ty += lineH;
       });
       ctx.restore();
