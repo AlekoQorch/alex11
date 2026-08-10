@@ -13,10 +13,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v155</title>
+  <title>დოკუმენტების ატვირთვა v154</title>
   <script>
     (function () {
-      var VER = '155';
+      var VER = '154';
       try {
         var k = 'cc_verify_v';
         var need = localStorage.getItem(k) !== VER;
@@ -711,16 +711,16 @@
 
     // Line-art PNG guides (same style set)
     const CAR_PNG = {
-      'car-front': 'icons/car-front.png?v=155',
-      'car-rear': 'icons/car-rear.png?v=155',
-      'car-left': 'icons/car-left.png?v=155',
-      'car-right': 'icons/car-right.png?v=155',
-      'car-fl': 'icons/car-fl.png?v=155',
-      'car-fr': 'icons/car-fr.png?v=155',
-      'car-rl': 'icons/car-rl.png?v=155',
-      'car-rr': 'icons/car-rr.png?v=155',
-      'car-odo': 'icons/car-odo.png?v=155',
-      'car-glass': 'icons/car-glass.png?v=155'
+      'car-front': 'icons/car-front.png?v=154',
+      'car-rear': 'icons/car-rear.png?v=154',
+      'car-left': 'icons/car-left.png?v=154',
+      'car-right': 'icons/car-right.png?v=154',
+      'car-fl': 'icons/car-fl.png?v=154',
+      'car-fr': 'icons/car-fr.png?v=154',
+      'car-rl': 'icons/car-rl.png?v=154',
+      'car-rr': 'icons/car-rr.png?v=154',
+      'car-odo': 'icons/car-odo.png?v=154',
+      'car-glass': 'icons/car-glass.png?v=154'
     };
 
     function carPngImg(guide) {
@@ -1331,8 +1331,12 @@
 
       if (isCarCapture()) {
         const ov = carOverlayRect(w, h);
-        drawCarChrome(ctx, w, h, ov.x, ov.y, ov.rw, ov.rh, ok);
-        drawCarGuide(ctx, ov.x, ov.y, ov.rw, ov.rh, state.captureGuide, ok, w);
+        if (state.captureGuide === 'car-front') {
+          drawCarFrontSquare(ctx, ov.x, ov.y, ov.rw, ov.rh, ok, w);
+        } else {
+          drawCarChrome(ctx, w, h, ov.x, ov.y, ov.rw, ov.rh, ok);
+          drawCarGuide(ctx, ov.x, ov.y, ov.rw, ov.rh, state.captureGuide, ok, w);
+        }
         return;
       }
 
@@ -1540,31 +1544,37 @@
     }
 
     function drawCarFrontSquare(ctx, x, y, rw, rh, ok, w) {
-      const side = Math.min(rw, rh) * 0.72;
+      // Nearly full width — only a small gap left/right
+      const side = Math.min(rw * 0.92, rh * 0.90);
       const sx = x + (rw - side) / 2;
       const sy = y + (rh - side) / 2;
+      const radius = Math.min(16, side * 0.04);
       const color = ok ? 'rgba(74,222,128,0.98)' : 'rgba(255,255,255,0.95)';
+      const cw = ctx.canvas.width;
+      const ch = ctx.canvas.height;
 
       ctx.save();
+      // dim outside the square; keep inside clear
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
+      ctx.fillRect(0, 0, cw, ch);
+      ctx.globalCompositeOperation = 'destination-out';
+      roundRect(ctx, sx, sy, side, side, radius);
+      ctx.fill();
+      ctx.globalCompositeOperation = 'source-over';
+
       ctx.strokeStyle = color;
       ctx.lineWidth = Math.max(ok ? 3.2 : 2.4, w * (ok ? 0.0055 : 0.004));
       ctx.setLineDash([12, 9]);
-      roundRect(ctx, sx, sy, side, side, Math.min(16, side * 0.04));
+      roundRect(ctx, sx, sy, side, side, radius);
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // soft fill so text stays readable on bright scenes
-      ctx.fillStyle = 'rgba(0,0,0,0.28)';
-      roundRect(ctx, sx, sy, side, side, Math.min(16, side * 0.04));
-      ctx.fill();
-
       const text = 'აქ მოათავსეთ მანქანის წინა მხარე';
       const maxTextW = side * 0.82;
-      let fontSize = Math.max(15, Math.min(side * 0.078, w * 0.042));
+      const fontSize = Math.max(15, Math.min(side * 0.078, w * 0.042));
       ctx.font = `600 ${fontSize}px system-ui, -apple-system, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillStyle = color;
 
       const words = text.split(' ');
       let lines = [];
@@ -1579,7 +1589,6 @@
         }
       });
       if (line) lines.push(line);
-      // Prefer 2 lines for this phrase
       if (lines.length === 1 && words.length >= 4) {
         const mid = Math.ceil(words.length / 2);
         lines = [words.slice(0, mid).join(' '), words.slice(mid).join(' ')];
@@ -1589,6 +1598,10 @@
       const totalH = lines.length * lineH;
       let ty = sy + side / 2 - totalH / 2 + lineH / 2;
       lines.forEach((ln) => {
+        ctx.shadowColor = 'rgba(0,0,0,0.75)';
+        ctx.shadowBlur = 6;
+        ctx.shadowOffsetY = 1;
+        ctx.fillStyle = color;
         ctx.fillText(ln, sx + side / 2, ty);
         ty += lineH;
       });
