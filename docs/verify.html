@@ -13,10 +13,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v161</title>
+  <title>დოკუმენტების ატვირთვა v162</title>
   <script>
     (function () {
-      var VER = '161';
+      var VER = '162';
       try {
         var k = 'cc_verify_v';
         var need = localStorage.getItem(k) !== VER;
@@ -748,16 +748,16 @@
 
     // Line-art PNG guides (same style set)
     const CAR_PNG = {
-      'car-front': 'icons/car-front.png?v=161',
-      'car-rear': 'icons/car-rear.png?v=161',
-      'car-left': 'icons/car-left.png?v=161',
-      'car-right': 'icons/car-right.png?v=161',
-      'car-fl': 'icons/car-fl.png?v=161',
-      'car-fr': 'icons/car-fr.png?v=161',
-      'car-rl': 'icons/car-rl.png?v=161',
-      'car-rr': 'icons/car-rr.png?v=161',
-      'car-odo': 'icons/car-odo.png?v=161',
-      'car-glass': 'icons/car-glass.png?v=161'
+      'car-front': 'icons/car-front.png?v=162',
+      'car-rear': 'icons/car-rear.png?v=162',
+      'car-left': 'icons/car-left.png?v=162',
+      'car-right': 'icons/car-right.png?v=162',
+      'car-fl': 'icons/car-fl.png?v=162',
+      'car-fr': 'icons/car-fr.png?v=162',
+      'car-rl': 'icons/car-rl.png?v=162',
+      'car-rr': 'icons/car-rr.png?v=162',
+      'car-odo': 'icons/car-odo.png?v=162',
+      'car-glass': 'icons/car-glass.png?v=162'
     };
 
     function carPngImg(guide) {
@@ -1566,27 +1566,20 @@
       const wide = state.frameShape === 'wide';
       const cw = ctx.canvas.width;
       const ch = ctx.canvas.height;
-      const landscape = cw > ch;
-      // Size ≈ Aldagi-style guides: large, dominant cutout
+      // Size ≈ large Aldagi-scale cutouts; wide = always landscape rectangle
       let fw;
       let fh;
       if (wide) {
-        if (landscape) {
-          fw = Math.min(rw * 0.96, cw * 0.92);
-          fh = Math.min(rh * 0.78, ch * 0.72);
-        } else {
-          // portrait side/corner — tall like the sample overlays
-          fw = Math.min(rw * 0.78, cw * 0.72);
-          fh = Math.min(rh * 0.86, ch * 0.78);
-        }
-      } else if (landscape) {
-        const side = Math.min(rw * 0.72, rh * 0.82, cw * 0.52, ch * 0.78);
+        // Side / corner / glass — wide horizontal frame
+        fw = Math.min(rw * 0.96, cw * 0.94);
+        fh = Math.min(rh * 0.62, fw * 0.48, ch * 0.58);
+        // ensure clearly wider than tall
+        if (fh >= fw * 0.72) fh = fw * 0.48;
+      } else {
+        // Front / rear / odo — large near-square
+        const side = Math.min(rw * 0.88, rh * 0.82, cw * 0.86, ch * 0.72);
         fw = side;
         fh = side;
-      } else {
-        // portrait front/rear — ~shoe-guide scale
-        fw = Math.min(rw * 0.86, cw * 0.78);
-        fh = Math.min(rh * 0.78, ch * 0.70, fw * 1.08);
       }
       const sx = x + (rw - fw) / 2;
       const sy = y + (rh - fh) / 2;
@@ -1611,7 +1604,7 @@
 
       const label = text || 'აქ მოათავსეთ მანქანა';
       const maxTextW = fw * 0.88;
-      const fontSize = Math.max(14, Math.min(fh * 0.09, fw * 0.065, w * 0.042));
+      const fontSize = Math.max(14, Math.min(fh * 0.14, fw * 0.055, w * 0.042));
       ctx.font = `600 ${fontSize}px system-ui, -apple-system, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
