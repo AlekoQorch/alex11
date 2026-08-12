@@ -7,16 +7,16 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="დოკუმენტები">
-  <meta name="theme-color" content="#0a0c10">
+  <meta name="theme-color" content="#000000">
   <link rel="manifest" href="manifest-verify.json">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v179</title>
+  <title>დოკუმენტების ატვირთვა v180</title>
   <script>
     (function () {
-      var VER = '179';
+      var VER = '180';
       try {
         var k = 'cc_verify_v';
         var need = localStorage.getItem(k) !== VER;
@@ -50,28 +50,25 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     :root {
-      --bg: #0b0d11;
-      --bg-glow: linear-gradient(180deg, #12151c 0%, #0b0d11 42%, #090a0e 100%);
-      --surface: #151820;
-      --surface-2: #0f1116;
-      --line: rgba(255,255,255,.08);
-      --line-strong: rgba(255,255,255,.14);
-      --text: #f2f4f8;
-      --dim: #9aa3b2;
-      --teal: #2dd4bf;
+      --bg: #0b0b0c;
+      --surface: #17171a;
+      --surface-2: #101012;
+      --line: #2f2f34;
+      --line-strong: #2f2f34;
+      --text: #f3f3f3;
+      --dim: #9b9ba1;
+      --teal: #14b8a6;
       --green: #22c55e;
       --danger: #f87171;
-      --shadow: 0 10px 24px rgba(0,0,0,.25);
       --tap: 48px;
     }
     html, body { height: 100%; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      background: var(--bg-glow);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
       color: var(--text);
       min-height: 100dvh;
       line-height: 1.45;
-      -webkit-font-smoothing: antialiased;
     }
     .app {
       max-width: 480px;
@@ -97,11 +94,10 @@
       color: var(--text); font-size: 20px; flex-shrink: 0;
       transition: transform .12s ease, background .12s ease;
     }
-    .back:active { transform: scale(0.96); background: #1a1e27; }
+    .back:active { transform: scale(0.96); background: #1c1c20; }
     .topbar h1 {
-      font-size: 20px;
+      font-size: 17px;
       font-weight: 700;
-      letter-spacing: -0.02em;
       line-height: 1.2;
       flex: 1;
       min-width: 0;
@@ -110,70 +106,67 @@
       flex-shrink: 0;
       font-size: 12px;
       font-weight: 700;
-      color: #a7f3d0;
-      background: rgba(45,212,191,.1);
-      border: 1px solid rgba(45,212,191,.2);
+      color: var(--dim);
+      background: var(--surface-2);
+      border: 1px solid var(--line);
       border-radius: 999px;
       padding: 7px 11px;
       font-variant-numeric: tabular-nums;
     }
     .sub {
       color: var(--dim);
-      font-size: 14px;
-      margin-bottom: 14px;
-      line-height: 1.5;
+      font-size: 12px;
+      margin-bottom: 10px;
+      line-height: 1.35;
       flex-shrink: 0;
     }
     .progress {
-      height: 3px; background: rgba(255,255,255,.06); border-radius: 99px; overflow: hidden;
-      margin-bottom: 14px; flex-shrink: 0;
+      height: 3px; background: var(--line); border-radius: 99px; overflow: hidden;
+      margin-bottom: 10px; flex-shrink: 0;
     }
     .progress > i {
       display: block; height: 100%; width: 0;
-      background: linear-gradient(90deg, #14b8a6, #34d399);
-      transition: width .3s ease;
+      background: var(--teal);
+      transition: width .25s ease;
     }
     .card {
       background: var(--surface);
       border: 1px solid var(--line);
-      border-radius: 18px;
-      padding: 18px 16px 16px;
+      border-radius: 14px;
+      padding: 14px;
       margin-bottom: 14px;
     }
-    .field-label { display: block; font-size: 13px; color: var(--dim); margin: 10px 0 7px; font-weight: 600; }
+    .field-label { display: block; font-size: 12px; color: var(--dim); margin: 8px 0 5px; }
     .field-label:first-child { margin-top: 0; }
     .field-inp {
-      width: 100%; background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: 14px;
-      color: var(--text); padding: 15px 14px; font-size: 17px; font-family: inherit;
+      width: 100%; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px;
+      color: var(--text); padding: 11px 12px; font-size: 16px; font-family: inherit;
       min-height: var(--tap);
-      transition: border-color .15s ease, box-shadow .15s ease;
     }
     .field-inp:focus {
       outline: none;
-      border-color: rgba(45,212,191,.5);
-      box-shadow: 0 0 0 3px rgba(45,212,191,.12);
+      border-color: var(--teal);
     }
     .field-inp.invalid { border-color: #ef4444; }
     .field-inp:read-only { color: #c4c4c8; }
     .field-err {
-      display: none; color: var(--danger); font-size: 12px; margin: 6px 0 2px; line-height: 1.35;
+      display: none; color: var(--danger); font-size: 12px; margin: 5px 0 2px; line-height: 1.35;
     }
     .field-err.show { display: block; }
     .btn {
-      border: none; border-radius: 14px; padding: 15px 16px; font-size: 16px; font-weight: 700;
+      border: none; border-radius: 12px; padding: 12px 14px; font-size: 15px; font-weight: 700;
       font-family: inherit;
-      min-height: 52px;
-      background: linear-gradient(180deg, #2dd4bf, #14b8a6);
+      min-height: 48px;
+      background: var(--teal);
       color: #042f2e; width: 100%;
-      transition: transform .12s ease, opacity .12s ease;
     }
-    .btn:active { transform: scale(0.985); }
+    .btn:active { opacity: 0.92; }
     .btn:disabled { opacity: 0.35; }
     .btn.secondary {
-      background: transparent; border: 1px solid var(--line-strong); color: var(--text);
+      background: transparent; border: 1px solid var(--line); color: var(--text);
     }
     .btn.green {
-      background: linear-gradient(180deg, #4ade80, #22c55e); color: #052e16;
+      background: var(--green); color: #052e16;
     }
     .row-btns { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
     .row-btns .btn { flex: 1; min-width: 140px; }
@@ -817,16 +810,16 @@
 
     // Line-art PNG guides (same style set)
     const CAR_PNG = {
-      'car-front': 'icons/car-front.png?v=179',
-      'car-rear': 'icons/car-rear.png?v=179',
-      'car-left': 'icons/car-left.png?v=179',
-      'car-right': 'icons/car-right.png?v=179',
-      'car-fl': 'icons/car-fl.png?v=179',
-      'car-fr': 'icons/car-fr.png?v=179',
-      'car-rl': 'icons/car-rl.png?v=179',
-      'car-rr': 'icons/car-rr.png?v=179',
-      'car-odo': 'icons/car-odo.png?v=179',
-      'car-glass': 'icons/car-glass.png?v=179'
+      'car-front': 'icons/car-front.png?v=180',
+      'car-rear': 'icons/car-rear.png?v=180',
+      'car-left': 'icons/car-left.png?v=180',
+      'car-right': 'icons/car-right.png?v=180',
+      'car-fl': 'icons/car-fl.png?v=180',
+      'car-fr': 'icons/car-fr.png?v=180',
+      'car-rl': 'icons/car-rl.png?v=180',
+      'car-rr': 'icons/car-rr.png?v=180',
+      'car-odo': 'icons/car-odo.png?v=180',
+      'car-glass': 'icons/car-glass.png?v=180'
     };
 
     function carPngImg(guide) {
