@@ -3,7 +3,7 @@
   "name": "დოკუმენტები",
   "short_name": "დოკუმენტები",
   "description": "დოკუმენტებისა და მანქანის ფოტოების ატვირთვა",
-  "start_url": "./verify.html?v=182&step=car&test=1",
+  "start_url": "./verify.html?v=183&step=car&test=1",
   "scope": "./",
   "display": "standalone",
   "background_color": "#000000",
