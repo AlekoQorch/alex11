@@ -13,10 +13,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v180</title>
+  <title>დოკუმენტების ატვირთვა v181</title>
   <script>
     (function () {
-      var VER = '180';
+      var VER = '181';
       try {
         var k = 'cc_verify_v';
         var need = localStorage.getItem(k) !== VER;
@@ -241,8 +241,8 @@
     }
     .slot {
       position: relative;
-      border: 1px solid var(--line-strong);
-      border-radius: 16px;
+      border: 1.5px solid var(--line);
+      border-radius: 12px;
       background: var(--surface-2);
       overflow: hidden;
       flex: 1;
@@ -258,18 +258,17 @@
       text-align: left;
       appearance: none;
       -webkit-appearance: none;
-      transition: border-color .15s ease, transform .12s ease, background .15s ease;
     }
-    .slot:active { transform: scale(0.985); background: #13151b; }
+    .slot:active { opacity: 0.92; }
     .slot.has-photo {
-      border-color: rgba(45,212,191,.5);
+      border-color: rgba(20,184,166,.55);
     }
     .slot.has-photo::after {
       content: "";
       position: absolute; top: 10px; right: 10px; z-index: 2;
       width: 22px; height: 22px; border-radius: 50%;
       background: #22c55e;
-      box-shadow: 0 0 0 2px rgba(11,13,17,.8);
+      box-shadow: 0 0 0 2px rgba(11,11,12,.8);
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M3.5 8.2l2.8 2.8 6.2-6.2' stroke='%23052e16' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
       background-size: 13px 13px;
       background-position: center;
@@ -298,7 +297,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 14px 14px 40px;
+      padding: 8px 10px 30px;
       box-sizing: border-box;
     }
     .slot .schematic.car-ico .car-ico-box {
@@ -315,8 +314,8 @@
       display: block;
       width: 100%;
       height: 100%;
-      max-width: 156px;
-      max-height: 88px;
+      max-width: 172px;
+      max-height: 100px;
       opacity: 0.95;
       object-fit: contain;
       object-position: center center;
@@ -810,16 +809,16 @@
 
     // Line-art PNG guides (same style set)
     const CAR_PNG = {
-      'car-front': 'icons/car-front.png?v=180',
-      'car-rear': 'icons/car-rear.png?v=180',
-      'car-left': 'icons/car-left.png?v=180',
-      'car-right': 'icons/car-right.png?v=180',
-      'car-fl': 'icons/car-fl.png?v=180',
-      'car-fr': 'icons/car-fr.png?v=180',
-      'car-rl': 'icons/car-rl.png?v=180',
-      'car-rr': 'icons/car-rr.png?v=180',
-      'car-odo': 'icons/car-odo.png?v=180',
-      'car-glass': 'icons/car-glass.png?v=180'
+      'car-front': 'icons/car-front.png?v=181',
+      'car-rear': 'icons/car-rear.png?v=181',
+      'car-left': 'icons/car-left.png?v=181',
+      'car-right': 'icons/car-right.png?v=181',
+      'car-fl': 'icons/car-fl.png?v=181',
+      'car-fr': 'icons/car-fr.png?v=181',
+      'car-rl': 'icons/car-rl.png?v=181',
+      'car-rr': 'icons/car-rr.png?v=181',
+      'car-odo': 'icons/car-odo.png?v=181',
+      'car-glass': 'icons/car-glass.png?v=181'
     };
 
     function carPngImg(guide) {
