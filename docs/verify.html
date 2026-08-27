@@ -9,14 +9,14 @@
   <meta name="apple-mobile-web-app-title" content="დოკუმენტები">
   <meta name="theme-color" content="#000000">
   <link rel="manifest" href="manifest-verify.json">
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon-v197.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v197</title>
+  <title>დოკუმენტების ატვირთვა v198</title>
   <script>
     (function () {
-      var VER = '197';
+      var VER = '198';
       try {
         var k = 'cc_verify_v';
         var need = localStorage.getItem(k) !== VER;
@@ -371,8 +371,8 @@
       max-width: none; margin: 0; overflow: hidden;
     }
     .cam-overlay.car-mode .cam-top p { max-width: 28rem; }
-    .cam-overlay.car-mode .take { width: 96px; height: 96px; }
-    .cam-overlay.car-mode .take .shutter-core { width: 74px; height: 74px; }
+    .cam-overlay.car-mode .take { width: 84px; height: 84px; }
+    .cam-overlay.car-mode .take .shutter-core { width: 64px; height: 64px; }
     .cam-overlay.car-mode .cam-top {
       padding: calc(8px + env(safe-area-inset-top)) 14px 8px;
       background: linear-gradient(180deg, rgba(0,0,0,.55), transparent);
@@ -390,8 +390,8 @@
       .cam-overlay.car-mode .cam-top h3 { font-size: 14px; }
       .cam-overlay.car-mode .cam-top p { font-size: 11px; margin-top: 2px; max-width: 70%; }
       .cam-overlay.car-mode .cam-top .close { margin-bottom: 0; font-size: 13px; }
-      .cam-overlay.car-mode .take { width: 88px; height: 88px; }
-      .cam-overlay.car-mode .take .shutter-core { width: 68px; height: 68px; }
+      .cam-overlay.car-mode .take { width: 76px; height: 76px; }
+      .cam-overlay.car-mode .take .shutter-core { width: 58px; height: 58px; }
       .cam-overlay.car-mode .cam-bottom { gap: 2px; padding-top: 6px; }
       .cam-overlay.car-mode .upload-link { font-size: 11px; }
       .cam-overlay.car-mode:not(.standalone-cam) .cam-top,
@@ -421,9 +421,9 @@
     .cam-top p.ok { color: #86efac; font-weight: 700; }
     .cam-ref {
       display: none;
-      margin-top: 10px;
-      width: 104px;
-      height: 60px;
+      margin-top: 4px;
+      width: 76px;
+      height: 42px;
       border-radius: 12px;
       border: 1px solid rgba(255,255,255,.25);
       background: rgba(8,10,14,.78);
@@ -435,13 +435,13 @@
       width: 100%; height: 100%; object-fit: contain; object-position: center;
       display: block; filter: brightness(1.15);
     }
-    .cam-overlay.car-mode .cam-ref { width: 104px; height: 60px; }
+    .cam-overlay.car-mode .cam-ref { width: 76px; height: 42px; }
     @media (orientation: landscape) {
       .cam-overlay.car-mode .cam-ref {
         position: absolute;
         top: calc(8px + env(safe-area-inset-top));
         right: max(16px, env(safe-area-inset-right));
-        margin-top: 0; width: 118px; height: 66px;
+        margin-top: 0; width: 92px; height: 52px;
       }
     }
     .take.ready { background: #fff; }
@@ -465,7 +465,7 @@
       background: linear-gradient(0deg, rgba(0,0,0,.85), transparent);
     }
     .take {
-      width: 84px; height: 84px; padding: 0;
+      width: 76px; height: 76px; padding: 0;
       border: 3px solid rgba(255,255,255,.92);
       border-radius: 50%;
       background: rgba(255,255,255,.16);
@@ -474,7 +474,7 @@
     }
     .take:active { transform: scale(0.94); }
     .take .shutter-core {
-      width: 66px; height: 66px; border-radius: 50%;
+      width: 58px; height: 58px; border-radius: 50%;
       background: #fff;
       transition: background .15s ease;
     }

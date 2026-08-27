@@ -13,15 +13,15 @@
   <meta http-equiv="Expires" content="0">
   <title>Cold Caller v150</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="apple-touch-icon-v197.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon-v197.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '197';
+    window.__CC_VER = '198';
     (function () {
       function go(v) {
         try {
@@ -775,7 +775,7 @@
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '197';
+      const v = window.__CC_VER || '198';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
