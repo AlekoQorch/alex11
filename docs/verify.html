@@ -8,10 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v117</title>
+  <title>დოკუმენტების ატვირთვა v118</title>
   <script>
     (function () {
-      var VER = '117';
+      var VER = '118';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -215,6 +215,23 @@
       white-space: nowrap;
     }
     .slot.has-photo .slot-tap-hint { color: rgba(255,255,255,.8); text-shadow: 0 1px 3px rgba(0,0,0,.6); }
+    #step-group.has-tech-data #group-slots {
+      flex: 0 1 auto;
+      max-height: 42vh;
+    }
+    #step-group.has-tech-data .vin-card,
+    #step-group.has-tech-data #group-next { flex-shrink: 0; }
+    .vin-card {
+      background: var(--surface); border: 1px solid var(--line);
+      border-radius: 14px; padding: 14px; margin-bottom: 10px;
+    }
+    .vin-card h3 { font-size: 15px; margin-bottom: 3px; }
+    .vin-card p { font-size: 12px; color: var(--dim); line-height: 1.4; }
+    .vin-actions { display: flex; gap: 8px; margin-top: 10px; }
+    .vin-actions .field-inp { flex: 1; }
+    .vin-status { min-height: 17px; margin-top: 8px; font-size: 12px; color: var(--dim); }
+    .vin-status.ok { color: #86efac; font-weight: 700; }
+    .vin-status.error { color: #f87171; }
     #group-next { flex-shrink: 0; }
     .status-pill { font-size: 12px; color: var(--dim); margin-top: 8px; }
     .done-list { display: grid; gap: 8px; }
@@ -320,6 +337,23 @@
       </div>
       <p class="sub" id="group-sub">წინა და უკანა · ჩარჩოზე დააჭირეთ გადასაღებად</p>
       <div id="group-slots"></div>
+      <div class="vin-card hide" id="vin-lookup">
+        <h3>ავტომობილის მონაცემები</h3>
+        <p>რეგისტრაციის ნომერი იკითხება პირველი გვერდის A ველიდან, VIN — უკანა გვერდის E ველიდან. გადაამოწმეთ და დაადასტურეთ ორივე კოდი.</p>
+        <label class="field-label" for="plate-input">რეგისტრაციის ნომერი · A</label>
+        <div class="vin-actions">
+          <input class="field-inp" id="plate-input" type="text" inputmode="text" autocomplete="off"
+            autocapitalize="characters" maxlength="10" placeholder="მაგ. S0008OF" aria-label="ავტომობილის რეგისტრაციის ნომერი">
+        </div>
+        <p class="vin-status" id="plate-status" aria-live="polite"></p>
+        <label class="field-label" for="vin-input">VIN კოდი · E</label>
+        <div class="vin-actions">
+          <input class="field-inp" id="vin-input" type="text" inputmode="text" autocomplete="off"
+            autocapitalize="characters" maxlength="17" placeholder="მაგ. WDF…" aria-label="ავტომობილის VIN">
+        </div>
+        <p class="vin-status" id="vin-status" aria-live="polite"></p>
+        <button class="btn secondary" id="confirm-tech-data" type="button" disabled>ვამოწმებ და ვადასტურებ მონაცემებს</button>
+      </div>
       <button class="btn" id="group-next" type="button" disabled>შემდეგი</button>
     </section>
 
@@ -424,7 +458,16 @@
       alignStreak: 0,
       alignTimer: null,
       autoShot: false,
-      jumpId: ''
+      jumpId: '',
+      vin: '',
+      vinStatus: '',
+      vinReading: false,
+      plate: '',
+      plateStatus: '',
+      plateReading: false,
+      plateConfirmed: false,
+      plateSource: '',
+      techDataConfirmed: false
     };
 
     const params = new URLSearchParams(location.search);
@@ -771,6 +814,282 @@
       return svgBack();
     }
 
+    function normalizeVin(raw, allowUnlabeled = false) {
+      const lines = String(raw || '').toUpperCase().split(/\r?\n/);
+      const fieldELines = lines.map((line) => {
+        const match = line.match(/(?:^|\s)E(?:[.:]|\s)+(.+)/);
+        return match ? match[1] : '';
+      }).filter(Boolean);
+      if (!fieldELines.length && !allowUnlabeled) return '';
+      const candidates = (fieldELines.length ? fieldELines : lines)
+        .flatMap((line) => line.match(/[A-Z0-9][A-Z0-9\s-]{15,28}/g) || []);
+      const found = [];
+      for (const chunk of candidates) {
+        let candidate = chunk.replace(/[^A-Z0-9]/g, '');
+        if (candidate.startsWith('W1DF')) candidate = 'WDF' + candidate.slice(4);
+        for (let i = 0; i <= candidate.length - 17; i++) {
+          let vin = candidate.slice(i, i + 17).replace(/I/g, '1').replace(/[OQ]/g, '0');
+          if (vin.startsWith('1DF')) vin = 'WDF' + vin.slice(3);
+          const digits = (vin.match(/\d/g) || []).length;
+          if (/^[A-HJ-NPR-Z0-9]{17}$/.test(vin) && digits >= 5) found.push(vin);
+        }
+      }
+      return found.sort((a, b) => (b.match(/\d/g) || []).length - (a.match(/\d/g) || []).length)[0] || '';
+    }
+
+    function normalizePlate(raw) {
+      const lines = String(raw || '').toUpperCase().split(/\r?\n/);
+      const numberOnALine = (line) => {
+        const match = line.match(/(?:^|\s)A(?:[.:]|\s)+(.+)/);
+        if (!match) return '';
+        const candidate = match[1].replace(/\$/g, 'S').match(/[A-Z0-9]{5,10}/);
+        const value = candidate ? candidate[0] : '';
+        return /[A-Z]/.test(value) && /\d/.test(value) ? value : '';
+      };
+      return lines.map(numberOnALine).find(Boolean) || '';
+    }
+
+    function renderVinLookup(show) {
+      const card = $('vin-lookup');
+      if (!card) return;
+      card.classList.toggle('hide', !show);
+      if (!show) return;
+      const plateInput = $('plate-input');
+      const input = $('vin-input');
+      const plateStatus = $('plate-status');
+      const status = $('vin-status');
+      const confirm = $('confirm-tech-data');
+      plateInput.value = state.plate;
+      input.value = state.vin;
+      plateStatus.textContent = state.plateStatus;
+      status.textContent = state.vinStatus;
+      plateStatus.className = 'vin-status' + (state.plate && state.plateConfirmed
+        ? ' ok'
+        : (state.plateStatus && !state.plateReading ? ' error' : ''));
+      status.className = 'vin-status' + (state.vin
+        ? ' ok'
+        : (state.vinStatus && !state.vinReading ? ' error' : ''));
+      if (confirm) {
+        const canConfirm = /^(?=.*[A-Z])(?=.*\d)[A-Z0-9]{5,10}$/.test(state.plate)
+          && /^[A-HJ-NPR-Z0-9]{17}$/.test(state.vin);
+        confirm.disabled = !canConfirm;
+        confirm.textContent = state.techDataConfirmed
+          ? 'მონაცემები დადასტურებულია ✓'
+          : 'ვამოწმებ და ვადასტურებ მონაცემებს';
+      }
+    }
+
+    let ocrLibraryPromise;
+    function loadOcrLibrary() {
+      if (window.Tesseract) return Promise.resolve(window.Tesseract);
+      if (ocrLibraryPromise) return ocrLibraryPromise;
+      ocrLibraryPromise = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@7/dist/tesseract.min.js';
+        script.async = true;
+        script.onload = () => window.Tesseract ? resolve(window.Tesseract) : reject(new Error('OCR unavailable'));
+        script.onerror = () => reject(new Error('OCR could not be loaded'));
+        document.head.appendChild(script);
+      });
+      return ocrLibraryPromise;
+    }
+
+    let qrLibraryPromise;
+    function loadQrLibrary() {
+      if (window.jsQR) return Promise.resolve(window.jsQR);
+      if (qrLibraryPromise) return qrLibraryPromise;
+      qrLibraryPromise = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
+        script.async = true;
+        script.onload = () => window.jsQR ? resolve(window.jsQR) : reject(new Error('QR decoder unavailable'));
+        script.onerror = () => reject(new Error('QR decoder could not be loaded'));
+        document.head.appendChild(script);
+      });
+      return qrLibraryPromise;
+    }
+
+    function registrationFromQr(payload) {
+      const firstValue = String(payload || '').split(/[\/\r\n]/)[0]
+        .toUpperCase().replace(/[^A-Z0-9]/g, '');
+      return /^(?=.*[A-Z])(?=.*\d)[A-Z0-9]{5,10}$/.test(firstValue) ? firstValue : '';
+    }
+
+    function qrRegions(width, height) {
+      return [
+        { x: 0, y: 0, w: width, h: height, scale: 1 },
+        { x: Math.round(width * 0.68), y: Math.round(height * 0.18), w: Math.round(width * 0.30), h: Math.round(height * 0.35), scale: 2 },
+        { x: Math.round(width * 0.60), y: Math.round(height * 0.12), w: Math.round(width * 0.38), h: Math.round(height * 0.45), scale: 2 }
+      ];
+    }
+
+    function decodeQrRegion(jsQR, ctx, region) {
+      const { x, y, w, h, scale } = region;
+      const sw = Math.max(1, w);
+      const sh = Math.max(1, h);
+      const canvas = document.createElement('canvas');
+      canvas.width = sw * scale;
+      canvas.height = sh * scale;
+      const out = canvas.getContext('2d', { willReadFrequently: true });
+      out.drawImage(ctx.canvas, x, y, sw, sh, 0, 0, canvas.width, canvas.height);
+      const pixels = out.getImageData(0, 0, canvas.width, canvas.height);
+      return jsQR(pixels.data, pixels.width, pixels.height, { inversionAttempts: 'attemptBoth' });
+    }
+
+    async function readRegistrationFromQr() {
+      const photo = state.photos.tech_back;
+      if (!photo) return;
+      try {
+        const jsQR = await loadQrLibrary();
+        const image = new Image();
+        const registration = await new Promise((resolve, reject) => {
+          image.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = image.naturalWidth;
+            canvas.height = image.naturalHeight;
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            ctx.drawImage(image, 0, 0);
+            for (const region of qrRegions(canvas.width, canvas.height)) {
+              const decoded = decodeQrRegion(jsQR, ctx, region);
+              const value = registrationFromQr(decoded && decoded.data);
+              if (value) {
+                resolve(value);
+                return;
+              }
+            }
+            resolve('');
+          };
+          image.onerror = () => reject(new Error('Photo could not be read'));
+          image.src = photo;
+        });
+        if (!registration) return;
+        state.plate = registration;
+        state.plateSource = 'qr';
+        state.plateConfirmed = true;
+        state.plateStatus = 'რეგისტრაციის ნომერი QR კოდიდან ზუსტად ამოიკითხა.';
+        renderVinLookup(true);
+      } catch (_) {
+        // OCR on the front photo remains available when a QR cannot be read.
+      }
+    }
+
+    function registrationFieldOcrImage(dataUrl) {
+      return new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => {
+          const sx = Math.round(image.width * 0.16);
+          const sy = Math.round(image.height * 0.16);
+          const sw = Math.round(image.width * 0.46);
+          const sh = Math.round(image.height * 0.24);
+          const canvas = document.createElement('canvas');
+          canvas.width = sw * 3;
+          canvas.height = sh * 3;
+          const ctx = canvas.getContext('2d');
+          ctx.filter = 'grayscale(1) contrast(1.45)';
+          ctx.drawImage(image, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/png'));
+        };
+        image.onerror = () => reject(new Error('Photo could not be read'));
+        image.src = dataUrl;
+      });
+    }
+
+    function vinFieldOcrImage(dataUrl) {
+      return new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => {
+          const sx = Math.round(image.width * 0.16);
+          const sy = Math.round(image.height * 0.13);
+          const sw = Math.round(image.width * 0.68);
+          const sh = Math.round(image.height * 0.24);
+          const canvas = document.createElement('canvas');
+          canvas.width = sw * 2;
+          canvas.height = sh * 2;
+          const ctx = canvas.getContext('2d');
+          ctx.filter = 'grayscale(1) contrast(1.45)';
+          ctx.drawImage(image, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/png'));
+        };
+        image.onerror = () => reject(new Error('Photo could not be read'));
+        image.src = dataUrl;
+      });
+    }
+
+    async function readVinFromTechPassport() {
+      const photo = state.photos.tech_back;
+      if (!photo || state.vinReading) return;
+      state.vinReading = true;
+      state.vinStatus = 'VIN იკითხება…';
+      renderVinLookup(true);
+      try {
+        const Tesseract = await loadOcrLibrary();
+        const ocrPhoto = await vinFieldOcrImage(photo);
+        const result = await Tesseract.recognize(ocrPhoto, 'eng', {
+          logger: (event) => {
+            if (event.status === 'recognizing text' && event.progress > 0.15) {
+              state.vinStatus = `VIN იკითხება… ${Math.round(event.progress * 100)}%`;
+              renderVinLookup(true);
+            }
+          }
+        });
+        let vin = normalizeVin(result && result.data && result.data.text, true);
+        if (!vin) {
+          const fullResult = await Tesseract.recognize(photo, 'eng');
+          vin = normalizeVin(fullResult && fullResult.data && fullResult.data.text, true);
+        }
+        state.vin = vin;
+        state.vinStatus = vin
+          ? 'VIN ამოცნობილია — გადაამოწმეთ კოდი.'
+          : 'VIN ვერ ამოიცნო. ჩაწერეთ 17 სიმბოლო ხელით.';
+      } catch (_) {
+        state.vinStatus = 'VIN-ის ავტომატური წაკითხვა ვერ მოხერხდა. ჩაწერეთ ხელით.';
+      } finally {
+        state.vinReading = false;
+        renderVinLookup(true);
+      }
+    }
+
+    async function readPlateFromTechPassport() {
+      const photo = state.photos.tech_front;
+      if (!photo || state.plateReading) return;
+      state.plateReading = true;
+      state.plateStatus = 'რეგისტრაციის ნომერი იკითხება…';
+      renderVinLookup(true);
+      try {
+        const Tesseract = await loadOcrLibrary();
+        const ocrPhoto = await registrationFieldOcrImage(photo);
+        const result = await Tesseract.recognize(ocrPhoto, 'eng', {
+          logger: (event) => {
+            if (event.status === 'recognizing text' && event.progress > 0.15) {
+              state.plateStatus = `რეგისტრაციის ნომერი იკითხება… ${Math.round(event.progress * 100)}%`;
+              renderVinLookup(true);
+            }
+          }
+        });
+        const closePlate = normalizePlate(result && result.data && result.data.text);
+        const fullResult = await Tesseract.recognize(photo, 'eng');
+        const fullPlate = normalizePlate(fullResult && fullResult.data && fullResult.data.text);
+        const plate = closePlate || fullPlate;
+        const hasAmbiguousGlyph = /[5S]/.test(plate);
+        if (state.plateSource !== 'qr') {
+          state.plate = plate;
+          state.plateConfirmed = !!closePlate && closePlate === fullPlate && !hasAmbiguousGlyph;
+          state.plateStatus = !plate
+            ? 'რეგისტრაციის ნომერი ვერ ამოიცნო. ჩაწერეთ ხელით.'
+            : state.plateConfirmed
+              ? 'რეგისტრაციის ნომერი ორივე შემოწმებით ემთხვევა.'
+              : hasAmbiguousGlyph
+                ? 'სიმბოლო S/5 ბუნდოვანია — A ველს შეადარეთ და ხელით გაასწორეთ.'
+                : 'OCR-ის შედეგი დაუზუსტებელია — A ველს შეადარეთ და ხელით გაასწორეთ.';
+        }
+      } catch (_) {
+        state.plateStatus = 'რეგისტრაციის ნომრის ავტომატური წაკითხვა ვერ მოხერხდა. ჩაწერეთ ხელით.';
+      } finally {
+        state.plateReading = false;
+        renderVinLookup(true);
+      }
+    }
+
     function renderGroup() {
       const g = GROUPS[state.groupIndex];
       $('group-title').textContent = g.title;
@@ -798,8 +1117,42 @@
         };
       });
 
+      const isTech = g.id === 'tech';
+      const hasTechData = isTech && (!!state.photos.tech_front || !!state.photos.tech_back);
+      $('step-group').classList.toggle('has-tech-data', hasTechData);
+      renderVinLookup(hasTechData);
+      if (isTech) {
+        const plateInput = $('plate-input');
+        const input = $('vin-input');
+        plateInput.oninput = () => {
+          state.plate = plateInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10);
+          state.plateConfirmed = true;
+          state.plateSource = 'manual';
+          state.techDataConfirmed = false;
+          state.plateStatus = /^(?=.*[A-Z])(?=.*\d)[A-Z0-9]{5,10}$/.test(state.plate)
+            ? 'რეგისტრაციის ნომერი მზადაა.'
+            : 'მაგალითი: S0008OF';
+          renderVinLookup(true);
+        };
+        input.oninput = () => {
+          state.vin = normalizeVin(input.value) || input.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 17);
+          state.techDataConfirmed = false;
+          state.vinStatus = /^[A-HJ-NPR-Z0-9]{17}$/.test(state.vin)
+            ? 'VIN მზადაა.'
+            : 'VIN უნდა შეიცავდეს 17 სიმბოლოს.';
+          renderVinLookup(true);
+        };
+        $('confirm-tech-data').onclick = () => {
+          const validPlate = /^(?=.*[A-Z])(?=.*\d)[A-Z0-9]{5,10}$/.test(state.plate);
+          const validVin = /^[A-HJ-NPR-Z0-9]{17}$/.test(state.vin);
+          if (!validPlate || !validVin) return;
+          state.techDataConfirmed = true;
+          renderGroup();
+        };
+      }
+
       const both = g.sides.every((s) => !!state.photos[s.key]);
-      $('group-next').disabled = !both;
+      $('group-next').disabled = !both || (isTech && !state.techDataConfirmed);
       const base = (state.groupIndex + (both ? 0.85 : 0.25)) / GROUPS.length;
       setProgress(Math.round(8 + base * 80));
     }
@@ -896,10 +1249,15 @@
     };
 
     async function saveSubmission() {
+      if (state.photos.tech_front && state.photos.tech_back && !state.techDataConfirmed) {
+        throw new Error('Tech passport data was not confirmed');
+      }
       const payload = {
         phone: state.phone,
         name: state.name,
         photos: state.photos,
+        plate: state.plate,
+        vin: state.vin,
         at: new Date().toISOString()
       };
       const db = await openDb();
@@ -911,7 +1269,8 @@
       });
       try {
         localStorage.setItem('cc_last_verify', JSON.stringify({
-          phone: payload.phone, name: payload.name, at: payload.at, keys: Object.keys(payload.photos)
+          phone: payload.phone, name: payload.name, plate: payload.plate, vin: payload.vin,
+          at: payload.at, keys: Object.keys(payload.photos)
         }));
       } catch {}
     }
@@ -962,6 +1321,10 @@
 
     function isCarCapture() {
       return String(state.captureGuide || '').startsWith('car-');
+    }
+
+    function isTechCapture() {
+      return state.captureKey === 'tech_front' || state.captureKey === 'tech_back';
     }
 
     async function openCamera(side) {
@@ -1475,10 +1838,28 @@
     }
 
     function acceptPhoto(dataUrl) {
+      const capturedKey = state.captureKey;
       stopAlignLoop();
-      state.photos[state.captureKey] = dataUrl;
+      if (capturedKey === 'tech_front') {
+        state.plate = '';
+        state.plateStatus = '';
+        state.plateConfirmed = false;
+        state.plateSource = '';
+        state.techDataConfirmed = false;
+      }
+      if (capturedKey === 'tech_back') {
+        state.vin = '';
+        state.vinStatus = '';
+        state.techDataConfirmed = false;
+      }
+      state.photos[capturedKey] = dataUrl;
       closeCamera();
       renderGroup();
+      if (capturedKey === 'tech_front') readPlateFromTechPassport();
+      if (capturedKey === 'tech_back') {
+        readRegistrationFromQr();
+        readVinFromTechPassport();
+      }
     }
 
     function captureFromVideo() {
@@ -1488,6 +1869,10 @@
       src.width = video.videoWidth;
       src.height = video.videoHeight;
       src.getContext('2d').drawImage(video, 0, 0);
+      if (isCarCapture() || isTechCapture()) {
+        acceptPhoto(src.toDataURL('image/jpeg', 0.95));
+        return;
+      }
       const { x, y, rw, rh } = cardRect(src.width, src.height);
       const out = document.createElement('canvas');
       out.width = Math.round(rw);
