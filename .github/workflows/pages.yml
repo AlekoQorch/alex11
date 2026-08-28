@@ -1,14 +1,29 @@
-# GitHub Pages is configured as: branch main, folder /docs.
-# Do NOT force-push gh-pages here — it races the built-in
-# pages-build-deployment and leaves the live site stuck on an old build.
-name: Pages source check
+name: Deploy to GitHub Pages
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - '.github/workflows/pages.yml'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: true
+
 jobs:
-  note:
+  deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Reminder
-        run: echo "Site publishes from main/docs via GitHub Pages (legacy)."
+      - uses: actions/checkout@v4
+
+      - name: Publish docs to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
+          force_orphan: true
