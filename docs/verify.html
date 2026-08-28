@@ -13,10 +13,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v211</title>
+  <title>დოკუმენტების ატვირთვა v212</title>
   <script>
     (function () {
-      var VER = '211';
+      var VER = '212';
       try {
         var k = 'cc_verify_v';
         var need = localStorage.getItem(k) !== VER;
@@ -931,7 +931,10 @@
         // VIN letters I, O and Q are not permitted. OCR commonly mistakes
         // 1/0 for I/O, so make only those unambiguous substitutions.
         for (let i = 0; i <= candidate.length - 17; i++) {
-          const vin = candidate.slice(i, i + 17).replace(/I/g, '1').replace(/[OQ]/g, '0');
+          let vin = candidate.slice(i, i + 17).replace(/I/g, '1').replace(/[OQ]/g, '0');
+          // Mercedes-Benz vehicle VINs begin with WDF. On certificates, the
+          // narrow left stroke of W is occasionally read by OCR as 1.
+          if (vin.startsWith('1DF')) vin = 'WDF' + vin.slice(3);
           if (/^[A-HJ-NPR-Z0-9]{17}$/.test(vin)) found.push(vin);
         }
       }
@@ -1990,6 +1993,16 @@
     function acceptPhoto(dataUrl) {
       const capturedKey = state.captureKey;
       stopAlignLoop();
+      // Never leave a value read from a previous document visible while OCR
+      // is processing its replacement photo.
+      if (capturedKey === 'tech_front') {
+        state.plate = '';
+        state.plateStatus = '';
+      }
+      if (capturedKey === 'tech_back') {
+        state.vin = '';
+        state.vinStatus = '';
+      }
       state.photos[capturedKey] = dataUrl;
       closeCamera();
       renderGroup();
