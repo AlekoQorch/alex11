@@ -13,10 +13,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v208</title>
+  <title>დოკუმენტების ატვირთვა v209</title>
   <script>
     (function () {
-      var VER = '208';
+      var VER = '209';
       try {
         var k = 'cc_verify_v';
         var need = localStorage.getItem(k) !== VER;
@@ -552,11 +552,11 @@
       <div id="group-slots"></div>
       <div class="vin-card hide" id="vin-lookup">
         <h3>ავტომობილის მონაცემები</h3>
-        <p>სახელმწიფო ნომერი იკითხება პირველი გვერდის A ველიდან, VIN — უკანა გვერდის E ველიდან.</p>
-        <label class="field-label" for="plate-input">სახელმწიფო ნომერი · A</label>
+        <p>რეგისტრაციის ნომერი იკითხება პირველი გვერდის A ველიდან, VIN — უკანა გვერდის E ველიდან.</p>
+        <label class="field-label" for="plate-input">რეგისტრაციის ნომერი · A</label>
         <div class="vin-actions">
           <input class="field-inp" id="plate-input" type="text" inputmode="text" autocomplete="off"
-            autocapitalize="characters" maxlength="9" placeholder="მაგ. AB-123-CD" aria-label="ავტომობილის სახელმწიფო ნომერი">
+            autocapitalize="characters" maxlength="10" placeholder="მაგ. S0008OF" aria-label="ავტომობილის რეგისტრაციის ნომერი">
         </div>
         <p class="vin-status" id="plate-status" aria-live="polite"></p>
         <label class="field-label" for="vin-input">VIN კოდი · E</label>
@@ -934,18 +934,17 @@
 
     function normalizePlate(raw) {
       const lines = String(raw || '').toUpperCase().split(/\r?\n/);
-      const plateOnLine = (line) => {
-        const compact = line.replace(/[^A-Z0-9]/g, '');
-        const plate = compact.match(/[A-Z]{2}\d{3}[A-Z]{2}/);
-        return plate ? `${plate[0].slice(0, 2)}-${plate[0].slice(2, 5)}-${plate[0].slice(5)}` : '';
+      const numberOnALine = (line) => {
+        const match = line.match(/(?:^|\s)A(?:[.:]|\s)+(.+)/);
+        if (!match) return '';
+        // The A field contains an alphanumeric registration number (for
+        // example S0008OF), not the AB-123-CD plate format. OCR occasionally
+        // reads the leading S as $, so correct that field-specific glyph.
+        const candidate = match[1].replace(/\$/g, 'S').match(/[A-Z0-9]{5,10}/);
+        const value = candidate ? candidate[0] : '';
+        return /[A-Z]/.test(value) && /\d/.test(value) ? value : '';
       };
-      // A is the registration-number field. Prioritize its line rather than
-      // joining the whole document, which can create a false plate from
-      // unrelated text on neighboring lines.
-      const fieldALines = lines.filter((line) => /(^|\s)A(?:[.:]|\s)/.test(line));
-      return fieldALines.map(plateOnLine).find(Boolean)
-        || lines.map(plateOnLine).find(Boolean)
-        || '';
+      return lines.map(numberOnALine).find(Boolean) || '';
     }
 
     function renderVinLookup(show) {
@@ -984,6 +983,29 @@
       return ocrLibraryPromise;
     }
 
+    function registrationFieldOcrImage(dataUrl) {
+      return new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => {
+          // A is in the upper-left document area. Cropping and enlarging this
+          // region is used only by OCR; the uploaded photo remains untouched.
+          const sx = Math.round(image.width * 0.16);
+          const sy = Math.round(image.height * 0.16);
+          const sw = Math.round(image.width * 0.46);
+          const sh = Math.round(image.height * 0.24);
+          const canvas = document.createElement('canvas');
+          canvas.width = sw * 3;
+          canvas.height = sh * 3;
+          const ctx = canvas.getContext('2d');
+          ctx.filter = 'grayscale(1) contrast(1.45)';
+          ctx.drawImage(image, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/png'));
+        };
+        image.onerror = () => reject(new Error('Photo could not be read'));
+        image.src = dataUrl;
+      });
+    }
+
     async function readVinFromTechPassport() {
       const photo = state.photos.tech_back;
       if (!photo || state.vinReading) return;
@@ -1017,14 +1039,15 @@
       const photo = state.photos.tech_front;
       if (!photo || state.plateReading) return;
       state.plateReading = true;
-      state.plateStatus = 'სახელმწიფო ნომერი იკითხება…';
+      state.plateStatus = 'რეგისტრაციის ნომერი იკითხება…';
       renderVinLookup(true);
       try {
         const Tesseract = await loadOcrLibrary();
-        const result = await Tesseract.recognize(photo, 'eng', {
+        const ocrPhoto = await registrationFieldOcrImage(photo);
+        const result = await Tesseract.recognize(ocrPhoto, 'eng', {
           logger: (event) => {
             if (event.status === 'recognizing text' && event.progress > 0.15) {
-              state.plateStatus = `სახელმწიფო ნომერი იკითხება… ${Math.round(event.progress * 100)}%`;
+              state.plateStatus = `რეგისტრაციის ნომერი იკითხება… ${Math.round(event.progress * 100)}%`;
               renderVinLookup(true);
             }
           }
@@ -1032,10 +1055,10 @@
         const plate = normalizePlate(result && result.data && result.data.text);
         state.plate = plate;
         state.plateStatus = plate
-          ? 'სახელმწიფო ნომერი ამოცნობილია — გადაამოწმეთ კოდი.'
-          : 'სახელმწიფო ნომერი ვერ ამოიცნო. ჩაწერეთ ხელით.';
+          ? 'რეგისტრაციის ნომერი ამოცნობილია — გადაამოწმეთ კოდი.'
+          : 'რეგისტრაციის ნომერი ვერ ამოიცნო. ჩაწერეთ ხელით.';
       } catch (_) {
-        state.plateStatus = 'სახელმწიფო ნომრის ავტომატური წაკითხვა ვერ მოხერხდა. ჩაწერეთ ხელით.';
+        state.plateStatus = 'რეგისტრაციის ნომრის ავტომატური წაკითხვა ვერ მოხერხდა. ჩაწერეთ ხელით.';
       } finally {
         state.plateReading = false;
         renderVinLookup(true);
@@ -1079,11 +1102,10 @@
         const plateInput = $('plate-input');
         const input = $('vin-input');
         plateInput.oninput = () => {
-          const lettersAndDigits = plateInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7);
-          state.plate = normalizePlate(lettersAndDigits) || lettersAndDigits;
-          state.plateStatus = /^[A-Z]{2}-\d{3}-[A-Z]{2}$/.test(state.plate)
-            ? 'სახელმწიფო ნომერი მზადაა.'
-            : 'ფორმატი: AB-123-CD';
+          state.plate = plateInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10);
+          state.plateStatus = /^(?=.*[A-Z])(?=.*\d)[A-Z0-9]{5,10}$/.test(state.plate)
+            ? 'რეგისტრაციის ნომერი მზადაა.'
+            : 'მაგალითი: S0008OF';
           renderVinLookup(true);
         };
         input.oninput = () => {

@@ -1,5 +1,5 @@
 /* Cold Caller — network-first updates (never return null from respondWith) */
-const CACHE = 'cold-caller-v208';
+const CACHE = 'cold-caller-v209';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
