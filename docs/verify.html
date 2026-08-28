@@ -8,10 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v129</title>
+  <title>დოკუმენტების ატვირთვა v130</title>
   <script>
     (function () {
-      var VER = '129';
+      var VER = '130';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -860,6 +860,199 @@
         .replace(/[^A-Z0-9\n\s-]/g, ' ');
     }
 
+    const VIN_KNOWN_WMIS = [
+      'WDC', 'WDD', 'WDF', 'WDB', 'WVW', 'VF1', 'VF3', 'JTD', 'KMH', 'YV1', 'ZFA',
+      '1HG', '2HG', '3VW', '5UX', 'WBA', 'WBS', '4US', 'X4X', 'TRU', 'SAL', 'SAJ'
+    ];
+
+    const VIN_CHAR_ALTS = {
+      '0': ['O', 'Q', 'D'],
+      '1': ['I', 'L'],
+      '2': ['Z', '3'],
+      '3': ['8', '2'],
+      '4': ['7', 'A'],
+      '5': ['S'],
+      '6': ['G'],
+      '7': ['4', '1'],
+      '8': ['B', '3'],
+      'B': ['8'],
+      'D': ['0'],
+      'G': ['6'],
+      'I': ['1'],
+      'L': ['1'],
+      'O': ['0'],
+      'Q': ['0'],
+      'S': ['5'],
+      'Z': ['2']
+    };
+
+    function isValidVinFormat(vin) {
+      return /^[A-HJ-NPR-Z0-9]{17}$/.test(vin) && (vin.match(/\d/g) || []).length >= 4;
+    }
+
+    function applyBasicVinFixes(s) {
+      return String(s || '').toUpperCase()
+        .replace(/WDR/g, 'WDF')
+        .replace(/W1DF/g, 'WDF')
+        .replace(/1DF/g, 'WDF');
+    }
+
+    function sanitizeVinWindow(s) {
+      return applyBasicVinFixes(s).replace(/[^A-Z0-9]/g, '');
+    }
+
+    function charRepairScore(from, to) {
+      const key = from + to;
+      const common = {
+        '23': 24, '32': 24, '5S': 20, 'S5': 20, '0O': 18, 'O0': 18, '0Q': 18, 'Q0': 18,
+        '1I': 18, 'I1': 18, '1L': 16, 'L1': 16, '8B': 16, 'B8': 16, '6G': 14, 'G6': 14,
+        '74': 6, '47': 6, '41': 6, '14': 6
+      };
+      return common[key] || 10;
+    }
+
+    function repairVinByCheckDigit(candidate) {
+      if (!candidate || candidate.length !== 17) return '';
+      const base = sanitizeVinWindow(candidate).slice(0, 17);
+      if (base.length !== 17) return '';
+      if (vinHasValidCheckDigit(base) && isValidVinFormat(base)) return base;
+
+      const fixes = [];
+      const tryFix = (next, pos, from, to) => {
+        if (!isValidVinFormat(next) || !vinHasValidCheckDigit(next) || hasRepeatedVinSegment(next)) return;
+        fixes.push({ vin: next, score: charRepairScore(from, to) - (pos > 12 ? 0 : 2) });
+      };
+
+      for (let pos = 0; pos < 17; pos++) {
+        const c = base[pos];
+        const alts = VIN_CHAR_ALTS[c] || [];
+        for (const alt of alts) {
+          tryFix(base.slice(0, pos) + alt + base.slice(pos + 1), pos, c, alt);
+        }
+      }
+
+      if (!fixes.length) {
+        const ambig = [];
+        for (let i = 0; i < 17; i++) if (VIN_CHAR_ALTS[base[i]]) ambig.push(i);
+        for (let a = 0; a < ambig.length; a++) {
+          for (let b = a + 1; b < ambig.length; b++) {
+            const i = ambig[a];
+            const j = ambig[b];
+            const ai = VIN_CHAR_ALTS[base[i]] || [];
+            const aj = VIN_CHAR_ALTS[base[j]] || [];
+            for (const ca of ai) {
+              for (const cb of aj) {
+                const next = base.slice(0, i) + ca + base.slice(i + 1, j) + cb + base.slice(j + 1);
+                if (isValidVinFormat(next) && vinHasValidCheckDigit(next) && !hasRepeatedVinSegment(next)) {
+                  fixes.push({ vin: next, score: charRepairScore(base[i], ca) + charRepairScore(base[j], cb) - 4 });
+                }
+              }
+            }
+          }
+        }
+      }
+
+      if (!fixes.length) return '';
+      fixes.sort((a, b) => b.score - a.score);
+      return fixes[0].vin;
+    }
+
+    function discoverVinsInString(text) {
+      const found = new Map();
+      const addVin = (vin, exact) => {
+        if (!vin || !isValidVinFormat(vin) || hasRepeatedVinSegment(vin)) return;
+        const prev = found.get(vin) || 0;
+        found.set(vin, prev + (exact ? 3 : 1));
+      };
+
+      const sources = [
+        String(text || '').toUpperCase(),
+        stripVinLabelNoise(text),
+        stripVinLabelNoise(text).replace(/\s+/g, '')
+      ];
+
+      for (const src of sources) {
+        const wmi = findVinByWmiPattern(src);
+        if (wmi) addVin(wmi, true);
+        const compact = sanitizeVinWindow(src);
+        for (let i = 0; i <= compact.length - 17; i++) {
+          const slice = compact.slice(i, i + 17);
+          addVin(slice, true);
+          const repaired = repairVinByCheckDigit(slice);
+          if (repaired) addVin(repaired, false);
+        }
+        for (const vin of extractVinCandidates(src)) addVin(vin, true);
+      }
+      return [...found.keys()];
+    }
+
+    function vinWeightsFromHits(candidates, hitMap, passWeight) {
+      const weights = {};
+      for (const vin of candidates) {
+        weights[vin] = (weights[vin] || 0) + passWeight + (hitMap.get(vin) || 0) * 2;
+      }
+      return weights;
+    }
+
+    function loadImageElement(dataUrl) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('Photo could not be read'));
+        img.src = dataUrl;
+      });
+    }
+
+    function renderOcrCanvas(image, sx, sy, sw, sh, outW, outH, filter) {
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, outW);
+      canvas.height = Math.max(1, outH);
+      const ctx = canvas.getContext('2d');
+      ctx.filter = filter || 'grayscale(1) contrast(1.85) brightness(1.05)';
+      ctx.drawImage(image, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+      return canvas.toDataURL('image/png');
+    }
+
+    async function buildVinScanPasses(dataUrl) {
+      const image = await loadImageElement(dataUrl);
+      const iw = image.naturalWidth;
+      const ih = image.naturalHeight;
+      const targetW = Math.min(2600, Math.max(1400, iw));
+      const scale = targetW / iw;
+      const passes = [];
+
+      const pushRegion = (region, ocrScale, weight, singleLine) => {
+        const sx = Math.round(iw * region.x);
+        const sy = Math.round(ih * region.y);
+        const sw = Math.max(1, Math.round(iw * region.w));
+        const sh = Math.max(1, Math.round(ih * region.h));
+        const outW = Math.round(sw * ocrScale);
+        const outH = Math.round(sh * ocrScale);
+        passes.push({
+          dataUrl: renderOcrCanvas(image, sx, sy, sw, sh, outW, outH),
+          weight,
+          singleLine: !!singleLine
+        });
+      };
+
+      pushRegion({ x: 0, y: 0, w: 1, h: 1 }, Math.max(1.5, scale), 6, false);
+
+      const bandH = 0.14;
+      for (let y = 0; y <= 1 - bandH; y += 0.07) {
+        pushRegion({ x: 0, y, w: 1, h: bandH }, Math.max(2.5, scale * 1.2), 10, true);
+      }
+
+      for (let y = 0.12; y <= 0.42; y += 0.04) {
+        pushRegion({ x: 0.22, y, w: 0.78, h: 0.09 }, Math.max(3.5, scale * 1.5), 18, true);
+        pushRegion({ x: 0.05, y, w: 0.95, h: 0.11 }, Math.max(3, scale * 1.3), 14, true);
+      }
+
+      pushRegion({ x: 0.30, y: 0.16, w: 0.70, h: 0.22 }, Math.max(3, scale), 16, true);
+      pushRegion({ x: 0.30, y: 0.26, w: 0.70, h: 0.22 }, Math.max(3, scale), 16, true);
+
+      return passes;
+    }
+
     function vinHasValidCheckDigit(vin) {
       const translit = { A:1,B:2,C:3,D:4,E:5,F:6,G:7,H:8,J:1,K:2,L:3,M:4,N:5,P:7,R:9,S:2,T:3,U:4,V:5,W:6,X:7,Y:8,Z:9 };
       const weights = [8,7,6,5,4,3,2,10,0,9,8,7,6,5,4,3,2];
@@ -888,7 +1081,7 @@
     function findVinByWmiPattern(source) {
       let s = stripVinLabelNoise(source).replace(/\s+/g, '');
       s = s.replace(/WDR/g, 'WDF').replace(/W1DF/g, 'WDF').replace(/1DF/g, 'WDF');
-      const wmiList = ['WDC', 'WDD', 'WDF', 'WDB', 'WVW', 'VF1', 'VF3', 'JTD', 'KMH', 'YV1', 'ZFA', '1HG', '2HG', '3VW', '5UX', 'WBA', 'WBS', '4US'];
+      const wmiList = VIN_KNOWN_WMIS;
       for (const wmi of wmiList) {
         let idx = 0;
         while ((idx = s.indexOf(wmi, idx)) !== -1) {
@@ -941,12 +1134,24 @@
     function scoreVin(vin, hits, weight) {
       let score = (vin.match(/\d/g) || []).length * 12 + hits * 30 + (weight || 0);
       if (/^[A-Z]{3}\d/.test(vin)) score += 24;
-      if (/^(WDC|WDD|WDF|WDB|WVW|VF1|VF3|JTD|KMH|YV1|ZFA|1HG|2HG|3VW|5UX|WBA|WBS|4US)/.test(vin)) score += 20;
-      if (vinHasValidCheckDigit(vin)) score += 50;
-      if (!/^[A-Z]{3}/.test(vin)) score -= 70;
+      if (VIN_KNOWN_WMIS.some((w) => vin.startsWith(w))) score += 28;
+      if (vinHasValidCheckDigit(vin)) score += 120;
+      else score -= 40;
+      if (/^[A-Z0-9]{17}$/.test(vin) && !/^[A-Z]{3}/.test(vin) && vinHasValidCheckDigit(vin)) score += 20;
+      if (!/^[A-Z]{3}/.test(vin) && !vinHasValidCheckDigit(vin)) score -= 70;
       if (hasRepeatedVinSegment(vin)) score -= 120;
       if (/^(GLC|BMW|MERC|HIGH|PASS|MATIC|DIESEL|DIZEL|VIANO)/.test(vin)) score -= 80;
       return score;
+    }
+
+    function pickBestVin(candidates, weights) {
+      if (!candidates.length) return '';
+      const withCheck = candidates.filter((v) => vinHasValidCheckDigit(v));
+      const pool = withCheck.length ? withCheck : candidates;
+      const best = bestVinCandidate(pool, weights);
+      if (best) return best;
+      const wmi = candidates.find((v) => VIN_KNOWN_WMIS.some((w) => v.startsWith(w)));
+      return wmi || candidates[0] || '';
     }
 
     function normalizeVin(raw, allowUnlabeled = false) {
@@ -973,7 +1178,7 @@
       if (fromRow) return fromRow;
 
       if (!allowUnlabeled) return '';
-      return bestVinCandidate(extractVinCandidates(stripVinLabelNoise(raw)), null);
+      return pickBestVin(extractVinCandidates(stripVinLabelNoise(raw)), null);
     }
 
     function cropOcrImage(dataUrl, region, scale) {
@@ -997,18 +1202,71 @@
       });
     }
 
-    // E ველი: ზედა გვერდზე ~18–24%, უკანა გვერდზე ~26–34%.
-    const VIN_OCR_REGIONS = [
-      { x: 0.42, y: 0.18, w: 0.40, h: 0.08, scale: 4, singleLine: true, weight: 32 },
-      { x: 0.35, y: 0.20, w: 0.50, h: 0.08, scale: 4, singleLine: true, weight: 30 },
-      { x: 0.38, y: 0.22, w: 0.48, h: 0.10, scale: 4, singleLine: true, weight: 28 },
-      { x: 0.30, y: 0.18, w: 0.55, h: 0.10, scale: 3, singleLine: true, weight: 26 },
-      { x: 0.42, y: 0.28, w: 0.40, h: 0.08, scale: 4, singleLine: true, weight: 24 },
-      { x: 0.30, y: 0.28, w: 0.55, h: 0.08, scale: 4, singleLine: true, weight: 22 },
-      { x: 0.38, y: 0.30, w: 0.48, h: 0.10, scale: 3, singleLine: true, weight: 20 },
-      { x: 0.30, y: 0.32, w: 0.55, h: 0.10, scale: 3, singleLine: true, weight: 16 },
-      { x: 0.08, y: 0.16, w: 0.72, h: 0.26, scale: 2, singleLine: false, weight: 10 }
-    ];
+    async function recognizeVinText(Tesseract, dataUrl, singleLine) {
+      const opts = {
+        tessedit_char_whitelist: 'ABCDEFGHJKLMNPRSTUVWXYZ0123456789',
+        logger: (event) => {
+          if (event.status === 'recognizing text' && event.progress > 0.15) {
+            state.vinStatus = `VIN იკითხება… ${Math.round(event.progress * 100)}%`;
+            renderVinLookup(true);
+          }
+        }
+      };
+      if (singleLine) opts.tessedit_pageseg_mode = '7';
+      const result = await Tesseract.recognize(dataUrl, 'eng', opts);
+      return result && result.data && result.data.text;
+    }
+
+    async function readVinFromTechPassport(sourceKey) {
+      const photo = ocrTechPhoto(sourceKey) || ocrTechPhoto('tech_back') || ocrTechPhoto('tech_front');
+      if (!photo || state.vinReading) return;
+      state.vinReading = true;
+      state.vinStatus = 'VIN იკითხება…';
+      renderVinLookup(true);
+      try {
+        const Tesseract = await loadOcrLibrary();
+        const passes = await buildVinScanPasses(photo);
+        const candidates = [];
+        const weights = {};
+        let vin = '';
+
+        for (let i = 0; i < passes.length; i++) {
+          const pass = passes[i];
+          state.vinStatus = `VIN იკითხება… ${Math.min(99, Math.round(((i + 1) / passes.length) * 100))}%`;
+          renderVinLookup(true);
+          const text = await recognizeVinText(Tesseract, pass.dataUrl, pass.singleLine);
+          const hits = new Map();
+          for (const found of discoverVinsInString(text)) {
+            candidates.push(found);
+            hits.set(found, (hits.get(found) || 0) + 1);
+          }
+          Object.assign(weights, vinWeightsFromHits([...hits.keys()], hits, pass.weight));
+          vin = pickBestVin(candidates, weights);
+          if (vin && vinHasValidCheckDigit(vin) && (weights[vin] || 0) >= 24) break;
+        }
+
+        if (!vin) {
+          const fullText = await recognizeVinText(Tesseract, photo, false);
+          for (const found of discoverVinsInString(fullText)) {
+            candidates.push(found);
+            weights[found] = (weights[found] || 0) + 8;
+          }
+          vin = pickBestVin(candidates, weights);
+        }
+
+        state.vin = vin;
+        state.vinStatus = vin
+          ? (vinHasValidCheckDigit(vin)
+            ? 'VIN ამოცნობილია — გადაამოწმეთ კოდი.'
+            : 'VIN ნაპოვნია — გადაამოწმეთ კოდი ხელით.')
+          : 'VIN ვერ ამოიცნო. ჩაწერეთ 17 სიმბოლო ხელით.';
+      } catch (_) {
+        state.vinStatus = 'VIN-ის ავტომატური წაკითხვა ვერ მოხერხდა. ჩაწერეთ ხელით.';
+      } finally {
+        state.vinReading = false;
+        renderVinLookup(true);
+      }
+    }
 
     function scorePlate(plate) {
       if (!plate) return -1;
@@ -1190,56 +1448,6 @@
 
     function registrationFieldOcrImage(dataUrl, region) {
       return cropOcrImage(dataUrl, region || PLATE_OCR_REGIONS[0], region ? region.scale : PLATE_OCR_REGIONS[0].scale);
-    }
-
-    async function recognizeVinText(Tesseract, dataUrl, singleLine) {
-      const opts = {
-        logger: (event) => {
-          if (event.status === 'recognizing text' && event.progress > 0.15) {
-            state.vinStatus = `VIN იკითხება… ${Math.round(event.progress * 100)}%`;
-            renderVinLookup(true);
-          }
-        }
-      };
-      if (singleLine) opts.tessedit_pageseg_mode = '7';
-      const result = await Tesseract.recognize(dataUrl, 'eng', opts);
-      return result && result.data && result.data.text;
-    }
-
-    async function readVinFromTechPassport(sourceKey) {
-      const photo = ocrTechPhoto(sourceKey) || ocrTechPhoto('tech_back') || ocrTechPhoto('tech_front');
-      if (!photo || state.vinReading) return;
-      state.vinReading = true;
-      state.vinStatus = 'VIN იკითხება…';
-      renderVinLookup(true);
-      try {
-        const Tesseract = await loadOcrLibrary();
-        const candidates = [];
-        const weights = {};
-        for (const region of VIN_OCR_REGIONS) {
-          const crop = await cropOcrImage(photo, region, region.scale);
-          const text = await recognizeVinText(Tesseract, crop, region.singleLine);
-          const direct = findVinByWmiPattern(text);
-          const vin = direct || normalizeVin(text, true);
-          if (vin) {
-            candidates.push(vin);
-            weights[vin] = (weights[vin] || 0) + (region.weight || 1);
-          }
-        }
-        let vin = bestVinCandidate(candidates, weights);
-        if (!vin) {
-          vin = normalizeVin(await recognizeVinText(Tesseract, photo, false), true);
-        }
-        state.vin = vin;
-        state.vinStatus = vin
-          ? 'VIN ამოცნობილია — გადაამოწმეთ კოდი.'
-          : 'VIN ვერ ამოიცნო. ჩაწერეთ 17 სიმბოლო ხელით.';
-      } catch (_) {
-        state.vinStatus = 'VIN-ის ავტომატური წაკითხვა ვერ მოხერხდა. ჩაწერეთ ხელით.';
-      } finally {
-        state.vinReading = false;
-        renderVinLookup(true);
-      }
     }
 
     async function readPlateFromTechPassport() {
