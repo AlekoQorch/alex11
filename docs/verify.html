@@ -8,10 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v142</title>
+  <title>დოკუმენტების ატვირთვა v143</title>
   <script>
     (function () {
-      var VER = '142';
+      var VER = '143';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -222,7 +222,7 @@
       inset: 0;
       width: 100%;
       height: 100%;
-      object-fit: contain;
+      object-fit: fill;
       object-position: center;
       background: #101012;
     }
@@ -2495,15 +2495,16 @@
       slotsEl.innerHTML = g.sides.map((s) => {
         const photo = state.photos[s.key];
         const processing = isTech && state.techPhotoProcessing && state.techPhotoProcessing[s.key];
+        const showPhoto = photo && !processing;
         return `
           <div class="slot-block">
             <div class="slot-label">${s.label}</div>
-            <button type="button" class="slot ${isTech ? 'tech-slot' : ''} ${photo ? 'has-photo' : ''} ${processing ? 'processing' : ''}" data-capture="${s.key}" aria-label="${s.label} გადაღება">
-              ${photo
+            <button type="button" class="slot ${isTech ? 'tech-slot' : ''} ${showPhoto ? 'has-photo' : ''} ${processing ? 'processing' : ''}" data-capture="${s.key}" aria-label="${s.label} გადაღება">
+              ${showPhoto
                 ? `<img class="preview" src="${photo}" alt="">`
                 : `<div class="schematic">${schematicFor(s)}</div>`}
               ${processing ? '<span class="slot-processing">ტექპასპორტის ამოჭერა…</span>' : ''}
-              <span class="slot-tap-hint">${photo ? 'თავიდან გადაღება' : 'დააჭირეთ გადასაღებად'}</span>
+              <span class="slot-tap-hint">${showPhoto ? 'თავიდან გადაღება' : 'დააჭირეთ გადასაღებად'}</span>
             </button>
           </div>`;
       }).join('');
@@ -3007,9 +3008,16 @@
       return score;
     }
 
+    function colorEdgeThreshold(bg) {
+      const max = Math.max(bg[0], bg[1], bg[2]);
+      const min = Math.min(bg[0], bg[1], bg[2]);
+      const sat = max ? (max - min) / max : 0;
+      return sat > 0.18 ? 34 : 46;
+    }
+
     function detectDocumentByColorEdge(data, w, h) {
       const bg = sampleBorderRgb(data, w, h);
-      const threshold = 48;
+      const threshold = colorEdgeThreshold(bg);
       const stepX = Math.max(2, Math.round(w / 240));
       const stepY = Math.max(2, Math.round(h / 240));
       const rowHits = (y) => {
@@ -3196,7 +3204,7 @@
 
     function normalizeTechPassportCanvas(canvas) {
       let out = orientDocumentCanvas(canvas);
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < 6; i++) {
         const trimmed = trimBackgroundMargins(out);
         if (trimmed === out) break;
         out = trimmed;
@@ -3204,7 +3212,7 @@
       if (out.width < TECH_CROP_MIN_WIDTH) {
         out = scaleCanvasProportional(out, TECH_CROP_MIN_WIDTH);
       }
-      return out;
+      return fitCanvasToTechSlot(out);
     }
 
     function quadOutputSize(corners, targetW) {
@@ -3699,6 +3707,7 @@
         state.photos[capturedKey] = cropped;
         state.photosOcr[capturedKey] = cropped;
       } catch (_) {
+        state.photos[capturedKey] = dataUrl;
         state.photosOcr[capturedKey] = dataUrl;
       } finally {
         state.techPhotoProcessing[capturedKey] = false;
@@ -3741,8 +3750,9 @@
         state.techDataConfirmed = false;
       }
 
-      state.photos[capturedKey] = dataUrl;
+      state.photos[capturedKey] = (capturedKey === 'tech_front' || capturedKey === 'tech_back') ? '' : dataUrl;
       if (capturedKey === 'tech_front' || capturedKey === 'tech_back') {
+        state.techPhotoProcessing[capturedKey] = true;
         if (capturedKey === 'tech_back') state.vinStatus = 'VIN იკითხება…';
         else state.plateStatus = 'რეგისტრაციის ნომერი წაიკითხება უკანა გვერდის QR კოდიდან…';
       }
