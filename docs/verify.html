@@ -13,10 +13,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v217</title>
+  <title>დოკუმენტების ატვირთვა v218</title>
   <script>
     (function () {
-      var VER = '217';
+      var VER = '218';
       try {
         var k = 'cc_verify_v';
         var need = localStorage.getItem(k) !== VER;
@@ -1126,7 +1126,10 @@
         let vin = normalizeVin(result && result.data && result.data.text, true);
         if (!vin) {
           const fullResult = await Tesseract.recognize(photo, 'eng');
-          vin = normalizeVin(fullResult && fullResult.data && fullResult.data.text);
+          // The full photo can omit the tiny E marker even when the VIN is
+          // clear. The structural and numeric filters in normalizeVin still
+          // reject normal document phrases.
+          vin = normalizeVin(fullResult && fullResult.data && fullResult.data.text, true);
         }
         state.vin = vin;
         state.vinStatus = vin
