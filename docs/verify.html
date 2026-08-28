@@ -13,10 +13,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v213</title>
+  <title>დოკუმენტების ატვირთვა v214</title>
   <script>
     (function () {
-      var VER = '213';
+      var VER = '214';
       try {
         var k = 'cc_verify_v';
         var need = localStorage.getItem(k) !== VER;
@@ -552,7 +552,7 @@
       <div id="group-slots"></div>
       <div class="vin-card hide" id="vin-lookup">
         <h3>ავტომობილის მონაცემები</h3>
-        <p>რეგისტრაციის ნომერი იკითხება პირველი გვერდის A ველიდან, VIN — უკანა გვერდის E ველიდან.</p>
+        <p>რეგისტრაციის ნომერი იკითხება პირველი გვერდის A ველიდან, VIN — უკანა გვერდის E ველიდან. გადაამოწმეთ და დაადასტურეთ ორივე კოდი.</p>
         <label class="field-label" for="plate-input">რეგისტრაციის ნომერი · A</label>
         <div class="vin-actions">
           <input class="field-inp" id="plate-input" type="text" inputmode="text" autocomplete="off"
@@ -565,6 +565,7 @@
             autocapitalize="characters" maxlength="17" placeholder="მაგ. WDC…" aria-label="ავტომობილის VIN">
         </div>
         <p class="vin-status" id="vin-status" aria-live="polite"></p>
+        <button class="btn secondary" id="confirm-tech-data" type="button" disabled>ვამოწმებ და ვადასტურებ მონაცემებს</button>
       </div>
       <button class="btn" id="group-next" type="button" disabled>შემდეგი</button>
     </section>
@@ -690,7 +691,8 @@
       plate: '',
       plateStatus: '',
       plateReading: false,
-      plateConfirmed: false
+      plateConfirmed: false,
+      techDataConfirmed: false
     };
 
     const params = new URLSearchParams(location.search);
@@ -968,6 +970,7 @@
       const input = $('vin-input');
       const plateStatus = $('plate-status');
       const status = $('vin-status');
+      const confirm = $('confirm-tech-data');
       plateInput.value = state.plate;
       input.value = state.vin;
       plateStatus.textContent = state.plateStatus;
@@ -978,6 +981,14 @@
       status.className = 'vin-status' + (state.vin
         ? ' ok'
         : (state.vinStatus && !state.vinReading ? ' error' : ''));
+      if (confirm) {
+        const canConfirm = /^(?=.*[A-Z])(?=.*\d)[A-Z0-9]{5,10}$/.test(state.plate)
+          && /^[A-HJ-NPR-Z0-9]{17}$/.test(state.vin);
+        confirm.disabled = !canConfirm;
+        confirm.textContent = state.techDataConfirmed
+          ? 'მონაცემები დადასტურებულია ✓'
+          : 'ვამოწმებ და ვადასტურებ მონაცემებს';
+      }
     }
 
     let ocrLibraryPromise;
@@ -1156,6 +1167,7 @@
         plateInput.oninput = () => {
           state.plate = plateInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10);
           state.plateConfirmed = true;
+          state.techDataConfirmed = false;
           state.plateStatus = /^(?=.*[A-Z])(?=.*\d)[A-Z0-9]{5,10}$/.test(state.plate)
             ? 'რეგისტრაციის ნომერი მზადაა.'
             : 'მაგალითი: S0008OF';
@@ -1163,15 +1175,23 @@
         };
         input.oninput = () => {
           state.vin = normalizeVin(input.value) || input.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 17);
+          state.techDataConfirmed = false;
           state.vinStatus = /^[A-HJ-NPR-Z0-9]{17}$/.test(state.vin)
             ? 'VIN მზადაა.'
             : 'VIN უნდა შეიცავდეს 17 სიმბოლოს.';
           renderVinLookup(true);
         };
+        $('confirm-tech-data').onclick = () => {
+          const validPlate = /^(?=.*[A-Z])(?=.*\d)[A-Z0-9]{5,10}$/.test(state.plate);
+          const validVin = /^[A-HJ-NPR-Z0-9]{17}$/.test(state.vin);
+          if (!validPlate || !validVin) return;
+          state.techDataConfirmed = true;
+          renderGroup();
+        };
       }
 
       const both = g.sides.every((s) => !!state.photos[s.key]);
-      $('group-next').disabled = !both;
+      $('group-next').disabled = !both || (isTech && !state.techDataConfirmed);
       const base = (state.groupIndex + (both ? 0.85 : 0.25)) / GROUPS.length;
       setProgress(Math.round(8 + base * 80));
     }
@@ -1268,6 +1288,9 @@
     };
 
     async function saveSubmission() {
+      if (state.photos.tech_front && state.photos.tech_back && !state.techDataConfirmed) {
+        throw new Error('Tech passport data was not confirmed');
+      }
       const payload = {
         phone: state.phone,
         name: state.name,
@@ -2006,10 +2029,12 @@
         state.plate = '';
         state.plateStatus = '';
         state.plateConfirmed = false;
+        state.techDataConfirmed = false;
       }
       if (capturedKey === 'tech_back') {
         state.vin = '';
         state.vinStatus = '';
+        state.techDataConfirmed = false;
       }
       state.photos[capturedKey] = dataUrl;
       closeCamera();
