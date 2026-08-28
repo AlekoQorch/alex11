@@ -13,10 +13,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v207</title>
+  <title>დოკუმენტების ატვირთვა v208</title>
   <script>
     (function () {
-      var VER = '207';
+      var VER = '208';
       try {
         var k = 'cc_verify_v';
         var need = localStorage.getItem(k) !== VER;
@@ -933,9 +933,19 @@
     }
 
     function normalizePlate(raw) {
-      const compact = String(raw || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-      const plate = compact.match(/[A-Z]{2}\d{3}[A-Z]{2}/);
-      return plate ? `${plate[0].slice(0, 2)}-${plate[0].slice(2, 5)}-${plate[0].slice(5)}` : '';
+      const lines = String(raw || '').toUpperCase().split(/\r?\n/);
+      const plateOnLine = (line) => {
+        const compact = line.replace(/[^A-Z0-9]/g, '');
+        const plate = compact.match(/[A-Z]{2}\d{3}[A-Z]{2}/);
+        return plate ? `${plate[0].slice(0, 2)}-${plate[0].slice(2, 5)}-${plate[0].slice(5)}` : '';
+      };
+      // A is the registration-number field. Prioritize its line rather than
+      // joining the whole document, which can create a false plate from
+      // unrelated text on neighboring lines.
+      const fieldALines = lines.filter((line) => /(^|\s)A(?:[.:]|\s)/.test(line));
+      return fieldALines.map(plateOnLine).find(Boolean)
+        || lines.map(plateOnLine).find(Boolean)
+        || '';
     }
 
     function renderVinLookup(show) {
