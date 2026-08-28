@@ -13,10 +13,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v203</title>
+  <title>დოკუმენტების ატვირთვა v204</title>
   <script>
     (function () {
-      var VER = '203';
+      var VER = '204';
       try {
         var k = 'cc_verify_v';
         var need = localStorage.getItem(k) !== VER;
@@ -540,8 +540,13 @@
       <p class="sub" id="group-sub">წინა და უკანა · ჩარჩოზე დააჭირეთ გადასაღებად</p>
       <div id="group-slots"></div>
       <div class="vin-card hide" id="vin-lookup">
-        <h3>ავტომობილის VIN</h3>
-        <p>VIN ავტომატურად იკითხება ტექპასპორტის უკანა ფოტოდან. გადაამოწმეთ კოდი.</p>
+        <h3>ავტომობილის მონაცემები</h3>
+        <p>სახელმწიფო ნომერი იკითხება პირველი გვერდის A ველიდან, VIN — უკანა გვერდის E ველიდან.</p>
+        <div class="vin-actions">
+          <input class="field-inp" id="plate-input" type="text" inputmode="text" autocomplete="off"
+            autocapitalize="characters" maxlength="9" placeholder="მაგ. AB-123-CD" aria-label="ავტომობილის სახელმწიფო ნომერი">
+        </div>
+        <p class="vin-status" id="plate-status" aria-live="polite"></p>
         <div class="vin-actions">
           <input class="field-inp" id="vin-input" type="text" inputmode="text" autocomplete="off"
             autocapitalize="characters" maxlength="17" placeholder="მაგ. WDC…" aria-label="ავტომობილის VIN">
@@ -668,7 +673,10 @@
       nativeCapture: false,
       vin: '',
       vinStatus: '',
-      vinReading: false
+      vinReading: false,
+      plate: '',
+      plateStatus: '',
+      plateReading: false
     };
 
     const params = new URLSearchParams(location.search);
@@ -911,15 +919,28 @@
       return found.sort((a, b) => (b.match(/\d/g) || []).length - (a.match(/\d/g) || []).length)[0] || '';
     }
 
+    function normalizePlate(raw) {
+      const compact = String(raw || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+      const plate = compact.match(/[A-Z]{2}\d{3}[A-Z]{2}/);
+      return plate ? `${plate[0].slice(0, 2)}-${plate[0].slice(2, 5)}-${plate[0].slice(5)}` : '';
+    }
+
     function renderVinLookup(show) {
       const card = $('vin-lookup');
       if (!card) return;
       card.classList.toggle('hide', !show);
       if (!show) return;
+      const plateInput = $('plate-input');
       const input = $('vin-input');
+      const plateStatus = $('plate-status');
       const status = $('vin-status');
+      plateInput.value = state.plate;
       input.value = state.vin;
+      plateStatus.textContent = state.plateStatus;
       status.textContent = state.vinStatus;
+      plateStatus.className = 'vin-status' + (state.plate
+        ? ' ok'
+        : (state.plateStatus && !state.plateReading ? ' error' : ''));
       status.className = 'vin-status' + (state.vin
         ? ' ok'
         : (state.vinStatus && !state.vinReading ? ' error' : ''));
@@ -969,6 +990,35 @@
       }
     }
 
+    async function readPlateFromTechPassport() {
+      const photo = state.photos.tech_front;
+      if (!photo || state.plateReading) return;
+      state.plateReading = true;
+      state.plateStatus = 'სახელმწიფო ნომერი იკითხება…';
+      renderVinLookup(true);
+      try {
+        const Tesseract = await loadOcrLibrary();
+        const result = await Tesseract.recognize(photo, 'eng', {
+          logger: (event) => {
+            if (event.status === 'recognizing text' && event.progress > 0.15) {
+              state.plateStatus = `სახელმწიფო ნომერი იკითხება… ${Math.round(event.progress * 100)}%`;
+              renderVinLookup(true);
+            }
+          }
+        });
+        const plate = normalizePlate(result && result.data && result.data.text);
+        state.plate = plate;
+        state.plateStatus = plate
+          ? 'სახელმწიფო ნომერი ამოცნობილია — გადაამოწმეთ კოდი.'
+          : 'სახელმწიფო ნომერი ვერ ამოიცნო. ჩაწერეთ ხელით.';
+      } catch (_) {
+        state.plateStatus = 'სახელმწიფო ნომრის ავტომატური წაკითხვა ვერ მოხერხდა. ჩაწერეთ ხელით.';
+      } finally {
+        state.plateReading = false;
+        renderVinLookup(true);
+      }
+    }
+
     function renderGroup() {
       const g = GROUPS[state.groupIndex];
       $('group-title').textContent = g.title;
@@ -999,9 +1049,18 @@
       });
 
       const isTech = g.id === 'tech';
-      renderVinLookup(isTech && !!state.photos.tech_back);
+      renderVinLookup(isTech && (!!state.photos.tech_front || !!state.photos.tech_back));
       if (isTech) {
+        const plateInput = $('plate-input');
         const input = $('vin-input');
+        plateInput.oninput = () => {
+          const lettersAndDigits = plateInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7);
+          state.plate = normalizePlate(lettersAndDigits) || lettersAndDigits;
+          state.plateStatus = /^[A-Z]{2}-\d{3}-[A-Z]{2}$/.test(state.plate)
+            ? 'სახელმწიფო ნომერი მზადაა.'
+            : 'ფორმატი: AB-123-CD';
+          renderVinLookup(true);
+        };
         input.oninput = () => {
           state.vin = normalizeVin(input.value) || input.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 17);
           state.vinStatus = /^[A-HJ-NPR-Z0-9]{17}$/.test(state.vin)
@@ -1113,6 +1172,7 @@
         phone: state.phone,
         name: state.name,
         photos: state.photos,
+        plate: state.plate,
         vin: state.vin,
         at: new Date().toISOString()
       };
@@ -1125,7 +1185,7 @@
       });
       try {
         localStorage.setItem('cc_last_verify', JSON.stringify({
-          phone: payload.phone, name: payload.name, vin: payload.vin,
+          phone: payload.phone, name: payload.name, plate: payload.plate, vin: payload.vin,
           at: payload.at, keys: Object.keys(payload.photos)
         }));
       } catch {}
@@ -1843,6 +1903,7 @@
       state.photos[capturedKey] = dataUrl;
       closeCamera();
       renderGroup();
+      if (capturedKey === 'tech_front') readPlateFromTechPassport();
       if (capturedKey === 'tech_back') readVinFromTechPassport();
     }
 
