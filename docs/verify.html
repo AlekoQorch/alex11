@@ -8,10 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v127</title>
+  <title>დოკუმენტების ატვირთვა v128</title>
   <script>
     (function () {
-      var VER = '127';
+      var VER = '128';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -133,6 +133,10 @@
       display: none !important;
     }
     #step-intro, #step-review, #step-done { overflow: auto; }
+    #step-group.tech-step {
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
 
     #group-slots {
       flex: 1;
@@ -141,6 +145,15 @@
       grid-template-rows: 1fr 1fr;
       gap: 10px;
       margin-bottom: 10px;
+    }
+    #group-slots.tech-slots {
+      flex: 0 0 auto;
+      grid-template-rows: none;
+      grid-auto-rows: auto;
+      min-height: auto;
+    }
+    #step-group.tech-step .slot-block {
+      flex-shrink: 0;
     }
     #group-slots.multi {
       grid-template-columns: 1fr 1fr;
@@ -187,6 +200,15 @@
     .slot img.preview {
       width: 100%; height: 100%; object-fit: cover; display: block;
     }
+    .slot.tech-slot {
+      flex: none;
+      height: clamp(210px, 36vh, 340px);
+      min-height: 210px;
+    }
+    .slot.tech-slot img.preview {
+      object-fit: contain;
+      background: #101012;
+    }
     .slot .schematic {
       position: absolute;
       inset: 0;
@@ -215,12 +237,8 @@
       white-space: nowrap;
     }
     .slot.has-photo .slot-tap-hint { color: rgba(255,255,255,.8); text-shadow: 0 1px 3px rgba(0,0,0,.6); }
-    #step-group.has-tech-data #group-slots {
-      flex: 0 1 auto;
-      max-height: 42vh;
-    }
-    #step-group.has-tech-data .vin-card,
-    #step-group.has-tech-data #group-next { flex-shrink: 0; }
+    #step-group.tech-step .vin-card,
+    #step-group.tech-step #group-next { flex-shrink: 0; }
     .vin-card {
       background: var(--surface); border: 1px solid var(--line);
       border-radius: 14px; padding: 14px; margin-bottom: 10px;
@@ -449,6 +467,7 @@
     const state = {
       phone: '', name: '',
       photos: {},
+      photosOcr: {},
       groupIndex: 0,
       captureKey: '',
       captureSide: 'front',
@@ -1104,8 +1123,12 @@
       return jsQR(pixels.data, pixels.width, pixels.height, { inversionAttempts: 'attemptBoth' });
     }
 
+    function ocrTechPhoto(key) {
+      return state.photosOcr[key] || state.photos[key] || '';
+    }
+
     async function readRegistrationFromQr() {
-      const photo = state.photos.tech_back;
+      const photo = ocrTechPhoto('tech_back');
       if (!photo) return;
       try {
         const jsQR = await loadQrLibrary();
@@ -1167,7 +1190,7 @@
     }
 
     async function readVinFromTechPassport(sourceKey) {
-      const photo = state.photos[sourceKey] || state.photos.tech_back || state.photos.tech_front;
+      const photo = ocrTechPhoto(sourceKey) || ocrTechPhoto('tech_back') || ocrTechPhoto('tech_front');
       if (!photo || state.vinReading) return;
       state.vinReading = true;
       state.vinStatus = 'VIN იკითხება…';
@@ -1203,7 +1226,7 @@
     }
 
     async function readPlateFromTechPassport() {
-      const photo = state.photos.tech_front;
+      const photo = ocrTechPhoto('tech_front');
       if (!photo || state.plateReading) return;
       state.plateReading = true;
       state.plateStatus = 'რეგისტრაციის ნომერი იკითხება…';
@@ -1257,14 +1280,17 @@
       const g = GROUPS[state.groupIndex];
       $('group-title').textContent = g.title;
       $('group-sub').textContent = g.sub;
+      const isTech = g.id === 'tech';
       const slotsEl = $('group-slots');
       slotsEl.classList.toggle('multi', g.sides.length > 2);
+      slotsEl.classList.toggle('tech-slots', isTech);
+      $('step-group').classList.toggle('tech-step', isTech);
       slotsEl.innerHTML = g.sides.map((s) => {
         const photo = state.photos[s.key];
         return `
           <div class="slot-block">
             <div class="slot-label">${s.label}</div>
-            <button type="button" class="slot ${photo ? 'has-photo' : ''}" data-capture="${s.key}" aria-label="${s.label} გადაღება">
+            <button type="button" class="slot ${isTech ? 'tech-slot' : ''} ${photo ? 'has-photo' : ''}" data-capture="${s.key}" aria-label="${s.label} გადაღება">
               ${photo
                 ? `<img class="preview" src="${photo}" alt="">`
                 : `<div class="schematic">${schematicFor(s)}</div>`}
@@ -1280,7 +1306,6 @@
         };
       });
 
-      const isTech = g.id === 'tech';
       const hasTechData = isTech && (!!state.photos.tech_front || !!state.photos.tech_back);
       $('step-group').classList.toggle('has-tech-data', hasTechData);
       renderVinLookup(hasTechData);
@@ -2249,19 +2274,18 @@
         state.techDataConfirmed = false;
       }
 
-      let processed = dataUrl;
+      state.photos[capturedKey] = dataUrl;
       if (capturedKey === 'tech_front' || capturedKey === 'tech_back') {
-        if (capturedKey === 'tech_back') state.vinStatus = 'ფოტო მოარგებულია…';
-        else state.plateStatus = 'ფოტო მოარგებულია…';
+        if (capturedKey === 'tech_back') state.vinStatus = 'VIN იკითხება…';
+        else state.plateStatus = 'რეგისტრაციის ნომერი იკითხება…';
         renderVinLookup(true);
         try {
-          processed = await cropTechPassportFromPhoto(dataUrl);
+          state.photosOcr[capturedKey] = await cropTechPassportFromPhoto(dataUrl);
         } catch (_) {
-          processed = dataUrl;
+          state.photosOcr[capturedKey] = dataUrl;
         }
       }
 
-      state.photos[capturedKey] = processed;
       closeCamera();
       renderGroup();
       if (capturedKey === 'tech_front') readPlateFromTechPassport();
