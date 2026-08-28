@@ -13,10 +13,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v214</title>
+  <title>დოკუმენტების ატვირთვა v215</title>
   <script>
     (function () {
-      var VER = '214';
+      var VER = '215';
       try {
         var k = 'cc_verify_v';
         var need = localStorage.getItem(k) !== VER;
@@ -692,6 +692,7 @@
       plateStatus: '',
       plateReading: false,
       plateConfirmed: false,
+      plateSource: '',
       techDataConfirmed: false
     };
 
@@ -1006,6 +1007,58 @@
       return ocrLibraryPromise;
     }
 
+    let qrLibraryPromise;
+    function loadQrLibrary() {
+      if (window.jsQR) return Promise.resolve(window.jsQR);
+      if (qrLibraryPromise) return qrLibraryPromise;
+      qrLibraryPromise = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
+        script.async = true;
+        script.onload = () => window.jsQR ? resolve(window.jsQR) : reject(new Error('QR decoder unavailable'));
+        script.onerror = () => reject(new Error('QR decoder could not be loaded'));
+        document.head.appendChild(script);
+      });
+      return qrLibraryPromise;
+    }
+
+    function registrationFromQr(payload) {
+      const firstValue = String(payload || '').split(/[\/\r\n]/)[0]
+        .toUpperCase().replace(/[^A-Z0-9]/g, '');
+      return /^(?=.*[A-Z])(?=.*\d)[A-Z0-9]{5,10}$/.test(firstValue) ? firstValue : '';
+    }
+
+    async function readRegistrationFromQr() {
+      const photo = state.photos.tech_back;
+      if (!photo) return;
+      try {
+        const jsQR = await loadQrLibrary();
+        const image = new Image();
+        const decoded = await new Promise((resolve, reject) => {
+          image.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = image.naturalWidth;
+            canvas.height = image.naturalHeight;
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            ctx.drawImage(image, 0, 0);
+            const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            resolve(jsQR(pixels.data, pixels.width, pixels.height, { inversionAttempts: 'attemptBoth' }));
+          };
+          image.onerror = () => reject(new Error('Photo could not be read'));
+          image.src = photo;
+        });
+        const registration = registrationFromQr(decoded && decoded.data);
+        if (!registration) return;
+        state.plate = registration;
+        state.plateSource = 'qr';
+        state.plateConfirmed = true;
+        state.plateStatus = 'რეგისტრაციის ნომერი QR კოდიდან ზუსტად ამოიკითხა.';
+        renderVinLookup(true);
+      } catch (_) {
+        // OCR on the front photo remains available when a QR cannot be read.
+      }
+    }
+
     function registrationFieldOcrImage(dataUrl) {
       return new Promise((resolve, reject) => {
         const image = new Image();
@@ -1110,16 +1163,18 @@
         const fullResult = await Tesseract.recognize(photo, 'eng');
         const fullPlate = normalizePlate(fullResult && fullResult.data && fullResult.data.text);
         const plate = closePlate || fullPlate;
-        state.plate = plate;
         const hasAmbiguousGlyph = /[5S]/.test(plate);
-        state.plateConfirmed = !!closePlate && closePlate === fullPlate && !hasAmbiguousGlyph;
-        state.plateStatus = !plate
-          ? 'რეგისტრაციის ნომერი ვერ ამოიცნო. ჩაწერეთ ხელით.'
-          : state.plateConfirmed
-            ? 'რეგისტრაციის ნომერი ორივე შემოწმებით ემთხვევა.'
-            : hasAmbiguousGlyph
-              ? 'სიმბოლო S/5 ბუნდოვანია — A ველს შეადარეთ და ხელით გაასწორეთ.'
-              : 'OCR-ის შედეგი დაუზუსტებელია — A ველს შეადარეთ და ხელით გაასწორეთ.';
+        if (state.plateSource !== 'qr') {
+          state.plate = plate;
+          state.plateConfirmed = !!closePlate && closePlate === fullPlate && !hasAmbiguousGlyph;
+          state.plateStatus = !plate
+            ? 'რეგისტრაციის ნომერი ვერ ამოიცნო. ჩაწერეთ ხელით.'
+            : state.plateConfirmed
+              ? 'რეგისტრაციის ნომერი ორივე შემოწმებით ემთხვევა.'
+              : hasAmbiguousGlyph
+                ? 'სიმბოლო S/5 ბუნდოვანია — A ველს შეადარეთ და ხელით გაასწორეთ.'
+                : 'OCR-ის შედეგი დაუზუსტებელია — A ველს შეადარეთ და ხელით გაასწორეთ.';
+        }
       } catch (_) {
         state.plateStatus = 'რეგისტრაციის ნომრის ავტომატური წაკითხვა ვერ მოხერხდა. ჩაწერეთ ხელით.';
       } finally {
@@ -1167,6 +1222,7 @@
         plateInput.oninput = () => {
           state.plate = plateInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10);
           state.plateConfirmed = true;
+          state.plateSource = 'manual';
           state.techDataConfirmed = false;
           state.plateStatus = /^(?=.*[A-Z])(?=.*\d)[A-Z0-9]{5,10}$/.test(state.plate)
             ? 'რეგისტრაციის ნომერი მზადაა.'
@@ -2029,6 +2085,7 @@
         state.plate = '';
         state.plateStatus = '';
         state.plateConfirmed = false;
+        state.plateSource = '';
         state.techDataConfirmed = false;
       }
       if (capturedKey === 'tech_back') {
@@ -2040,7 +2097,10 @@
       closeCamera();
       renderGroup();
       if (capturedKey === 'tech_front') readPlateFromTechPassport();
-      if (capturedKey === 'tech_back') readVinFromTechPassport();
+      if (capturedKey === 'tech_back') {
+        readRegistrationFromQr();
+        readVinFromTechPassport();
+      }
     }
 
     function captureFromVideo() {
