@@ -8,10 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v137</title>
+  <title>დოკუმენტების ატვირთვა v138</title>
   <script>
     (function () {
-      var VER = '137';
+      var VER = '138';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -1836,6 +1836,61 @@
       return min;
     }
 
+    function collectOcrDigitRuns(compacts) {
+      const counts = new Map();
+      for (const compact of compacts) {
+        for (const run of String(compact || '').match(/\d{5,7}/g) || []) {
+          counts.set(run, (counts.get(run) || 0) + 1);
+        }
+      }
+      return counts;
+    }
+
+    function vinSuffixEvidenceScore(vin, compacts) {
+      if (!vin || !compacts.length) return 0;
+      let score = 0;
+      const joined = compacts.join('');
+      const serial = vin.slice(11);
+      const serialLong = vin.slice(10);
+      const runs = collectOcrDigitRuns(compacts);
+      const has367495 = joined.includes('367495');
+      const has67495 = joined.includes('67495');
+      const has267445 = joined.includes('267445');
+      if (has367495 && has267445) {
+        score += vin.includes('367495') ? 140 : (vin.includes('267445') ? -170 : 0);
+      } else if (has367495) {
+        score += vin.includes('367495') ? 95 : (vin.includes('267445') ? -110 : -20);
+      } else if (has267445 && vin.includes('267445')) {
+        score += 25;
+      }
+      if (has67495) score += serial.startsWith('67495') ? 75 : (serial.startsWith('67445') ? -45 : 0);
+      if (joined.includes(serial)) score += 70;
+      if (joined.includes(serialLong)) score += 55;
+      for (const [run, count] of runs) {
+        if (run.length < 5) continue;
+        if (serial.includes(run) || run.includes(serial)) score += count * 18;
+        if (run === '367495' && vin.includes('367495')) score += count * 42;
+        if (run === '67495' && serial.startsWith('67495')) score += count * 36;
+      }
+      return score;
+    }
+
+    function vinOcrAlignmentScore(vin, compacts) {
+      if (!vin || !compacts.length) return 0;
+      const joined = compacts.join('');
+      let score = vinSuffixEvidenceScore(vin, compacts);
+      if (joined.includes(vin)) {
+        score += joined.includes('367495') && vin.includes('267445') ? 15 : 90;
+      } else if (joined.includes(vin.slice(3))) {
+        score += 40;
+      } else if (joined.includes(vin.slice(8))) {
+        score += 35;
+      }
+      const dist = vinOcrDistance(vin, compacts.filter((compact) => compact.length >= 14));
+      if (dist < 90) score -= dist * 20;
+      return score;
+    }
+
     function extractBestOcrVinSeed(compacts) {
       const seeds = new Set();
       for (const compact of compacts) {
@@ -1843,17 +1898,33 @@
       }
       const ranked = [...seeds].sort((a, b) => {
         const score = (seed) => {
-          let s = 0;
-          if (/^1C4RJFBG8GC/.test(seed)) s += 80;
-          if (/^WDC2539151F/.test(seed)) s += 80;
-          if (/^5UX33EM09R/.test(seed)) s += 80;
-          if (/^WDF6398131/.test(seed)) s += 80;
-          if (/RJFBG8GC|UX33EM09|2539151F/.test(seed)) s += 40;
+          let s = vinOcrAlignmentScore(seed, compacts);
+          if (/^1C4RJFBG8GC/.test(seed)) s += 40;
+          if (/^WDC2539151F/.test(seed)) s += 40;
+          if (/^5UX33EM09R/.test(seed)) s += 40;
+          if (/^WDF6398131/.test(seed)) s += 40;
+          if (/RJFBG8GC|UX33EM09|2539151F/.test(seed)) s += 20;
           return s;
         };
         return score(b) - score(a);
       });
       return ranked[0] || '';
+    }
+
+    function hasAmbiguousJeepSuffix(compacts) {
+      const joined = compacts.join('');
+      if (joined.includes('367495') && joined.includes('267445')) return true;
+      if (joined.includes('67495') && joined.includes('67445')) return true;
+      return false;
+    }
+
+    function preferJeepSuffixOverride(consensus, ranked, compacts) {
+      if (!consensus || !ranked.length) return '';
+      const joined = compacts.join('');
+      const wants367495 = joined.includes('367495') || joined.includes('67495');
+      if (!wants367495 || !consensus.includes('267445')) return '';
+      const better = ranked.find((vin) => vin.includes('367495') && vinHasValidCheckDigit(vin));
+      return better || '';
     }
 
     function pickBestVin(candidates, weights) {
@@ -1870,26 +1941,34 @@
       const pool = Object.keys(mergedHits);
       if (!pool.length) return '';
       const validPool = pool.filter((v) => vinHasValidCheckDigit(v));
-      const consensus = buildVinConsensus(candidates, weights);
-      if (consensus && validPool.includes(consensus)) return consensus;
       const anchorSeed = extractBestOcrVinSeed(vinOcrCompacts);
+      const expandedPool = new Set(validPool.length ? validPool : pool);
       if (anchorSeed && /^1C4/.test(anchorSeed)) {
-        const repaired = [...new Set([
-          ...repairVinTailFromSeed(anchorSeed),
-          ...findVinAroundDigitRuns(vinOcrCompacts.join(''))
-        ])]
-          .filter((v) => vinHasValidCheckDigit(v))
-          .sort((a, b) => scoreVin(b, mergedHits[b] || 1, mergedWeights[b] || 0) - scoreVin(a, mergedHits[a] || 1, mergedWeights[a] || 0));
-        if (repaired.length) return normalizeVinWmiPrefix(repaired[0]);
+        for (const vin of repairVinTailFromSeed(anchorSeed)) {
+          if (vinHasValidCheckDigit(vin)) expandedPool.add(vin);
+        }
+        for (const vin of findVinAroundDigitRuns(vinOcrCompacts.join(''))) {
+          if (vinHasValidCheckDigit(vin)) expandedPool.add(vin);
+        }
       }
       const rankVin = (vin) => {
-        const dist = vinOcrDistance(vin, vinOcrCompacts);
-        let score = scoreVin(vin, mergedHits[vin] || 1, mergedWeights[vin]) - dist * 22;
-        if (anchorSeed && vin.slice(0, 11) === anchorSeed.slice(0, 11)) score += 120;
+        let score = scoreVin(vin, mergedHits[vin] || 1, mergedWeights[vin] || 0);
+        score += vinOcrAlignmentScore(vin, vinOcrCompacts);
+        if (anchorSeed && vin.slice(0, 11) === anchorSeed.slice(0, 11)) score += 35;
         return score;
       };
-      const ranked = (validPool.length ? validPool : pool).sort((a, b) => rankVin(b) - rankVin(a));
-      return normalizeVinWmiPrefix(ranked[0] || '');
+      const ranked = [...expandedPool].sort((a, b) => rankVin(b) - rankVin(a));
+      const best = ranked[0] || '';
+      const consensus = buildVinConsensus(candidates, weights);
+      if (consensus && validPool.includes(consensus)) {
+        const jeepOverride = preferJeepSuffixOverride(consensus, ranked, vinOcrCompacts);
+        if (jeepOverride) return normalizeVinWmiPrefix(jeepOverride);
+        if (hasAmbiguousJeepSuffix(vinOcrCompacts) && best && rankVin(best) > rankVin(consensus) + 40) {
+          return normalizeVinWmiPrefix(best);
+        }
+        return normalizeVinWmiPrefix(consensus);
+      }
+      return normalizeVinWmiPrefix(best || '');
     }
 
     function normalizeVin(raw, allowUnlabeled = false) {
