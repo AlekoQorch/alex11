@@ -13,10 +13,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v216</title>
+  <title>დოკუმენტების ატვირთვა v217</title>
   <script>
     (function () {
-      var VER = '216';
+      var VER = '217';
       try {
         var k = 'cc_verify_v';
         var need = localStorage.getItem(k) !== VER;
@@ -918,32 +918,29 @@
       return svgBack();
     }
 
-    function normalizeVin(raw) {
+    function normalizeVin(raw, allowUnlabeled = false) {
       const lines = String(raw || '').toUpperCase().split(/\r?\n/);
       const fieldELines = lines.map((line) => {
         const match = line.match(/(?:^|\s)E(?:[.:]|\s)+(.+)/);
         return match ? match[1] : '';
       }).filter(Boolean);
-      // Prefer the E field (VIN) and keep each OCR line independent. This
-      // prevents neighboring fields from being accidentally joined into a
-      // different 17-character code.
+      // A full-document OCR result is trusted only when it names the E
+      // field. The close-up is restricted to the E region, so it may accept
+      // an unlabeled VIN when OCR omits the field letter.
+      if (!fieldELines.length && !allowUnlabeled) return '';
       const candidates = (fieldELines.length ? fieldELines : lines)
         .flatMap((line) => line.match(/[A-Z0-9][A-Z0-9\s-]{15,28}/g) || []);
       const found = [];
       for (const chunk of candidates) {
-        let candidate = chunk.replace(/[^A-Z0-9]/g, '');
-        // The wide opening stroke in Mercedes VINs can be read as W1DF.
-        // Remove the inserted 1 before selecting the 17-character value,
-        // otherwise OCR drops the genuine final character.
-        if (candidate.startsWith('W1DF')) candidate = 'WDF' + candidate.slice(4);
+        const candidate = chunk.replace(/[^A-Z0-9]/g, '');
         // VIN letters I, O and Q are not permitted. OCR commonly mistakes
         // 1/0 for I/O, so make only those unambiguous substitutions.
         for (let i = 0; i <= candidate.length - 17; i++) {
-          let vin = candidate.slice(i, i + 17).replace(/I/g, '1').replace(/[OQ]/g, '0');
-          // Mercedes-Benz vehicle VINs begin with WDF. On certificates, the
-          // narrow left stroke of W is occasionally read by OCR as 1.
-          if (vin.startsWith('1DF')) vin = 'WDF' + vin.slice(3);
-          if (/^[A-HJ-NPR-Z0-9]{17}$/.test(vin)) found.push(vin);
+          const vin = candidate.slice(i, i + 17).replace(/I/g, '1').replace(/[OQ]/g, '0');
+          const digits = (vin.match(/\d/g) || []).length;
+          // This also rejects English phrases such as "PERMISSIBLE LADEN"
+          // that contain a few OCR-converted I characters.
+          if (/^[A-HJ-NPR-Z0-9]{17}$/.test(vin) && digits >= 5) found.push(vin);
         }
       }
       // OCR also sees words such as "vehicle identification". A real VIN
@@ -1092,10 +1089,10 @@
         image.onload = () => {
           // E is in the upper section of the reverse side. As with A, this
           // crop is only an OCR aid and never changes the saved photo.
-          const sx = Math.round(image.width * 0.10);
-          const sy = Math.round(image.height * 0.06);
-          const sw = Math.round(image.width * 0.80);
-          const sh = Math.round(image.height * 0.46);
+          const sx = Math.round(image.width * 0.16);
+          const sy = Math.round(image.height * 0.13);
+          const sw = Math.round(image.width * 0.68);
+          const sh = Math.round(image.height * 0.24);
           const canvas = document.createElement('canvas');
           canvas.width = sw * 2;
           canvas.height = sh * 2;
@@ -1126,7 +1123,7 @@
             }
           }
         });
-        let vin = normalizeVin(result && result.data && result.data.text);
+        let vin = normalizeVin(result && result.data && result.data.text, true);
         if (!vin) {
           const fullResult = await Tesseract.recognize(photo, 'eng');
           vin = normalizeVin(fullResult && fullResult.data && fullResult.data.text);
