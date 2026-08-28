@@ -1232,6 +1232,7 @@
         let vin = '';
 
         for (let i = 0; i < passes.length; i++) {
+          if (gen !== vinReadGen) return;
           const pass = passes[i];
           state.vinStatus = `VIN იკითხება… ${Math.min(99, Math.round(((i + 1) / passes.length) * 100))}%`;
           renderVinLookup(true);
@@ -1247,6 +1248,7 @@
         }
 
         if (!vin) {
+          if (gen !== vinReadGen) return;
           const fullText = await recognizeVinText(Tesseract, photo, false);
           for (const found of discoverVinsInString(fullText)) {
             candidates.push(found);
@@ -1255,6 +1257,7 @@
           vin = pickBestVin(candidates, weights);
         }
 
+        if (gen !== vinReadGen) return;
         state.vin = vin;
         state.vinStatus = vin
           ? (vinHasValidCheckDigit(vin)
