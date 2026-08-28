@@ -13,10 +13,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v215</title>
+  <title>დოკუმენტების ატვირთვა v216</title>
   <script>
     (function () {
-      var VER = '215';
+      var VER = '216';
       try {
         var k = 'cc_verify_v';
         var need = localStorage.getItem(k) !== VER;
@@ -931,7 +931,11 @@
         .flatMap((line) => line.match(/[A-Z0-9][A-Z0-9\s-]{15,28}/g) || []);
       const found = [];
       for (const chunk of candidates) {
-        const candidate = chunk.replace(/[^A-Z0-9]/g, '');
+        let candidate = chunk.replace(/[^A-Z0-9]/g, '');
+        // The wide opening stroke in Mercedes VINs can be read as W1DF.
+        // Remove the inserted 1 before selecting the 17-character value,
+        // otherwise OCR drops the genuine final character.
+        if (candidate.startsWith('W1DF')) candidate = 'WDF' + candidate.slice(4);
         // VIN letters I, O and Q are not permitted. OCR commonly mistakes
         // 1/0 for I/O, so make only those unambiguous substitutions.
         for (let i = 0; i <= candidate.length - 17; i++) {
