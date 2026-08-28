@@ -8,10 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v122</title>
+  <title>დოკუმენტების ატვირთვა v123</title>
   <script>
     (function () {
-      var VER = '122';
+      var VER = '123';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -1537,6 +1537,130 @@
       return n ? sum / n : 0;
     }
 
+    function medianLuma(nums) {
+      const a = nums.slice().sort((x, y) => x - y);
+      const m = Math.floor(a.length / 2);
+      return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2;
+    }
+
+    function sampleBackgroundLuma(data, w, h) {
+      const samples = [];
+      const m = Math.max(6, Math.round(Math.min(w, h) * 0.04));
+      const addBand = (x0, y0, x1, y1) => {
+        const step = Math.max(2, Math.round(Math.max(x1 - x0, y1 - y0) / 24));
+        for (let y = y0; y < y1; y += step) {
+          for (let x = x0; x < x1; x += step) samples.push(lumaAt(data, w, x, y));
+        }
+      };
+      addBand(0, 0, w, m);
+      addBand(0, h - m, w, h);
+      addBand(0, 0, m, h);
+      addBand(w - m, 0, w, h);
+      return medianLuma(samples);
+    }
+
+    function normalizeDocumentRect(x, y, rw, rh, w, h) {
+      const pad = Math.round(Math.max(rw, rh) * 0.012);
+      x = Math.max(0, x - pad);
+      y = Math.max(0, y - pad);
+      rw = Math.min(w - x, rw + pad * 2);
+      rh = Math.min(h - y, rh + pad * 2);
+      const aspect = rw / rh;
+      if (rw < w * 0.12 || rh < h * 0.12) return null;
+      if (!((aspect > 1.12 && aspect < 2.15) || (aspect > 0.46 && aspect < 0.9))) return null;
+      return { x, y, w: rw, h: rh };
+    }
+
+    function detectDocumentByBackground(data, w, h) {
+      const bg = sampleBackgroundLuma(data, w, h);
+      const step = Math.max(2, Math.round(Math.min(w, h) / 250));
+      let minX = w;
+      let minY = h;
+      let maxX = 0;
+      let maxY = 0;
+      let hits = 0;
+      for (let y = 0; y < h; y += step) {
+        for (let x = 0; x < w; x += step) {
+          const l = lumaAt(data, w, x, y);
+          if (l > bg + 16 || Math.abs(l - bg) > 24) {
+            hits++;
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
+          }
+        }
+      }
+      if (hits < 25) return null;
+      return normalizeDocumentRect(minX, minY, maxX - minX, maxY - minY, w, h);
+    }
+
+    function detectDocumentByProjection(data, w, h) {
+      const bg = sampleBackgroundLuma(data, w, h);
+      const step = Math.max(2, Math.round(Math.min(w, h) / 250));
+      const rowMean = new Array(h).fill(0);
+      const colMean = new Array(w).fill(0);
+      const rowN = new Array(h).fill(0);
+      const colN = new Array(w).fill(0);
+      for (let y = 0; y < h; y += step) {
+        for (let x = 0; x < w; x += step) {
+          const l = lumaAt(data, w, x, y);
+          rowMean[y] += l;
+          rowN[y]++;
+          colMean[x] += l;
+          colN[x]++;
+        }
+      }
+      const isDoc = (v) => v > bg + 14;
+      let top = 0;
+      let bot = h - 1;
+      let left = 0;
+      let right = w - 1;
+      for (let y = 0; y < h; y++) if (rowN[y] && isDoc(rowMean[y] / rowN[y])) { top = y; break; }
+      for (let y = h - 1; y >= 0; y--) if (rowN[y] && isDoc(rowMean[y] / rowN[y])) { bot = y; break; }
+      for (let x = 0; x < w; x++) if (colN[x] && isDoc(colMean[x] / colN[x])) { left = x; break; }
+      for (let x = w - 1; x >= 0; x--) if (colN[x] && isDoc(colMean[x] / colN[x])) { right = x; break; }
+      return normalizeDocumentRect(left, top, right - left, bot - top, w, h);
+    }
+
+    function detectDocumentRect(data, w, h) {
+      const candidates = [detectDocumentByBackground(data, w, h), detectDocumentByProjection(data, w, h)].filter(Boolean);
+      if (!candidates.length) return null;
+      return candidates.sort((a, b) => (b.w * b.h) - (a.w * a.h))[0];
+    }
+
+    async function cropTechPassportFromPhoto(dataUrl) {
+      const image = await new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('Photo could not be read'));
+        img.src = dataUrl;
+      });
+      const maxDim = 1400;
+      const scale = Math.min(1, maxDim / Math.max(image.naturalWidth, image.naturalHeight));
+      const sw = Math.round(image.naturalWidth * scale);
+      const sh = Math.round(image.naturalHeight * scale);
+      const canvas = document.createElement('canvas');
+      canvas.width = sw;
+      canvas.height = sh;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      ctx.drawImage(image, 0, 0, sw, sh);
+      const rect = detectDocumentRect(ctx.getImageData(0, 0, sw, sh).data, sw, sh);
+      if (!rect) return dataUrl;
+      const areaRatio = (rect.w * rect.h) / (sw * sh);
+      if (areaRatio > 0.96) return dataUrl;
+      const inv = 1 / scale;
+      const sx = Math.round(rect.x * inv);
+      const sy = Math.round(rect.y * inv);
+      const rw = Math.round(rect.w * inv);
+      const rh = Math.round(rect.h * inv);
+      const out = document.createElement('canvas');
+      out.width = rw;
+      out.height = rh;
+      out.getContext('2d').drawImage(image, sx, sy, rw, rh, 0, 0, rw, rh);
+      return out.toDataURL('image/jpeg', 0.94);
+    }
+
     function scoreDocumentInFrame(video, cw, ch) {
       if (!video.videoWidth) return 0;
       const aw = Math.min(360, cw);
@@ -1896,8 +2020,9 @@
       ctx.closePath();
     }
 
-    function acceptPhoto(dataUrl) {
+    async function acceptPhoto(dataUrl, options) {
       const capturedKey = state.captureKey;
+      const fromGallery = !!(options && options.fromGallery);
       stopAlignLoop();
       if (capturedKey === 'tech_front') {
         state.plate = '';
@@ -1911,7 +2036,22 @@
         state.vinStatus = '';
         state.techDataConfirmed = false;
       }
-      state.photos[capturedKey] = dataUrl;
+
+      let processed = dataUrl;
+      if (capturedKey === 'tech_front' || capturedKey === 'tech_back') {
+        if (fromGallery) {
+          if (capturedKey === 'tech_back') state.vinStatus = 'ტექპასპორტი მოირჩევა…';
+          else state.plateStatus = 'ტექპასპორტი მოირჩევა…';
+          renderVinLookup(true);
+        }
+        try {
+          processed = await cropTechPassportFromPhoto(dataUrl);
+        } catch (_) {
+          processed = dataUrl;
+        }
+      }
+
+      state.photos[capturedKey] = processed;
       closeCamera();
       renderGroup();
       if (capturedKey === 'tech_front') readPlateFromTechPassport();
@@ -1929,7 +2069,7 @@
       src.height = video.videoHeight;
       src.getContext('2d').drawImage(video, 0, 0);
       if (isCarCapture() || isTechCapture()) {
-        acceptPhoto(src.toDataURL('image/jpeg', 0.95));
+        void acceptPhoto(src.toDataURL('image/jpeg', 0.95));
         return;
       }
       const { x, y, rw, rh } = cardRect(src.width, src.height);
@@ -1937,7 +2077,7 @@
       out.width = Math.round(rw);
       out.height = Math.round(rh);
       out.getContext('2d').drawImage(src, x, y, rw, rh, 0, 0, out.width, out.height);
-      acceptPhoto(out.toDataURL('image/jpeg', 0.92));
+      void acceptPhoto(out.toDataURL('image/jpeg', 0.92));
     }
 
     $('cam-shutter').onclick = () => {
@@ -1966,7 +2106,7 @@
       const file = $('file-input').files && $('file-input').files[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = () => acceptPhoto(String(reader.result || ''));
+      reader.onload = () => { void acceptPhoto(String(reader.result || ''), { fromGallery: true }); };
       reader.readAsDataURL(file);
       $('file-input').value = '';
     };
