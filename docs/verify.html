@@ -8,10 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v135</title>
+  <title>დოკუმენტების ატვირთვა v136</title>
   <script>
     (function () {
-      var VER = '135';
+      var VER = '136';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -374,7 +374,7 @@
       <div id="group-slots"></div>
       <div class="vin-card hide" id="vin-lookup">
         <h3>ავტომობილის მონაცემები</h3>
-        <p>რეგისტრაციის ნომერი იკითხება პირველი გვერდის A ველიდან, VIN — უკანა გვერდის E ველიდან. გადაამოწმეთ და დაადასტურეთ ორივე კოდი.</p>
+        <p>რეგისტრაციის ნომერი იკითხება უკანა გვერდის QR კოდიდან (პირველი მნიშვნელობა), VIN — უკანა გვერდის E ველიდან. გადაამოწმეთ და დაადასტურეთ ორივე კოდი.</p>
         <label class="field-label" for="plate-input">რეგისტრაციის ნომერი · A</label>
         <div class="vin-actions">
           <input class="field-inp" id="plate-input" type="text" inputmode="text" autocomplete="off"
@@ -1984,15 +1984,35 @@
     }
 
     function registrationFromQr(payload) {
-      const firstValue = String(payload || '').split(/[\/\r\n]/)[0]
-        .toUpperCase().replace(/[^A-Z0-9]/g, '');
+      const raw = String(payload || '').trim();
+      if (!raw) return '';
+      const firstValue = raw.split(/[\/|\r\n;]/)[0]
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, '');
       return isGeorgianPlateFormat(firstValue) ? firstValue : '';
     }
 
     function qrRegions(width, height) {
+      const full = { x: 0, y: 0, w: width, h: height };
+      const right = {
+        x: Math.round(width * 0.55),
+        y: Math.round(height * 0.15),
+        w: Math.round(width * 0.42),
+        h: Math.round(height * 0.55)
+      };
+      const tight = {
+        x: Math.round(width * 0.60),
+        y: Math.round(height * 0.20),
+        w: Math.round(width * 0.35),
+        h: Math.round(height * 0.45)
+      };
       return [
-        { x: 0, y: 0, w: width, h: height, scale: 1 },
-        { x: 0, y: 0, w: width, h: height, scale: 2 }
+        { ...full, scale: 1 },
+        { ...full, scale: 2 },
+        { ...right, scale: 2 },
+        { ...right, scale: 3 },
+        { ...tight, scale: 3 },
+        { ...tight, scale: 4 }
       ];
     }
 
@@ -2015,38 +2035,39 @@
 
     async function readRegistrationFromQr() {
       const photo = ocrTechPhoto('tech_back');
-      if (!photo) return;
+      if (!photo) return false;
+      state.plateReading = true;
+      state.plateStatus = 'რეგისტრაციის ნომერი იკითხება QR კოდიდან…';
+      renderVinLookup(true);
       try {
         const jsQR = await loadQrLibrary();
-        const image = new Image();
-        const registration = await new Promise((resolve, reject) => {
-          image.onload = () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = image.naturalWidth;
-            canvas.height = image.naturalHeight;
-            const ctx = canvas.getContext('2d', { willReadFrequently: true });
-            ctx.drawImage(image, 0, 0);
-            for (const region of qrRegions(canvas.width, canvas.height)) {
-              const decoded = decodeQrRegion(jsQR, ctx, region);
-              const value = registrationFromQr(decoded && decoded.data);
-              if (value) {
-                resolve(value);
-                return;
-              }
-            }
-            resolve('');
-          };
-          image.onerror = () => reject(new Error('Photo could not be read'));
-          image.src = photo;
-        });
-        if (!registration) return;
+        const image = await loadImageElement(photo);
+        const canvas = document.createElement('canvas');
+        canvas.width = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        ctx.drawImage(image, 0, 0);
+        let registration = '';
+        for (const region of qrRegions(canvas.width, canvas.height)) {
+          const decoded = decodeQrRegion(jsQR, ctx, region);
+          const value = registrationFromQr(decoded && decoded.data);
+          if (value) {
+            registration = value;
+            break;
+          }
+        }
+        if (!registration) return false;
         state.plate = registration;
         state.plateSource = 'qr';
         state.plateConfirmed = true;
         state.plateStatus = 'რეგისტრაციის ნომერი QR კოდიდან ზუსტად ამოიკითხა.';
         renderVinLookup(true);
+        return true;
       } catch (_) {
-        // OCR on the front photo remains available when a QR cannot be read.
+        return false;
+      } finally {
+        state.plateReading = false;
+        renderVinLookup(true);
       }
     }
 
@@ -2098,7 +2119,7 @@
 
     async function readPlateFromTechPassport(triggerKey) {
       const photoKeys = [];
-      if (state.photos.tech_front && triggerKey !== 'tech_back') photoKeys.push('tech_front');
+      if (state.photos.tech_front) photoKeys.push('tech_front');
       if (state.photos.tech_back && triggerKey === 'tech_back') photoKeys.push('tech_back');
       if (!photoKeys.length) return;
       const gen = ++plateReadGen;
@@ -3157,10 +3178,20 @@
       } catch (_) {
         state.photosOcr[capturedKey] = dataUrl;
       }
-      if (capturedKey === 'tech_front') void readPlateFromTechPassport('tech_front');
+      if (capturedKey === 'tech_front') {
+        if (!state.photos.tech_back) {
+          state.plateStatus = 'რეგისტრაციის ნომერი წაიკითხება უკანა გვერდის QR კოდიდან…';
+          renderVinLookup(true);
+        }
+        return;
+      }
       if (capturedKey === 'tech_back') {
-        void readRegistrationFromQr();
-        void readPlateFromTechPassport('tech_back');
+        const fromQr = await readRegistrationFromQr();
+        if (!fromQr) {
+          state.plateStatus = 'QR ვერ ამოიცნო — A ველიდან OCR-ით იკითხება…';
+          renderVinLookup(true);
+          void readPlateFromTechPassport('tech_back');
+        }
         void readVinFromTechPassport('tech_back');
       }
     }
@@ -3188,7 +3219,7 @@
       if (capturedKey === 'tech_front' || capturedKey === 'tech_back') {
         state.photosOcr[capturedKey] = dataUrl;
         if (capturedKey === 'tech_back') state.vinStatus = 'VIN იკითხება…';
-        else state.plateStatus = 'რეგისტრაციის ნომერი იკითხება…';
+        else state.plateStatus = 'რეგისტრაციის ნომერი წაიკითხება უკანა გვერდის QR კოდიდან…';
       }
 
       closeCamera();
