@@ -8,10 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v140</title>
+  <title>დოკუმენტების ატვირთვა v141</title>
   <script>
     (function () {
-      var VER = '140';
+      var VER = '141';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -222,7 +222,7 @@
       inset: 0;
       width: 100%;
       height: 100%;
-      object-fit: contain;
+      object-fit: cover;
       object-position: center;
       background: #101012;
     }
@@ -1348,9 +1348,7 @@
     }
 
     function orientDocumentCanvas(canvas) {
-      const aspect = canvas.width / canvas.height;
-      if (aspect < 0.92) return rotateCanvas90(canvas);
-      if (aspect > 2.35) return rotateCanvas90(canvas);
+      if (canvas.height > canvas.width) return rotateCanvas90(canvas);
       return canvas;
     }
 
@@ -3178,12 +3176,17 @@
       const ctx = out.getContext('2d');
       ctx.fillStyle = '#101012';
       ctx.fillRect(0, 0, targetW, targetH);
-      const scale = Math.min(targetW / canvas.width, targetH / canvas.height);
+      const scale = Math.max(targetW / canvas.width, targetH / canvas.height);
       const dw = Math.round(canvas.width * scale);
       const dh = Math.round(canvas.height * scale);
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, 0, targetW, targetH);
+      ctx.clip();
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(canvas, Math.round((targetW - dw) / 2), Math.round((targetH - dh) / 2), dw, dh);
+      ctx.restore();
       return out;
     }
 
@@ -3194,7 +3197,6 @@
         if (trimmed === out) break;
         out = trimmed;
       }
-      out = scaleCanvasProportional(out, TECH_DOC_NORM_WIDTH);
       return fitCanvasToTechSlot(out);
     }
 
