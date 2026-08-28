@@ -13,10 +13,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v201</title>
+  <title>დოკუმენტების ატვირთვა v202</title>
   <script>
     (function () {
-      var VER = '201';
+      var VER = '202';
       try {
         var k = 'cc_verify_v';
         var need = localStorage.getItem(k) !== VER;
@@ -687,6 +687,7 @@
       state.jumpId = 'car';
       state.testMode = true;
     }
+    if (stepFromLink === 'tech') state.jumpId = 'tech';
 
     /** 577920471 → 577 92 04 71 (9 ციფრი, იწყება 5-ით) */
     function formatPhone(raw) {
@@ -1930,10 +1931,22 @@
       renderGroup();
     }
 
+    function enterTechPreview() {
+      const idx = GROUPS.findIndex((g) => g.id === 'tech');
+      if (idx < 0) return;
+      state.jumpId = 'tech';
+      state.phone = phoneDigits($('phone').value) || phoneDigits(phoneFromLink) || '500000000';
+      state.name = ($('fullname').value || '').trim() || 'ტესტი მომხმარებელი';
+      state.groupIndex = idx;
+      show('group');
+      renderGroup();
+    }
+
     $('test-car-btn').onclick = () => enterCarTest();
 
-    // პირდაპირ ავტომობილის სექცია: Home Screen, ?step=car, ?test=1
+    // პირდაპირი წინასწარი ნახვა: ?step=car ან ?step=tech
     if (state.jumpId === 'car') enterCarTest();
+    if (state.jumpId === 'tech') enterTechPreview();
   </script>
 </body>
 </html>
