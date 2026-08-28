@@ -13,10 +13,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v204</title>
+  <title>დოკუმენტების ატვირთვა v205</title>
   <script>
     (function () {
-      var VER = '204';
+      var VER = '205';
       try {
         var k = 'cc_verify_v';
         var need = localStorage.getItem(k) !== VER;
@@ -1910,16 +1910,14 @@
     function captureFromVideo() {
       const video = $('cam-video');
       if (!video.videoWidth) return;
-      const src = document.createElement('canvas');
-      src.width = video.videoWidth;
-      src.height = video.videoHeight;
-      src.getContext('2d').drawImage(video, 0, 0);
-      const { x, y, rw, rh } = cardRect(src.width, src.height);
-      const out = document.createElement('canvas');
-      out.width = Math.round(rw);
-      out.height = Math.round(rh);
-      out.getContext('2d').drawImage(src, x, y, rw, rh, 0, 0, out.width, out.height);
-      acceptPhoto(out.toDataURL('image/jpeg', 0.92));
+      // The green frame is an alignment guide only. Save the entire camera
+      // frame at its native dimensions so submitted photos are not cropped
+      // or downscaled to the guide's size.
+      const full = document.createElement('canvas');
+      full.width = video.videoWidth;
+      full.height = video.videoHeight;
+      full.getContext('2d').drawImage(video, 0, 0);
+      acceptPhoto(full.toDataURL('image/jpeg', 1));
     }
 
     function readPhotoFile(inp) {
