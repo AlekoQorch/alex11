@@ -8,10 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v121</title>
+  <title>დოკუმენტების ატვირთვა v122</title>
   <script>
     (function () {
-      var VER = '121';
+      var VER = '122';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -843,29 +843,48 @@
       return found;
     }
 
-    function bestVinCandidate(candidates) {
-      return candidates.sort((a, b) => (b.match(/\d/g) || []).length - (a.match(/\d/g) || []).length)[0] || '';
+    function bestVinCandidate(candidates, weights) {
+      const hits = {};
+      for (const vin of candidates) {
+        if (!vin) continue;
+        hits[vin] = (hits[vin] || 0) + 1;
+      }
+      const unique = [...new Set(candidates.filter(Boolean))];
+      if (!unique.length) return '';
+      return unique.sort((a, b) => scoreVin(b, hits[b] || 1, weights && weights[b]) - scoreVin(a, hits[a] || 1, weights && weights[a]))[0];
+    }
+
+    function scoreVin(vin, hits, weight) {
+      let score = (vin.match(/\d/g) || []).length * 12 + hits * 30 + (weight || 0);
+      if (/^[A-Z]{3}\d/.test(vin)) score += 18;
+      if (/^(WDC|WDD|WDF|WDB|WVW|VF1|VF3|JTD|KMH|YV1|ZFA|1HG|2HG|3VW)/.test(vin)) score += 12;
+      if (/^(GLC|BMW|MERC|HIGH|PASS|MATIC|DIESEL|DIZEL)/.test(vin)) score -= 80;
+      return score;
     }
 
     function normalizeVin(raw, allowUnlabeled = false) {
       const lines = String(raw || '').toUpperCase().split(/\r?\n/);
       const eRows = lines.filter((line) =>
-        /(?:^|\s)E(?:[.:]|\s)|VEHICLE\s*IDENT|IDENTIFICATION\s*NUMBER/.test(line)
+        /(?:^|\s)E(?:[.:]|\s)|VEHICLE\s*IDENT|IDENTIFICATION\s*NUMBER|წარმოების\s*ნომერი/.test(line)
       );
 
+      const fromLines = [];
       for (const line of eRows) {
-        // On Georgian tech passports E sits left and the 17-char VIN sits to the
-        // right of the "vehicle identification number" label on the same row.
-        const afterNumber = line.split(/IDENTIFICATION\s*NUMBER|NUMBER/i).pop() || '';
+        const afterNumber = line.split(/IDENTIFICATION\s*NUMBER|წარმოების\s*ნომერი/i).pop() || '';
+        const afterE = line.split(/(?:^|\s)E(?:[.:]|\s)/).pop() || '';
         const eTail = ((line.match(/(?:^|\s)E(?:[.:]|\s)+(.+)/) || [])[1]) || '';
-        const vinSide = stripVinLabelNoise(afterNumber) + ' ' + stripVinLabelNoise(eTail);
-        const fromRow = extractVinCandidates(vinSide);
-        const vin = bestVinCandidate(fromRow);
-        if (vin) return vin;
+        const vinSide = [
+          stripVinLabelNoise(afterNumber),
+          stripVinLabelNoise(afterE),
+          stripVinLabelNoise(eTail)
+        ].join(' ');
+        fromLines.push(...extractVinCandidates(vinSide));
       }
+      const fromRow = bestVinCandidate(fromLines, null);
+      if (fromRow) return fromRow;
 
       if (!allowUnlabeled) return '';
-      return bestVinCandidate(extractVinCandidates(stripVinLabelNoise(raw)));
+      return bestVinCandidate(extractVinCandidates(stripVinLabelNoise(raw)), null);
     }
 
     function cropOcrImage(dataUrl, region, scale) {
@@ -880,7 +899,7 @@
           canvas.width = sw * scale;
           canvas.height = sh * scale;
           const ctx = canvas.getContext('2d');
-          ctx.filter = 'grayscale(1) contrast(1.55)';
+          ctx.filter = 'grayscale(1) contrast(1.8) brightness(1.04)';
           ctx.drawImage(image, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
           resolve(canvas.toDataURL('image/png'));
         };
@@ -889,15 +908,16 @@
       });
     }
 
-    function vinValueOcrImage(dataUrl) {
-      // Tight crop on the value to the right of the E / label text.
-      return cropOcrImage(dataUrl, { x: 0.34, y: 0.11, w: 0.46, h: 0.10 }, 4);
-    }
-
-    function vinFieldOcrImage(dataUrl) {
-      // Full E row band: small E on the left, VIN value on the right.
-      return cropOcrImage(dataUrl, { x: 0.08, y: 0.08, w: 0.72, h: 0.18 }, 3);
-    }
+    // E ველი ტექპასპორტის უკანა მხარეზე D.1–D.3-ის ქვემოთაა (~24–36% სიმაღლეზე).
+    const VIN_OCR_REGIONS = [
+      { x: 0.42, y: 0.28, w: 0.40, h: 0.08, scale: 4, singleLine: true, weight: 30 },
+      { x: 0.30, y: 0.28, w: 0.55, h: 0.08, scale: 4, singleLine: true, weight: 24 },
+      { x: 0.38, y: 0.30, w: 0.48, h: 0.10, scale: 3, singleLine: true, weight: 20 },
+      { x: 0.42, y: 0.24, w: 0.40, h: 0.08, scale: 4, singleLine: true, weight: 18 },
+      { x: 0.30, y: 0.32, w: 0.55, h: 0.10, scale: 3, singleLine: true, weight: 16 },
+      { x: 0.35, y: 0.34, w: 0.50, h: 0.10, scale: 3, singleLine: true, weight: 12 },
+      { x: 0.08, y: 0.22, w: 0.72, h: 0.20, scale: 2, singleLine: false, weight: 8 }
+    ];
 
     function normalizePlate(raw) {
       const lines = String(raw || '').toUpperCase().split(/\r?\n/);
@@ -1061,13 +1081,18 @@
       renderVinLookup(true);
       try {
         const Tesseract = await loadOcrLibrary();
-        let vin = '';
-        const valueCrop = await vinValueOcrImage(photo);
-        vin = normalizeVin(await recognizeVinText(Tesseract, valueCrop, true), true);
-        if (!vin) {
-          const rowCrop = await vinFieldOcrImage(photo);
-          vin = normalizeVin(await recognizeVinText(Tesseract, rowCrop, false), true);
+        const candidates = [];
+        const weights = {};
+        for (const region of VIN_OCR_REGIONS) {
+          const crop = await cropOcrImage(photo, region, region.scale);
+          const text = await recognizeVinText(Tesseract, crop, region.singleLine);
+          const vin = normalizeVin(text, true);
+          if (vin) {
+            candidates.push(vin);
+            weights[vin] = (weights[vin] || 0) + (region.weight || 1);
+          }
         }
+        let vin = bestVinCandidate(candidates, weights);
         if (!vin) {
           vin = normalizeVin(await recognizeVinText(Tesseract, photo, false), true);
         }
