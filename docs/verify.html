@@ -897,16 +897,19 @@
     function normalizeVin(raw) {
       const text = String(raw || '').toUpperCase();
       const candidates = text.match(/[A-Z0-9][A-Z0-9\s-]{15,28}/g) || [];
+      const found = [];
       for (const chunk of candidates) {
         const candidate = chunk.replace(/[^A-Z0-9]/g, '');
         // VIN letters I, O and Q are not permitted. OCR commonly mistakes
         // 1/0 for I/O, so make only those unambiguous substitutions.
         for (let i = 0; i <= candidate.length - 17; i++) {
           const vin = candidate.slice(i, i + 17).replace(/I/g, '1').replace(/[OQ]/g, '0');
-          if (/^[A-HJ-NPR-Z0-9]{17}$/.test(vin)) return vin;
+          if (/^[A-HJ-NPR-Z0-9]{17}$/.test(vin)) found.push(vin);
         }
       }
-      return '';
+      // OCR also sees words such as "vehicle identification". A real VIN
+      // normally contains far more digits, so prefer the strongest candidate.
+      return found.sort((a, b) => (b.match(/\d/g) || []).length - (a.match(/\d/g) || []).length)[0] || '';
     }
 
     function bidCarsUrl(vin) {
