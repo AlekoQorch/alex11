@@ -8,10 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v139</title>
+  <title>დოკუმენტების ატვირთვა v140</title>
   <script>
     (function () {
-      var VER = '139';
+      var VER = '140';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -1240,6 +1240,7 @@
 
     const TECH_DOC_NORM_WIDTH = 2000;
     const TECH_CROP_MIN_WIDTH = 1400;
+    const TECH_SLOT_ASPECT = 100 / 58;
 
     function normalizedDocHeight(srcW, srcH) {
       return Math.max(1, Math.round(srcH * (TECH_DOC_NORM_WIDTH / srcW)));
@@ -1347,8 +1348,10 @@
     }
 
     function orientDocumentCanvas(canvas) {
-      if (canvas.width >= canvas.height * 1.05) return canvas;
-      return rotateCanvas90(canvas);
+      const aspect = canvas.width / canvas.height;
+      if (aspect < 0.92) return rotateCanvas90(canvas);
+      if (aspect > 2.35) return rotateCanvas90(canvas);
+      return canvas;
     }
 
     function scaleCanvasProportional(canvas, outW) {
@@ -2853,6 +2856,50 @@
       return 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
     }
 
+    function rgbAt(data, w, x, y) {
+      const xi = Math.max(0, Math.min(w - 1, x | 0));
+      const yi = Math.max(0, Math.min((data.length / (w * 4)) - 1, y | 0));
+      const i = (yi * w + xi) * 4;
+      return [data[i], data[i + 1], data[i + 2]];
+    }
+
+    function medianRgb(samples) {
+      if (!samples.length) return [0, 0, 0];
+      const mid = (arr) => {
+        const sorted = arr.slice().sort((a, b) => a - b);
+        const m = Math.floor(sorted.length / 2);
+        return sorted.length % 2 ? sorted[m] : Math.round((sorted[m - 1] + sorted[m]) / 2);
+      };
+      return [
+        mid(samples.map((s) => s[0])),
+        mid(samples.map((s) => s[1])),
+        mid(samples.map((s) => s[2]))
+      ];
+    }
+
+    function colorDistance(a, b) {
+      return Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+    }
+
+    function sampleBorderRgb(data, w, h) {
+      const samples = [];
+      const m = Math.max(6, Math.round(Math.min(w, h) * 0.05));
+      const step = Math.max(2, Math.round(m / 2));
+      for (let x = 0; x < w; x += step) {
+        samples.push(rgbAt(data, w, x, 0));
+        samples.push(rgbAt(data, w, x, h - 1));
+      }
+      for (let y = 0; y < h; y += step) {
+        samples.push(rgbAt(data, w, 0, y));
+        samples.push(rgbAt(data, w, w - 1, y));
+      }
+      return medianRgb(samples);
+    }
+
+    function isBackgroundPixel(data, w, bg, x, y, threshold) {
+      return colorDistance(rgbAt(data, w, x, y), bg) < threshold;
+    }
+
     function edgeContrast(data, w, x0, y0, x1, y1, inwardX, inwardY) {
       const steps = 22;
       let sum = 0;
@@ -2936,7 +2983,7 @@
     }
 
     function normalizeDocumentRect(x, y, rw, rh, w, h, allowLoose) {
-      const pad = Math.round(Math.max(rw, rh) * 0.008);
+      const pad = Math.round(Math.max(rw, rh) * 0.004);
       x = Math.max(0, x - pad);
       y = Math.max(0, y - pad);
       rw = Math.min(w - x, rw + pad * 2);
@@ -2948,18 +2995,120 @@
       return { x, y, w: rw, h: rh };
     }
 
-    function pickBestDocumentRect(data, w, h) {
-      const fullArea = w * h;
-      const content = detectContentBounds(data, w, h);
-      const doc = detectDocumentRect(data, w, h);
-      if (content && doc) {
-        const contentArea = content.w * content.h;
-        const docArea = doc.w * doc.h;
-        if (contentArea < fullArea * 0.9 && contentArea < docArea * 0.98) return content;
-        if (docArea < fullArea * 0.9) return doc;
-        return docArea <= contentArea ? doc : content;
+    function scoreDocumentRect(rect, w, h) {
+      const area = rect.w * rect.h;
+      const full = w * h;
+      const aspect = rect.w / rect.h;
+      let score = 0;
+      const landscapeOk = aspect > 1.32 && aspect < 2.05;
+      const portraitOk = aspect > 0.48 && aspect < 0.76;
+      if (landscapeOk || portraitOk) score += 140;
+      if (area > full * 0.12 && area < full * 0.94) score += 90;
+      score += (1 - area / full) * 80;
+      if (aspect > 2.2 || aspect < 0.4) score -= 120;
+      return score;
+    }
+
+    function detectDocumentByColorEdge(data, w, h) {
+      const bg = sampleBorderRgb(data, w, h);
+      const threshold = 48;
+      const stepX = Math.max(2, Math.round(w / 240));
+      const stepY = Math.max(2, Math.round(h / 240));
+      const rowHits = (y) => {
+        let hits = 0;
+        let total = 0;
+        for (let x = 0; x < w; x += stepX) {
+          total++;
+          if (!isBackgroundPixel(data, w, bg, x, y, threshold)) hits++;
+        }
+        return total ? hits / total : 0;
+      };
+      const colHits = (x) => {
+        let hits = 0;
+        let total = 0;
+        for (let y = 0; y < h; y += stepY) {
+          total++;
+          if (!isBackgroundPixel(data, w, bg, x, y, threshold)) hits++;
+        }
+        return total ? hits / total : 0;
+      };
+      const minRow = 0.10;
+      const minCol = 0.10;
+      let top = 0;
+      let bot = h - 1;
+      let left = 0;
+      let right = w - 1;
+      for (let y = 0; y < h; y++) if (rowHits(y) >= minRow) { top = y; break; }
+      for (let y = h - 1; y >= 0; y--) if (rowHits(y) >= minRow) { bot = y; break; }
+      for (let x = 0; x < w; x++) if (colHits(x) >= minCol) { left = x; break; }
+      for (let x = w - 1; x >= 0; x--) if (colHits(x) >= minCol) { right = x; break; }
+      const rw = right - left + 1;
+      const rh = bot - top + 1;
+      if (rw < w * 0.12 || rh < h * 0.12) return null;
+      return normalizeDocumentRect(left, top, rw, rh, w, h, true);
+    }
+
+    function detectDocumentByLightRegion(data, w, h) {
+      return detectDocumentByAdaptiveBright(data, w, h);
+    }
+
+    function brightBoxAtThreshold(data, w, h, threshold) {
+      const step = Math.max(2, Math.round(Math.min(w, h) / 320));
+      let minX = w;
+      let minY = h;
+      let maxX = 0;
+      let maxY = 0;
+      let hits = 0;
+      for (let y = 0; y < h; y += step) {
+        for (let x = 0; x < w; x += step) {
+          const luma = lumaAt(data, w, x, y);
+          if (luma <= threshold) continue;
+          const [r, g, b] = rgbAt(data, w, x, y);
+          const max = Math.max(r, g, b);
+          const min = Math.min(r, g, b);
+          const sat = max ? (max - min) / max : 0;
+          if (sat > 0.58 && luma < threshold + 18) continue;
+          hits++;
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+        }
       }
-      return doc || content;
+      if (hits < 18) return null;
+      const pad = Math.round(Math.max(maxX - minX, maxY - minY) * 0.015);
+      return normalizeDocumentRect(minX - pad, minY - pad, maxX - minX + 1 + pad * 2, maxY - minY + 1 + pad * 2, w, h, true);
+    }
+
+    function detectDocumentByAdaptiveBright(data, w, h) {
+      const tries = [];
+      for (let threshold = 212; threshold >= 150; threshold -= 4) {
+        const rect = brightBoxAtThreshold(data, w, h, threshold);
+        if (!rect) continue;
+        const area = (rect.w * rect.h) / (w * h);
+        const aspect = rect.w / rect.h;
+        const landscapeOk = aspect > 1.22 && aspect < 2.05;
+        const portraitOk = aspect > 0.48 && aspect < 0.82;
+        if (area < 0.12 || area > 0.86) continue;
+        if (!landscapeOk && !portraitOk) continue;
+        tries.push({
+          rect,
+          score: scoreDocumentRect(rect, w, h) + (1 - area) * 110 + (landscapeOk ? 20 : 10)
+        });
+      }
+      if (!tries.length) return null;
+      return tries.sort((a, b) => b.score - a.score)[0].rect;
+    }
+
+    function pickBestDocumentRect(data, w, h) {
+      const candidates = [
+        detectDocumentByAdaptiveBright(data, w, h),
+        detectDocumentByColorEdge(data, w, h),
+        detectContentBounds(data, w, h),
+        detectDocumentRect(data, w, h)
+      ].filter(Boolean);
+      if (!candidates.length) return null;
+      return candidates.sort((a, b) => scoreDocumentRect(b, w, h) - scoreDocumentRect(a, w, h))[0];
     }
 
     function detectDocumentRect(data, w, h) {
@@ -2991,11 +3140,18 @@
     }
 
     function trimDarkMargins(canvas) {
+      return trimBackgroundMargins(canvas);
+    }
+
+    function trimBackgroundMargins(canvas) {
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
       const w = canvas.width;
       const h = canvas.height;
-      const rect = detectContentBounds(ctx.getImageData(0, 0, w, h).data, w, h);
-      if (!rect || rect.w * rect.h > w * h * 0.94) return canvas;
+      const data = ctx.getImageData(0, 0, w, h).data;
+      const rect = detectDocumentByAdaptiveBright(data, w, h)
+        || detectDocumentByColorEdge(data, w, h)
+        || detectContentBounds(data, w, h);
+      if (!rect || rect.w * rect.h > w * h * 0.97) return canvas;
       const out = document.createElement('canvas');
       let outW = rect.w;
       let outH = rect.h;
@@ -3013,12 +3169,33 @@
       return out;
     }
 
+    function fitCanvasToTechSlot(canvas) {
+      const targetW = TECH_DOC_NORM_WIDTH;
+      const targetH = Math.max(1, Math.round(targetW / TECH_SLOT_ASPECT));
+      const out = document.createElement('canvas');
+      out.width = targetW;
+      out.height = targetH;
+      const ctx = out.getContext('2d');
+      ctx.fillStyle = '#101012';
+      ctx.fillRect(0, 0, targetW, targetH);
+      const scale = Math.min(targetW / canvas.width, targetH / canvas.height);
+      const dw = Math.round(canvas.width * scale);
+      const dh = Math.round(canvas.height * scale);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(canvas, Math.round((targetW - dw) / 2), Math.round((targetH - dh) / 2), dw, dh);
+      return out;
+    }
+
     function normalizeTechPassportCanvas(canvas) {
       let out = orientDocumentCanvas(canvas);
-      out = trimDarkMargins(out);
-      const trimmedAgain = trimDarkMargins(out);
-      if (trimmedAgain !== out) out = trimmedAgain;
-      return scaleCanvasProportional(out, TECH_DOC_NORM_WIDTH);
+      for (let i = 0; i < 4; i++) {
+        const trimmed = trimBackgroundMargins(out);
+        if (trimmed === out) break;
+        out = trimmed;
+      }
+      out = scaleCanvasProportional(out, TECH_DOC_NORM_WIDTH);
+      return fitCanvasToTechSlot(out);
     }
 
     function quadOutputSize(corners, targetW) {
@@ -3045,7 +3222,7 @@
       let cropW = image.naturalWidth;
       let cropH = image.naturalHeight;
 
-      for (let pass = 0; pass < 3; pass++) {
+      for (let pass = 0; pass < 4; pass++) {
         const iw = cropW;
         const ih = cropH;
         const detectScale = Math.min(1, 2200 / Math.max(iw, ih));
@@ -3069,7 +3246,7 @@
         sy = nextSy;
         cropW = nextW;
         cropH = nextH;
-        if (areaAfter > areaBefore * 0.94) break;
+        if (areaAfter > areaBefore * 0.90) break;
       }
 
       const cropped = renderTightTechCrop(image, sx, sy, cropW, cropH);
