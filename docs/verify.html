@@ -8,10 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v123</title>
+  <title>დოკუმენტების ატვირთვა v124</title>
   <script>
     (function () {
-      var VER = '123';
+      var VER = '124';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -824,8 +824,40 @@
         .replace(/[^A-Z0-9\n\s-]/g, ' ');
     }
 
+    function hasRepeatedVinSegment(vin, minLen = 5) {
+      for (let len = minLen; len <= 8; len++) {
+        for (let i = 0; i <= vin.length - len * 2; i++) {
+          const seg = vin.slice(i, i + len);
+          if (vin.indexOf(seg, i + len) !== -1) return true;
+        }
+      }
+      return false;
+    }
+
+    function findVinByWmiPattern(source) {
+      let s = stripVinLabelNoise(source).replace(/\s+/g, '');
+      s = s.replace(/WDR/g, 'WDF').replace(/W1DF/g, 'WDF').replace(/1DF/g, 'WDF');
+      const wmiList = ['WDC', 'WDD', 'WDF', 'WDB', 'WVW', 'VF1', 'VF3', 'JTD', 'KMH', 'YV1', 'ZFA', '1HG', '2HG', '3VW'];
+      for (const wmi of wmiList) {
+        let idx = 0;
+        while ((idx = s.indexOf(wmi, idx)) !== -1) {
+          const chunk = s.slice(idx).replace(/[^A-Z0-9]/g, '');
+          for (let i = 0; i <= chunk.length - 17; i++) {
+            let vin = chunk.slice(i, i + 17).replace(/I/g, '1').replace(/[OQ]/g, '0');
+            if (vin.startsWith('1DF')) vin = 'WDF' + vin.slice(3);
+            const digits = (vin.match(/\d/g) || []).length;
+            if (/^[A-HJ-NPR-Z0-9]{17}$/.test(vin) && digits >= 5 && !hasRepeatedVinSegment(vin)) return vin;
+          }
+          idx += 1;
+        }
+      }
+      return '';
+    }
+
     function extractVinCandidates(source) {
       const found = [];
+      const direct = findVinByWmiPattern(source);
+      if (direct) found.push(direct);
       const chunks = String(source || '').toUpperCase()
         .split(/\r?\n/)
         .flatMap((line) => [line, stripVinLabelNoise(line)])
@@ -833,11 +865,12 @@
       for (const chunk of chunks) {
         let candidate = chunk.replace(/[^A-Z0-9]/g, '');
         if (candidate.startsWith('W1DF')) candidate = 'WDF' + candidate.slice(4);
+        candidate = candidate.replace(/WDR/g, 'WDF');
         for (let i = 0; i <= candidate.length - 17; i++) {
           let vin = candidate.slice(i, i + 17).replace(/I/g, '1').replace(/[OQ]/g, '0');
           if (vin.startsWith('1DF')) vin = 'WDF' + vin.slice(3);
           const digits = (vin.match(/\d/g) || []).length;
-          if (/^[A-HJ-NPR-Z0-9]{17}$/.test(vin) && digits >= 5) found.push(vin);
+          if (/^[A-HJ-NPR-Z0-9]{17}$/.test(vin) && digits >= 5 && !hasRepeatedVinSegment(vin)) found.push(vin);
         }
       }
       return found;
@@ -856,13 +889,17 @@
 
     function scoreVin(vin, hits, weight) {
       let score = (vin.match(/\d/g) || []).length * 12 + hits * 30 + (weight || 0);
-      if (/^[A-Z]{3}\d/.test(vin)) score += 18;
-      if (/^(WDC|WDD|WDF|WDB|WVW|VF1|VF3|JTD|KMH|YV1|ZFA|1HG|2HG|3VW)/.test(vin)) score += 12;
-      if (/^(GLC|BMW|MERC|HIGH|PASS|MATIC|DIESEL|DIZEL)/.test(vin)) score -= 80;
+      if (/^[A-Z]{3}\d/.test(vin)) score += 24;
+      if (/^(WDC|WDD|WDF|WDB|WVW|VF1|VF3|JTD|KMH|YV1|ZFA|1HG|2HG|3VW)/.test(vin)) score += 20;
+      if (!/^[A-Z]{3}/.test(vin)) score -= 70;
+      if (hasRepeatedVinSegment(vin)) score -= 120;
+      if (/^(GLC|BMW|MERC|HIGH|PASS|MATIC|DIESEL|DIZEL|VIANO)/.test(vin)) score -= 80;
       return score;
     }
 
     function normalizeVin(raw, allowUnlabeled = false) {
+      const direct = findVinByWmiPattern(raw);
+      if (direct) return direct;
       const lines = String(raw || '').toUpperCase().split(/\r?\n/);
       const eRows = lines.filter((line) =>
         /(?:^|\s)E(?:[.:]|\s)|VEHICLE\s*IDENT|IDENTIFICATION\s*NUMBER|წარმოების\s*ნომერი/.test(line)
@@ -908,15 +945,17 @@
       });
     }
 
-    // E ველი ტექპასპორტის უკანა მხარეზე D.1–D.3-ის ქვემოთაა (~24–36% სიმაღლეზე).
+    // E ველი: ზედა გვერდზე ~18–24%, უკანა გვერდზე ~26–34%.
     const VIN_OCR_REGIONS = [
-      { x: 0.42, y: 0.28, w: 0.40, h: 0.08, scale: 4, singleLine: true, weight: 30 },
-      { x: 0.30, y: 0.28, w: 0.55, h: 0.08, scale: 4, singleLine: true, weight: 24 },
+      { x: 0.42, y: 0.18, w: 0.40, h: 0.08, scale: 4, singleLine: true, weight: 32 },
+      { x: 0.35, y: 0.20, w: 0.50, h: 0.08, scale: 4, singleLine: true, weight: 30 },
+      { x: 0.38, y: 0.22, w: 0.48, h: 0.10, scale: 4, singleLine: true, weight: 28 },
+      { x: 0.30, y: 0.18, w: 0.55, h: 0.10, scale: 3, singleLine: true, weight: 26 },
+      { x: 0.42, y: 0.28, w: 0.40, h: 0.08, scale: 4, singleLine: true, weight: 24 },
+      { x: 0.30, y: 0.28, w: 0.55, h: 0.08, scale: 4, singleLine: true, weight: 22 },
       { x: 0.38, y: 0.30, w: 0.48, h: 0.10, scale: 3, singleLine: true, weight: 20 },
-      { x: 0.42, y: 0.24, w: 0.40, h: 0.08, scale: 4, singleLine: true, weight: 18 },
       { x: 0.30, y: 0.32, w: 0.55, h: 0.10, scale: 3, singleLine: true, weight: 16 },
-      { x: 0.35, y: 0.34, w: 0.50, h: 0.10, scale: 3, singleLine: true, weight: 12 },
-      { x: 0.08, y: 0.22, w: 0.72, h: 0.20, scale: 2, singleLine: false, weight: 8 }
+      { x: 0.08, y: 0.16, w: 0.72, h: 0.26, scale: 2, singleLine: false, weight: 10 }
     ];
 
     function normalizePlate(raw) {
@@ -1073,8 +1112,8 @@
       return result && result.data && result.data.text;
     }
 
-    async function readVinFromTechPassport() {
-      const photo = state.photos.tech_back;
+    async function readVinFromTechPassport(sourceKey) {
+      const photo = state.photos[sourceKey] || state.photos.tech_back || state.photos.tech_front;
       if (!photo || state.vinReading) return;
       state.vinReading = true;
       state.vinStatus = 'VIN იკითხება…';
@@ -1086,7 +1125,8 @@
         for (const region of VIN_OCR_REGIONS) {
           const crop = await cropOcrImage(photo, region, region.scale);
           const text = await recognizeVinText(Tesseract, crop, region.singleLine);
-          const vin = normalizeVin(text, true);
+          const direct = findVinByWmiPattern(text);
+          const vin = direct || normalizeVin(text, true);
           if (vin) {
             candidates.push(vin);
             weights[vin] = (weights[vin] || 0) + (region.weight || 1);
@@ -2055,9 +2095,9 @@
       closeCamera();
       renderGroup();
       if (capturedKey === 'tech_front') readPlateFromTechPassport();
-      if (capturedKey === 'tech_back') {
-        readRegistrationFromQr();
-        readVinFromTechPassport();
+      if (capturedKey === 'tech_front' || capturedKey === 'tech_back') {
+        if (capturedKey === 'tech_back') readRegistrationFromQr();
+        readVinFromTechPassport(capturedKey);
       }
     }
 
