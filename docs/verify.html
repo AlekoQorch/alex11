@@ -13,10 +13,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v212</title>
+  <title>დოკუმენტების ატვირთვა v213</title>
   <script>
     (function () {
-      var VER = '212';
+      var VER = '213';
       try {
         var k = 'cc_verify_v';
         var need = localStorage.getItem(k) !== VER;
@@ -689,7 +689,8 @@
       vinReading: false,
       plate: '',
       plateStatus: '',
-      plateReading: false
+      plateReading: false,
+      plateConfirmed: false
     };
 
     const params = new URLSearchParams(location.search);
@@ -971,7 +972,7 @@
       input.value = state.vin;
       plateStatus.textContent = state.plateStatus;
       status.textContent = state.vinStatus;
-      plateStatus.className = 'vin-status' + (state.plate
+      plateStatus.className = 'vin-status' + (state.plate && state.plateConfirmed
         ? ' ok'
         : (state.plateStatus && !state.plateReading ? ' error' : ''));
       status.className = 'vin-status' + (state.vin
@@ -1091,18 +1092,23 @@
             }
           }
         });
-        let plate = normalizePlate(result && result.data && result.data.text);
-        // A close-up is normally more accurate. If the document was framed
-        // differently, retry its full-resolution original before asking for
-        // manual input.
-        if (!plate) {
-          const fullResult = await Tesseract.recognize(photo, 'eng');
-          plate = normalizePlate(fullResult && fullResult.data && fullResult.data.text);
-        }
+        const closePlate = normalizePlate(result && result.data && result.data.text);
+        // Compare a close-up with the full-resolution document. Registration
+        // numbers have no check digit, so an OCR-only 5/S disagreement must
+        // be shown as unverified rather than accepted as correct.
+        const fullResult = await Tesseract.recognize(photo, 'eng');
+        const fullPlate = normalizePlate(fullResult && fullResult.data && fullResult.data.text);
+        const plate = closePlate || fullPlate;
         state.plate = plate;
-        state.plateStatus = plate
-          ? 'რეგისტრაციის ნომერი ამოცნობილია — გადაამოწმეთ კოდი.'
-          : 'რეგისტრაციის ნომერი ვერ ამოიცნო. ჩაწერეთ ხელით.';
+        const hasAmbiguousGlyph = /[5S]/.test(plate);
+        state.plateConfirmed = !!closePlate && closePlate === fullPlate && !hasAmbiguousGlyph;
+        state.plateStatus = !plate
+          ? 'რეგისტრაციის ნომერი ვერ ამოიცნო. ჩაწერეთ ხელით.'
+          : state.plateConfirmed
+            ? 'რეგისტრაციის ნომერი ორივე შემოწმებით ემთხვევა.'
+            : hasAmbiguousGlyph
+              ? 'სიმბოლო S/5 ბუნდოვანია — A ველს შეადარეთ და ხელით გაასწორეთ.'
+              : 'OCR-ის შედეგი დაუზუსტებელია — A ველს შეადარეთ და ხელით გაასწორეთ.';
       } catch (_) {
         state.plateStatus = 'რეგისტრაციის ნომრის ავტომატური წაკითხვა ვერ მოხერხდა. ჩაწერეთ ხელით.';
       } finally {
@@ -1149,6 +1155,7 @@
         const input = $('vin-input');
         plateInput.oninput = () => {
           state.plate = plateInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10);
+          state.plateConfirmed = true;
           state.plateStatus = /^(?=.*[A-Z])(?=.*\d)[A-Z0-9]{5,10}$/.test(state.plate)
             ? 'რეგისტრაციის ნომერი მზადაა.'
             : 'მაგალითი: S0008OF';
@@ -1998,6 +2005,7 @@
       if (capturedKey === 'tech_front') {
         state.plate = '';
         state.plateStatus = '';
+        state.plateConfirmed = false;
       }
       if (capturedKey === 'tech_back') {
         state.vin = '';
