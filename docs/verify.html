@@ -8,10 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v130</title>
+  <title>დოკუმენტების ატვირთვა v131</title>
   <script>
     (function () {
-      var VER = '130';
+      var VER = '131';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -1035,20 +1035,16 @@
         });
       };
 
-      pushRegion({ x: 0, y: 0, w: 1, h: 1 }, Math.max(1.5, scale), 6, false);
+      pushRegion({ x: 0, y: 0, w: 1, h: 1 }, Math.max(1.5, scale), 8, false);
 
-      const bandH = 0.14;
-      for (let y = 0; y <= 1 - bandH; y += 0.07) {
-        pushRegion({ x: 0, y, w: 1, h: bandH }, Math.max(2.5, scale * 1.2), 10, true);
+      const bandH = 0.16;
+      for (let y = 0; y <= 0.72; y += 0.12) {
+        pushRegion({ x: 0, y, w: 1, h: bandH }, Math.max(2.5, scale * 1.2), 12, true);
       }
 
-      for (let y = 0.12; y <= 0.42; y += 0.04) {
-        pushRegion({ x: 0.22, y, w: 0.78, h: 0.09 }, Math.max(3.5, scale * 1.5), 18, true);
-        pushRegion({ x: 0.05, y, w: 0.95, h: 0.11 }, Math.max(3, scale * 1.3), 14, true);
+      for (const y of [0.14, 0.20, 0.26, 0.32, 0.38]) {
+        pushRegion({ x: 0.20, y, w: 0.80, h: 0.10 }, Math.max(3.5, scale * 1.4), 20, true);
       }
-
-      pushRegion({ x: 0.30, y: 0.16, w: 0.70, h: 0.22 }, Math.max(3, scale), 16, true);
-      pushRegion({ x: 0.30, y: 0.26, w: 0.70, h: 0.22 }, Math.max(3, scale), 16, true);
 
       return passes;
     }
@@ -1217,9 +1213,14 @@
       return result && result.data && result.data.text;
     }
 
+    let vinReadGen = 0;
+    let plateReadGen = 0;
+
     async function readVinFromTechPassport(sourceKey) {
-      const photo = ocrTechPhoto(sourceKey) || ocrTechPhoto('tech_back') || ocrTechPhoto('tech_front');
-      if (!photo || state.vinReading) return;
+      if (sourceKey !== 'tech_back' && !ocrTechPhoto('tech_back')) return;
+      const photo = ocrTechPhoto('tech_back') || ocrTechPhoto(sourceKey);
+      if (!photo) return;
+      const gen = ++vinReadGen;
       state.vinReading = true;
       state.vinStatus = 'VIN იკითხება…';
       renderVinLookup(true);
@@ -1261,10 +1262,12 @@
             : 'VIN ნაპოვნია — გადაამოწმეთ კოდი ხელით.')
           : 'VIN ვერ ამოიცნო. ჩაწერეთ 17 სიმბოლო ხელით.';
       } catch (_) {
-        state.vinStatus = 'VIN-ის ავტომატური წაკითხვა ვერ მოხერხდა. ჩაწერეთ ხელით.';
+        if (gen === vinReadGen) state.vinStatus = 'VIN-ის ავტომატური წაკითხვა ვერ მოხერხდა. ჩაწერეთ ხელით.';
       } finally {
-        state.vinReading = false;
-        renderVinLookup(true);
+        if (gen === vinReadGen) {
+          state.vinReading = false;
+          renderVinLookup(true);
+        }
       }
     }
 
@@ -1452,7 +1455,8 @@
 
     async function readPlateFromTechPassport() {
       const photo = ocrTechPhoto('tech_front');
-      if (!photo || state.plateReading) return;
+      if (!photo) return;
+      const gen = ++plateReadGen;
       state.plateReading = true;
       state.plateStatus = 'რეგისტრაციის ნომერი იკითხება…';
       renderVinLookup(true);
@@ -1494,10 +1498,12 @@
                 : 'OCR-ის შედეგი დაუზუსტებელია — A ველს შეადარეთ და ხელით გაასწორეთ.';
         }
       } catch (_) {
-        state.plateStatus = 'რეგისტრაციის ნომრის ავტომატური წაკითხვა ვერ მოხერხდა. ჩაწერეთ ხელით.';
+        if (gen === plateReadGen) state.plateStatus = 'რეგისტრაციის ნომრის ავტომატური წაკითხვა ვერ მოხერხდა. ჩაწერეთ ხელით.';
       } finally {
-        state.plateReading = false;
-        renderVinLookup(true);
+        if (gen === plateReadGen) {
+          state.plateReading = false;
+          renderVinLookup(true);
+        }
       }
     }
 
@@ -1527,6 +1533,11 @@
       slotsEl.querySelectorAll('[data-capture]').forEach((btn) => {
         btn.onclick = () => {
           const side = g.sides.find((x) => x.key === btn.dataset.capture);
+          state.captureKey = side.key;
+          if (isTech) {
+            $('file-input').click();
+            return;
+          }
           openCamera(side);
         };
       });
@@ -2482,9 +2493,22 @@
       ctx.closePath();
     }
 
-    async function acceptPhoto(dataUrl, options) {
+    async function processTechPhoto(capturedKey, dataUrl) {
+      try {
+        state.photosOcr[capturedKey] = await cropTechPassportFromPhoto(dataUrl);
+      } catch (_) {
+        state.photosOcr[capturedKey] = dataUrl;
+      }
+      if (capturedKey === 'tech_front') void readPlateFromTechPassport();
+      if (capturedKey === 'tech_back') {
+        void readRegistrationFromQr();
+        void readVinFromTechPassport('tech_back');
+      }
+    }
+
+    function acceptPhoto(dataUrl, options) {
       const capturedKey = state.captureKey;
-      const fromGallery = !!(options && options.fromGallery);
+      if (!capturedKey) return;
       stopAlignLoop();
       if (capturedKey === 'tech_front') {
         state.plate = '';
@@ -2501,22 +2525,15 @@
 
       state.photos[capturedKey] = dataUrl;
       if (capturedKey === 'tech_front' || capturedKey === 'tech_back') {
+        state.photosOcr[capturedKey] = dataUrl;
         if (capturedKey === 'tech_back') state.vinStatus = 'VIN იკითხება…';
         else state.plateStatus = 'რეგისტრაციის ნომერი იკითხება…';
-        renderVinLookup(true);
-        try {
-          state.photosOcr[capturedKey] = await cropTechPassportFromPhoto(dataUrl);
-        } catch (_) {
-          state.photosOcr[capturedKey] = dataUrl;
-        }
       }
 
       closeCamera();
       renderGroup();
-      if (capturedKey === 'tech_front') readPlateFromTechPassport();
       if (capturedKey === 'tech_front' || capturedKey === 'tech_back') {
-        if (capturedKey === 'tech_back') readRegistrationFromQr();
-        readVinFromTechPassport(capturedKey);
+        void processTechPhoto(capturedKey, dataUrl);
       }
     }
 
