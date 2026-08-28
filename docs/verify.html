@@ -13,10 +13,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v206</title>
+  <title>დოკუმენტების ატვირთვა v207</title>
   <script>
     (function () {
-      var VER = '206';
+      var VER = '207';
       try {
         var k = 'cc_verify_v';
         var need = localStorage.getItem(k) !== VER;
@@ -209,6 +209,16 @@
       display: none !important;
     }
     #step-intro, #step-review, #step-done { overflow: auto; }
+    #step-group.has-tech-data {
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    #step-group.has-tech-data #group-slots {
+      flex: 0 0 auto;
+      min-height: calc(100dvh - 225px);
+    }
+    #step-group.has-tech-data .vin-card,
+    #step-group.has-tech-data #group-next { flex-shrink: 0; }
 
     #group-slots {
       flex: 1;
@@ -543,11 +553,13 @@
       <div class="vin-card hide" id="vin-lookup">
         <h3>ავტომობილის მონაცემები</h3>
         <p>სახელმწიფო ნომერი იკითხება პირველი გვერდის A ველიდან, VIN — უკანა გვერდის E ველიდან.</p>
+        <label class="field-label" for="plate-input">სახელმწიფო ნომერი · A</label>
         <div class="vin-actions">
           <input class="field-inp" id="plate-input" type="text" inputmode="text" autocomplete="off"
             autocapitalize="characters" maxlength="9" placeholder="მაგ. AB-123-CD" aria-label="ავტომობილის სახელმწიფო ნომერი">
         </div>
         <p class="vin-status" id="plate-status" aria-live="polite"></p>
+        <label class="field-label" for="vin-input">VIN კოდი · E</label>
         <div class="vin-actions">
           <input class="field-inp" id="vin-input" type="text" inputmode="text" autocomplete="off"
             autocapitalize="characters" maxlength="17" placeholder="მაგ. WDC…" aria-label="ავტომობილის VIN">
@@ -1050,7 +1062,9 @@
       });
 
       const isTech = g.id === 'tech';
-      renderVinLookup(isTech && (!!state.photos.tech_front || !!state.photos.tech_back));
+      const hasTechData = isTech && (!!state.photos.tech_front || !!state.photos.tech_back);
+      $('step-group').classList.toggle('has-tech-data', hasTechData);
+      renderVinLookup(hasTechData);
       if (isTech) {
         const plateInput = $('plate-input');
         const input = $('vin-input');
