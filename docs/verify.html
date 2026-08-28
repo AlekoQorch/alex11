@@ -13,10 +13,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v202</title>
+  <title>დოკუმენტების ატვირთვა v203</title>
   <script>
     (function () {
-      var VER = '202';
+      var VER = '203';
       try {
         var k = 'cc_verify_v';
         var need = localStorage.getItem(k) !== VER;
@@ -351,7 +351,6 @@
       font: 700 14px ui-monospace, SFMono-Regular, Menlo, monospace;
       letter-spacing: .04em; text-transform: uppercase;
     }
-    .vin-actions .btn { flex: 0 0 auto; min-height: 42px; padding: 9px 12px; font-size: 13px; }
     .vin-status { min-height: 17px; margin-top: 8px; }
     .vin-status.ok { color: #86efac; font-weight: 700; }
     .vin-status.error { color: var(--danger); }
@@ -542,11 +541,10 @@
       <div id="group-slots"></div>
       <div class="vin-card hide" id="vin-lookup">
         <h3>ავტომობილის VIN</h3>
-        <p>VIN ავტომატურად იკითხება ტექპასპორტის უკანა ფოტოდან. გადაამოწმეთ კოდი ძიებამდე.</p>
+        <p>VIN ავტომატურად იკითხება ტექპასპორტის უკანა ფოტოდან. გადაამოწმეთ კოდი.</p>
         <div class="vin-actions">
           <input class="field-inp" id="vin-input" type="text" inputmode="text" autocomplete="off"
             autocapitalize="characters" maxlength="17" placeholder="მაგ. WDC…" aria-label="ავტომობილის VIN">
-          <button class="btn secondary" id="vin-search" type="button" disabled>BidCars-ში ძიება</button>
         </div>
         <p class="vin-status" id="vin-status" aria-live="polite"></p>
       </div>
@@ -913,25 +911,18 @@
       return found.sort((a, b) => (b.match(/\d/g) || []).length - (a.match(/\d/g) || []).length)[0] || '';
     }
 
-    function bidCarsUrl(vin) {
-      return 'https://bid.cars/en/search/results?search-type=search&search='
-        + encodeURIComponent(vin);
-    }
-
     function renderVinLookup(show) {
       const card = $('vin-lookup');
       if (!card) return;
       card.classList.toggle('hide', !show);
       if (!show) return;
       const input = $('vin-input');
-      const search = $('vin-search');
       const status = $('vin-status');
       input.value = state.vin;
       status.textContent = state.vinStatus;
       status.className = 'vin-status' + (state.vin
         ? ' ok'
         : (state.vinStatus && !state.vinReading ? ' error' : ''));
-      search.disabled = !/^[A-HJ-NPR-Z0-9]{17}$/.test(state.vin);
     }
 
     let ocrLibraryPromise;
@@ -968,7 +959,7 @@
         const vin = normalizeVin(result && result.data && result.data.text);
         state.vin = vin;
         state.vinStatus = vin
-          ? 'VIN ამოცნობილია — გადაამოწმეთ და მოძებნეთ BidCars-ში.'
+          ? 'VIN ამოცნობილია — გადაამოწმეთ კოდი.'
           : 'VIN ვერ ამოიცნო. ჩაწერეთ 17 სიმბოლო ხელით.';
       } catch (_) {
         state.vinStatus = 'VIN-ის ავტომატური წაკითხვა ვერ მოხერხდა. ჩაწერეთ ხელით.';
@@ -1011,17 +1002,12 @@
       renderVinLookup(isTech && !!state.photos.tech_back);
       if (isTech) {
         const input = $('vin-input');
-        const search = $('vin-search');
         input.oninput = () => {
           state.vin = normalizeVin(input.value) || input.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 17);
           state.vinStatus = /^[A-HJ-NPR-Z0-9]{17}$/.test(state.vin)
-            ? 'VIN მზადაა BidCars-ში საძებნელად.'
+            ? 'VIN მზადაა.'
             : 'VIN უნდა შეიცავდეს 17 სიმბოლოს.';
           renderVinLookup(true);
-        };
-        search.onclick = () => {
-          if (!/^[A-HJ-NPR-Z0-9]{17}$/.test(state.vin)) return;
-          window.open(bidCarsUrl(state.vin), '_blank', 'noopener');
         };
       }
 
