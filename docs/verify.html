@@ -8,10 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v118</title>
+  <title>დოკუმენტების ატვირთვა v119</title>
   <script>
     (function () {
-      var VER = '118';
+      var VER = '119';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -474,6 +474,7 @@
     const phoneFromLink = params.get('n');
     const stepFromLink = String(params.get('step') || params.get('g') || '').toLowerCase();
     if (stepFromLink === 'car') state.jumpId = 'car';
+    if (stepFromLink === 'tech') state.jumpId = 'tech';
 
     /** 577920471 → 577 92 04 71 (9 ციფრი, იწყება 5-ით) */
     function formatPhone(raw) {
@@ -1914,9 +1915,9 @@
 
     setProgress(3);
 
-    // პირდაპირ ავტომობილის სექცია: ?step=car ან ?g=car
-    if (state.jumpId === 'car') {
-      const idx = GROUPS.findIndex((g) => g.id === 'car');
+    // პირდაპირ სექცია: ?step=car|tech ან ?g=car|tech
+    if (state.jumpId === 'car' || state.jumpId === 'tech') {
+      const idx = GROUPS.findIndex((g) => g.id === state.jumpId);
       if (idx >= 0) {
         state.phone = phoneDigits($('phone').value) || phoneDigits(phoneFromLink) || '500000000';
         state.name = ($('fullname').value || '').trim() || 'ტესტი მომხმარებელი';
