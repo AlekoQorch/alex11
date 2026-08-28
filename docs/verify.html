@@ -8,10 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v120</title>
+  <title>დოკუმენტების ატვირთვა v121</title>
   <script>
     (function () {
-      var VER = '120';
+      var VER = '121';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -815,17 +815,22 @@
       return svgBack();
     }
 
-    function normalizeVin(raw, allowUnlabeled = false) {
-      const lines = String(raw || '').toUpperCase().split(/\r?\n/);
-      const fieldELines = lines.map((line) => {
-        const match = line.match(/(?:^|\s)E(?:[.:]|\s)+(.+)/);
-        return match ? match[1] : '';
-      }).filter(Boolean);
-      if (!fieldELines.length && !allowUnlabeled) return '';
-      const candidates = (fieldELines.length ? fieldELines : lines)
-        .flatMap((line) => line.match(/[A-Z0-9][A-Z0-9\s-]{15,28}/g) || []);
+    function stripVinLabelNoise(raw) {
+      return String(raw || '').toUpperCase()
+        .replace(/VEHICLE\s*IDENTIFICATION\s*NUMBER/gi, ' ')
+        .replace(/VEHICLE\s*IDENTIFICATION/gi, ' ')
+        .replace(/IDENTIFICATION\s*NUMBER/gi, ' ')
+        .replace(/წარმოების\s*ნომერი/gi, ' ')
+        .replace(/[^A-Z0-9\n\s-]/g, ' ');
+    }
+
+    function extractVinCandidates(source) {
       const found = [];
-      for (const chunk of candidates) {
+      const chunks = String(source || '').toUpperCase()
+        .split(/\r?\n/)
+        .flatMap((line) => [line, stripVinLabelNoise(line)])
+        .flatMap((line) => line.match(/[A-Z0-9][A-Z0-9\s-]{15,28}/g) || []);
+      for (const chunk of chunks) {
         let candidate = chunk.replace(/[^A-Z0-9]/g, '');
         if (candidate.startsWith('W1DF')) candidate = 'WDF' + candidate.slice(4);
         for (let i = 0; i <= candidate.length - 17; i++) {
@@ -835,7 +840,63 @@
           if (/^[A-HJ-NPR-Z0-9]{17}$/.test(vin) && digits >= 5) found.push(vin);
         }
       }
-      return found.sort((a, b) => (b.match(/\d/g) || []).length - (a.match(/\d/g) || []).length)[0] || '';
+      return found;
+    }
+
+    function bestVinCandidate(candidates) {
+      return candidates.sort((a, b) => (b.match(/\d/g) || []).length - (a.match(/\d/g) || []).length)[0] || '';
+    }
+
+    function normalizeVin(raw, allowUnlabeled = false) {
+      const lines = String(raw || '').toUpperCase().split(/\r?\n/);
+      const eRows = lines.filter((line) =>
+        /(?:^|\s)E(?:[.:]|\s)|VEHICLE\s*IDENT|IDENTIFICATION\s*NUMBER/.test(line)
+      );
+
+      for (const line of eRows) {
+        // On Georgian tech passports E sits left and the 17-char VIN sits to the
+        // right of the "vehicle identification number" label on the same row.
+        const afterNumber = line.split(/IDENTIFICATION\s*NUMBER|NUMBER/i).pop() || '';
+        const eTail = ((line.match(/(?:^|\s)E(?:[.:]|\s)+(.+)/) || [])[1]) || '';
+        const vinSide = stripVinLabelNoise(afterNumber) + ' ' + stripVinLabelNoise(eTail);
+        const fromRow = extractVinCandidates(vinSide);
+        const vin = bestVinCandidate(fromRow);
+        if (vin) return vin;
+      }
+
+      if (!allowUnlabeled) return '';
+      return bestVinCandidate(extractVinCandidates(stripVinLabelNoise(raw)));
+    }
+
+    function cropOcrImage(dataUrl, region, scale) {
+      return new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => {
+          const sx = Math.round(image.width * region.x);
+          const sy = Math.round(image.height * region.y);
+          const sw = Math.max(1, Math.round(image.width * region.w));
+          const sh = Math.max(1, Math.round(image.height * region.h));
+          const canvas = document.createElement('canvas');
+          canvas.width = sw * scale;
+          canvas.height = sh * scale;
+          const ctx = canvas.getContext('2d');
+          ctx.filter = 'grayscale(1) contrast(1.55)';
+          ctx.drawImage(image, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/png'));
+        };
+        image.onerror = () => reject(new Error('Photo could not be read'));
+        image.src = dataUrl;
+      });
+    }
+
+    function vinValueOcrImage(dataUrl) {
+      // Tight crop on the value to the right of the E / label text.
+      return cropOcrImage(dataUrl, { x: 0.34, y: 0.11, w: 0.46, h: 0.10 }, 4);
+    }
+
+    function vinFieldOcrImage(dataUrl) {
+      // Full E row band: small E on the left, VIN value on the right.
+      return cropOcrImage(dataUrl, { x: 0.08, y: 0.08, w: 0.72, h: 0.18 }, 3);
     }
 
     function normalizePlate(raw) {
@@ -975,45 +1036,21 @@
     }
 
     function registrationFieldOcrImage(dataUrl) {
-      return new Promise((resolve, reject) => {
-        const image = new Image();
-        image.onload = () => {
-          const sx = Math.round(image.width * 0.16);
-          const sy = Math.round(image.height * 0.16);
-          const sw = Math.round(image.width * 0.46);
-          const sh = Math.round(image.height * 0.24);
-          const canvas = document.createElement('canvas');
-          canvas.width = sw * 3;
-          canvas.height = sh * 3;
-          const ctx = canvas.getContext('2d');
-          ctx.filter = 'grayscale(1) contrast(1.45)';
-          ctx.drawImage(image, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
-          resolve(canvas.toDataURL('image/png'));
-        };
-        image.onerror = () => reject(new Error('Photo could not be read'));
-        image.src = dataUrl;
-      });
+      return cropOcrImage(dataUrl, { x: 0.16, y: 0.16, w: 0.46, h: 0.24 }, 3);
     }
 
-    function vinFieldOcrImage(dataUrl) {
-      return new Promise((resolve, reject) => {
-        const image = new Image();
-        image.onload = () => {
-          const sx = Math.round(image.width * 0.16);
-          const sy = Math.round(image.height * 0.13);
-          const sw = Math.round(image.width * 0.68);
-          const sh = Math.round(image.height * 0.24);
-          const canvas = document.createElement('canvas');
-          canvas.width = sw * 2;
-          canvas.height = sh * 2;
-          const ctx = canvas.getContext('2d');
-          ctx.filter = 'grayscale(1) contrast(1.45)';
-          ctx.drawImage(image, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
-          resolve(canvas.toDataURL('image/png'));
-        };
-        image.onerror = () => reject(new Error('Photo could not be read'));
-        image.src = dataUrl;
-      });
+    async function recognizeVinText(Tesseract, dataUrl, singleLine) {
+      const opts = {
+        logger: (event) => {
+          if (event.status === 'recognizing text' && event.progress > 0.15) {
+            state.vinStatus = `VIN იკითხება… ${Math.round(event.progress * 100)}%`;
+            renderVinLookup(true);
+          }
+        }
+      };
+      if (singleLine) opts.tessedit_pageseg_mode = '7';
+      const result = await Tesseract.recognize(dataUrl, 'eng', opts);
+      return result && result.data && result.data.text;
     }
 
     async function readVinFromTechPassport() {
@@ -1024,19 +1061,15 @@
       renderVinLookup(true);
       try {
         const Tesseract = await loadOcrLibrary();
-        const ocrPhoto = await vinFieldOcrImage(photo);
-        const result = await Tesseract.recognize(ocrPhoto, 'eng', {
-          logger: (event) => {
-            if (event.status === 'recognizing text' && event.progress > 0.15) {
-              state.vinStatus = `VIN იკითხება… ${Math.round(event.progress * 100)}%`;
-              renderVinLookup(true);
-            }
-          }
-        });
-        let vin = normalizeVin(result && result.data && result.data.text, true);
+        let vin = '';
+        const valueCrop = await vinValueOcrImage(photo);
+        vin = normalizeVin(await recognizeVinText(Tesseract, valueCrop, true), true);
         if (!vin) {
-          const fullResult = await Tesseract.recognize(photo, 'eng');
-          vin = normalizeVin(fullResult && fullResult.data && fullResult.data.text, true);
+          const rowCrop = await vinFieldOcrImage(photo);
+          vin = normalizeVin(await recognizeVinText(Tesseract, rowCrop, false), true);
+        }
+        if (!vin) {
+          vin = normalizeVin(await recognizeVinText(Tesseract, photo, false), true);
         }
         state.vin = vin;
         state.vinStatus = vin
