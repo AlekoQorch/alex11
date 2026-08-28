@@ -8,10 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v124</title>
+  <title>დოკუმენტების ატვირთვა v125</title>
   <script>
     (function () {
-      var VER = '124';
+      var VER = '125';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -824,6 +824,21 @@
         .replace(/[^A-Z0-9\n\s-]/g, ' ');
     }
 
+    function vinHasValidCheckDigit(vin) {
+      const translit = { A:1,B:2,C:3,D:4,E:5,F:6,G:7,H:8,J:1,K:2,L:3,M:4,N:5,P:7,R:9,S:2,T:3,U:4,V:5,W:6,X:7,Y:8,Z:9 };
+      const weights = [8,7,6,5,4,3,2,10,0,9,8,7,6,5,4,3,2];
+      let sum = 0;
+      for (let i = 0; i < 17; i++) {
+        const c = vin[i];
+        const val = /\d/.test(c) ? parseInt(c, 10) : translit[c];
+        if (val === undefined) return false;
+        sum += val * weights[i];
+      }
+      const remainder = sum % 11;
+      const check = remainder === 10 ? 'X' : String(remainder);
+      return vin[8] === check;
+    }
+
     function hasRepeatedVinSegment(vin, minLen = 5) {
       for (let len = minLen; len <= 8; len++) {
         for (let i = 0; i <= vin.length - len * 2; i++) {
@@ -891,6 +906,7 @@
       let score = (vin.match(/\d/g) || []).length * 12 + hits * 30 + (weight || 0);
       if (/^[A-Z]{3}\d/.test(vin)) score += 24;
       if (/^(WDC|WDD|WDF|WDB|WVW|VF1|VF3|JTD|KMH|YV1|ZFA|1HG|2HG|3VW)/.test(vin)) score += 20;
+      if (vinHasValidCheckDigit(vin)) score += 50;
       if (!/^[A-Z]{3}/.test(vin)) score -= 70;
       if (hasRepeatedVinSegment(vin)) score -= 120;
       if (/^(GLC|BMW|MERC|HIGH|PASS|MATIC|DIESEL|DIZEL|VIANO)/.test(vin)) score -= 80;
