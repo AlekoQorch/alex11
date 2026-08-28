@@ -8,10 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v138</title>
+  <title>დოკუმენტების ატვირთვა v139</title>
   <script>
     (function () {
-      var VER = '138';
+      var VER = '139';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -225,6 +225,23 @@
       object-fit: contain;
       object-position: center;
       background: #101012;
+    }
+    .slot.tech-slot.processing img.preview {
+      opacity: 0.45;
+      filter: blur(1px);
+    }
+    .slot-processing {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      background: rgba(0, 0, 0, 0.42);
+      z-index: 2;
+      pointer-events: none;
     }
     .slot .schematic {
       position: absolute;
@@ -505,7 +522,8 @@
       plateSource: '',
       plateLayoutHits: [],
       plateTextHits: [],
-      techDataConfirmed: false
+      techDataConfirmed: false,
+      techPhotoProcessing: {}
     };
 
     const params = new URLSearchParams(location.search);
@@ -2475,13 +2493,15 @@
       $('step-group').classList.toggle('tech-step', isTech);
       slotsEl.innerHTML = g.sides.map((s) => {
         const photo = state.photos[s.key];
+        const processing = isTech && state.techPhotoProcessing && state.techPhotoProcessing[s.key];
         return `
           <div class="slot-block">
             <div class="slot-label">${s.label}</div>
-            <button type="button" class="slot ${isTech ? 'tech-slot' : ''} ${photo ? 'has-photo' : ''}" data-capture="${s.key}" aria-label="${s.label} გადაღება">
+            <button type="button" class="slot ${isTech ? 'tech-slot' : ''} ${photo ? 'has-photo' : ''} ${processing ? 'processing' : ''}" data-capture="${s.key}" aria-label="${s.label} გადაღება">
               ${photo
                 ? `<img class="preview" src="${photo}" alt="">`
                 : `<div class="schematic">${schematicFor(s)}</div>`}
+              ${processing ? '<span class="slot-processing">ტექპასპორტის ამოჭერა…</span>' : ''}
               <span class="slot-tap-hint">${photo ? 'თავიდან გადაღება' : 'დააჭირეთ გადასაღებად'}</span>
             </button>
           </div>`;
@@ -2993,6 +3013,26 @@
       return out;
     }
 
+    function normalizeTechPassportCanvas(canvas) {
+      let out = orientDocumentCanvas(canvas);
+      out = trimDarkMargins(out);
+      const trimmedAgain = trimDarkMargins(out);
+      if (trimmedAgain !== out) out = trimmedAgain;
+      return scaleCanvasProportional(out, TECH_DOC_NORM_WIDTH);
+    }
+
+    function quadOutputSize(corners, targetW) {
+      const [tl, tr, br, bl] = corners;
+      const topW = Math.hypot(tr.x - tl.x, tr.y - tl.y);
+      const botW = Math.hypot(br.x - bl.x, br.y - bl.y);
+      const leftH = Math.hypot(bl.x - tl.x, bl.y - tl.y);
+      const rightH = Math.hypot(br.x - tr.x, br.y - tr.y);
+      const avgW = Math.max(1, (topW + botW) / 2);
+      const avgH = Math.max(1, (leftH + rightH) / 2);
+      const outW = Math.max(TECH_CROP_MIN_WIDTH, targetW);
+      return { outW, outH: Math.max(1, Math.round(outW * (avgH / avgW))) };
+    }
+
     async function cropTechPassportFromPhoto(dataUrl) {
       const image = await new Promise((resolve, reject) => {
         const img = new Image();
@@ -3005,10 +3045,10 @@
       let cropW = image.naturalWidth;
       let cropH = image.naturalHeight;
 
-      for (let pass = 0; pass < 2; pass++) {
+      for (let pass = 0; pass < 3; pass++) {
         const iw = cropW;
         const ih = cropH;
-        const detectScale = Math.min(1, 2000 / Math.max(iw, ih));
+        const detectScale = Math.min(1, 2200 / Math.max(iw, ih));
         const sw = Math.round(iw * detectScale);
         const sh = Math.round(ih * detectScale);
         const canvas = document.createElement('canvas');
@@ -3029,11 +3069,11 @@
         sy = nextSy;
         cropW = nextW;
         cropH = nextH;
-        if (areaAfter > areaBefore * 0.96) break;
+        if (areaAfter > areaBefore * 0.94) break;
       }
 
       const cropped = renderTightTechCrop(image, sx, sy, cropW, cropH);
-      const detectScale = Math.min(1, 1600 / Math.max(cropped.width, cropped.height));
+      const detectScale = Math.min(1, 1800 / Math.max(cropped.width, cropped.height));
       const detW = Math.max(1, Math.round(cropped.width * detectScale));
       const detH = Math.max(1, Math.round(cropped.height * detectScale));
       const detCanvas = document.createElement('canvas');
@@ -3048,14 +3088,10 @@
           x: p.x / detectScale,
           y: p.y / detectScale
         }));
-        if (quadNeedsPerspective(mapped)) {
-          const normW = Math.max(TECH_CROP_MIN_WIDTH, cropped.width);
-          const normH = normalizedDocHeight(cropped.width, cropped.height);
-          normalized = perspectiveWarpCanvas(cropped, mapped, normW, normH);
-        }
+        const { outW, outH } = quadOutputSize(mapped, TECH_DOC_NORM_WIDTH);
+        normalized = perspectiveWarpCanvas(cropped, mapped, outW, outH);
       }
-      const trimmed = trimDarkMargins(normalized);
-      return trimmed.toDataURL('image/jpeg', 0.96);
+      return normalizeTechPassportCanvas(normalized).toDataURL('image/jpeg', 0.96);
     }
 
     function detectDocumentByBackground(data, w, h) {
@@ -3470,10 +3506,17 @@
     }
 
     async function processTechPhoto(capturedKey, dataUrl) {
+      state.techPhotoProcessing[capturedKey] = true;
+      renderGroup();
       try {
-        state.photosOcr[capturedKey] = await cropTechPassportFromPhoto(dataUrl);
+        const cropped = await cropTechPassportFromPhoto(dataUrl);
+        state.photos[capturedKey] = cropped;
+        state.photosOcr[capturedKey] = cropped;
       } catch (_) {
         state.photosOcr[capturedKey] = dataUrl;
+      } finally {
+        state.techPhotoProcessing[capturedKey] = false;
+        renderGroup();
       }
       if (capturedKey === 'tech_front') {
         if (!state.photos.tech_back) {
@@ -3514,7 +3557,6 @@
 
       state.photos[capturedKey] = dataUrl;
       if (capturedKey === 'tech_front' || capturedKey === 'tech_back') {
-        state.photosOcr[capturedKey] = dataUrl;
         if (capturedKey === 'tech_back') state.vinStatus = 'VIN იკითხება…';
         else state.plateStatus = 'რეგისტრაციის ნომერი წაიკითხება უკანა გვერდის QR კოდიდან…';
       }
