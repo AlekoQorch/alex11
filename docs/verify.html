@@ -13,10 +13,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v209</title>
+  <title>დოკუმენტების ატვირთვა v210</title>
   <script>
     (function () {
-      var VER = '209';
+      var VER = '210';
       try {
         var k = 'cc_verify_v';
         var need = localStorage.getItem(k) !== VER;
@@ -1052,7 +1052,14 @@
             }
           }
         });
-        const plate = normalizePlate(result && result.data && result.data.text);
+        let plate = normalizePlate(result && result.data && result.data.text);
+        // A close-up is normally more accurate. If the document was framed
+        // differently, retry its full-resolution original before asking for
+        // manual input.
+        if (!plate) {
+          const fullResult = await Tesseract.recognize(photo, 'eng');
+          plate = normalizePlate(fullResult && fullResult.data && fullResult.data.text);
+        }
         state.plate = plate;
         state.plateStatus = plate
           ? 'რეგისტრაციის ნომერი ამოცნობილია — გადაამოწმეთ კოდი.'
