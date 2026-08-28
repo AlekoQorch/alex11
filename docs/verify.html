@@ -8,10 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v125</title>
+  <title>დოკუმენტების ატვირთვა v126</title>
   <script>
     (function () {
-      var VER = '125';
+      var VER = '126';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -1685,6 +1685,25 @@
       return candidates.sort((a, b) => (b.w * b.h) - (a.w * a.h))[0];
     }
 
+    const TECH_GUIDE_ASPECT = 1 / 0.58;
+    const TECH_ALIGN_MIN_WIDTH = 1600;
+
+    function fitGuideCanvasSize(width, height) {
+      let w = Math.max(1, Math.round(width));
+      let h = Math.max(1, Math.round(height));
+      const aspect = w / h;
+      if (Math.abs(aspect - TECH_GUIDE_ASPECT) > 0.05) {
+        if (aspect > TECH_GUIDE_ASPECT) h = Math.round(w / TECH_GUIDE_ASPECT);
+        else w = Math.round(h * TECH_GUIDE_ASPECT);
+      }
+      if (w < TECH_ALIGN_MIN_WIDTH) {
+        const scale = TECH_ALIGN_MIN_WIDTH / w;
+        w = Math.round(w * scale);
+        h = Math.round(h * scale);
+      }
+      return { w, h };
+    }
+
     async function cropTechPassportFromPhoto(dataUrl) {
       const image = await new Promise((resolve, reject) => {
         const img = new Image();
@@ -1692,29 +1711,46 @@
         img.onerror = () => reject(new Error('Photo could not be read'));
         img.src = dataUrl;
       });
-      const maxDim = 1400;
-      const scale = Math.min(1, maxDim / Math.max(image.naturalWidth, image.naturalHeight));
-      const sw = Math.round(image.naturalWidth * scale);
-      const sh = Math.round(image.naturalHeight * scale);
+      const iw = image.naturalWidth;
+      const ih = image.naturalHeight;
+      const detectScale = Math.min(1, 1800 / Math.max(iw, ih));
+      const sw = Math.round(iw * detectScale);
+      const sh = Math.round(ih * detectScale);
       const canvas = document.createElement('canvas');
       canvas.width = sw;
       canvas.height = sh;
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
       ctx.drawImage(image, 0, 0, sw, sh);
       const rect = detectDocumentRect(ctx.getImageData(0, 0, sw, sh).data, sw, sh);
-      if (!rect) return dataUrl;
-      const areaRatio = (rect.w * rect.h) / (sw * sh);
-      if (areaRatio > 0.96) return dataUrl;
-      const inv = 1 / scale;
-      const sx = Math.round(rect.x * inv);
-      const sy = Math.round(rect.y * inv);
-      const rw = Math.round(rect.w * inv);
-      const rh = Math.round(rect.h * inv);
+
+      let sx = 0;
+      let sy = 0;
+      let cropW = iw;
+      let cropH = ih;
+      if (rect) {
+        const inv = 1 / detectScale;
+        sx = Math.max(0, Math.min(iw - 1, Math.round(rect.x * inv)));
+        sy = Math.max(0, Math.min(ih - 1, Math.round(rect.y * inv)));
+        cropW = Math.max(1, Math.min(iw - sx, Math.round(rect.w * inv)));
+        cropH = Math.max(1, Math.min(ih - sy, Math.round(rect.h * inv)));
+      }
+
+      const { w: outW, h: outH } = fitGuideCanvasSize(cropW, cropH);
       const out = document.createElement('canvas');
-      out.width = rw;
-      out.height = rh;
-      out.getContext('2d').drawImage(image, sx, sy, rw, rh, 0, 0, rw, rh);
-      return out.toDataURL('image/jpeg', 0.94);
+      out.width = outW;
+      out.height = outH;
+      const outCtx = out.getContext('2d');
+      outCtx.fillStyle = '#0b0b0c';
+      outCtx.fillRect(0, 0, outW, outH);
+      outCtx.imageSmoothingEnabled = true;
+      outCtx.imageSmoothingQuality = 'high';
+      const scale = Math.min(outW / cropW, outH / cropH);
+      const drawW = cropW * scale;
+      const drawH = cropH * scale;
+      const dx = (outW - drawW) / 2;
+      const dy = (outH - drawH) / 2;
+      outCtx.drawImage(image, sx, sy, cropW, cropH, dx, dy, drawW, drawH);
+      return out.toDataURL('image/jpeg', 0.96);
     }
 
     function scoreDocumentInFrame(video, cw, ch) {
@@ -2095,11 +2131,9 @@
 
       let processed = dataUrl;
       if (capturedKey === 'tech_front' || capturedKey === 'tech_back') {
-        if (fromGallery) {
-          if (capturedKey === 'tech_back') state.vinStatus = 'ტექპასპორტი მოირჩევა…';
-          else state.plateStatus = 'ტექპასპორტი მოირჩევა…';
-          renderVinLookup(true);
-        }
+        if (capturedKey === 'tech_back') state.vinStatus = 'ფოტო მოარგებულია…';
+        else state.plateStatus = 'ფოტო მოარგებულია…';
+        renderVinLookup(true);
         try {
           processed = await cropTechPassportFromPhoto(dataUrl);
         } catch (_) {
