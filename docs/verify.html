@@ -8,10 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v141</title>
+  <title>დოკუმენტების ატვირთვა v142</title>
   <script>
     (function () {
-      var VER = '141';
+      var VER = '142';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -222,7 +222,7 @@
       inset: 0;
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      object-fit: contain;
       object-position: center;
       background: #101012;
     }
@@ -3167,6 +3167,15 @@
       return out;
     }
 
+    function insetQuadCorners(corners, fraction) {
+      const cx = corners.reduce((sum, p) => sum + p.x, 0) / corners.length;
+      const cy = corners.reduce((sum, p) => sum + p.y, 0) / corners.length;
+      return corners.map((p) => ({
+        x: p.x + (cx - p.x) * fraction,
+        y: p.y + (cy - p.y) * fraction
+      }));
+    }
+
     function fitCanvasToTechSlot(canvas) {
       const targetW = TECH_DOC_NORM_WIDTH;
       const targetH = Math.max(1, Math.round(targetW / TECH_SLOT_ASPECT));
@@ -3176,28 +3185,26 @@
       const ctx = out.getContext('2d');
       ctx.fillStyle = '#101012';
       ctx.fillRect(0, 0, targetW, targetH);
-      const scale = Math.max(targetW / canvas.width, targetH / canvas.height);
+      const scale = Math.min(targetW / canvas.width, targetH / canvas.height);
       const dw = Math.round(canvas.width * scale);
       const dh = Math.round(canvas.height * scale);
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(0, 0, targetW, targetH);
-      ctx.clip();
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(canvas, Math.round((targetW - dw) / 2), Math.round((targetH - dh) / 2), dw, dh);
-      ctx.restore();
       return out;
     }
 
     function normalizeTechPassportCanvas(canvas) {
       let out = orientDocumentCanvas(canvas);
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < 5; i++) {
         const trimmed = trimBackgroundMargins(out);
         if (trimmed === out) break;
         out = trimmed;
       }
-      return fitCanvasToTechSlot(out);
+      if (out.width < TECH_CROP_MIN_WIDTH) {
+        out = scaleCanvasProportional(out, TECH_CROP_MIN_WIDTH);
+      }
+      return out;
     }
 
     function quadOutputSize(corners, targetW) {
@@ -3263,10 +3270,10 @@
       const corners = detectDocumentQuadCorners(detCtx.getImageData(0, 0, detW, detH).data, detW, detH);
       let normalized = cropped;
       if (corners) {
-        const mapped = corners.map((p) => ({
+        const mapped = insetQuadCorners(corners.map((p) => ({
           x: p.x / detectScale,
           y: p.y / detectScale
-        }));
+        })), 0.018);
         const { outW, outH } = quadOutputSize(mapped, TECH_DOC_NORM_WIDTH);
         normalized = perspectiveWarpCanvas(cropped, mapped, outW, outH);
       }
