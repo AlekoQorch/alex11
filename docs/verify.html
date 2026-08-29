@@ -8,10 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v142</title>
+  <title>დოკუმენტების ატვირთვა v144</title>
   <script>
     (function () {
-      var VER = '142';
+      var VER = '143';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -222,7 +222,7 @@
       inset: 0;
       width: 100%;
       height: 100%;
-      object-fit: contain;
+      object-fit: fill;
       object-position: center;
       background: #101012;
     }
@@ -2495,15 +2495,16 @@
       slotsEl.innerHTML = g.sides.map((s) => {
         const photo = state.photos[s.key];
         const processing = isTech && state.techPhotoProcessing && state.techPhotoProcessing[s.key];
+        const showPhoto = photo && !processing;
         return `
           <div class="slot-block">
             <div class="slot-label">${s.label}</div>
-            <button type="button" class="slot ${isTech ? 'tech-slot' : ''} ${photo ? 'has-photo' : ''} ${processing ? 'processing' : ''}" data-capture="${s.key}" aria-label="${s.label} გადაღება">
-              ${photo
+            <button type="button" class="slot ${isTech ? 'tech-slot' : ''} ${showPhoto ? 'has-photo' : ''} ${processing ? 'processing' : ''}" data-capture="${s.key}" aria-label="${s.label} გადაღება">
+              ${showPhoto
                 ? `<img class="preview" src="${photo}" alt="">`
                 : `<div class="schematic">${schematicFor(s)}</div>`}
               ${processing ? '<span class="slot-processing">ტექპასპორტის ამოჭერა…</span>' : ''}
-              <span class="slot-tap-hint">${photo ? 'თავიდან გადაღება' : 'დააჭირეთ გადასაღებად'}</span>
+              <span class="slot-tap-hint">${showPhoto ? 'თავიდან გადაღება' : 'დააჭირეთ გადასაღებად'}</span>
             </button>
           </div>`;
       }).join('');
@@ -2898,6 +2899,70 @@
       return colorDistance(rgbAt(data, w, x, y), bg) < threshold;
     }
 
+    function isBrightDocumentPixel(data, w, x, y) {
+      const luma = lumaAt(data, w, x, y);
+      if (luma < 162) return false;
+      const [r, g, b] = rgbAt(data, w, x, y);
+      const max = Math.max(r, g, b);
+      const min = Math.min(r, g, b);
+      const sat = max ? (max - min) / max : 0;
+      if (sat > 0.4 && luma < 202) return false;
+      return true;
+    }
+
+    function trimBrightDocumentEdges(canvas) {
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      const w = canvas.width;
+      const h = canvas.height;
+      const data = ctx.getImageData(0, 0, w, h).data;
+      const step = Math.max(1, Math.round(Math.min(w, h) / 420));
+      const rowFrac = (y) => {
+        let hits = 0;
+        let total = 0;
+        for (let x = 0; x < w; x += step) {
+          total++;
+          if (isBrightDocumentPixel(data, w, x, y)) hits++;
+        }
+        return total ? hits / total : 0;
+      };
+      const colFrac = (x) => {
+        let hits = 0;
+        let total = 0;
+        for (let y = 0; y < h; y += step) {
+          total++;
+          if (isBrightDocumentPixel(data, w, x, y)) hits++;
+        }
+        return total ? hits / total : 0;
+      };
+      const minFrac = 0.22;
+      let top = 0;
+      let bot = h - 1;
+      let left = 0;
+      let right = w - 1;
+      for (let y = 0; y < h; y++) if (rowFrac(y) >= minFrac) { top = y; break; }
+      for (let y = h - 1; y >= 0; y--) if (rowFrac(y) >= minFrac) { bot = y; break; }
+      for (let x = 0; x < w; x++) if (colFrac(x) >= minFrac) { left = x; break; }
+      for (let x = w - 1; x >= 0; x--) if (colFrac(x) >= minFrac) { right = x; break; }
+      const rw = right - left + 1;
+      const rh = bot - top + 1;
+      if (rw < w * 0.32 || rh < h * 0.32 || rw * rh > w * h * 0.985) return canvas;
+      const out = document.createElement('canvas');
+      let outW = rw;
+      let outH = rh;
+      if (outW < TECH_CROP_MIN_WIDTH) {
+        const scale = TECH_CROP_MIN_WIDTH / outW;
+        outW = Math.round(outW * scale);
+        outH = Math.round(outH * scale);
+      }
+      out.width = outW;
+      out.height = outH;
+      const outCtx = out.getContext('2d');
+      outCtx.imageSmoothingEnabled = true;
+      outCtx.imageSmoothingQuality = 'high';
+      outCtx.drawImage(canvas, left, top, rw, rh, 0, 0, outW, outH);
+      return out;
+    }
+
     function edgeContrast(data, w, x0, y0, x1, y1, inwardX, inwardY) {
       const steps = 22;
       let sum = 0;
@@ -3007,9 +3072,16 @@
       return score;
     }
 
-    function detectDocumentByColorEdge(data, w, h) {
-      const bg = sampleBorderRgb(data, w, h);
-      const threshold = 48;
+    function colorEdgeThreshold(bg) {
+      const max = Math.max(bg[0], bg[1], bg[2]);
+      const min = Math.min(bg[0], bg[1], bg[2]);
+      const sat = max ? (max - min) / max : 0;
+      if (sat > 0.35) return 26;
+      if (sat > 0.18) return 32;
+      return 46;
+    }
+
+    function detectDocumentByBrightEdge(data, w, h) {
       const stepX = Math.max(2, Math.round(w / 240));
       const stepY = Math.max(2, Math.round(h / 240));
       const rowHits = (y) => {
@@ -3017,7 +3089,7 @@
         let total = 0;
         for (let x = 0; x < w; x += stepX) {
           total++;
-          if (!isBackgroundPixel(data, w, bg, x, y, threshold)) hits++;
+          if (isBrightDocumentPixel(data, w, x, y)) hits++;
         }
         return total ? hits / total : 0;
       };
@@ -3026,12 +3098,54 @@
         let total = 0;
         for (let y = 0; y < h; y += stepY) {
           total++;
-          if (!isBackgroundPixel(data, w, bg, x, y, threshold)) hits++;
+          if (isBrightDocumentPixel(data, w, x, y)) hits++;
         }
         return total ? hits / total : 0;
       };
-      const minRow = 0.10;
-      const minCol = 0.10;
+      const minRow = 0.20;
+      const minCol = 0.20;
+      let top = 0;
+      let bot = h - 1;
+      let left = 0;
+      let right = w - 1;
+      for (let y = 0; y < h; y++) if (rowHits(y) >= minRow) { top = y; break; }
+      for (let y = h - 1; y >= 0; y--) if (rowHits(y) >= minRow) { bot = y; break; }
+      for (let x = 0; x < w; x++) if (colHits(x) >= minCol) { left = x; break; }
+      for (let x = w - 1; x >= 0; x--) if (colHits(x) >= minCol) { right = x; break; }
+      const rw = right - left + 1;
+      const rh = bot - top + 1;
+      if (rw < w * 0.12 || rh < h * 0.12) return null;
+      return normalizeDocumentRect(left, top, rw, rh, w, h, true);
+    }
+
+    function detectDocumentByColorEdge(data, w, h) {
+      const bg = sampleBorderRgb(data, w, h);
+      const threshold = colorEdgeThreshold(bg);
+      const max = Math.max(bg[0], bg[1], bg[2]);
+      const min = Math.min(bg[0], bg[1], bg[2]);
+      const sat = max ? (max - min) / max : 0;
+      const stepX = Math.max(2, Math.round(w / 240));
+      const stepY = Math.max(2, Math.round(h / 240));
+      const rowHits = (y) => {
+        let hits = 0;
+        let total = 0;
+        for (let x = 0; x < w; x += stepX) {
+          total++;
+          if (sat > 0.18 ? isBrightDocumentPixel(data, w, x, y) : !isBackgroundPixel(data, w, bg, x, y, threshold)) hits++;
+        }
+        return total ? hits / total : 0;
+      };
+      const colHits = (x) => {
+        let hits = 0;
+        let total = 0;
+        for (let y = 0; y < h; y += stepY) {
+          total++;
+          if (sat > 0.18 ? isBrightDocumentPixel(data, w, x, y) : !isBackgroundPixel(data, w, bg, x, y, threshold)) hits++;
+        }
+        return total ? hits / total : 0;
+      };
+      const minRow = sat > 0.18 ? 0.24 : 0.10;
+      const minCol = sat > 0.18 ? 0.24 : 0.10;
       let top = 0;
       let bot = h - 1;
       let left = 0;
@@ -3100,6 +3214,7 @@
 
     function pickBestDocumentRect(data, w, h) {
       const candidates = [
+        detectDocumentByBrightEdge(data, w, h),
         detectDocumentByAdaptiveBright(data, w, h),
         detectDocumentByColorEdge(data, w, h),
         detectContentBounds(data, w, h),
@@ -3146,7 +3261,8 @@
       const w = canvas.width;
       const h = canvas.height;
       const data = ctx.getImageData(0, 0, w, h).data;
-      const rect = detectDocumentByAdaptiveBright(data, w, h)
+      const rect = detectDocumentByBrightEdge(data, w, h)
+        || detectDocumentByAdaptiveBright(data, w, h)
         || detectDocumentByColorEdge(data, w, h)
         || detectContentBounds(data, w, h);
       if (!rect || rect.w * rect.h > w * h * 0.97) return canvas;
@@ -3196,15 +3312,20 @@
 
     function normalizeTechPassportCanvas(canvas) {
       let out = orientDocumentCanvas(canvas);
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < 8; i++) {
         const trimmed = trimBackgroundMargins(out);
+        if (trimmed === out) break;
+        out = trimmed;
+      }
+      for (let i = 0; i < 4; i++) {
+        const trimmed = trimBrightDocumentEdges(out);
         if (trimmed === out) break;
         out = trimmed;
       }
       if (out.width < TECH_CROP_MIN_WIDTH) {
         out = scaleCanvasProportional(out, TECH_CROP_MIN_WIDTH);
       }
-      return out;
+      return fitCanvasToTechSlot(out);
     }
 
     function quadOutputSize(corners, targetW) {
@@ -3699,6 +3820,7 @@
         state.photos[capturedKey] = cropped;
         state.photosOcr[capturedKey] = cropped;
       } catch (_) {
+        state.photos[capturedKey] = dataUrl;
         state.photosOcr[capturedKey] = dataUrl;
       } finally {
         state.techPhotoProcessing[capturedKey] = false;
@@ -3741,8 +3863,9 @@
         state.techDataConfirmed = false;
       }
 
-      state.photos[capturedKey] = dataUrl;
+      state.photos[capturedKey] = (capturedKey === 'tech_front' || capturedKey === 'tech_back') ? '' : dataUrl;
       if (capturedKey === 'tech_front' || capturedKey === 'tech_back') {
+        state.techPhotoProcessing[capturedKey] = true;
         if (capturedKey === 'tech_back') state.vinStatus = 'VIN იკითხება…';
         else state.plateStatus = 'რეგისტრაციის ნომერი წაიკითხება უკანა გვერდის QR კოდიდან…';
       }
