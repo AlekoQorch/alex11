@@ -8,10 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v146</title>
+  <title>დოკუმენტების ატვირთვა v148</title>
   <script>
     (function () {
-      var VER = '146';
+      var VER = '148';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -1339,6 +1339,7 @@
       const leftH = Math.hypot(corners[3].x - corners[0].x, corners[3].y - corners[0].y);
       const rightH = Math.hypot(corners[2].x - corners[1].x, corners[2].y - corners[1].y);
       if (topW < w * 0.15 || botW < w * 0.15 || leftH < h * 0.12 || rightH < h * 0.12) return null;
+      if (scoreDocumentQuad(corners, w, h) < 80) return null;
       return corners;
     }
 
@@ -3467,10 +3468,51 @@
       const landscapeOk = aspect > 1.32 && aspect < 2.05;
       const portraitOk = aspect > 0.48 && aspect < 0.76;
       if (landscapeOk || portraitOk) score += 140;
-      if (area > full * 0.12 && area < full * 0.94) score += 90;
-      score += (1 - area / full) * 80;
+      const areaFrac = area / full;
+      if (areaFrac > 0.15 && areaFrac < 0.96) score += 90;
+      score += areaFrac * 130;
+      if (areaFrac < 0.18) score -= 100;
       if (aspect > 2.2 || aspect < 0.4) score -= 120;
       return score;
+    }
+
+    function expandDocumentRect(rect, w, h, fraction) {
+      const padX = Math.round(rect.w * (fraction || 0.03));
+      const padY = Math.round(rect.h * (fraction || 0.03));
+      const x = Math.max(0, rect.x - padX);
+      const y = Math.max(0, rect.y - padY);
+      const rw = Math.min(w - x, rect.w + padX * 2);
+      const rh = Math.min(h - y, rect.h + padY * 2);
+      return { x, y, w: rw, h: rh };
+    }
+
+    function scoreDocumentQuad(corners, w, h) {
+      const [tl, tr, br, bl] = corners;
+      const area = quadArea(corners);
+      const full = w * h;
+      if (area < full * 0.18) return -1;
+      const topW = Math.hypot(tr.x - tl.x, tr.y - tl.y);
+      const botW = Math.hypot(br.x - bl.x, br.y - bl.y);
+      const leftH = Math.hypot(bl.x - tl.x, bl.y - tl.y);
+      const rightH = Math.hypot(br.x - tr.x, br.y - tr.y);
+      if (topW < w * 0.28 || botW < w * 0.28 || leftH < h * 0.22 || rightH < h * 0.22) return -1;
+      const widthRatio = Math.min(topW, botW) / Math.max(topW, botW);
+      const heightRatio = Math.min(leftH, rightH) / Math.max(leftH, rightH);
+      if (widthRatio < 0.62 || heightRatio < 0.62) return -1;
+      const avgW = (topW + botW) / 2;
+      const avgH = (leftH + rightH) / 2;
+      const aspect = avgW / avgH;
+      if (!isTechPassportAspect(avgW, avgH)) return -1;
+      const topAngle = Math.abs(Math.atan2(tr.y - tl.y, tr.x - tl.x) * 180 / Math.PI);
+      let score = 100 + area / full * 120;
+      if (landscapeOkAspect(aspect)) score += 40;
+      if (topAngle > 18) score -= 80;
+      if (widthRatio > 0.82 && heightRatio > 0.82) score += 35;
+      return score;
+    }
+
+    function landscapeOkAspect(aspect) {
+      return aspect >= 1.28 && aspect <= 2.18;
     }
 
     function colorEdgeThreshold(bg) {
@@ -3606,7 +3648,7 @@
         if (!landscapeOk && !portraitOk) continue;
         tries.push({
           rect,
-          score: scoreDocumentRect(rect, w, h) + (1 - area) * 110 + (landscapeOk ? 20 : 10)
+          score: scoreDocumentRect(rect, w, h) + area * 110 + (landscapeOk ? 20 : 10)
         });
       }
       if (!tries.length) return null;
@@ -3758,7 +3800,7 @@
       let cropW = image.naturalWidth;
       let cropH = image.naturalHeight;
 
-      for (let pass = 0; pass < 4; pass++) {
+      for (let pass = 0; pass < 2; pass++) {
         const iw = cropW;
         const ih = cropH;
         const detectScale = Math.min(1, 2200 / Math.max(iw, ih));
@@ -3769,8 +3811,9 @@
         canvas.height = sh;
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
         ctx.drawImage(image, sx, sy, iw, ih, 0, 0, sw, sh);
-        const rect = detectCropRectFromImageData(ctx.getImageData(0, 0, sw, sh).data, sw, sh);
+        let rect = detectCropRectFromImageData(ctx.getImageData(0, 0, sw, sh).data, sw, sh);
         if (!rect || !isReasonableTechCropRect(rect, sw, sh)) break;
+        rect = expandDocumentRect(rect, sw, sh, 0.025);
         const inv = 1 / detectScale;
         const nextSx = sx + Math.round(rect.x * inv);
         const nextSy = sy + Math.round(rect.y * inv);
@@ -3794,28 +3837,7 @@
       }
 
       const cropped = renderTightTechCrop(image, sx, sy, cropW, cropH);
-      const detectScale = Math.min(1, 1800 / Math.max(cropped.width, cropped.height));
-      const detW = Math.max(1, Math.round(cropped.width * detectScale));
-      const detH = Math.max(1, Math.round(cropped.height * detectScale));
-      const detCanvas = document.createElement('canvas');
-      detCanvas.width = detW;
-      detCanvas.height = detH;
-      const detCtx = detCanvas.getContext('2d', { willReadFrequently: true });
-      detCtx.drawImage(cropped, 0, 0, detW, detH);
-      const corners = detectDocumentQuadCorners(detCtx.getImageData(0, 0, detW, detH).data, detW, detH);
-      let normalized = cropped;
-      if (corners) {
-        const mapped = insetQuadCorners(corners.map((p) => ({
-          x: p.x / detectScale,
-          y: p.y / detectScale
-        })), 0.018);
-        const { outW, outH } = quadOutputSize(mapped, TECH_DOC_NORM_WIDTH);
-        if (isTechPassportAspect(outW, outH)) {
-          const warped = perspectiveWarpCanvas(cropped, mapped, outW, outH);
-          if (isReasonableTechCanvas(warped)) normalized = warped;
-        }
-      }
-      return normalizeTechPassportCanvas(normalized).toDataURL('image/jpeg', 0.96);
+      return normalizeTechPassportCanvas(cropped).toDataURL('image/jpeg', 0.96);
     }
 
     function detectDocumentByBackground(data, w, h) {
