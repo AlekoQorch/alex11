@@ -8,10 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v150</title>
+  <title>დოკუმენტების ატვირთვა v151</title>
   <script>
     (function () {
-      var VER = '150';
+      var VER = '151';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -222,7 +222,7 @@
       inset: 0;
       width: 100%;
       height: 100%;
-      object-fit: contain;
+      object-fit: cover;
       object-position: center;
       background: #101012;
     }
@@ -1369,6 +1369,71 @@
 
     function isLandscapeTechCanvas(canvas) {
       return canvas && canvas.width > canvas.height && (canvas.width / canvas.height) >= 1.28;
+    }
+
+    function isRedBackgroundPixel(data, w, x, y) {
+      const [r, g, b] = rgbAt(data, w, x, y);
+      const max = Math.max(r, g, b);
+      const min = Math.min(r, g, b);
+      const sat = max ? (max - min) / max : 0;
+      return r > 90 && r > g * 1.12 && r > b * 1.12 && sat > 0.22 && lumaAt(data, w, x, y) < 215;
+    }
+
+    function trimColoredBackgroundMargins(canvas) {
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      const w = canvas.width;
+      const h = canvas.height;
+      const data = ctx.getImageData(0, 0, w, h).data;
+      const bg = sampleBorderRgb(data, w, h);
+      const threshold = colorEdgeThreshold(bg);
+      const step = Math.max(2, Math.round(Math.min(w, h) / 280));
+      const rowBgFrac = (y) => {
+        let bgHits = 0;
+        let total = 0;
+        for (let x = 0; x < w; x += step) {
+          total++;
+          const px = rgbAt(data, w, x, y);
+          if (isBackgroundPixel(data, w, bg, x, y, threshold) || isRedBackgroundPixel(data, w, x, y)) bgHits++;
+        }
+        return total ? bgHits / total : 1;
+      };
+      const colBgFrac = (x) => {
+        let bgHits = 0;
+        let total = 0;
+        for (let y = 0; y < h; y += step) {
+          total++;
+          if (isBackgroundPixel(data, w, bg, x, y, threshold) || isRedBackgroundPixel(data, w, x, y)) bgHits++;
+        }
+        return total ? bgHits / total : 1;
+      };
+      const maxBg = 0.58;
+      let top = 0;
+      let bot = h - 1;
+      let left = 0;
+      let right = w - 1;
+      for (let y = 0; y < h; y++) if (rowBgFrac(y) < maxBg) { top = y; break; }
+      for (let y = h - 1; y >= 0; y--) if (rowBgFrac(y) < maxBg) { bot = y; break; }
+      for (let x = 0; x < w; x++) if (colBgFrac(x) < maxBg) { left = x; break; }
+      for (let x = w - 1; x >= 0; x--) if (colBgFrac(x) < maxBg) { right = x; break; }
+      const rw = right - left + 1;
+      const rh = bot - top + 1;
+      if (rw < w * 0.42 || rh < h * 0.42 || rw * rh > w * h * 0.985) return canvas;
+      if (!isTechPassportAspect(rw, rh)) return canvas;
+      const out = document.createElement('canvas');
+      let outW = rw;
+      let outH = rh;
+      if (outW < TECH_CROP_MIN_WIDTH) {
+        const scale = TECH_CROP_MIN_WIDTH / outW;
+        outW = Math.round(outW * scale);
+        outH = Math.round(outH * scale);
+      }
+      out.width = outW;
+      out.height = outH;
+      const outCtx = out.getContext('2d');
+      outCtx.imageSmoothingEnabled = true;
+      outCtx.imageSmoothingQuality = 'high';
+      outCtx.drawImage(canvas, left, top, rw, rh, 0, 0, outW, outH);
+      return out;
     }
 
     function orientDocumentCanvas(canvas) {
@@ -3696,7 +3761,7 @@
       return candidates.sort((a, b) => (b.w * b.h) - (a.w * a.h))[0];
     }
 
-    function renderTightTechCrop(image, sx, sy, cropW, cropH) {
+    function renderTightTechCrop(source, sx, sy, cropW, cropH) {
       let outW = cropW;
       let outH = cropH;
       if (outW < TECH_CROP_MIN_WIDTH) {
@@ -3710,7 +3775,7 @@
       const outCtx = out.getContext('2d');
       outCtx.imageSmoothingEnabled = true;
       outCtx.imageSmoothingQuality = 'high';
-      outCtx.drawImage(image, sx, sy, cropW, cropH, 0, 0, outW, outH);
+      outCtx.drawImage(source, sx, sy, cropW, cropH, 0, 0, outW, outH);
       return out;
     }
 
@@ -3759,6 +3824,7 @@
     }
 
     function fitCanvasToTechSlot(canvas) {
+      const doc = orientDocumentCanvas(canvas);
       const targetW = TECH_DOC_NORM_WIDTH;
       const targetH = Math.max(1, Math.round(targetW / TECH_SLOT_ASPECT));
       const out = document.createElement('canvas');
@@ -3767,18 +3833,28 @@
       const ctx = out.getContext('2d');
       ctx.fillStyle = '#101012';
       ctx.fillRect(0, 0, targetW, targetH);
-      const scale = Math.min(targetW / canvas.width, targetH / canvas.height);
-      const dw = Math.round(canvas.width * scale);
-      const dh = Math.round(canvas.height * scale);
+      const aspect = doc.width / doc.height;
+      const useCover = aspect >= 1.28 && aspect <= 2.05;
+      const scale = useCover
+        ? Math.max(targetW / doc.width, targetH / doc.height)
+        : Math.min(targetW / doc.width, targetH / doc.height);
+      const dw = Math.round(doc.width * scale);
+      const dh = Math.round(doc.height * scale);
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(canvas, Math.round((targetW - dw) / 2), Math.round((targetH - dh) / 2), dw, dh);
+      ctx.drawImage(doc, Math.round((targetW - dw) / 2), Math.round((targetH - dh) / 2), dw, dh);
       return out;
     }
 
     function normalizeTechPassportCanvas(canvas) {
       const fallback = orientDocumentCanvas(canvas);
       let out = fallback;
+      for (let i = 0; i < 3; i++) {
+        const trimmed = trimColoredBackgroundMargins(out);
+        if (trimmed === out) break;
+        if (!isReasonableTechCanvas(trimmed)) break;
+        out = trimmed;
+      }
       for (let i = 0; i < 5; i++) {
         const trimmed = trimBackgroundMargins(out);
         if (trimmed === out) break;
@@ -3824,10 +3900,11 @@
         img.onerror = () => reject(new Error('Photo could not be read'));
         img.src = dataUrl;
       });
+      const source = orientDocumentCanvas(canvasFromImageElement(image));
       let sx = 0;
       let sy = 0;
-      let cropW = image.naturalWidth;
-      let cropH = image.naturalHeight;
+      let cropW = source.width;
+      let cropH = source.height;
 
       for (let pass = 0; pass < 2; pass++) {
         const iw = cropW;
@@ -3839,10 +3916,10 @@
         canvas.width = sw;
         canvas.height = sh;
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        ctx.drawImage(image, sx, sy, iw, ih, 0, 0, sw, sh);
+        ctx.drawImage(source, sx, sy, iw, ih, 0, 0, sw, sh);
         let rect = detectCropRectFromImageData(ctx.getImageData(0, 0, sw, sh).data, sw, sh);
         if (!rect || !isReasonableTechCropRect(rect, sw, sh)) break;
-        rect = expandDocumentRect(rect, sw, sh, 0.025);
+        rect = expandDocumentRect(rect, sw, sh, 0.035);
         const inv = 1 / detectScale;
         const nextSx = sx + Math.round(rect.x * inv);
         const nextSy = sy + Math.round(rect.y * inv);
@@ -3858,14 +3935,14 @@
         if (areaAfter > areaBefore * 0.90) break;
       }
 
-      if (!isTechPassportAspect(cropW, cropH) || cropW * cropH < image.naturalWidth * image.naturalHeight * 0.12) {
+      if (!isTechPassportAspect(cropW, cropH) || cropW * cropH < source.width * source.height * 0.12) {
         sx = 0;
         sy = 0;
-        cropW = image.naturalWidth;
-        cropH = image.naturalHeight;
+        cropW = source.width;
+        cropH = source.height;
       }
 
-      const cropped = renderTightTechCrop(image, sx, sy, cropW, cropH);
+      const cropped = renderTightTechCrop(source, sx, sy, cropW, cropH);
       return normalizeTechPassportCanvas(cropped).toDataURL('image/jpeg', 0.96);
     }
 
