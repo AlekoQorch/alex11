@@ -8,10 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v149</title>
+  <title>დოკუმენტების ატვირთვა v150</title>
   <script>
     (function () {
-      var VER = '149';
+      var VER = '150';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -222,7 +222,7 @@
       inset: 0;
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      object-fit: contain;
       object-position: center;
       background: #101012;
     }
@@ -1365,6 +1365,10 @@
       ctx.rotate(Math.PI / 2);
       ctx.drawImage(canvas, 0, 0);
       return out;
+    }
+
+    function isLandscapeTechCanvas(canvas) {
+      return canvas && canvas.width > canvas.height && (canvas.width / canvas.height) >= 1.28;
     }
 
     function orientDocumentCanvas(canvas) {
@@ -3763,7 +3767,7 @@
       const ctx = out.getContext('2d');
       ctx.fillStyle = '#101012';
       ctx.fillRect(0, 0, targetW, targetH);
-      const scale = Math.max(targetW / canvas.width, targetH / canvas.height);
+      const scale = Math.min(targetW / canvas.width, targetH / canvas.height);
       const dw = Math.round(canvas.width * scale);
       const dh = Math.round(canvas.height * scale);
       ctx.imageSmoothingEnabled = true;
@@ -3789,6 +3793,11 @@
       }
       if (!isReasonableTechCanvas(out)) out = fallback;
       out = orientDocumentCanvas(out);
+      if (!isLandscapeTechCanvas(out)) {
+        const rotated = orientDocumentCanvas(out);
+        if (isLandscapeTechCanvas(rotated)) out = rotated;
+        else out = fallback;
+      }
       if (out.width < TECH_CROP_MIN_WIDTH) {
         const scaled = scaleCanvasProportional(out, TECH_CROP_MIN_WIDTH);
         if (isReasonableTechCanvas(scaled)) out = scaled;
@@ -3849,7 +3858,7 @@
         if (areaAfter > areaBefore * 0.90) break;
       }
 
-      if (!isTechPassportAspect(cropW, cropH) || cropW * cropH < image.naturalWidth * image.naturalHeight * 0.06) {
+      if (!isTechPassportAspect(cropW, cropH) || cropW * cropH < image.naturalWidth * image.naturalHeight * 0.12) {
         sx = 0;
         sy = 0;
         cropW = image.naturalWidth;
