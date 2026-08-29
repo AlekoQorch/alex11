@@ -8,10 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v145</title>
+  <title>დოკუმენტების ატვირთვა v146</title>
   <script>
     (function () {
-      var VER = '145';
+      var VER = '146';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -222,7 +222,7 @@
       inset: 0;
       width: 100%;
       height: 100%;
-      object-fit: fill;
+      object-fit: contain;
       object-position: center;
       background: #101012;
     }
@@ -1243,6 +1243,23 @@
     const TECH_DOC_NORM_WIDTH = 2000;
     const TECH_CROP_MIN_WIDTH = 1400;
     const TECH_SLOT_ASPECT = 100 / 58;
+
+    function isTechPassportAspect(w, h) {
+      if (!w || !h) return false;
+      const aspect = w / h;
+      return (aspect >= 1.28 && aspect <= 2.18) || (aspect >= 0.44 && aspect <= 0.84);
+    }
+
+    function isReasonableTechCropRect(rect, frameW, frameH) {
+      if (!rect || rect.w < frameW * 0.22 || rect.h < frameH * 0.22) return false;
+      if (rect.w * rect.h < frameW * frameH * 0.08) return false;
+      return isTechPassportAspect(rect.w, rect.h);
+    }
+
+    function isReasonableTechCanvas(canvas) {
+      return canvas && isTechPassportAspect(canvas.width, canvas.height)
+        && canvas.width >= 320 && canvas.height >= 180;
+    }
 
     function normalizedDocHeight(srcW, srcH) {
       return Math.max(1, Math.round(srcH * (TECH_DOC_NORM_WIDTH / srcW)));
@@ -3328,7 +3345,8 @@
       for (let x = w - 1; x >= 0; x--) if (colFrac(x) >= minFrac) { right = x; break; }
       const rw = right - left + 1;
       const rh = bot - top + 1;
-      if (rw < w * 0.32 || rh < h * 0.32 || rw * rh > w * h * 0.985) return canvas;
+      if (rw < w * 0.45 || rh < h * 0.45 || rw * rh > w * h * 0.985) return canvas;
+      if (!isTechPassportAspect(rw, rh)) return canvas;
       const out = document.createElement('canvas');
       let outW = rw;
       let outH = rh;
@@ -3436,8 +3454,8 @@
       rh = Math.min(h - y, rh + pad * 2);
       const aspect = rw / rh;
       if (rw < w * 0.08 || rh < h * 0.08) return null;
-      if (!allowLoose && !((aspect > 1.12 && aspect < 2.15) || (aspect > 0.46 && aspect < 0.9))) return null;
-      if (allowLoose && aspect > 2.6) return null;
+      if (!allowLoose && !isTechPassportAspect(rw, rh)) return null;
+      if (allowLoose && !isTechPassportAspect(rw, rh)) return null;
       return { x, y, w: rw, h: rh };
     }
 
@@ -3648,7 +3666,7 @@
         || detectDocumentByAdaptiveBright(data, w, h)
         || detectDocumentByColorEdge(data, w, h)
         || detectContentBounds(data, w, h);
-      if (!rect || rect.w * rect.h > w * h * 0.97) return canvas;
+      if (!rect || !isReasonableTechCropRect(rect, w, h) || rect.w * rect.h > w * h * 0.97) return canvas;
       const out = document.createElement('canvas');
       let outW = rect.w;
       let outH = rect.h;
@@ -3694,19 +3712,24 @@
     }
 
     function normalizeTechPassportCanvas(canvas) {
-      let out = orientDocumentCanvas(canvas);
-      for (let i = 0; i < 8; i++) {
+      const fallback = orientDocumentCanvas(canvas);
+      let out = fallback;
+      for (let i = 0; i < 5; i++) {
         const trimmed = trimBackgroundMargins(out);
         if (trimmed === out) break;
+        if (!isReasonableTechCanvas(trimmed)) break;
         out = trimmed;
       }
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < 2; i++) {
         const trimmed = trimBrightDocumentEdges(out);
         if (trimmed === out) break;
+        if (!isReasonableTechCanvas(trimmed)) break;
         out = trimmed;
       }
+      if (!isReasonableTechCanvas(out)) out = fallback;
       if (out.width < TECH_CROP_MIN_WIDTH) {
-        out = scaleCanvasProportional(out, TECH_CROP_MIN_WIDTH);
+        const scaled = scaleCanvasProportional(out, TECH_CROP_MIN_WIDTH);
+        if (isReasonableTechCanvas(scaled)) out = scaled;
       }
       return fitCanvasToTechSlot(out);
     }
@@ -3747,7 +3770,7 @@
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
         ctx.drawImage(image, sx, sy, iw, ih, 0, 0, sw, sh);
         const rect = detectCropRectFromImageData(ctx.getImageData(0, 0, sw, sh).data, sw, sh);
-        if (!rect) break;
+        if (!rect || !isReasonableTechCropRect(rect, sw, sh)) break;
         const inv = 1 / detectScale;
         const nextSx = sx + Math.round(rect.x * inv);
         const nextSy = sy + Math.round(rect.y * inv);
@@ -3755,11 +3778,19 @@
         const nextH = Math.max(1, Math.round(rect.h * inv));
         const areaBefore = cropW * cropH;
         const areaAfter = nextW * nextH;
+        if (!isTechPassportAspect(nextW, nextH)) break;
         sx = nextSx;
         sy = nextSy;
         cropW = nextW;
         cropH = nextH;
         if (areaAfter > areaBefore * 0.90) break;
+      }
+
+      if (!isTechPassportAspect(cropW, cropH) || cropW * cropH < image.naturalWidth * image.naturalHeight * 0.06) {
+        sx = 0;
+        sy = 0;
+        cropW = image.naturalWidth;
+        cropH = image.naturalHeight;
       }
 
       const cropped = renderTightTechCrop(image, sx, sy, cropW, cropH);
@@ -3779,7 +3810,10 @@
           y: p.y / detectScale
         })), 0.018);
         const { outW, outH } = quadOutputSize(mapped, TECH_DOC_NORM_WIDTH);
-        normalized = perspectiveWarpCanvas(cropped, mapped, outW, outH);
+        if (isTechPassportAspect(outW, outH)) {
+          const warped = perspectiveWarpCanvas(cropped, mapped, outW, outH);
+          if (isReasonableTechCanvas(warped)) normalized = warped;
+        }
       }
       return normalizeTechPassportCanvas(normalized).toDataURL('image/jpeg', 0.96);
     }
