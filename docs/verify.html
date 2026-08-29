@@ -8,10 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v147</title>
+  <title>დოკუმენტების ატვირთვა v148</title>
   <script>
     (function () {
-      var VER = '147';
+      var VER = '148';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -3648,7 +3648,7 @@
         if (!landscapeOk && !portraitOk) continue;
         tries.push({
           rect,
-          score: scoreDocumentRect(rect, w, h) + (1 - area) * 110 + (landscapeOk ? 20 : 10)
+          score: scoreDocumentRect(rect, w, h) + area * 110 + (landscapeOk ? 20 : 10)
         });
       }
       if (!tries.length) return null;
@@ -3837,28 +3837,7 @@
       }
 
       const cropped = renderTightTechCrop(image, sx, sy, cropW, cropH);
-      const detectScale = Math.min(1, 1800 / Math.max(cropped.width, cropped.height));
-      const detW = Math.max(1, Math.round(cropped.width * detectScale));
-      const detH = Math.max(1, Math.round(cropped.height * detectScale));
-      const detCanvas = document.createElement('canvas');
-      detCanvas.width = detW;
-      detCanvas.height = detH;
-      const detCtx = detCanvas.getContext('2d', { willReadFrequently: true });
-      detCtx.drawImage(cropped, 0, 0, detW, detH);
-      const corners = detectDocumentQuadCorners(detCtx.getImageData(0, 0, detW, detH).data, detW, detH);
-      let normalized = cropped;
-      if (corners && scoreDocumentQuad(corners, detW, detH) >= 120 && quadNeedsPerspective(corners)) {
-        const mapped = insetQuadCorners(corners.map((p) => ({
-          x: p.x / detectScale,
-          y: p.y / detectScale
-        })), 0.012);
-        const { outW, outH } = quadOutputSize(mapped, TECH_DOC_NORM_WIDTH);
-        if (isTechPassportAspect(outW, outH) && scoreDocumentQuad(mapped, cropped.width, cropped.height) >= 100) {
-          const warped = perspectiveWarpCanvas(cropped, mapped, outW, outH);
-          if (isReasonableTechCanvas(warped)) normalized = warped;
-        }
-      }
-      return normalizeTechPassportCanvas(normalized).toDataURL('image/jpeg', 0.96);
+      return normalizeTechPassportCanvas(cropped).toDataURL('image/jpeg', 0.96);
     }
 
     function detectDocumentByBackground(data, w, h) {
