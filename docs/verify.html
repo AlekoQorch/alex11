@@ -9,7 +9,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="tech-gemini-api" content="https://vin-gemini.aleksandrekorchashvili.workers.dev">
-  <title>დოკუმენტების ატვირთვა v159</title>
+  <title>დოკუმენტების ატვირთვა v160</title>
   <script>
     (function () {
       try {
@@ -27,7 +27,7 @@
           if (fromHash) history.replaceState(null, '', location.pathname + location.search);
         }
       } catch (e) {}
-      var VER = '159';
+      var VER = '160';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -2893,6 +2893,58 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
     let vinReadGen = 0;
     let plateReadGen = 0;
 
+    function geminiConfidenceScore(geminiResult) {
+      if (!geminiResult) return 0;
+      if (typeof geminiResult.confidenceScore === 'number') return geminiResult.confidenceScore;
+      if (geminiResult.confidence === 'high' || geminiResult.confidence === 'very-high') return 0.9;
+      if (geminiResult.confidence === 'medium') return 0.7;
+      if (geminiResult.confidence === 'low') return 0.45;
+      return parseFloat(geminiResult.confidence) || 0;
+    }
+
+    function isGeminiVinTrusted(geminiResult) {
+      if (!geminiResult || geminiResult.error || !geminiResult.vin) return false;
+      const vin = normalizeVinWmiPrefix(geminiResult.vin);
+      if (!vin || vin === 'VIN_NOT_CONFIDENT') return false;
+      if (!isValidVinFormat(vin) || !serialSectionValid(vin) || !isPlausibleVinStructure(vin)) return false;
+      if (geminiResult.readable === false) return false;
+      return geminiConfidenceScore(geminiResult) >= 0.65;
+    }
+
+    function applyVinReadResult(result, evidence, geminiApiError, gen) {
+      const geminiVin = evidence.visionResult && evidence.visionResult.vin;
+      const geminiReadable = geminiVin && geminiVin !== 'VIN_NOT_CONFIDENT' && isValidVinFormat(normalizeVinWmiPrefix(geminiVin));
+      const useGemini = getStoredGeminiKey() || TECH_GEMINI_API;
+      if (useGemini && geminiApiError && !geminiReadable) {
+        state.vin = '';
+        if (!getStoredGeminiKey()) showGeminiKeySetup(true);
+        state.vinStatus = getStoredGeminiKey()
+          ? 'Gemini API არ მუშაობს — შეამოწმეთ API key.'
+          : 'Gemini API key საჭიროა — ჩაწერეთ ქვემოთ (უფასო, ერთხელ).';
+        return;
+      }
+      if (useGemini && !geminiReadable && (!result.vin || result.confidence === 'unreliable' || (!result.source || !/gemini|vision/.test(result.source)))) {
+        state.vin = '';
+        if (!getStoredGeminiKey()) showGeminiKeySetup(true);
+        state.vinStatus = geminiApiError
+          ? 'Gemini API არ მუშაობს — ჩაწერეთ API key ქვემოთ.'
+          : 'Gemini ვერ წაიკითხა VIN-ს საიმედოდ — შეადარეთ E ველს და ჩაწერეთ ხელით.';
+        return;
+      }
+      if (!result.vin || result.confidence === 'unreliable') {
+        state.vin = '';
+        state.vinStatus = 'VIN ვერ წაიკითხა საიმედოდ — შეადარეთ E ველს და ჩაწერეთ ხელით.';
+        return;
+      }
+      state.vin = result.vin;
+      const conf = vinConfidenceFromPipeline(result.confidence);
+      const sourceNote = result.source && (result.source.startsWith('gemini') || result.source.startsWith('vision'))
+        ? ((getStoredGeminiKey() || TECH_GEMINI_API) ? ' (Gemini AI)' : ' (Vision AI)')
+        : '';
+      const checkNote = vinHasValidCheckDigit(result.vin) ? '' : ' — გადაამოწმეთ კოდი.';
+      state.vinStatus = `VIN ამოცნობილია (${conf} სანდოობა)${sourceNote}${checkNote}`;
+    }
+
     async function readVinFromTechPassport(sourceKey) {
       if (sourceKey !== 'tech_back' && !ocrTechPhoto('tech_back')) return;
       const photo = ocrTechPhoto('tech_back') || ocrTechPhoto(sourceKey);
@@ -2903,17 +2955,17 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
       vinOcrCompacts = [];
       renderVinLookup(true);
       try {
-        const Tesseract = await loadOcrLibrary();
         const evidence = createVinEvidence();
         let geminiApiError = '';
+        let geminiResult = null;
 
         if (TECH_AI_ENABLED) {
           if (gen !== vinReadGen) return;
-          state.vinStatus = TECH_GEMINI_API
+          state.vinStatus = (getStoredGeminiKey() || TECH_GEMINI_API)
             ? 'Gemini კითხულობს VIN-ს სურათიდან…'
             : 'Vision AI კითხულობს VIN-ს სურათიდან…';
           renderVinLookup(true);
-          const geminiResult = await readVinViaVision(photo, TECH_GEMINI_API ? 'extract_tech' : 'extract_vin');
+          geminiResult = await readVinViaVision(photo, (getStoredGeminiKey() || TECH_GEMINI_API) ? 'extract_tech' : 'extract_vin');
           if (geminiResult && geminiResult.error === 'rate_limit') {
             state.vinStatus = geminiResult.message || 'Gemini უფასო ლიმიტი ამოიწურა — OCR-ით იკითხება…';
             renderVinLookup(true);
@@ -2923,8 +2975,21 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
             addGeminiVinEvidence(evidence, geminiResult, 'gemini-ai', 300, false);
             applyGeminiVehicleFields(geminiResult.vehicle);
           }
+
+          if (gen !== vinReadGen) return;
+          if (isGeminiVinTrusted(geminiResult)) {
+            const vin = normalizeVinWmiPrefix(geminiResult.vin);
+            applyVinReadResult({
+              vin,
+              confidence: geminiResult.confidence || 'high',
+              source: 'gemini-ai',
+              score: 900
+            }, evidence, geminiApiError, gen);
+            return;
+          }
         }
 
+        const Tesseract = await loadOcrLibrary();
         if (gen !== vinReadGen) return;
         state.vinStatus = 'QR კოდი მოწმდება…';
         renderVinLookup(true);
@@ -3001,32 +3066,7 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
             result.confidence = 'medium';
           }
         }
-        const geminiVin = evidence.visionResult && evidence.visionResult.vin;
-        const geminiReadable = geminiVin && geminiVin !== 'VIN_NOT_CONFIDENT' && isValidVinFormat(normalizeVinWmiPrefix(geminiVin));
-        if (TECH_GEMINI_API && geminiApiError && !geminiReadable) {
-          state.vin = '';
-          if (!getStoredGeminiKey()) showGeminiKeySetup(true);
-          state.vinStatus = getStoredGeminiKey()
-            ? 'Gemini API არ მუშაობს — შეამოწმეთ API key.'
-            : 'Gemini API key საჭიროა — ჩაწერეთ ქვემოთ (უფასო, ერთხელ).';
-        } else if (TECH_GEMINI_API && !geminiReadable && (!result.vin || result.confidence === 'unreliable' || (!result.source || !/gemini|vision/.test(result.source)))) {
-          state.vin = '';
-          if (!getStoredGeminiKey()) showGeminiKeySetup(true);
-          state.vinStatus = geminiApiError
-            ? 'Gemini API არ მუშაობს — ჩაწერეთ API key ქვემოთ.'
-            : 'Gemini ვერ წაიკითხა VIN-ს საიმედოდ — შეადარეთ E ველს და ჩაწერეთ ხელით.';
-        } else if (!result.vin || result.confidence === 'unreliable') {
-          state.vin = '';
-          state.vinStatus = 'VIN ვერ წაიკითხა საიმედოდ — შეადარეთ E ველს და ჩაწერეთ ხელით.';
-        } else {
-          state.vin = result.vin;
-          const conf = vinConfidenceFromPipeline(result.confidence);
-          const sourceNote = result.source && (result.source.startsWith('gemini') || result.source.startsWith('vision'))
-            ? (TECH_GEMINI_API ? ' (Gemini AI)' : ' (Vision AI)')
-            : '';
-          const checkNote = vinHasValidCheckDigit(result.vin) ? '' : ' — გადაამოწმეთ კოდი.';
-          state.vinStatus = `VIN ამოცნობილია (${conf} სანდოობა)${sourceNote}${checkNote}`;
-        }
+        applyVinReadResult(result, evidence, geminiApiError, gen);
       } catch (_) {
         if (gen === vinReadGen) state.vinStatus = 'VIN-ის ავტომატური წაკითხვა ვერ მოხერხდა. ჩაწერეთ ხელით.';
       } finally {
