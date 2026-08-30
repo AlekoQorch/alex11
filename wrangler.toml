@@ -1,6 +1,7 @@
 name = "vin-gemini"
 main = "api/gemini-tech-worker.js"
 compatibility_date = "2024-12-01"
+account_id = "8e95b92a654fdc8ee313d736a7a26910"
 
 [vars]
 # GEMINI_API_KEY is set as an encrypted secret via: wrangler secret put GEMINI_API_KEY
