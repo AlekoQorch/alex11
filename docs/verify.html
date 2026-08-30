@@ -9,7 +9,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="tech-gemini-api" content="https://vin-gemini.aleksandrekorchashvili.workers.dev">
-  <title>დოკუმენტების ატვირთვა v166</title>
+  <title>დოკუმენტების ატვირთვა v168</title>
   <script>
     (function () {
       try {
@@ -27,7 +27,7 @@
           if (fromHash) history.replaceState(null, '', location.pathname + location.search);
         }
       } catch (e) {}
-      var VER = '166';
+      var VER = '168';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -1570,6 +1570,17 @@
       return out;
     }
 
+    function ocrLineBbox(line) {
+      const b = line && line.bbox;
+      if (b && Number.isFinite(b.x0)) return b;
+      return {
+        x0: (line && line.x0) || 0,
+        y0: (line && line.y0) || 0,
+        x1: (line && line.x1) || 0,
+        y1: (line && line.y1) || 0
+      };
+    }
+
     function flattenOcrLines(result) {
       const data = result && result.data;
       if (!data) return [];
@@ -1577,10 +1588,10 @@
         return data.lines.map((line) => ({
           text: line.text || '',
           confidence: line.confidence || 0,
-          bbox: line.bbox || { x0: line.x0 || 0, y0: line.y0 || 0, x1: line.x1 || 0, y1: line.y1 || 0 }
+          bbox: ocrLineBbox(line)
         }));
       }
-      const words = data.words || [];
+      const words = (data.words || []).filter((w) => w && w.bbox && Number.isFinite(w.bbox.x0));
       if (!words.length) return [];
       const sorted = [...words].sort((a, b) => (a.bbox.y0 - b.bbox.y0) || (a.bbox.x0 - b.bbox.x0));
       const lines = [];
@@ -1615,6 +1626,21 @@
       ctx.filter = filter || 'grayscale(1) contrast(1.85) brightness(1.05)';
       ctx.drawImage(image, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
       return canvas.toDataURL('image/png');
+    }
+
+    async function preparePhotoForOcr(dataUrl) {
+      const image = await loadImageElement(dataUrl);
+      const iw = image.naturalWidth;
+      const ih = image.naturalHeight;
+      const maxDim = 2400;
+      if (Math.max(iw, ih) <= maxDim) return dataUrl;
+      const scale = maxDim / Math.max(iw, ih);
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(iw * scale);
+      canvas.height = Math.round(ih * scale);
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+      return canvas.toDataURL('image/jpeg', 0.92);
     }
 
     async function buildDocumentOcrPasses(dataUrl) {
@@ -1655,8 +1681,15 @@
 
       pushRegion({ x: 0, y: 0, w: 0.72, h: 1 }, Math.max(2, baseScale), 18, false);
       const bandH = 0.12;
-      for (let y = 0; y <= 0.68; y += 0.1) {
-        pushRegion({ x: 0, y, w: 0.72, h: bandH }, Math.max(2.8, baseScale * 1.2), 22, true);
+      const portrait = ih > iw * 1.1;
+      if (portrait) {
+        for (const y of [0.26, 0.34, 0.42, 0.50, 0.58]) {
+          pushRegion({ x: 0.03, y, w: 0.94, h: bandH }, Math.max(2.8, baseScale * 1.2), 24, true);
+        }
+      } else {
+        for (let y = 0; y <= 0.68; y += 0.1) {
+          pushRegion({ x: 0, y, w: 0.72, h: bandH }, Math.max(2.8, baseScale * 1.2), 22, true);
+        }
       }
 
       return { image, passes };
@@ -1674,14 +1707,18 @@
       }
       if (!labelYs.length) {
         const h = image.naturalHeight;
-        const defaults = kind === 'plate' ? [0.10, 0.16, 0.22] : [0.22, 0.28, 0.34];
+        const portrait = image.naturalHeight > image.naturalWidth * 1.1;
+        const defaults = kind === 'plate'
+          ? (portrait ? [0.08, 0.12, 0.16] : [0.10, 0.16, 0.22])
+          : (portrait ? [0.28, 0.36, 0.44, 0.52, 0.60] : [0.22, 0.28, 0.34]);
         for (const frac of defaults) labelYs.push(h * frac);
       }
       const passes = [];
       const iw = image.naturalWidth;
       const ih = image.naturalHeight;
-      const bandH = Math.max(40, Math.round(ih * 0.09));
-      const bandW = Math.round(iw * 0.72);
+      const portrait = ih > iw * 1.1;
+      const bandH = Math.max(40, Math.round((portrait ? iw : ih) * 0.09));
+      const bandW = portrait ? Math.round(iw * 0.94) : Math.round(iw * 0.72);
       const zoom = Math.max(3.5, baseScaleFromImage(iw));
       for (const y of labelYs) {
         const sy = Math.max(0, Math.round(y - bandH / 2));
@@ -1752,20 +1789,26 @@
     }
 
     async function recognizeOcrPass(Tesseract, pass, opts) {
-      const tessOpts = {
-        tessedit_char_whitelist: opts && opts.whitelist,
-        tessedit_pageseg_mode: pass.psm || '3',
-        logger: opts && opts.logger
-      };
-      if (!tessOpts.tessedit_char_whitelist) delete tessOpts.tessedit_char_whitelist;
-      const result = await Tesseract.recognize(pass.dataUrl, 'eng', tessOpts);
-      const data = result && result.data;
-      return {
-        text: (data && data.text) || '',
-        lines: flattenOcrLines(result),
-        confidence: data && data.confidence ? data.confidence : 0,
-        weight: pass.weight || 10
-      };
+      try {
+        const worker = await getOcrWorker(Tesseract);
+        const params = { tessedit_pageseg_mode: String(pass.psm || 3) };
+        if (opts && opts.whitelist) params.tessedit_char_whitelist = opts.whitelist;
+        await worker.setParameters(params);
+        const result = await worker.recognize(pass.dataUrl);
+        const data = result && result.data;
+        if (opts && opts.logger && data && typeof data.progress === 'number') {
+          opts.logger({ status: 'recognizing text', progress: data.progress });
+        }
+        return {
+          text: (data && data.text) || '',
+          lines: flattenOcrLines(result),
+          confidence: data && data.confidence ? data.confidence : 0,
+          weight: pass.weight || 10
+        };
+      } catch (e) {
+        console.warn('recognizeOcrPass failed', e);
+        return { text: '', lines: [], confidence: 0, weight: pass.weight || 10 };
+      }
     }
 
     function extractVinFromOcrLines(lines, imageW) {
@@ -2178,20 +2221,22 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
       for (const line of lines) {
         const upper = line.text.toUpperCase();
         if (!eLabelPatterns.some((pat) => pat.test(upper))) continue;
-        const cy = (line.bbox.y0 + line.bbox.y1) / 2;
-        const tol = Math.max(22, (line.bbox.y1 - line.bbox.y0) * 2.2);
-        let x0 = line.bbox.x0;
-        let y0 = line.bbox.y0;
-        let x1 = line.bbox.x1;
-        let y1 = line.bbox.y1;
+        const bbox = ocrLineBbox(line);
+        const cy = (bbox.y0 + bbox.y1) / 2;
+        const tol = Math.max(22, (bbox.y1 - bbox.y0) * 2.2);
+        let x0 = bbox.x0;
+        let y0 = bbox.y0;
+        let x1 = bbox.x1;
+        let y1 = bbox.y1;
         for (const other of lines) {
-          const oy = (other.bbox.y0 + other.bbox.y1) / 2;
+          const ob = ocrLineBbox(other);
+          const oy = (ob.y0 + ob.y1) / 2;
           if (Math.abs(oy - cy) > tol) continue;
           if (isLineInQrZone(other, iw) && !eLabelPatterns.some((pat) => pat.test(other.text.toUpperCase()))) continue;
-          x0 = Math.min(x0, other.bbox.x0);
-          y0 = Math.min(y0, other.bbox.y0);
-          x1 = Math.max(x1, other.bbox.x1);
-          y1 = Math.max(y1, other.bbox.y1);
+          x0 = Math.min(x0, ob.x0);
+          y0 = Math.min(y0, ob.y0);
+          x1 = Math.max(x1, ob.x1);
+          y1 = Math.max(y1, ob.y1);
         }
         addRegion(x0, y0, x1, y1, 78, 'e-field');
       }
@@ -2201,7 +2246,8 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
         const compact = sanitizeVinWindow(line.text);
         if (compact.length < 14) continue;
         if (!/[A-Z]{2,3}[A-HJ-NPR-Z0-9]{8,}/.test(compact)) continue;
-        addRegion(line.bbox.x0, line.bbox.y0, line.bbox.x1, line.bbox.y1, 58, 'vin-line');
+        const bbox = ocrLineBbox(line);
+        addRegion(bbox.x0, bbox.y0, bbox.x1, bbox.y1, 58, 'vin-line');
       }
 
       return regions.sort((a, b) => b.weight - a.weight);
@@ -2981,11 +3027,6 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
         state.vinStatus = geminiApiError || 'Gemini ვერ მუშაობს — VIN ხელით ჩაწერე.';
         return;
       }
-      if (useGemini && !geminiReadable && !geminiFailed && (!result.vin || result.confidence === 'unreliable' || (!result.source || !/gemini|vision/.test(result.source)))) {
-        state.vin = '';
-        state.vinStatus = 'Gemini ვერ დაადასტურა VIN-ს — შეადარე E ველს და ჩაწერე ხელით.';
-        return;
-      }
       if (!result.vin || result.confidence === 'unreliable') {
         state.vin = '';
         state.vinStatus = 'VIN ვერ წაიკითხა საიმედოდ — შეადარეთ E ველს და ჩაწერეთ ხელით.';
@@ -3022,13 +3063,16 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
             : 'Vision AI კითხულობს VIN-ს სურათიდან…';
           renderVinLookup(true);
           geminiResult = await readVinViaVision(photo, (getStoredGeminiKey() || TECH_GEMINI_API) ? 'extract_tech' : 'extract_vin');
-          if (geminiResult && (geminiResult.error === 'rate_limit' || geminiResult.error === 'overloaded' || geminiResult.error === 'gemini_error' || geminiResult.error === 'config')) {
+          if (geminiResult && geminiResult.error) {
             geminiFailed = true;
             geminiApiError = geminiResult.message || geminiErrorUserMessage(geminiResult.error, '');
             if (geminiResult.error === 'rate_limit' || geminiResult.error === 'overloaded') {
               state.vinStatus = geminiApiError + ' OCR-ით იკითხება…';
               renderVinLookup(true);
             }
+          } else if (!geminiResult && !getStoredGeminiKey()) {
+            geminiFailed = true;
+            geminiApiError = 'Gemini ვერ უპასუხა — OCR-ით იკითხება…';
           } else if (geminiResult && geminiResult.vin) {
             addGeminiVinEvidence(evidence, geminiResult, 'gemini-ai', 300, false);
             applyGeminiVehicleFields(geminiResult.vehicle);
@@ -3047,13 +3091,23 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
           }
         }
 
-        const Tesseract = await loadOcrLibrary();
+        let Tesseract;
+        try {
+          Tesseract = await loadOcrLibrary();
+        } catch (loadErr) {
+          console.error('loadOcrLibrary failed', loadErr);
+          if (gen === vinReadGen) {
+            state.vinStatus = 'OCR ვერ ჩაიტვირთა — შეამოწმეთ ინტერნეტი ან ჩაწერეთ VIN ხელით.';
+          }
+          return;
+        }
         if (gen !== vinReadGen) return;
-        const built = await buildDocumentOcrPasses(photo);
+        const ocrPhoto = await preparePhotoForOcr(photo);
+        const built = await buildDocumentOcrPasses(ocrPhoto);
         const image = built.image;
         state.vinStatus = 'დოკუმენტის სტრუქტურა იკითხება…';
         renderVinLookup(true);
-        const layoutOcr = await recognizeOcrPass(Tesseract, { dataUrl: photo, weight: 22, psm: '3' }, {
+        const layoutOcr = await recognizeOcrPass(Tesseract, { dataUrl: ocrPhoto, weight: 22, psm: '3' }, {
           whitelist: 'ABCDEFGHJKLMNPRSTUVWXYZ0123456789',
           logger: (event) => {
             if (event.status === 'recognizing text' && event.progress > 0.2) {
@@ -3117,9 +3171,13 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
           }
         }
         applyVinReadResult(result, evidence, geminiApiError, gen, geminiFailed);
-      } catch (_) {
-        if (gen === vinReadGen) state.vinStatus = 'VIN-ის ავტომატური წაკითხვა ვერ მოხერხდა. ჩაწერეთ ხელით.';
+      } catch (err) {
+        console.error('readVinFromTechPassport failed', err);
+        if (gen === vinReadGen) {
+          state.vinStatus = 'VIN-ის ავტომატური წაკითხვა ვერ მოხერხდა. ჩაწერეთ ხელით.';
+        }
       } finally {
+        void resetOcrWorker();
         if (gen === vinReadGen) {
           state.vinReading = false;
           renderVinLookup(true);
@@ -3242,18 +3300,40 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
     }
 
     let ocrLibraryPromise;
+    let ocrWorkerPromise = null;
+
     function loadOcrLibrary() {
       if (window.Tesseract) return Promise.resolve(window.Tesseract);
       if (ocrLibraryPromise) return ocrLibraryPromise;
       ocrLibraryPromise = new Promise((resolve, reject) => {
         const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@7/dist/tesseract.min.js';
+        script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
         script.async = true;
         script.onload = () => window.Tesseract ? resolve(window.Tesseract) : reject(new Error('OCR unavailable'));
         script.onerror = () => reject(new Error('OCR could not be loaded'));
         document.head.appendChild(script);
       });
       return ocrLibraryPromise;
+    }
+
+    async function getOcrWorker(Tesseract) {
+      if (!ocrWorkerPromise) {
+        ocrWorkerPromise = Tesseract.createWorker('eng', 1, {
+          workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js',
+          langPath: 'https://tessdata.projectnaptha.com/4.0.0',
+          corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5.0.0'
+        });
+      }
+      return ocrWorkerPromise;
+    }
+
+    async function resetOcrWorker() {
+      if (!ocrWorkerPromise) return;
+      try {
+        const worker = await ocrWorkerPromise;
+        await worker.terminate();
+      } catch (_) {}
+      ocrWorkerPromise = null;
     }
 
     let qrLibraryPromise;
@@ -5012,12 +5092,32 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
     };
 
     $('cam-upload').onclick = () => $('file-input').click();
+    async function fileToDataUrl(file) {
+      if (typeof createImageBitmap === 'function') {
+        try {
+          const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+          const canvas = document.createElement('canvas');
+          canvas.width = bitmap.width;
+          canvas.height = bitmap.height;
+          canvas.getContext('2d').drawImage(bitmap, 0, 0);
+          if (typeof bitmap.close === 'function') bitmap.close();
+          return canvas.toDataURL('image/jpeg', 0.92);
+        } catch (_) {}
+      }
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = () => reject(new Error('Photo could not be read'));
+        reader.readAsDataURL(file);
+      });
+    }
+
     $('file-input').onchange = () => {
       const file = $('file-input').files && $('file-input').files[0];
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => { void acceptPhoto(String(reader.result || ''), { fromGallery: true }); };
-      reader.readAsDataURL(file);
+      void fileToDataUrl(file)
+        .then((dataUrl) => acceptPhoto(dataUrl, { fromGallery: true }))
+        .catch(() => { state.vinStatus = 'ფოტო ვერ წაიკითხა — სცადეთ ხელახლა.'; renderVinLookup(true); });
       $('file-input').value = '';
     };
 
