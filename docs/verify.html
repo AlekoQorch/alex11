@@ -8,10 +8,17 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
+<<<<<<< HEAD
+  <title>დოკუმენტების ატვირთვა v152</title>
+  <script>
+    (function () {
+      var VER = '152';
+=======
   <title>დოკუმენტების ატვირთვა v151</title>
   <script>
     (function () {
       var VER = '151';
+>>>>>>> origin/main
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -4358,25 +4365,9 @@
     }
 
     async function processTechPhoto(capturedKey, dataUrl) {
-      state.techPhotoProcessing[capturedKey] = true;
+      state.photos[capturedKey] = dataUrl;
+      state.photosOcr[capturedKey] = dataUrl;
       renderGroup();
-      try {
-        const cropped = await cropTechPassportFromPhoto(dataUrl);
-        state.photos[capturedKey] = cropped;
-        state.photosOcr[capturedKey] = cropped;
-      } catch (_) {
-        try {
-          const normalized = await normalizeTechPassportPhoto(dataUrl);
-          state.photos[capturedKey] = normalized;
-          state.photosOcr[capturedKey] = normalized;
-        } catch (__) {
-          state.photos[capturedKey] = dataUrl;
-          state.photosOcr[capturedKey] = dataUrl;
-        }
-      } finally {
-        state.techPhotoProcessing[capturedKey] = false;
-        renderGroup();
-      }
       if (capturedKey === 'tech_front') {
         if (!state.photos.tech_back) {
           state.plateStatus = 'რეგისტრაციის ნომერი წაიკითხება უკანა გვერდის QR კოდიდან…';
@@ -4414,9 +4405,9 @@
         state.techDataConfirmed = false;
       }
 
-      state.photos[capturedKey] = (capturedKey === 'tech_front' || capturedKey === 'tech_back') ? '' : dataUrl;
+      state.photos[capturedKey] = dataUrl;
+      state.photosOcr[capturedKey] = dataUrl;
       if (capturedKey === 'tech_front' || capturedKey === 'tech_back') {
-        state.techPhotoProcessing[capturedKey] = true;
         if (capturedKey === 'tech_back') state.vinStatus = 'VIN იკითხება…';
         else state.plateStatus = 'რეგისტრაციის ნომერი წაიკითხება უკანა გვერდის QR კოდიდან…';
       }
