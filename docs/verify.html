@@ -8,10 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v154</title>
+  <title>დოკუმენტების ატვირთვა v155</title>
   <script>
     (function () {
-      var VER = '154';
+      var VER = '155';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -2041,12 +2041,67 @@
       };
     }
 
+    function vinLiteralEvidenceScore(vin, compacts) {
+      if (!vin || !compacts.length) return 0;
+      const joined = compacts.join('');
+      let score = 0;
+      if (joined.includes(vin)) score += vinHasValidCheckDigit(vin) ? 110 : 25;
+      const rules = [
+        ['2539151', '2534151'],
+        ['ZASPAKBN', '5PAKBN'],
+        ['367495', '267445'],
+        ['24928', '24528'],
+        ['716609', '716604']
+      ];
+      for (const [good, bad] of rules) {
+        if (!joined.includes(good)) continue;
+        if (vin.includes(good)) score += 85;
+        if (vin.includes(bad) && !vin.includes(good)) score -= 200;
+      }
+      return score;
+    }
+
+    function preferLiteralKnownWmiVin(evidence, currentVin) {
+      const joined = evidence.compacts.join('');
+      let best = '';
+      let bestScore = -999;
+      for (const compact of evidence.compacts) {
+        const c = sanitizeVinWindow(compact);
+        for (let i = 0; i <= c.length - 17; i++) {
+          const slice = normalizeVinWmiPrefix(c.slice(i, i + 17));
+          if (!joined.includes(slice)) continue;
+          if (!isValidVinFormat(slice) || !serialSectionValid(slice) || !isPlausibleVinStructure(slice)) continue;
+          if (!VIN_KNOWN_WMIS.some((w) => slice.startsWith(w))) continue;
+          let score = vinLiteralEvidenceScore(slice, evidence.compacts) + vinOcrAlignmentScore(slice, evidence.compacts);
+          if (vinHasValidCheckDigit(slice)) score += 35;
+          if (slice === currentVin) score += 25;
+          if (score > bestScore) {
+            bestScore = score;
+            best = slice;
+          }
+        }
+      }
+      if (bestScore < 90) return currentVin || '';
+      if (!currentVin) return best;
+      if (best === currentVin) return currentVin;
+      const curLit = vinLiteralEvidenceScore(currentVin, evidence.compacts);
+      const bestLit = vinLiteralEvidenceScore(best, evidence.compacts);
+      if (vinHasValidCheckDigit(currentVin) && VIN_KNOWN_WMIS.some((w) => currentVin.startsWith(w))) {
+        const misreadFix = curLit < 0 && bestLit >= 100;
+        const exactUpgrade = !joined.includes(currentVin) && joined.includes(best) && bestLit >= curLit + 90;
+        if (!misreadFix && !exactUpgrade) return currentVin;
+      }
+      if (bestLit > curLit + 40) return best;
+      return currentVin;
+    }
+
     function pickBestVinFromEvidence(evidence) {
       if (!evidence.candidates.size) return { vin: '', confidence: 'none', score: 0, source: '' };
       const ranked = [...evidence.candidates.entries()].map(([vin, meta]) => {
         let score = meta.score + scoreVin(vin, meta.sources.size, 0);
         score += vinOcrAlignmentScore(vin, evidence.compacts);
         score += vinWmiOcrSupport(vin, evidence.eFieldCompacts.length ? evidence.eFieldCompacts : evidence.compacts);
+        score += vinLiteralEvidenceScore(vin, evidence.compacts);
         if (meta.eField) score += 130;
         if (meta.vinRegion) score += 85;
         if (meta.qr) score += 160;
@@ -2688,6 +2743,13 @@
         }
 
         if (gen !== vinReadGen) return;
+        const literalVin = preferLiteralKnownWmiVin(evidence, result.vin || '');
+        if (literalVin) {
+          result.vin = literalVin;
+          if (!result.confidence || result.confidence === 'unreliable' || result.confidence === 'none') {
+            result.confidence = 'medium';
+          }
+        }
         if (!result.vin || result.confidence === 'unreliable') {
           state.vin = '';
           state.vinStatus = 'VIN ვერ წაიკითხა საიმედოდ — შეადარეთ E ველს და ჩაწერეთ ხელით.';

@@ -10,7 +10,7 @@ const CASES = [
 
 const browser = await chromium.launch();
 const page = await browser.newPage();
-await page.goto('file:///workspace/docs/verify.html?step=tech&v=145');
+await page.goto('file:///workspace/docs/verify.html?step=tech&v=155');
 
 for (const c of CASES) {
   const url = `data:image/jpeg;base64,${readFileSync(`/home/ubuntu/.cursor/projects/workspace/assets/${c.img}`).toString('base64')}`;
