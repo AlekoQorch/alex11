@@ -1789,6 +1789,26 @@
 
     const GEMINI_KEY_STORAGE = 'cc_gemini_api_key';
     const GEMINI_MODEL_ID = 'gemini-3.6-flash';
+    const GEMINI_FALLBACK_MODELS = ['gemini-3.6-flash', 'gemini-flash-latest'];
+
+    function classifyGeminiErrorMessage(message) {
+      const msg = String(message || '');
+      if (/quota|exceeded|rate.?limit|resource exhausted|limit:\s*\d+/i.test(msg)) return 'rate_limit';
+      if (/high demand|unavailable|503|overloaded|try again later/i.test(msg)) return 'overloaded';
+      if (/auth|credential|api key|permission/i.test(msg)) return 'auth';
+      return 'unknown';
+    }
+
+    function geminiErrorUserMessage(kind, rawMessage) {
+      if (kind === 'rate_limit') return 'Gemini უფასო ლიმიტი ამოიწურა (≈20 ფოტო/დღე) — ხვალ ისევ იმუშავებს, ან VIN ხელით ჩაწერე.';
+      if (kind === 'overloaded') return 'Gemini დროებით დატვირთულია — 1–2 წუთში სცადე თავიდან.';
+      if (kind === 'auth') return 'Gemini API key არასწორია — AI Studio-დან ახალი key ჩაწერე ქვემოთ.';
+      return rawMessage || 'Gemini API შეცდომა';
+    }
+
+    async function sleepMs(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
 
     function getStoredGeminiKey() {
       try { return (localStorage.getItem(GEMINI_KEY_STORAGE) || '').trim(); } catch (_) { return ''; }
@@ -1881,27 +1901,44 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
       const match = String(dataUrl).match(/^data:(image\/[a-z+]+);base64,(.+)$/i);
       if (!match) return { error: 'image_required', message: 'invalid image' };
       const prompt = buildGeminiPrompt(task || 'extract_tech', extra || {});
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL_ID}:generateContent?key=${encodeURIComponent(apiKey)}`;
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              { text: prompt },
-              { inline_data: { mime_type: match[1], data: match[2] } }
-            ]
-          }],
-          generationConfig: { temperature: 0, responseMimeType: 'application/json' }
-        })
-      });
-      const raw = await res.json().catch(() => ({}));
-      if (res.status === 429 || /quota|rate|limit|resource exhausted/i.test(raw?.error?.message || '')) {
-        return { error: 'rate_limit', message: 'Gemini უფასო ლიმიტი ამოიწურა. სცადეთ მოგვიანებით.' };
+      const models = GEMINI_FALLBACK_MODELS;
+      let lastError = null;
+      for (let m = 0; m < models.length; m++) {
+        for (let attempt = 0; attempt < 3; attempt++) {
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${models[m]}:generateContent?key=${encodeURIComponent(apiKey)}`;
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{
+                parts: [
+                  { text: prompt },
+                  { inline_data: { mime_type: match[1], data: match[2] } }
+                ]
+              }],
+              generationConfig: { temperature: 0, responseMimeType: 'application/json' }
+            })
+          });
+          const raw = await res.json().catch(() => ({}));
+          const msg = raw?.error?.message || '';
+          const kind = classifyGeminiErrorMessage(msg || String(res.status));
+          if (res.status === 429 || kind === 'rate_limit') {
+            return { error: 'rate_limit', message: geminiErrorUserMessage('rate_limit', msg) };
+          }
+          if (!res.ok) {
+            lastError = { error: kind === 'overloaded' ? 'overloaded' : 'gemini_error', message: geminiErrorUserMessage(kind, msg), kind };
+            if (kind === 'overloaded' && attempt < 2) {
+              await sleepMs(1200 * (attempt + 1));
+              continue;
+            }
+            if (kind === 'overloaded' && m < models.length - 1) break;
+            return lastError;
+          }
+          const text = raw?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('') || '';
+          return parseVisionVinResponse(normalizeGeminiApiPayload(parseGeminiJsonFromText(text), task || 'extract_tech'));
+        }
       }
-      if (!res.ok) return { error: 'gemini_error', message: raw?.error?.message || 'Gemini API error' };
-      const text = raw?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('') || '';
-      return parseVisionVinResponse(normalizeGeminiApiPayload(parseGeminiJsonFromText(text), task || 'extract_tech'));
+      return lastError || { error: 'gemini_error', message: 'Gemini API error' };
     }
 
     const DEFAULT_TECH_GEMINI_API = 'https://vin-gemini.aleksandrekorchashvili.workers.dev';
@@ -2911,24 +2948,19 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
       return geminiConfidenceScore(geminiResult) >= 0.65;
     }
 
-    function applyVinReadResult(result, evidence, geminiApiError, gen) {
+    function applyVinReadResult(result, evidence, geminiApiError, gen, geminiFailed) {
       const geminiVin = evidence.visionResult && evidence.visionResult.vin;
       const geminiReadable = geminiVin && geminiVin !== 'VIN_NOT_CONFIDENT' && isValidVinFormat(normalizeVinWmiPrefix(geminiVin));
       const useGemini = getStoredGeminiKey() || TECH_GEMINI_API;
-      if (useGemini && geminiApiError && !geminiReadable) {
+      if (useGemini && geminiFailed && !geminiReadable && !result.vin) {
         state.vin = '';
-        if (!getStoredGeminiKey()) showGeminiKeySetup(true);
-        state.vinStatus = getStoredGeminiKey()
-          ? 'Gemini API არ მუშაობს — შეამოწმეთ API key.'
-          : 'Gemini API key საჭიროა — ჩაწერეთ ქვემოთ (უფასო, ერთხელ).';
+        if (geminiApiError && /API key/i.test(geminiApiError) && !getStoredGeminiKey()) showGeminiKeySetup(true);
+        state.vinStatus = geminiApiError || 'Gemini ვერ მუშაობს — VIN ხელით ჩაწერე.';
         return;
       }
-      if (useGemini && !geminiReadable && (!result.vin || result.confidence === 'unreliable' || (!result.source || !/gemini|vision/.test(result.source)))) {
+      if (useGemini && !geminiReadable && !geminiFailed && (!result.vin || result.confidence === 'unreliable' || (!result.source || !/gemini|vision/.test(result.source)))) {
         state.vin = '';
-        if (!getStoredGeminiKey()) showGeminiKeySetup(true);
-        state.vinStatus = geminiApiError
-          ? 'Gemini API არ მუშაობს — ჩაწერეთ API key ქვემოთ.'
-          : 'Gemini ვერ წაიკითხა VIN-ს საიმედოდ — შეადარეთ E ველს და ჩაწერეთ ხელით.';
+        state.vinStatus = 'Gemini ვერ დაადასტურა VIN-ს — შეადარე E ველს და ჩაწერე ხელით.';
         return;
       }
       if (!result.vin || result.confidence === 'unreliable') {
@@ -2957,6 +2989,7 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
       try {
         const evidence = createVinEvidence();
         let geminiApiError = '';
+        let geminiFailed = false;
         let geminiResult = null;
 
         if (TECH_AI_ENABLED) {
@@ -2966,11 +2999,13 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
             : 'Vision AI კითხულობს VIN-ს სურათიდან…';
           renderVinLookup(true);
           geminiResult = await readVinViaVision(photo, (getStoredGeminiKey() || TECH_GEMINI_API) ? 'extract_tech' : 'extract_vin');
-          if (geminiResult && geminiResult.error === 'rate_limit') {
-            state.vinStatus = geminiResult.message || 'Gemini უფასო ლიმიტი ამოიწურა — OCR-ით იკითხება…';
-            renderVinLookup(true);
-          } else if (geminiResult && geminiResult.error) {
-            geminiApiError = geminiResult.message || 'Gemini API error';
+          if (geminiResult && (geminiResult.error === 'rate_limit' || geminiResult.error === 'overloaded' || geminiResult.error === 'gemini_error' || geminiResult.error === 'config')) {
+            geminiFailed = true;
+            geminiApiError = geminiResult.message || geminiErrorUserMessage(geminiResult.error, '');
+            if (geminiResult.error === 'rate_limit' || geminiResult.error === 'overloaded') {
+              state.vinStatus = geminiApiError + ' OCR-ით იკითხება…';
+              renderVinLookup(true);
+            }
           } else if (geminiResult && geminiResult.vin) {
             addGeminiVinEvidence(evidence, geminiResult, 'gemini-ai', 300, false);
             applyGeminiVehicleFields(geminiResult.vehicle);
@@ -2984,7 +3019,7 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
               confidence: geminiResult.confidence || 'high',
               source: 'gemini-ai',
               score: 900
-            }, evidence, geminiApiError, gen);
+            }, evidence, geminiApiError, gen, geminiFailed);
             return;
           }
         }
@@ -3066,7 +3101,7 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
             result.confidence = 'medium';
           }
         }
-        applyVinReadResult(result, evidence, geminiApiError, gen);
+        applyVinReadResult(result, evidence, geminiApiError, gen, geminiFailed);
       } catch (_) {
         if (gen === vinReadGen) state.vinStatus = 'VIN-ის ავტომატური წაკითხვა ვერ მოხერხდა. ჩაწერეთ ხელით.';
       } finally {
