@@ -11,7 +11,7 @@ function toDataUrl(path) {
 
 const browser = await chromium.launch();
 const page = await browser.newPage();
-await page.goto('file:///workspace/docs/verify.html?step=tech&v=155');
+await page.goto('file:///workspace/docs/verify.html?step=tech&v=156');
 
 const dataUrl = toDataUrl(ALFA_BACK);
 
