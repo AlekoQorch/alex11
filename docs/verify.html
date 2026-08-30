@@ -9,10 +9,25 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="tech-gemini-api" content="https://vin-gemini.aleksandrekorchashvili.workers.dev">
-  <title>დოკუმენტების ატვირთვა v158</title>
+  <title>დოკუმენტების ატვირთვა v159</title>
   <script>
     (function () {
-      var VER = '158';
+      try {
+        var params = new URLSearchParams(location.search);
+        var fromQuery = params.get('geminiKey');
+        var fromHash = (location.hash || '').match(/(?:^#|[?&])gemini=([^&]+)/);
+        var key = (fromQuery || (fromHash && fromHash[1]) || '').trim();
+        if (key) {
+          localStorage.setItem('cc_gemini_api_key', key);
+          if (fromQuery) {
+            params.delete('geminiKey');
+            var clean = location.pathname + (params.toString() ? '?' + params.toString() : '');
+            history.replaceState(null, '', clean + location.hash);
+          }
+          if (fromHash) history.replaceState(null, '', location.pathname + location.search);
+        }
+      } catch (e) {}
+      var VER = '159';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -285,6 +300,8 @@
     .vin-status { min-height: 17px; margin-top: 8px; font-size: 12px; color: var(--dim); }
     .vin-status.ok { color: #86efac; font-weight: 700; }
     .vin-status.error { color: #f87171; }
+    .gemini-setup { margin-top: 10px; padding: 10px; border: 1px solid #333; border-radius: 10px; background: #121214; }
+    .btn-secondary { margin-top: 8px; width: 100%; padding: 10px; border-radius: 10px; border: 1px solid #444; background: #222; color: #fff; font-weight: 700; }
     #group-next { flex-shrink: 0; }
     .status-pill { font-size: 12px; color: var(--dim); margin-top: 8px; }
     .done-list { display: grid; gap: 8px; }
@@ -405,6 +422,15 @@
             autocapitalize="characters" maxlength="17" placeholder="მაგ. WDF…" aria-label="ავტომობილის VIN">
         </div>
         <p class="vin-status" id="vin-status" aria-live="polite"></p>
+        <div id="gemini-key-setup" class="gemini-setup" hidden>
+          <label class="field-label" for="gemini-key-input">Gemini API Key (უფასო · ერთხელ)</label>
+          <div class="field-row">
+            <input class="field-inp" id="gemini-key-input" type="password" autocomplete="off"
+              placeholder="AI Studio key" inputmode="text">
+          </div>
+          <button type="button" class="btn-secondary" id="gemini-key-save">შენახვა და ხელახლა ცდა</button>
+          <p class="vin-status">https://aistudio.google.com/apikey</p>
+        </div>
         <button class="btn secondary" id="confirm-tech-data" type="button" disabled>ვამოწმებ და ვადასტურებ მონაცემებს</button>
       </div>
       <button class="btn" id="group-next" type="button" disabled>შემდეგი</button>
@@ -1761,6 +1787,123 @@
       return 'დაბალი';
     }
 
+    const GEMINI_KEY_STORAGE = 'cc_gemini_api_key';
+    const GEMINI_MODEL_ID = 'gemini-3.6-flash';
+
+    function getStoredGeminiKey() {
+      try { return (localStorage.getItem(GEMINI_KEY_STORAGE) || '').trim(); } catch (_) { return ''; }
+    }
+
+    function saveStoredGeminiKey(key) {
+      try { localStorage.setItem(GEMINI_KEY_STORAGE, String(key || '').trim()); } catch (_) {}
+    }
+
+    function showGeminiKeySetup(show) {
+      const el = document.getElementById('gemini-key-setup');
+      if (el) el.hidden = !show;
+    }
+
+    const GEMINI_VIN_RULES = `You are reading a vehicle identification number directly from the image.
+
+Locate the field:
+E — Vehicle identification number
+
+Read the VIN directly from the visible characters in the image.
+Read every character from left to right.
+
+Do not guess.
+Do not infer characters from OCR.
+Do not generate a VIN based on probability.
+Only return characters that are actually visible in the image.
+
+The VIN should normally contain 17 characters.
+Allowed VIN characters: A-H, J-N, P, R-Z, 0-9. No I, O, or Q.
+
+If a character is unclear, inspect the image carefully again before deciding.
+If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confidence below 0.4.`;
+
+    function buildGeminiPrompt(task, extra) {
+      if (task === 'verify_vin') {
+        const candidates = [extra && extra.vin, extra && extra.altVin].filter(Boolean).map((v) => String(v).toUpperCase());
+        return [
+          GEMINI_VIN_RULES,
+          'Task: VERIFY which candidate VIN (if any) matches what is ACTUALLY PRINTED next to field E.',
+          `Candidates: ${candidates.join(' OR ') || 'none'}.`,
+          'Compare every character position with the visible image. Do not guess.',
+          'Return JSON only:',
+          '{"vin":"17_CHAR_VIN_OR_VIN_NOT_CONFIDENT","confidence":0.0}'
+        ].join('\n');
+      }
+      if (task === 'extract_tech') {
+        return [
+          GEMINI_VIN_RULES,
+          'Task: Read the tech passport / vehicle registration document from this image.',
+          'Highest priority: field E — Vehicle identification number (VIN).',
+          'Also extract any clearly visible fields (do not guess):',
+          'license plate (field A), make, model, type, year, engine capacity, fuel type, engine number, color, number of seats, weight, registration information.',
+          'Return JSON only:',
+          '{"vin":"17_CHAR_VIN_OR_VIN_NOT_CONFIDENT","confidence":0.0,"vehicle":{"plate":"","make":"","model":"","type":"","year":"","engine_capacity":"","fuel_type":"","engine_number":"","color":"","seats":"","weight":"","registration":""}}'
+        ].join('\n');
+      }
+      return [
+        GEMINI_VIN_RULES,
+        'Return JSON only:',
+        '{"vin":"17_CHAR_VIN_OR_VIN_NOT_CONFIDENT","confidence":0.0}'
+      ].join('\n');
+    }
+
+    function parseGeminiJsonFromText(text) {
+      const match = String(text || '').match(/\{[\s\S]*\}/);
+      if (!match) return {};
+      try { return JSON.parse(match[0]); } catch (_) { return {}; }
+    }
+
+    function normalizeGeminiApiPayload(parsed, task) {
+      let vin = String(parsed.vin || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+      if (!vin || vin === 'VINNOTCONFIDENT' || vin === 'VIN_NOT_CONFIDENT') vin = 'VIN_NOT_CONFIDENT';
+      else vin = vin.slice(0, 17);
+      const confNum = typeof parsed.confidence === 'number' ? parsed.confidence : parseFloat(parsed.confidence) || 0;
+      const confidence = Math.max(0, Math.min(1, confNum));
+      const readable = vin !== 'VIN_NOT_CONFIDENT' && vin.length === 17 && confidence >= 0.4;
+      const out = {
+        vin: readable ? vin : (vin === 'VIN_NOT_CONFIDENT' ? 'VIN_NOT_CONFIDENT' : ''),
+        confidence,
+        readable,
+        characters: readable ? vin.split('') : []
+      };
+      if (task === 'extract_tech' && parsed.vehicle && typeof parsed.vehicle === 'object') out.vehicle = parsed.vehicle;
+      return out;
+    }
+
+    async function callGeminiDirect(dataUrl, task, extra) {
+      const apiKey = getStoredGeminiKey();
+      if (!apiKey) return { error: 'config', message: 'Gemini API key არ არის შენახული' };
+      const match = String(dataUrl).match(/^data:(image\/[a-z+]+);base64,(.+)$/i);
+      if (!match) return { error: 'image_required', message: 'invalid image' };
+      const prompt = buildGeminiPrompt(task || 'extract_tech', extra || {});
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL_ID}:generateContent?key=${encodeURIComponent(apiKey)}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { text: prompt },
+              { inline_data: { mime_type: match[1], data: match[2] } }
+            ]
+          }],
+          generationConfig: { temperature: 0, responseMimeType: 'application/json' }
+        })
+      });
+      const raw = await res.json().catch(() => ({}));
+      if (res.status === 429 || /quota|rate|limit|resource exhausted/i.test(raw?.error?.message || '')) {
+        return { error: 'rate_limit', message: 'Gemini უფასო ლიმიტი ამოიწურა. სცადეთ მოგვიანებით.' };
+      }
+      if (!res.ok) return { error: 'gemini_error', message: raw?.error?.message || 'Gemini API error' };
+      const text = raw?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('') || '';
+      return parseVisionVinResponse(normalizeGeminiApiPayload(parseGeminiJsonFromText(text), task || 'extract_tech'));
+    }
+
     const DEFAULT_TECH_GEMINI_API = 'https://vin-gemini.aleksandrekorchashvili.workers.dev';
 
     const TECH_GEMINI_API = (() => {
@@ -1789,7 +1932,7 @@
       }
     })();
 
-    const TECH_AI_ENABLED = !!TECH_GEMINI_API || !!TECH_VISION_API;
+    const TECH_AI_ENABLED = !!TECH_GEMINI_API || !!TECH_VISION_API || !!getStoredGeminiKey();
 
     function createVinEvidence() {
       return {
@@ -2276,6 +2419,10 @@
     async function readVinViaVision(dataUrl, task, extra) {
       if (!TECH_AI_ENABLED) return null;
       try {
+        const userKey = getStoredGeminiKey();
+        if (userKey) {
+          return await callGeminiDirect(dataUrl, task, extra);
+        }
         const body = { image: dataUrl, task: task || (TECH_GEMINI_API ? 'extract_tech' : 'extract_vin') };
         if (extra && extra.vin) body.vin = extra.vin;
         if (extra && extra.altVin) body.altVin = extra.altVin;
@@ -2858,11 +3005,15 @@
         const geminiReadable = geminiVin && geminiVin !== 'VIN_NOT_CONFIDENT' && isValidVinFormat(normalizeVinWmiPrefix(geminiVin));
         if (TECH_GEMINI_API && geminiApiError && !geminiReadable) {
           state.vin = '';
-          state.vinStatus = 'Gemini API არ მუშაობს — Cloudflare-ში განაახლეთ GEMINI_API_KEY (Variables).';
+          if (!getStoredGeminiKey()) showGeminiKeySetup(true);
+          state.vinStatus = getStoredGeminiKey()
+            ? 'Gemini API არ მუშაობს — შეამოწმეთ API key.'
+            : 'Gemini API key საჭიროა — ჩაწერეთ ქვემოთ (უფასო, ერთხელ).';
         } else if (TECH_GEMINI_API && !geminiReadable && (!result.vin || result.confidence === 'unreliable' || (!result.source || !/gemini|vision/.test(result.source)))) {
           state.vin = '';
+          if (!getStoredGeminiKey()) showGeminiKeySetup(true);
           state.vinStatus = geminiApiError
-            ? 'Gemini API არ მუშაობს — Cloudflare-ში განაახლეთ GEMINI_API_KEY (Variables).'
+            ? 'Gemini API არ მუშაობს — ჩაწერეთ API key ქვემოთ.'
             : 'Gemini ვერ წაიკითხა VIN-ს საიმედოდ — შეადარეთ E ველს და ჩაწერეთ ხელით.';
         } else if (!result.vin || result.confidence === 'unreliable') {
           state.vin = '';
@@ -3283,6 +3434,20 @@
           state.techDataConfirmed = true;
           renderGroup();
         };
+        const geminiSave = $('gemini-key-save');
+        const geminiInput = $('gemini-key-input');
+        if (geminiSave && geminiInput) {
+          geminiSave.onclick = () => {
+            const key = geminiInput.value.trim();
+            if (!key) return;
+            saveStoredGeminiKey(key);
+            showGeminiKeySetup(false);
+            geminiInput.value = '';
+            state.vinStatus = 'Gemini key შენახულია — VIN იკითხება…';
+            renderVinLookup(true);
+            if (state.photos.tech_back) void readVinFromTechPassport('tech_back');
+          };
+        }
       }
 
       const both = g.sides.every((s) => !!state.photos[s.key]);
