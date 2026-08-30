@@ -22,12 +22,12 @@ export default {
       return cors(json({ error: 'method_not_allowed' }, 405));
     }
     try {
-      const apiKey = env.GEMINI_API_KEY;
+      const body = await request.json();
+      const apiKey = (body.geminiKey || env.GEMINI_API_KEY || '').trim();
       if (!apiKey) {
         return cors(json({ error: 'config', message: 'GEMINI_API_KEY not configured' }, 503));
       }
 
-      const body = await request.json();
       const image = body.image || '';
       if (!image.startsWith('data:image/')) {
         return cors(json({ error: 'image_required' }, 400));
