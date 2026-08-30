@@ -8,10 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v153</title>
+  <title>დოკუმენტების ატვირთვა v154</title>
   <script>
     (function () {
-      var VER = '153';
+      var VER = '154';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -1795,14 +1795,16 @@
         vinRegion: false,
         qr: false,
         vision: false,
-        visionVerified: false
+        visionVerified: false,
+        consensus: false
       };
       prev.score += weight;
       prev.sources.add(source);
-      if (/e-field|e-line|vin-region-e|e-field-default/.test(source)) prev.eField = true;
+      if (/e-field|e-line|vin-region-e|ocr-consensus/.test(source)) prev.eField = true;
       if (/vin-region/.test(source)) prev.vinRegion = true;
       if (source === 'qr') prev.qr = true;
       if (source === 'vision-ai') prev.vision = true;
+      if (source === 'ocr-consensus') prev.consensus = true;
       evidence.candidates.set(normalized, prev);
     }
 
@@ -2050,6 +2052,7 @@
         if (meta.qr) score += 160;
         if (meta.vision) score += 320;
         if (meta.visionVerified) score += 220;
+        if (meta.consensus) score += 95;
         if (evidence.qrVin && evidence.qrVin === vin) score += 180;
         if (evidence.qrVin && evidence.qrVin !== vin) score -= 120;
         if (!serialSectionValid(vin)) score -= 300;
@@ -2068,15 +2071,16 @@
       else if (top.meta.qr && top.meta.eField && gap >= 50) confidence = 'very-high';
       else if ((top.meta.qr || top.meta.eField || top.meta.vision) && gap >= 45) confidence = 'high';
       else if (top.meta.vinRegion && top.meta.eField && gap >= 35) confidence = 'high';
+      else if (top.meta.consensus && gap >= 12) confidence = 'medium';
       else if (top.meta.eField && gap >= 30) confidence = 'medium';
       else if (top.meta.vinRegion && gap >= 40) confidence = 'medium';
       else if (top.meta.eField) confidence = 'medium';
       else if (top.meta.vinRegion && top.score >= 260) confidence = 'medium';
 
-      if (confidence === 'low' && gap < 18 && !top.meta.eField && !top.meta.qr && !top.meta.vision) {
+      if (confidence === 'low' && gap < 18 && !top.meta.eField && !top.meta.qr && !top.meta.vision && !top.meta.consensus) {
         return { vin: '', confidence: 'unreliable', score: top.score, source: '' };
       }
-      if (!top.meta.eField && !top.meta.qr && !top.meta.vision && !top.meta.visionVerified && !top.meta.vinRegion) {
+      if (!top.meta.eField && !top.meta.qr && !top.meta.vision && !top.meta.visionVerified && !top.meta.vinRegion && !top.meta.consensus) {
         const align = vinOcrAlignmentScore(top.vin, evidence.compacts);
         if (top.score >= 480 && align >= 55) {
           return { vin: top.vin, confidence: 'medium', score: top.score, source: 'ocr' };
@@ -2085,6 +2089,26 @@
       }
       const source = top.meta.visionVerified ? 'vision-verify' : (top.meta.vision ? 'vision-ai' : (top.meta.qr ? 'qr' : 'ocr'));
       return { vin: top.vin, confidence, score: top.score, source };
+    }
+
+    function collectOcrConsensusEvidence(evidence) {
+      if (!evidence.compacts.length) return;
+      const weights = evidence.compacts.map((_, i) => Math.max(8, 42 - i * 2));
+      const consensus = buildVinConsensus(evidence.compacts, weights);
+      if (consensus) addVinEvidence(evidence, consensus, 'ocr-consensus', 110);
+      const seen = new Map();
+      const sources = [evidence.compacts.join(''), ...evidence.compacts.slice(0, 8)];
+      for (const compact of sources) {
+        for (const vin of recoverVinsFromCompact(compact)) {
+          seen.set(vin, (seen.get(vin) || 0) + 1);
+        }
+      }
+      for (const [vin, count] of seen) {
+        const anchor = vin.slice(0, 11);
+        const anchored = evidence.eFieldCompacts.some((c) => c.includes(anchor)) || evidence.compacts.some((c) => c.includes(anchor));
+        if (count < 2 && !anchored) continue;
+        addVinEvidence(evidence, vin, 'ocr-recovery', 48 + count * 16);
+      }
     }
 
     function addVisionVinEvidence(evidence, visionResult, source, weight, verified) {
@@ -2635,7 +2659,7 @@
           collectVinFromOcr(evidence, ocr, pass, { eField: true, imageW: image.naturalWidth });
         }
 
-        for (let i = 0; i < Math.min(built.passes.length, 4); i++) {
+        for (let i = 0; i < Math.min(built.passes.length, 7); i++) {
           if (gen !== vinReadGen) return;
           const pass = built.passes[i];
           const ocr = await recognizeOcrPass(Tesseract, pass, {
@@ -2644,6 +2668,7 @@
           collectVinFromOcr(evidence, ocr, pass, { imageW: image.naturalWidth });
         }
 
+        collectOcrConsensusEvidence(evidence);
         vinOcrCompacts = evidence.compacts.slice();
         let result = (TECH_VISION_API && evidence.visionResult && evidence.visionResult.vin)
           ? await reconcileVinWithVision(photo, evidence, gen)
@@ -2655,6 +2680,7 @@
           renderVinLookup(true);
           const tightRegions = dynamicRegions.map((r) => tightenVinRegion(r, 0.86));
           await runVinRegionPipeline(Tesseract, image, tightRegions, evidence, gen, vinReadGen);
+          collectOcrConsensusEvidence(evidence);
           vinOcrCompacts = evidence.compacts.slice();
           result = (TECH_VISION_API && evidence.visionResult && evidence.visionResult.vin)
             ? await reconcileVinWithVision(photo, evidence, gen)
