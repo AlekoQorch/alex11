@@ -8,17 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-<<<<<<< HEAD
-  <title>დოკუმენტების ატვირთვა v152</title>
+  <title>დოკუმენტების ატვირთვა v153</title>
   <script>
     (function () {
-      var VER = '152';
-=======
-  <title>დოკუმენტების ატვირთვა v151</title>
-  <script>
-    (function () {
-      var VER = '151';
->>>>>>> origin/main
+      var VER = '153';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -1768,6 +1761,9 @@
 
     const TECH_VISION_API = (() => {
       try {
+        const params = new URLSearchParams(location.search);
+        const fromQuery = params.get('visionApi');
+        if (fromQuery) return fromQuery;
         const meta = document.querySelector('meta[name="tech-vision-api"]');
         return (meta && meta.content) || '';
       } catch (_) {
@@ -1781,7 +1777,9 @@
         compacts: [],
         eFieldCompacts: [],
         qrVin: '',
-        qrPayload: ''
+        qrPayload: '',
+        visionResult: null,
+        visionVerified: false
       };
     }
 
@@ -1796,7 +1794,8 @@
         eField: false,
         vinRegion: false,
         qr: false,
-        vision: false
+        vision: false,
+        visionVerified: false
       };
       prev.score += weight;
       prev.sources.add(source);
@@ -2006,8 +2005,42 @@
       }
     }
 
+    function countVinCharMismatches(a, b) {
+      if (!a || !b) return 17;
+      let n = 0;
+      for (let i = 0; i < 17; i++) if (a[i] !== b[i]) n++;
+      return n;
+    }
+
+    function vinFromCharacterArray(chars) {
+      if (!Array.isArray(chars) || chars.length !== 17) return '';
+      const vin = chars.map((c) => String(c || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 1)).join('');
+      const normalized = normalizeVinWmiPrefix(vin);
+      if (!isValidVinFormat(normalized) || !vinHasValidCheckDigit(normalized) || !serialSectionValid(normalized)) return '';
+      return normalized;
+    }
+
+    function parseVisionVinResponse(data) {
+      if (!data || typeof data !== 'object') return null;
+      const chars = Array.isArray(data.characters)
+        ? data.characters.map((c) => String(c || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 1))
+        : [];
+      let vin = normalizeVinWmiPrefix(String(data.vin || ''));
+      const fromChars = vinFromCharacterArray(chars);
+      if (fromChars) vin = fromChars;
+      else if (vin && (!isValidVinFormat(vin) || !vinHasValidCheckDigit(vin) || !serialSectionValid(vin))) vin = '';
+      const readable = data.readable !== false && vin.length === 17;
+      return {
+        vin,
+        characters: chars.length === 17 ? chars : (vin ? vin.split('') : []),
+        confidence: String(data.confidence || (readable ? 'medium' : 'none')),
+        readable,
+        mismatches: Array.isArray(data.mismatches) ? data.mismatches : []
+      };
+    }
+
     function pickBestVinFromEvidence(evidence) {
-      if (!evidence.candidates.size) return { vin: '', confidence: 'none', score: 0 };
+      if (!evidence.candidates.size) return { vin: '', confidence: 'none', score: 0, source: '' };
       const ranked = [...evidence.candidates.entries()].map(([vin, meta]) => {
         let score = meta.score + scoreVin(vin, meta.sources.size, 0);
         score += vinOcrAlignmentScore(vin, evidence.compacts);
@@ -2015,21 +2048,24 @@
         if (meta.eField) score += 130;
         if (meta.vinRegion) score += 85;
         if (meta.qr) score += 160;
-        if (meta.vision) score += 140;
+        if (meta.vision) score += 320;
+        if (meta.visionVerified) score += 220;
         if (evidence.qrVin && evidence.qrVin === vin) score += 180;
         if (evidence.qrVin && evidence.qrVin !== vin) score -= 120;
         if (!serialSectionValid(vin)) score -= 300;
         return { vin, score, meta };
       }).filter((row) => row.score > 40).sort((a, b) => b.score - a.score);
 
-      if (!ranked.length) return { vin: '', confidence: 'none', score: 0 };
+      if (!ranked.length) return { vin: '', confidence: 'none', score: 0, source: '' };
 
       const top = ranked[0];
       const second = ranked[1];
       const gap = second ? top.score - second.score : top.score;
 
       let confidence = 'low';
-      if (top.meta.qr && top.meta.eField && gap >= 50) confidence = 'very-high';
+      if (top.meta.visionVerified && gap >= 20) confidence = 'very-high';
+      else if (top.meta.vision && gap >= 15) confidence = 'high';
+      else if (top.meta.qr && top.meta.eField && gap >= 50) confidence = 'very-high';
       else if ((top.meta.qr || top.meta.eField || top.meta.vision) && gap >= 45) confidence = 'high';
       else if (top.meta.vinRegion && top.meta.eField && gap >= 35) confidence = 'high';
       else if (top.meta.eField && gap >= 30) confidence = 'medium';
@@ -2038,35 +2074,84 @@
       else if (top.meta.vinRegion && top.score >= 260) confidence = 'medium';
 
       if (confidence === 'low' && gap < 18 && !top.meta.eField && !top.meta.qr && !top.meta.vision) {
-        return { vin: '', confidence: 'unreliable', score: top.score };
+        return { vin: '', confidence: 'unreliable', score: top.score, source: '' };
       }
-      if (!top.meta.eField && !top.meta.qr && !top.meta.vision && !top.meta.vinRegion) {
+      if (!top.meta.eField && !top.meta.qr && !top.meta.vision && !top.meta.visionVerified && !top.meta.vinRegion) {
         const align = vinOcrAlignmentScore(top.vin, evidence.compacts);
         if (top.score >= 480 && align >= 55) {
-          return { vin: top.vin, confidence: 'medium', score: top.score };
+          return { vin: top.vin, confidence: 'medium', score: top.score, source: 'ocr' };
         }
-        return { vin: '', confidence: 'unreliable', score: top.score };
+        return { vin: '', confidence: 'unreliable', score: top.score, source: '' };
       }
-      return { vin: top.vin, confidence, score: top.score };
+      const source = top.meta.visionVerified ? 'vision-verify' : (top.meta.vision ? 'vision-ai' : (top.meta.qr ? 'qr' : 'ocr'));
+      return { vin: top.vin, confidence, score: top.score, source };
     }
 
-    function defaultVinFieldRegions() {
-      const regions = [];
-      for (let y = 0.14; y <= 0.40; y += 0.045) {
-        regions.push({ x: 0, y, w: 0.62, h: 0.055, weight: 48, source: 'e-field-default' });
-      }
-      return regions;
+    function addVisionVinEvidence(evidence, visionResult, source, weight, verified) {
+      if (!evidence || !visionResult || !visionResult.vin) return;
+      evidence.visionResult = visionResult;
+      const normalized = normalizeVinWmiPrefix(visionResult.vin);
+      if (!isValidVinFormat(normalized) || !vinHasValidCheckDigit(normalized) || !isPlausibleVinStructure(normalized)) return;
+      const prev = evidence.candidates.get(normalized) || {
+        score: 0,
+        sources: new Set(),
+        eField: false,
+        vinRegion: false,
+        qr: false,
+        vision: false,
+        visionVerified: false
+      };
+      prev.score += weight;
+      prev.sources.add(source);
+      prev.vision = true;
+      if (verified) prev.visionVerified = true;
+      evidence.candidates.set(normalized, prev);
     }
 
-    function mergeVinRegions(dynamicRegions) {
-      const merged = [...dynamicRegions, ...defaultVinFieldRegions()];
-      const seen = new Set();
-      return merged.filter((region) => {
-        const key = [region.x.toFixed(3), region.y.toFixed(3), region.w.toFixed(3), region.h.toFixed(3)].join(':');
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      }).sort((a, b) => b.weight - a.weight);
+    async function readVinViaVision(dataUrl, task, extra) {
+      if (!TECH_VISION_API) return null;
+      try {
+        const body = { image: dataUrl, task: task || 'extract_vin' };
+        if (extra && extra.vin) body.vin = extra.vin;
+        if (extra && extra.altVin) body.altVin = extra.altVin;
+        const res = await fetch(TECH_VISION_API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        if (!res.ok) return null;
+        const data = await res.json();
+        return parseVisionVinResponse(data);
+      } catch (_) {
+        return null;
+      }
+    }
+
+    async function reconcileVinWithVision(photo, evidence, gen) {
+      const vision = evidence.visionResult;
+      const ocrPick = pickBestVinFromEvidence(evidence);
+      if (!vision || !vision.vin) return ocrPick;
+      if (!ocrPick.vin || ocrPick.vin === vision.vin) {
+        return { vin: vision.vin, confidence: vision.confidence || 'high', source: 'vision-ai', score: 900 };
+      }
+      const mismatches = countVinCharMismatches(vision.vin, ocrPick.vin);
+      if (gen !== vinReadGen) return { vin: vision.vin, confidence: vision.confidence || 'high', source: 'vision-ai', score: 900 };
+      state.vinStatus = 'Vision AI ამოწმებს VIN სიმბოლოებს…';
+      renderVinLookup(true);
+      const verify = await readVinViaVision(photo, 'verify_vin', { vin: vision.vin, altVin: ocrPick.vin });
+      if (verify && verify.vin) {
+        addVisionVinEvidence(evidence, verify, 'vision-verify', 260, true);
+        return {
+          vin: verify.vin,
+          confidence: verify.confidence || 'high',
+          source: 'vision-verify',
+          score: 950
+        };
+      }
+      if (mismatches >= 3) {
+        return { vin: vision.vin, confidence: vision.confidence || 'high', source: 'vision-ai', score: 900 };
+      }
+      return ocrPick;
     }
 
     function vinConfidenceFromPipeline(confidence) {
@@ -2090,24 +2175,6 @@
       return '';
     }
 
-    async function readVinViaVision(dataUrl) {
-      if (!TECH_VISION_API) return '';
-      try {
-        const res = await fetch(TECH_VISION_API, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ image: dataUrl, task: 'extract_vin' })
-        });
-        if (!res.ok) return '';
-        const data = await res.json();
-        const vin = normalizeVinWmiPrefix(String(data.vin || ''));
-        if (!isValidVinFormat(vin) || !vinHasValidCheckDigit(vin) || !serialSectionValid(vin)) return '';
-        return vin;
-      } catch (_) {
-        return '';
-      }
-    }
-
     async function runVinRegionPipeline(Tesseract, image, regions, evidence, gen, vinReadGen) {
       for (const region of regions.slice(0, 5)) {
         if (gen !== vinReadGen) return;
@@ -2128,40 +2195,9 @@
       }
     }
 
-    function buildVinFieldPasses(image) {
-      const iw = image.naturalWidth;
-      const ih = image.naturalHeight;
-      const bandH = 0.055;
-      const bandW = 0.62;
-      const regions = [];
-      for (let y = 0.14; y <= 0.40; y += 0.045) {
-        regions.push({ x: 0, y, w: bandW, h: bandH });
-      }
-      const zoom = Math.max(4.8, baseScaleFromImage(iw) * 1.9);
-      return regions.map((region, idx) => {
-        const sw = Math.max(1, Math.round(iw * region.w));
-        const sh = Math.max(1, Math.round(ih * region.h));
-        return {
-          dataUrl: renderOcrCanvas(
-            image,
-            Math.round(iw * region.x),
-            Math.round(ih * region.y),
-            sw,
-            sh,
-            Math.round(sw * zoom),
-            Math.round(sh * zoom),
-            'grayscale(1) contrast(2.65) brightness(1.08)'
-          ),
-          weight: 58 - idx,
-          psm: '7',
-          sourceScale: zoom
-        };
-      });
-    }
-
     async function buildVinScanPasses(dataUrl) {
       const built = await buildDocumentOcrPasses(dataUrl);
-      return [...buildVinFieldPasses(built.image), ...built.passes];
+      return built.passes;
     }
 
     function vinHasValidCheckDigit(vin) {
@@ -2549,6 +2585,16 @@
         const Tesseract = await loadOcrLibrary();
         const evidence = createVinEvidence();
 
+        if (TECH_VISION_API) {
+          if (gen !== vinReadGen) return;
+          state.vinStatus = 'Vision AI კითხულობს VIN-ს სურათიდან…';
+          renderVinLookup(true);
+          const visionResult = await readVinViaVision(photo, 'extract_vin');
+          if (visionResult && visionResult.vin) {
+            addVisionVinEvidence(evidence, visionResult, 'vision-ai', 260, false);
+          }
+        }
+
         if (gen !== vinReadGen) return;
         state.vinStatus = 'QR კოდი მოწმდება…';
         renderVinLookup(true);
@@ -2574,7 +2620,7 @@
         const layoutLines = normalizeOcrLines(layoutOcr.lines, 1);
         collectVinFromOcr(evidence, layoutOcr, { source: 'layout', weight: 18 }, { imageW: image.naturalWidth });
 
-        const dynamicRegions = mergeVinRegions(detectVinFieldRegions(image, layoutLines));
+        const dynamicRegions = detectVinFieldRegions(image, layoutLines);
         await runVinRegionPipeline(Tesseract, image, dynamicRegions, evidence, gen, vinReadGen);
 
         const refinePasses = [
@@ -2589,18 +2635,6 @@
           collectVinFromOcr(evidence, ocr, pass, { eField: true, imageW: image.naturalWidth });
         }
 
-        if (gen !== vinReadGen) return;
-        const vinFieldPasses = buildVinFieldPasses(image);
-        for (let i = 0; i < Math.min(vinFieldPasses.length, 6); i++) {
-          if (gen !== vinReadGen) return;
-          state.vinStatus = `VIN იკითხება… ${Math.min(55, Math.round(((i + 1) / 10) * 100))}%`;
-          renderVinLookup(true);
-          const ocr = await recognizeOcrPass(Tesseract, vinFieldPasses[i], {
-            whitelist: 'ABCDEFGHJKLMNPRSTUVWXYZ0123456789'
-          });
-          collectVinFromOcr(evidence, ocr, { ...vinFieldPasses[i], source: 'e-field-default' }, { eField: true, imageW: image.naturalWidth });
-        }
-
         for (let i = 0; i < Math.min(built.passes.length, 4); i++) {
           if (gen !== vinReadGen) return;
           const pass = built.passes[i];
@@ -2610,16 +2644,10 @@
           collectVinFromOcr(evidence, ocr, pass, { imageW: image.naturalWidth });
         }
 
-        if (TECH_VISION_API) {
-          if (gen !== vinReadGen) return;
-          state.vinStatus = 'Vision AI ამოწმებს VIN-ს…';
-          renderVinLookup(true);
-          const visionVin = await readVinViaVision(photo);
-          if (visionVin) addVinEvidence(evidence, visionVin, 'vision-ai', 140);
-        }
-
         vinOcrCompacts = evidence.compacts.slice();
-        let result = pickBestVinFromEvidence(evidence);
+        let result = (TECH_VISION_API && evidence.visionResult && evidence.visionResult.vin)
+          ? await reconcileVinWithVision(photo, evidence, gen)
+          : pickBestVinFromEvidence(evidence);
 
         if ((!result.vin || result.confidence === 'unreliable') && dynamicRegions.length) {
           if (gen !== vinReadGen) return;
@@ -2628,7 +2656,9 @@
           const tightRegions = dynamicRegions.map((r) => tightenVinRegion(r, 0.86));
           await runVinRegionPipeline(Tesseract, image, tightRegions, evidence, gen, vinReadGen);
           vinOcrCompacts = evidence.compacts.slice();
-          result = pickBestVinFromEvidence(evidence);
+          result = (TECH_VISION_API && evidence.visionResult && evidence.visionResult.vin)
+            ? await reconcileVinWithVision(photo, evidence, gen)
+            : pickBestVinFromEvidence(evidence);
         }
 
         if (gen !== vinReadGen) return;
@@ -2638,8 +2668,9 @@
         } else {
           state.vin = result.vin;
           const conf = vinConfidenceFromPipeline(result.confidence);
+          const sourceNote = result.source && result.source.startsWith('vision') ? ' (Vision AI)' : '';
           const checkNote = vinHasValidCheckDigit(result.vin) ? '' : ' — გადაამოწმეთ კოდი.';
-          state.vinStatus = `VIN ამოცნობილია (${conf} სანდოობა)${checkNote}`;
+          state.vinStatus = `VIN ამოცნობილია (${conf} სანდოობა)${sourceNote}${checkNote}`;
         }
       } catch (_) {
         if (gen === vinReadGen) state.vinStatus = 'VIN-ის ავტომატური წაკითხვა ვერ მოხერხდა. ჩაწერეთ ხელით.';
