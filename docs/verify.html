@@ -9,7 +9,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="tech-gemini-api" content="https://vin-gemini.aleksandrekorchashvili.workers.dev">
-  <title>დოკუმენტების ატვირთვა v165</title>
+  <title>დოკუმენტების ატვირთვა v166</title>
   <script>
     (function () {
       try {
@@ -27,7 +27,7 @@
           if (fromHash) history.replaceState(null, '', location.pathname + location.search);
         }
       } catch (e) {}
-      var VER = '165';
+      var VER = '166';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -3049,6 +3049,8 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
 
         const Tesseract = await loadOcrLibrary();
         if (gen !== vinReadGen) return;
+        const built = await buildDocumentOcrPasses(photo);
+        const image = built.image;
         state.vinStatus = 'დოკუმენტის სტრუქტურა იკითხება…';
         renderVinLookup(true);
         const layoutOcr = await recognizeOcrPass(Tesseract, { dataUrl: photo, weight: 22, psm: '3' }, {
