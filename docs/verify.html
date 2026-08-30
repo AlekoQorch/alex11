@@ -9,10 +9,10 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="tech-gemini-api" content="https://vin-gemini.aleksandrekorchashvili.workers.dev">
-  <title>დოკუმენტების ატვირთვა v157</title>
+  <title>დოკუმენტების ატვირთვა v158</title>
   <script>
     (function () {
-      var VER = '157';
+      var VER = '158';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -1761,15 +1761,18 @@
       return 'დაბალი';
     }
 
+    const DEFAULT_TECH_GEMINI_API = 'https://vin-gemini.aleksandrekorchashvili.workers.dev';
+
     const TECH_GEMINI_API = (() => {
       try {
         const params = new URLSearchParams(location.search);
         const fromQuery = params.get('geminiApi');
         if (fromQuery) return fromQuery;
         const meta = document.querySelector('meta[name="tech-gemini-api"]');
-        return (meta && meta.content) || '';
+        const fromMeta = meta && meta.content && !/YOUR-WORKER/i.test(meta.content) ? meta.content : '';
+        return fromMeta || DEFAULT_TECH_GEMINI_API;
       } catch (_) {
-        return '';
+        return DEFAULT_TECH_GEMINI_API;
       }
     })();
 
@@ -1853,9 +1856,36 @@
       return cx > imageW * 0.58;
     }
 
+    function plateFromQrPayload(payload) {
+      const raw = String(payload || '').trim().toUpperCase();
+      if (!raw || !raw.includes('/')) return '';
+      const first = normalizePlate(raw.split('/')[0] || '');
+      return isGeorgianPlateFormat(first) ? first : '';
+    }
+
+    function vinOverlapsPlate(vin, plate) {
+      if (!vin || !plate || plate.length < 2) return false;
+      const v = String(vin).toUpperCase();
+      const p = String(plate).toUpperCase();
+      if (v.includes(p)) return true;
+      for (let len = Math.min(4, p.length); len >= 2; len--) {
+        if (v.startsWith(p.slice(0, len))) return true;
+      }
+      return false;
+    }
+
+    function knownPlateForVinEvidence(evidence) {
+      const fromQr = plateFromQrPayload(evidence.qrPayload);
+      if (fromQr) return fromQr;
+      const fromState = normalizePlate(state.plate || '');
+      return isGeorgianPlateFormat(fromState) ? fromState : '';
+    }
+
     function vinFromQrPayload(payload) {
-      const raw = String(payload || '').toUpperCase();
+      const raw = String(payload || '').toUpperCase().trim();
       if (!raw) return '';
+      // Georgian tech passport QR is PLATE/INTERNAL_ID/MODEL — not a VIN.
+      if (raw.includes('/')) return '';
       for (const vin of discoverVinsInString(raw)) {
         if (serialSectionValid(vin)) return vin;
       }
@@ -2158,6 +2188,8 @@
         if (meta.consensus) score += 95;
         if (evidence.qrVin && evidence.qrVin === vin) score += 180;
         if (evidence.qrVin && evidence.qrVin !== vin) score -= 120;
+        const plateHint = knownPlateForVinEvidence(evidence);
+        if (plateHint && vinOverlapsPlate(vin, plateHint)) score -= 420;
         if (!serialSectionValid(vin)) score -= 300;
         return { vin, score, meta };
       }).filter((row) => row.score > 40).sort((a, b) => b.score - a.score);
@@ -2176,9 +2208,12 @@
       else if (top.meta.vinRegion && top.meta.eField && gap >= 35) confidence = 'high';
       else if (top.meta.consensus && gap >= 12) confidence = 'medium';
       else if (top.meta.eField && gap >= 30) confidence = 'medium';
-      else if (top.meta.vinRegion && gap >= 40) confidence = 'medium';
-      else if (top.meta.eField) confidence = 'medium';
       else if (top.meta.vinRegion && top.score >= 260) confidence = 'medium';
+
+      const plateHint = knownPlateForVinEvidence(evidence);
+      if (plateHint && vinOverlapsPlate(top.vin, plateHint)) {
+        return { vin: '', confidence: 'unreliable', score: top.score, source: '' };
+      }
 
       if (confidence === 'low' && gap < 18 && !top.meta.eField && !top.meta.qr && !top.meta.vision && !top.meta.consensus) {
         return { vin: '', confidence: 'unreliable', score: top.score, source: '' };
@@ -2723,6 +2758,7 @@
       try {
         const Tesseract = await loadOcrLibrary();
         const evidence = createVinEvidence();
+        let geminiApiError = '';
 
         if (TECH_AI_ENABLED) {
           if (gen !== vinReadGen) return;
@@ -2734,6 +2770,8 @@
           if (geminiResult && geminiResult.error === 'rate_limit') {
             state.vinStatus = geminiResult.message || 'Gemini უფასო ლიმიტი ამოიწურა — OCR-ით იკითხება…';
             renderVinLookup(true);
+          } else if (geminiResult && geminiResult.error) {
+            geminiApiError = geminiResult.message || 'Gemini API error';
           } else if (geminiResult && geminiResult.vin) {
             addGeminiVinEvidence(evidence, geminiResult, 'gemini-ai', 300, false);
             applyGeminiVehicleFields(geminiResult.vehicle);
@@ -2816,7 +2854,17 @@
             result.confidence = 'medium';
           }
         }
-        if (!result.vin || result.confidence === 'unreliable') {
+        const geminiVin = evidence.visionResult && evidence.visionResult.vin;
+        const geminiReadable = geminiVin && geminiVin !== 'VIN_NOT_CONFIDENT' && isValidVinFormat(normalizeVinWmiPrefix(geminiVin));
+        if (TECH_GEMINI_API && geminiApiError && !geminiReadable) {
+          state.vin = '';
+          state.vinStatus = 'Gemini API არ მუშაობს — Cloudflare-ში განაახლეთ GEMINI_API_KEY (Variables).';
+        } else if (TECH_GEMINI_API && !geminiReadable && (!result.vin || result.confidence === 'unreliable' || (!result.source || !/gemini|vision/.test(result.source)))) {
+          state.vin = '';
+          state.vinStatus = geminiApiError
+            ? 'Gemini API არ მუშაობს — Cloudflare-ში განაახლეთ GEMINI_API_KEY (Variables).'
+            : 'Gemini ვერ წაიკითხა VIN-ს საიმედოდ — შეადარეთ E ველს და ჩაწერეთ ხელით.';
+        } else if (!result.vin || result.confidence === 'unreliable') {
           state.vin = '';
           state.vinStatus = 'VIN ვერ წაიკითხა საიმედოდ — შეადარეთ E ველს და ჩაწერეთ ხელით.';
         } else {
