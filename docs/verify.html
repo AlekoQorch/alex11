@@ -9,7 +9,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="tech-gemini-api" content="https://vin-gemini.aleksandrekorchashvili.workers.dev">
-  <title>დოკუმენტების ატვირთვა v160</title>
+  <title>დოკუმენტების ატვირთვა v162</title>
   <script>
     (function () {
       try {
@@ -27,7 +27,7 @@
           if (fromHash) history.replaceState(null, '', location.pathname + location.search);
         }
       } catch (e) {}
-      var VER = '160';
+      var VER = '162';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -409,7 +409,7 @@
       <div id="group-slots"></div>
       <div class="vin-card hide" id="vin-lookup">
         <h3>ავტომობილის მონაცემები</h3>
-        <p>რეგისტრაციის ნომერი იკითხება უკანა გვერდის QR კოდიდან (პირველი მნიშვნელობა), VIN — უკანა გვერდის E ველიდან. გადაამოწმეთ და დაადასტურეთ ორივე კოდი.</p>
+        <p>სახელმწიფო ნომერი (A) — მხოლოდ QR კოდიდან. VIN (E) — სურათის E ველიდან (Gemini). გადაამოწმეთ და დაადასტურეთ ორივე.</p>
         <label class="field-label" for="plate-input">რეგისტრაციის ნომერი · A</label>
         <div class="vin-actions">
           <input class="field-inp" id="plate-input" type="text" inputmode="text" autocomplete="off"
@@ -1976,8 +1976,6 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
         candidates: new Map(),
         compacts: [],
         eFieldCompacts: [],
-        qrVin: '',
-        qrPayload: '',
         visionResult: null,
         visionVerified: false
       };
@@ -2036,11 +2034,9 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
       return cx > imageW * 0.58;
     }
 
-    function plateFromQrPayload(payload) {
-      const raw = String(payload || '').trim().toUpperCase();
-      if (!raw || !raw.includes('/')) return '';
-      const first = normalizePlate(raw.split('/')[0] || '');
-      return isGeorgianPlateFormat(first) ? first : '';
+    function knownPlateForVinEvidence() {
+      const fromState = normalizePlate(state.plate || '');
+      return isGeorgianPlateFormat(fromState) ? fromState : '';
     }
 
     function vinOverlapsPlate(vin, plate) {
@@ -2052,29 +2048,6 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
         if (v.startsWith(p.slice(0, len))) return true;
       }
       return false;
-    }
-
-    function knownPlateForVinEvidence(evidence) {
-      const fromQr = plateFromQrPayload(evidence.qrPayload);
-      if (fromQr) return fromQr;
-      const fromState = normalizePlate(state.plate || '');
-      return isGeorgianPlateFormat(fromState) ? fromState : '';
-    }
-
-    function vinFromQrPayload(payload) {
-      const raw = String(payload || '').toUpperCase().trim();
-      if (!raw) return '';
-      // Georgian tech passport QR is PLATE/INTERNAL_ID/MODEL — not a VIN.
-      if (raw.includes('/')) return '';
-      for (const vin of discoverVinsInString(raw)) {
-        if (serialSectionValid(vin)) return vin;
-      }
-      const compact = sanitizeVinWindow(raw);
-      for (let i = 0; i <= compact.length - 17; i++) {
-        const slice = normalizeVinWmiPrefix(compact.slice(i, i + 17));
-        if (isValidVinFormat(slice) && vinHasValidCheckDigit(slice) && serialSectionValid(slice)) return slice;
-      }
-      return '';
     }
 
     function vinWmiOcrSupport(vin, compacts) {
@@ -2362,13 +2335,10 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
         score += vinLiteralEvidenceScore(vin, evidence.compacts);
         if (meta.eField) score += 130;
         if (meta.vinRegion) score += 85;
-        if (meta.qr) score += 160;
         if (meta.vision) score += 320;
         if (meta.visionVerified) score += 220;
         if (meta.consensus) score += 95;
-        if (evidence.qrVin && evidence.qrVin === vin) score += 180;
-        if (evidence.qrVin && evidence.qrVin !== vin) score -= 120;
-        const plateHint = knownPlateForVinEvidence(evidence);
+        const plateHint = knownPlateForVinEvidence();
         if (plateHint && vinOverlapsPlate(vin, plateHint)) score -= 420;
         if (!serialSectionValid(vin)) score -= 300;
         return { vin, score, meta };
@@ -2383,29 +2353,28 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
       let confidence = 'low';
       if (top.meta.visionVerified && gap >= 20) confidence = 'very-high';
       else if (top.meta.vision && gap >= 15) confidence = 'high';
-      else if (top.meta.qr && top.meta.eField && gap >= 50) confidence = 'very-high';
-      else if ((top.meta.qr || top.meta.eField || top.meta.vision) && gap >= 45) confidence = 'high';
+      else if (top.meta.eField && gap >= 45) confidence = 'high';
       else if (top.meta.vinRegion && top.meta.eField && gap >= 35) confidence = 'high';
       else if (top.meta.consensus && gap >= 12) confidence = 'medium';
       else if (top.meta.eField && gap >= 30) confidence = 'medium';
       else if (top.meta.vinRegion && top.score >= 260) confidence = 'medium';
 
-      const plateHint = knownPlateForVinEvidence(evidence);
+      const plateHint = knownPlateForVinEvidence();
       if (plateHint && vinOverlapsPlate(top.vin, plateHint)) {
         return { vin: '', confidence: 'unreliable', score: top.score, source: '' };
       }
 
-      if (confidence === 'low' && gap < 18 && !top.meta.eField && !top.meta.qr && !top.meta.vision && !top.meta.consensus) {
+      if (confidence === 'low' && gap < 18 && !top.meta.eField && !top.meta.vision && !top.meta.consensus) {
         return { vin: '', confidence: 'unreliable', score: top.score, source: '' };
       }
-      if (!top.meta.eField && !top.meta.qr && !top.meta.vision && !top.meta.visionVerified && !top.meta.vinRegion && !top.meta.consensus) {
+      if (!top.meta.eField && !top.meta.vision && !top.meta.visionVerified && !top.meta.vinRegion && !top.meta.consensus) {
         const align = vinOcrAlignmentScore(top.vin, evidence.compacts);
         if (top.score >= 480 && align >= 55) {
           return { vin: top.vin, confidence: 'medium', score: top.score, source: 'ocr' };
         }
         return { vin: '', confidence: 'unreliable', score: top.score, source: '' };
       }
-      const source = top.meta.visionVerified ? 'vision-verify' : (top.meta.vision ? 'vision-ai' : (top.meta.qr ? 'qr' : 'ocr'));
+      const source = top.meta.visionVerified ? 'vision-verify' : (top.meta.vision ? 'vision-ai' : 'ocr');
       return { vin: top.vin, confidence, score: top.score, source };
     }
 
@@ -2516,21 +2485,6 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
       if (confidence === 'very-high' || confidence === 'high') return 'მაღალი';
       if (confidence === 'medium') return 'საშუალო';
       return 'დაბალი';
-    }
-
-    async function decodeFullQrPayload(photo) {
-      const jsQR = await loadQrLibrary();
-      const image = await loadImageElement(photo);
-      const canvas = document.createElement('canvas');
-      canvas.width = image.naturalWidth;
-      canvas.height = image.naturalHeight;
-      const ctx = canvas.getContext('2d', { willReadFrequently: true });
-      ctx.drawImage(image, 0, 0);
-      for (const region of qrRegions(canvas.width, canvas.height)) {
-        const decoded = decodeQrRegion(jsQR, ctx, region);
-        if (decoded && decoded.data) return String(decoded.data);
-      }
-      return '';
     }
 
     async function runVinRegionPipeline(Tesseract, image, regions, evidence, gen, vinReadGen) {
@@ -3025,16 +2979,6 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
         }
 
         const Tesseract = await loadOcrLibrary();
-        if (gen !== vinReadGen) return;
-        state.vinStatus = 'QR კოდი მოწმდება…';
-        renderVinLookup(true);
-        evidence.qrPayload = await decodeFullQrPayload(photo);
-        evidence.qrVin = vinFromQrPayload(evidence.qrPayload);
-        if (evidence.qrVin) addVinEvidence(evidence, evidence.qrVin, 'qr', 160);
-
-        const built = await buildDocumentOcrPasses(photo);
-        const image = built.image;
-
         if (gen !== vinReadGen) return;
         state.vinStatus = 'დოკუმენტის სტრუქტურა იკითხება…';
         renderVinLookup(true);
