@@ -8,10 +8,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>დოკუმენტების ატვირთვა v155</title>
+  <title>დოკუმენტების ატვირთვა v156</title>
   <script>
     (function () {
-      var VER = '155';
+      var VER = '156';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -523,7 +523,8 @@
       plateLayoutHits: [],
       plateTextHits: [],
       techDataConfirmed: false,
-      techPhotoProcessing: {}
+      techPhotoProcessing: {},
+      techExtracted: {}
     };
 
     const params = new URLSearchParams(location.search);
@@ -1759,7 +1760,20 @@
       return 'დაბალი';
     }
 
+    const TECH_GEMINI_API = (() => {
+      try {
+        const params = new URLSearchParams(location.search);
+        const fromQuery = params.get('geminiApi');
+        if (fromQuery) return fromQuery;
+        const meta = document.querySelector('meta[name="tech-gemini-api"]');
+        return (meta && meta.content) || '';
+      } catch (_) {
+        return '';
+      }
+    })();
+
     const TECH_VISION_API = (() => {
+      if (TECH_GEMINI_API) return TECH_GEMINI_API;
       try {
         const params = new URLSearchParams(location.search);
         const fromQuery = params.get('visionApi');
@@ -1770,6 +1784,8 @@
         return '';
       }
     })();
+
+    const TECH_AI_ENABLED = !!TECH_GEMINI_API || !!TECH_VISION_API;
 
     function createVinEvidence() {
       return {
@@ -2024,21 +2040,52 @@
 
     function parseVisionVinResponse(data) {
       if (!data || typeof data !== 'object') return null;
+      if (data.error === 'rate_limit') {
+        return { error: 'rate_limit', message: data.message || 'Gemini quota exceeded', vin: '', confidence: 'none' };
+      }
+      if (data.error) return null;
+      const rawVin = String(data.vin || '').toUpperCase().replace(/[^A-Z0-9_]/g, '');
+      if (rawVin === 'VIN_NOT_CONFIDENT' || rawVin === 'VINNOTCONFIDENT') {
+        return { vin: '', confidence: 'none', readable: false, confidenceScore: 0, vehicle: data.vehicle || {} };
+      }
       const chars = Array.isArray(data.characters)
         ? data.characters.map((c) => String(c || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 1))
         : [];
       let vin = normalizeVinWmiPrefix(String(data.vin || ''));
       const fromChars = vinFromCharacterArray(chars);
       if (fromChars) vin = fromChars;
-      else if (vin && (!isValidVinFormat(vin) || !vinHasValidCheckDigit(vin) || !serialSectionValid(vin))) vin = '';
-      const readable = data.readable !== false && vin.length === 17;
+      else if (vin && (!isValidVinFormat(vin) || !serialSectionValid(vin))) vin = '';
+      const confNum = typeof data.confidence === 'number'
+        ? data.confidence
+        : (data.confidence === 'high' ? 0.9 : data.confidence === 'medium' ? 0.7 : data.confidence === 'low' ? 0.45 : parseFloat(data.confidence) || 0);
+      let confidence = 'none';
+      if (confNum >= 0.8) confidence = 'high';
+      else if (confNum >= 0.55) confidence = 'medium';
+      else if (confNum >= 0.35) confidence = 'low';
+      const readable = data.readable !== false && vin.length === 17 && confNum >= 0.4;
       return {
-        vin,
+        vin: readable ? vin : '',
         characters: chars.length === 17 ? chars : (vin ? vin.split('') : []),
-        confidence: String(data.confidence || (readable ? 'medium' : 'none')),
+        confidence,
+        confidenceScore: confNum,
         readable,
+        vehicle: data.vehicle || {},
         mismatches: Array.isArray(data.mismatches) ? data.mismatches : []
       };
+    }
+
+    function applyGeminiVehicleFields(vehicle) {
+      if (!vehicle || typeof vehicle !== 'object') return;
+      state.techExtracted = { ...state.techExtracted, ...vehicle };
+      if (!state.plate && vehicle.plate) {
+        const plate = findPlatePattern(vehicle.plate) || normalizePlate(vehicle.plate);
+        if (plate && isGeorgianPlateFormat(plate)) {
+          state.plate = plate;
+          state.plateSource = 'gemini';
+          state.plateConfirmed = true;
+          state.plateStatus = 'რეგისტრაციის ნომერი Gemini-დან ამოიცნო.';
+        }
+      }
     }
 
     function vinLiteralEvidenceScore(vin, compacts) {
@@ -2166,11 +2213,11 @@
       }
     }
 
-    function addVisionVinEvidence(evidence, visionResult, source, weight, verified) {
-      if (!evidence || !visionResult || !visionResult.vin) return;
-      evidence.visionResult = visionResult;
-      const normalized = normalizeVinWmiPrefix(visionResult.vin);
-      if (!isValidVinFormat(normalized) || !vinHasValidCheckDigit(normalized) || !isPlausibleVinStructure(normalized)) return;
+    function addGeminiVinEvidence(evidence, geminiResult, source, weight, verified) {
+      if (!evidence || !geminiResult || !geminiResult.vin) return;
+      evidence.visionResult = geminiResult;
+      const normalized = normalizeVinWmiPrefix(geminiResult.vin);
+      if (!isValidVinFormat(normalized) || !serialSectionValid(normalized) || !isPlausibleVinStructure(normalized)) return;
       const prev = evidence.candidates.get(normalized) || {
         score: 0,
         sources: new Set(),
@@ -2178,19 +2225,22 @@
         vinRegion: false,
         qr: false,
         vision: false,
-        visionVerified: false
+        visionVerified: false,
+        consensus: false,
+        exactCompact: false
       };
       prev.score += weight;
       prev.sources.add(source);
       prev.vision = true;
+      prev.eField = true;
       if (verified) prev.visionVerified = true;
       evidence.candidates.set(normalized, prev);
     }
 
     async function readVinViaVision(dataUrl, task, extra) {
-      if (!TECH_VISION_API) return null;
+      if (!TECH_AI_ENABLED) return null;
       try {
-        const body = { image: dataUrl, task: task || 'extract_vin' };
+        const body = { image: dataUrl, task: task || (TECH_GEMINI_API ? 'extract_tech' : 'extract_vin') };
         if (extra && extra.vin) body.vin = extra.vin;
         if (extra && extra.altVin) body.altVin = extra.altVin;
         const res = await fetch(TECH_VISION_API, {
@@ -2198,37 +2248,46 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body)
         });
-        if (!res.ok) return null;
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
+        if (res.status === 429 || data.error === 'rate_limit') {
+          return { error: 'rate_limit', message: data.message || 'Gemini უფასო ლიმიტი ამოიწურა. სცადეთ მოგვიანებით.' };
+        }
+        if (!res.ok) return { error: data.error || 'api_error', message: data.message };
         return parseVisionVinResponse(data);
       } catch (_) {
         return null;
       }
     }
 
+    function addVisionVinEvidence(evidence, visionResult, source, weight, verified) {
+      addGeminiVinEvidence(evidence, visionResult, source, weight, verified);
+    }
+
     async function reconcileVinWithVision(photo, evidence, gen) {
       const vision = evidence.visionResult;
       const ocrPick = pickBestVinFromEvidence(evidence);
-      if (!vision || !vision.vin) return ocrPick;
+      if (!vision || vision.error === 'rate_limit') return ocrPick;
+      if (!vision.vin) return ocrPick;
       if (!ocrPick.vin || ocrPick.vin === vision.vin) {
-        return { vin: vision.vin, confidence: vision.confidence || 'high', source: 'vision-ai', score: 900 };
+        return { vin: vision.vin, confidence: vision.confidence || 'high', source: 'gemini-ai', score: 900 };
       }
       const mismatches = countVinCharMismatches(vision.vin, ocrPick.vin);
-      if (gen !== vinReadGen) return { vin: vision.vin, confidence: vision.confidence || 'high', source: 'vision-ai', score: 900 };
-      state.vinStatus = 'Vision AI ამოწმებს VIN სიმბოლოებს…';
+      if (gen !== vinReadGen) return { vin: vision.vin, confidence: vision.confidence || 'high', source: 'gemini-ai', score: 900 };
+      state.vinStatus = TECH_GEMINI_API ? 'Gemini ხელახლა ამოწმებს VIN-ს…' : 'Vision AI ამოწმებს VIN სიმბოლოებს…';
       renderVinLookup(true);
       const verify = await readVinViaVision(photo, 'verify_vin', { vin: vision.vin, altVin: ocrPick.vin });
+      if (verify && verify.error === 'rate_limit') return ocrPick;
       if (verify && verify.vin) {
-        addVisionVinEvidence(evidence, verify, 'vision-verify', 260, true);
+        addGeminiVinEvidence(evidence, verify, 'gemini-verify', 280, true);
         return {
           vin: verify.vin,
           confidence: verify.confidence || 'high',
-          source: 'vision-verify',
+          source: 'gemini-verify',
           score: 950
         };
       }
-      if (mismatches >= 3) {
-        return { vin: vision.vin, confidence: vision.confidence || 'high', source: 'vision-ai', score: 900 };
+      if (mismatches >= 2 && (vision.confidenceScore || 0) >= 0.55) {
+        return { vin: vision.vin, confidence: vision.confidence || 'high', source: 'gemini-ai', score: 900 };
       }
       return ocrPick;
     }
@@ -2664,13 +2723,19 @@
         const Tesseract = await loadOcrLibrary();
         const evidence = createVinEvidence();
 
-        if (TECH_VISION_API) {
+        if (TECH_AI_ENABLED) {
           if (gen !== vinReadGen) return;
-          state.vinStatus = 'Vision AI კითხულობს VIN-ს სურათიდან…';
+          state.vinStatus = TECH_GEMINI_API
+            ? 'Gemini კითხულობს VIN-ს სურათიდან…'
+            : 'Vision AI კითხულობს VIN-ს სურათიდან…';
           renderVinLookup(true);
-          const visionResult = await readVinViaVision(photo, 'extract_vin');
-          if (visionResult && visionResult.vin) {
-            addVisionVinEvidence(evidence, visionResult, 'vision-ai', 260, false);
+          const geminiResult = await readVinViaVision(photo, TECH_GEMINI_API ? 'extract_tech' : 'extract_vin');
+          if (geminiResult && geminiResult.error === 'rate_limit') {
+            state.vinStatus = geminiResult.message || 'Gemini უფასო ლიმიტი ამოიწურა — OCR-ით იკითხება…';
+            renderVinLookup(true);
+          } else if (geminiResult && geminiResult.vin) {
+            addGeminiVinEvidence(evidence, geminiResult, 'gemini-ai', 300, false);
+            applyGeminiVehicleFields(geminiResult.vehicle);
           }
         }
 
@@ -2725,7 +2790,7 @@
 
         collectOcrConsensusEvidence(evidence);
         vinOcrCompacts = evidence.compacts.slice();
-        let result = (TECH_VISION_API && evidence.visionResult && evidence.visionResult.vin)
+        let result = (TECH_AI_ENABLED && evidence.visionResult && evidence.visionResult.vin)
           ? await reconcileVinWithVision(photo, evidence, gen)
           : pickBestVinFromEvidence(evidence);
 
@@ -2737,7 +2802,7 @@
           await runVinRegionPipeline(Tesseract, image, tightRegions, evidence, gen, vinReadGen);
           collectOcrConsensusEvidence(evidence);
           vinOcrCompacts = evidence.compacts.slice();
-          result = (TECH_VISION_API && evidence.visionResult && evidence.visionResult.vin)
+          result = (TECH_AI_ENABLED && evidence.visionResult && evidence.visionResult.vin)
             ? await reconcileVinWithVision(photo, evidence, gen)
             : pickBestVinFromEvidence(evidence);
         }
@@ -2756,7 +2821,9 @@
         } else {
           state.vin = result.vin;
           const conf = vinConfidenceFromPipeline(result.confidence);
-          const sourceNote = result.source && result.source.startsWith('vision') ? ' (Vision AI)' : '';
+          const sourceNote = result.source && (result.source.startsWith('gemini') || result.source.startsWith('vision'))
+            ? (TECH_GEMINI_API ? ' (Gemini AI)' : ' (Vision AI)')
+            : '';
           const checkNote = vinHasValidCheckDigit(result.vin) ? '' : ' — გადაამოწმეთ კოდი.';
           state.vinStatus = `VIN ამოცნობილია (${conf} სანდოობა)${sourceNote}${checkNote}`;
         }
@@ -3276,6 +3343,7 @@
         photos: state.photos,
         plate: state.plate,
         vin: state.vin,
+        techExtracted: state.techExtracted,
         at: new Date().toISOString()
       };
       const db = await openDb();
