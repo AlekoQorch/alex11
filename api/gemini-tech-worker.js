@@ -6,7 +6,7 @@
  *
  * Environment variables:
  *   GEMINI_API_KEY  — from https://aistudio.google.com/apikey (Free Tier)
- *   GEMINI_MODEL    — optional, default gemini-2.0-flash (free tier)
+ *   GEMINI_MODEL    — optional, default gemini-3.6-flash (free tier)
  *
  * Tasks:
  *   extract_vin    — read VIN from field E only
@@ -34,7 +34,7 @@ export default {
       }
 
       const task = body.task || 'extract_vin';
-      const model = env.GEMINI_MODEL || 'gemini-2.0-flash';
+      const model = env.GEMINI_MODEL || 'gemini-3.6-flash';
       const prompt = buildPrompt(task, body);
       const { mime, data } = parseDataUrl(image);
 
