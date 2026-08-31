@@ -10,11 +10,15 @@ const path = 'docs/verify.html';
 let html = fs.readFileSync(path, 'utf8');
 const safe = key.replace(/"/g, '');
 const meta = `<meta name="default-gemini-key" content="${safe}">`;
+const metaRe = /<meta name="default-gemini-key" content="[^"]*">/;
 
-if (html.includes('name="default-gemini-key"')) {
-  html = html.replace(/<meta name="default-gemini-key" content="[^"]*">/, meta);
+if (metaRe.test(html)) {
+  html = html.replace(metaRe, meta);
 } else {
-  html = html.replace('</head>', `  ${meta}\n</head>`);
+  html = html.replace('<!-- gemini-key-slot -->', meta);
+  if (!html.includes('name="default-gemini-key" content=')) {
+    html = html.replace('</head>', `  ${meta}\n</head>`);
+  }
 }
 
 fs.writeFileSync(path, html);
