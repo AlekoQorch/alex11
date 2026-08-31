@@ -11,7 +11,7 @@
   <meta name="tech-gemini-api" content="https://vin-gemini.aleksandrekorchashvili.workers.dev">
   <meta name="default-gemini-key" content="">
   <!-- gemini-key-slot -->
-  <title>დოკუმენტების ატვირთვა v181</title>
+  <title>დოკუმენტების ატვირთვა v182</title>
   <script>
     (function () {
       try {
@@ -33,7 +33,7 @@
           if (fromHash) history.replaceState(null, '', location.pathname + location.search);
         }
       } catch (e) {}
-      var VER = '181';
+      var VER = '182';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -2652,26 +2652,30 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
       ];
     }
 
-    function buildVinAiCropUrls(image, regions, forAi) {
-      const iw = image.naturalWidth;
-      const ih = image.naturalHeight;
-      const sourceRegions = (regions && regions.length) ? regions.slice(0, 4) : defaultVinFieldRegions(image);
-      const crops = [];
-      for (const region of sourceRegions) {
-        const sx = Math.round(iw * region.x);
-        const sy = Math.round(ih * region.y);
-        const sw = Math.max(1, Math.round(iw * region.w));
-        const sh = Math.max(1, Math.round(ih * region.h));
-        const zoom = forAi
-          ? Math.min(2.5, Math.max(1.8, 1100 / Math.max(sw, 55)))
-          : Math.max(2.8, 1400 / Math.max(sw, 70));
-        const filter = forAi ? 'contrast(1.12) brightness(1.04)' : 'grayscale(1) contrast(1.12) brightness(1.04)';
-        crops.push({
-          dataUrl: renderOcrCanvas(image, sx, sy, sw, sh, Math.round(sw * zoom), Math.round(sh * zoom), filter),
-          source: region.source || 'vin-crop'
-        });
+    async function runGeminiVinRead(preparedPhoto, evidence, gen) {
+      let geminiFailed = false;
+      let geminiApiError = '';
+      let best = null;
+      const aiOnly = VIN_READ_MODE === 'ai';
+
+      state.vinStatus = 'Gemini AI კითხულობს VIN-ს…';
+      renderVinLookup(true);
+
+      if (gen !== vinReadGen) return { best, geminiFailed, geminiApiError };
+
+      const full = await readVinViaVision(preparedPhoto, aiOnly ? 'extract_vin' : 'extract_tech', null, true);
+      if (full && full.error) {
+        geminiFailed = true;
+        geminiApiError = full.message || geminiErrorUserMessage(full.error, '');
+      } else if (full && full.vin) {
+        mergeGeminiIntoEvidence(evidence, full, 'gemini-full', 280);
+        if (!aiOnly) applyGeminiVehicleFields(full.vehicle);
+        if (isGeminiVinUsable(full)) best = full;
       }
-      return crops;
+
+      if (!best && full && !full.error && full.vin) best = full;
+      if (!geminiFailed && !best) geminiFailed = true;
+      return { best, geminiFailed, geminiApiError };
     }
 
     async function loadVinScanImage(photo, prepared) {
@@ -2705,82 +2709,6 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
         .filter(([, meta]) => meta.vision)
         .sort((a, b) => b[1].score - a[1].score);
       return ranked[0]?.[0] || '';
-    }
-
-    async function runGeminiVinMultiPass(preparedPhoto, image, regions, evidence, gen) {
-      let geminiFailed = false;
-      let geminiApiError = '';
-      let best = null;
-      const aiOnly = VIN_READ_MODE === 'ai';
-
-      state.vinStatus = 'Gemini AI კითხულობს VIN-ს…';
-      renderVinLookup(true);
-
-      if (gen !== vinReadGen) return { best, geminiFailed, geminiApiError };
-
-      const full = await readVinViaVision(preparedPhoto, aiOnly ? 'extract_vin' : 'extract_tech', null, true);
-      if (full && full.error) {
-        geminiFailed = true;
-        geminiApiError = full.message || geminiErrorUserMessage(full.error, '');
-      } else if (full && full.vin) {
-        mergeGeminiIntoEvidence(evidence, full, 'gemini-full', 280);
-        if (!aiOnly) applyGeminiVehicleFields(full.vehicle);
-        if (isGeminiVinUsable(full)) best = full;
-      }
-
-      if (aiOnly) {
-        if (best) return { best, geminiFailed: false, geminiApiError: '' };
-        const crops = buildVinAiCropUrls(image, regions, true).slice(0, 2);
-        if (crops.length && gen === vinReadGen) {
-          state.vinStatus = 'AI ამოწმებს E ველს…';
-          renderVinLookup(true);
-          const cropResults = await Promise.all(
-            crops.map((crop) => readVinViaVision(crop.dataUrl, 'extract_vin', null, true))
-          );
-          for (let i = 0; i < cropResults.length; i++) {
-            if (gen !== vinReadGen) return { best, geminiFailed, geminiApiError };
-            const cropResult = cropResults[i];
-            if (cropResult && cropResult.error) {
-              geminiFailed = true;
-              geminiApiError = cropResult.message || geminiApiError || '';
-              continue;
-            }
-            if (cropResult && cropResult.vin) {
-              mergeGeminiIntoEvidence(evidence, cropResult, 'gemini-crop-' + i, 300 - i * 10);
-              if (isGeminiVinUsable(cropResult) && (!best || geminiConfidenceScore(cropResult) > geminiConfidenceScore(best))) {
-                best = cropResult;
-              }
-            }
-          }
-        }
-        if (!geminiFailed && !best) geminiFailed = true;
-        return { best, geminiFailed, geminiApiError };
-      }
-
-      const crops = buildVinAiCropUrls(image, regions, true);
-      const cropLimit = 2;
-      for (let i = 0; i < Math.min(crops.length, cropLimit); i++) {
-        if (gen !== vinReadGen) return { best, geminiFailed, geminiApiError };
-        state.vinStatus = `AI კითხულობს E ველს… ${i + 1}/${Math.min(crops.length, cropLimit)}`;
-        renderVinLookup(true);
-        const cropResult = await readVinViaVision(crops[i].dataUrl, 'extract_vin', null, true);
-        if (cropResult && cropResult.error) {
-          geminiFailed = true;
-          geminiApiError = cropResult.message || geminiApiError || '';
-          continue;
-        }
-        if (cropResult && cropResult.vin) {
-          mergeGeminiIntoEvidence(evidence, cropResult, 'gemini-crop-' + i, 300 - i * 10);
-          if (isGeminiVinUsable(cropResult) && (!best || geminiConfidenceScore(cropResult) > geminiConfidenceScore(best))) {
-            best = cropResult;
-          }
-          if (isGeminiVinTrusted(cropResult)) break;
-        }
-      }
-
-      if (!best && full && !full.error && full.vin) best = full;
-      if (!geminiFailed && !best) geminiFailed = true;
-      return { best, geminiFailed, geminiApiError };
     }
 
     async function finalizeMaxAccuracyVin(photo, evidence, gen) {
@@ -3317,10 +3245,7 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
 
         if (TECH_AI_ENABLED) {
           const preparedPhoto = await preparePhotoForGemini(photo);
-          image = await loadVinScanImage(photo, preparedPhoto);
-          const regions = defaultVinFieldRegions(image);
-
-          const multi = await runGeminiVinMultiPass(preparedPhoto, image, regions, evidence, gen);
+          const multi = await runGeminiVinRead(preparedPhoto, evidence, gen);
           if (gen !== vinReadGen) return;
           geminiResult = multi.best;
           geminiFailed = multi.geminiFailed;
@@ -3347,8 +3272,8 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
           built = await buildDocumentOcrPasses(await preparePhotoForOcr(photo));
           image = built.image;
           ocrPhoto = await preparePhotoForOcr(photo);
-          dynamicRegions = detectVinFieldRegions(image, []) ;
-          if (!dynamicRegions.length) dynamicRegions = regions;
+          dynamicRegions = detectVinFieldRegions(image, []);
+          if (!dynamicRegions.length) dynamicRegions = defaultVinFieldRegions(image);
 
           if (geminiFailed && geminiApiError) {
             state.vinStatus = geminiApiError;
