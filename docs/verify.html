@@ -11,7 +11,7 @@
   <meta name="tech-gemini-api" content="https://vin-gemini.aleksandrekorchashvili.workers.dev">
   <meta name="default-gemini-key" content="">
   <!-- gemini-key-slot -->
-  <title>დოკუმენტების ატვირთვა v178</title>
+  <title>დოკუმენტების ატვირთვა v179</title>
   <script>
     (function () {
       try {
@@ -33,7 +33,7 @@
           if (fromHash) history.replaceState(null, '', location.pathname + location.search);
         }
       } catch (e) {}
-      var VER = '178';
+      var VER = '179';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -1907,11 +1907,12 @@
     }
 
     const GEMINI_KEY_STORAGE = 'cc_gemini_api_key';
-    const GEMINI_MODEL_ID = 'gemini-2.0-flash';
+    const GEMINI_MODEL_ID = 'gemini-2.5-flash';
     const GEMINI_FALLBACK_MODELS = [
+      'gemini-2.5-flash',
+      'gemini-2.5-flash-lite',
       'gemini-2.0-flash',
       'gemini-2.0-flash-lite',
-      'gemini-1.5-flash',
       'gemini-flash-latest'
     ];
 
