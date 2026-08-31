@@ -9,7 +9,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="tech-gemini-api" content="https://vin-gemini.aleksandrekorchashvili.workers.dev">
-  <title>დოკუმენტების ატვირთვა v171</title>
+  <title>დოკუმენტების ატვირთვა v172</title>
   <script>
     (function () {
       try {
@@ -27,7 +27,7 @@
           if (fromHash) history.replaceState(null, '', location.pathname + location.search);
         }
       } catch (e) {}
-      var VER = '171';
+      var VER = '172';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -409,7 +409,7 @@
       <div id="group-slots"></div>
       <div class="vin-card hide" id="vin-lookup">
         <h3>ავტომობილის მონაცემები</h3>
-        <p>სახელმწიფო ნომერი (A) — QR კოდიდან. VIN (E) — <strong>უფასო AI + OCR</strong> ერთად ამოწმებს (მაქს. სიზუსტე, key არ სჭირდება).</p>
+        <p>სახელმწიფო ნომერი (A) — QR კოდიდან. VIN (E) — მხოლოდ <strong>Gemini AI</strong> კითხულობს (OCR გამორთულია — ხშირად არასწორად წერს).</p>
         <label class="field-label" for="plate-input">რეგისტრაციის ნომერი · A</label>
         <div class="vin-actions">
           <input class="field-inp" id="plate-input" type="text" inputmode="text" autocomplete="off"
@@ -422,7 +422,7 @@
             autocapitalize="characters" maxlength="17" placeholder="მაგ. WDF…" aria-label="ავტომობილის VIN">
         </div>
         <p class="vin-status" id="vin-status" aria-live="polite"></p>
-        <button type="button" class="upload-link" id="gemini-key-toggle">+ უფასო Gemini key → AI უფრო ზუსტად (~20/დღე)</button>
+        <button type="button" class="upload-link" id="gemini-key-toggle">+ უფასო Gemini API key (სავალდებულო · AI Studio)</button>
         <div id="gemini-key-setup" class="gemini-setup" hidden>
           <label class="field-label" for="gemini-key-input">Gemini API Key (უფასო · ≈20 ფოტო/დღე)</label>
           <div class="field-row">
@@ -2617,7 +2617,21 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
       return 'დაბალი';
     }
 
+    function isCardLikeTechImage(image) {
+      const iw = image.naturalWidth;
+      const ih = image.naturalHeight;
+      const aspect = iw / ih;
+      return aspect >= 1.35 && aspect <= 2.25 && ih <= 1500;
+    }
+
     function defaultVinFieldRegions(image) {
+      if (isCardLikeTechImage(image)) {
+        return [
+          { x: 0.02, y: 0.38, w: 0.90, h: 0.09, source: 'e-card-1', weight: 82 },
+          { x: 0.02, y: 0.46, w: 0.90, h: 0.09, source: 'e-card-2', weight: 80 },
+          { x: 0.02, y: 0.54, w: 0.90, h: 0.08, source: 'e-card-3', weight: 78 }
+        ];
+      }
       const portrait = image.naturalHeight > image.naturalWidth * 1.1;
       if (portrait) {
         return [
@@ -2633,23 +2647,37 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
       ];
     }
 
-    function buildVinAiCropUrls(image, regions) {
+    function buildVinAiCropUrls(image, regions, forAi) {
       const iw = image.naturalWidth;
       const ih = image.naturalHeight;
-      const sourceRegions = (regions && regions.length) ? regions.slice(0, 3) : defaultVinFieldRegions(image);
+      const sourceRegions = (regions && regions.length) ? regions.slice(0, 4) : defaultVinFieldRegions(image);
       const crops = [];
       for (const region of sourceRegions) {
         const sx = Math.round(iw * region.x);
         const sy = Math.round(ih * region.y);
         const sw = Math.max(1, Math.round(iw * region.w));
         const sh = Math.max(1, Math.round(ih * region.h));
-        const zoom = Math.max(2.8, 1400 / Math.max(sw, 70));
+        const zoom = forAi ? Math.max(4, 2000 / Math.max(sw, 55)) : Math.max(2.8, 1400 / Math.max(sw, 70));
+        const filter = forAi ? 'contrast(1.12) brightness(1.04)' : 'grayscale(1) contrast(1.12) brightness(1.04)';
         crops.push({
-          dataUrl: renderOcrCanvas(image, sx, sy, sw, sh, Math.round(sw * zoom), Math.round(sh * zoom), 'contrast(1.12) brightness(1.04)'),
+          dataUrl: renderOcrCanvas(image, sx, sy, sw, sh, Math.round(sw * zoom), Math.round(sh * zoom), filter),
           source: region.source || 'vin-crop'
         });
       }
       return crops;
+    }
+
+    async function loadVinScanImage(photo) {
+      return loadImageElement(await preparePhotoForGemini(photo));
+    }
+
+    function finalizeAiOnlyVin(evidence, geminiResult) {
+      const aiVin = normalizeVinWmiPrefix(bestVisionVin(evidence) || (geminiResult && geminiResult.vin) || '');
+      if (!aiVin || !isValidVinFormat(aiVin)) {
+        return { vin: '', confidence: 'none', source: '', score: 0 };
+      }
+      const conf = geminiResult ? geminiVinConfidenceLabel(geminiResult) : 'medium';
+      return { vin: aiVin, confidence: conf, source: 'gemini-ai', score: 920 };
     }
 
     function mergeGeminiIntoEvidence(evidence, result, source, weight) {
@@ -2676,42 +2704,47 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
       let geminiFailed = false;
       let geminiApiError = '';
       let best = null;
+      const aiOnly = VIN_READ_MODE === 'ai';
+      const crops = buildVinAiCropUrls(image, regions, true);
+      const cropLimit = 4;
 
-      state.vinStatus = 'უფასო AI კითხულობს VIN-ს…';
+      state.vinStatus = 'Gemini AI კითხულობს VIN-ს…';
       renderVinLookup(true);
-      const full = await readVinViaVision(photo, 'extract_tech');
-      if (gen !== vinReadGen) return { best, geminiFailed, geminiApiError };
 
-      if (full && full.error) {
-        geminiFailed = true;
-        geminiApiError = full.message || geminiErrorUserMessage(full.error, '');
-      } else if (full && full.vin) {
-        mergeGeminiIntoEvidence(evidence, full, 'gemini-full', 300);
-        applyGeminiVehicleFields(full.vehicle);
-        best = full;
-      }
-
-      const crops = buildVinAiCropUrls(image, regions);
-      const cropLimit = getStoredGeminiKey() ? 3 : 2;
       for (let i = 0; i < Math.min(crops.length, cropLimit); i++) {
         if (gen !== vinReadGen) return { best, geminiFailed, geminiApiError };
-        state.vinStatus = `AI ამოწმებს E ველს… ${i + 1}/${crops.length}`;
+        state.vinStatus = `AI კითხულობს E ველს… ${i + 1}/${Math.min(crops.length, cropLimit)}`;
         renderVinLookup(true);
         const cropResult = await readVinViaVision(crops[i].dataUrl, 'extract_vin');
         if (cropResult && cropResult.error) {
           geminiFailed = true;
-          if (!geminiApiError) geminiApiError = cropResult.message || '';
+          geminiApiError = cropResult.message || geminiApiError || '';
           continue;
         }
         if (cropResult && cropResult.vin) {
-          mergeGeminiIntoEvidence(evidence, cropResult, 'gemini-crop-' + i, 280);
+          mergeGeminiIntoEvidence(evidence, cropResult, 'gemini-crop-' + i, 300 - i * 10);
           if (isGeminiVinUsable(cropResult) && (!best || geminiConfidenceScore(cropResult) > geminiConfidenceScore(best))) {
             best = cropResult;
           }
         }
       }
 
-      if (!best && full && !full.error && isGeminiVinUsable(full)) best = full;
+      if (gen !== vinReadGen) return { best, geminiFailed, geminiApiError };
+      const fullTask = aiOnly ? 'extract_vin' : 'extract_tech';
+      const full = await readVinViaVision(photo, fullTask);
+      if (full && full.error) {
+        geminiFailed = true;
+        if (!geminiApiError) geminiApiError = full.message || geminiErrorUserMessage(full.error, '');
+      } else if (full && full.vin) {
+        mergeGeminiIntoEvidence(evidence, full, 'gemini-full', 280);
+        if (!aiOnly) applyGeminiVehicleFields(full.vehicle);
+        if (isGeminiVinUsable(full) && (!best || geminiConfidenceScore(full) > geminiConfidenceScore(best))) {
+          best = full;
+        }
+      }
+
+      if (!best && full && !full.error && full.vin) best = full;
+      if (!geminiFailed && !best) geminiFailed = true;
       return { best, geminiFailed, geminiApiError };
     }
 
@@ -3160,7 +3193,7 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
       return parseFloat(geminiResult.confidence) || 0;
     }
 
-    const VIN_READ_MODE = 'max';
+    const VIN_READ_MODE = 'ai';
 
     async function preparePhotoForGemini(dataUrl) {
       const image = await loadImageElement(dataUrl);
@@ -3248,22 +3281,46 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
         let dynamicRegions = [];
 
         if (TECH_AI_ENABLED) {
-          ocrPhoto = await preparePhotoForOcr(photo);
-          built = await buildDocumentOcrPasses(ocrPhoto);
-          image = built.image;
-          dynamicRegions = defaultVinFieldRegions(image);
+          image = await loadVinScanImage(photo);
+          const regions = defaultVinFieldRegions(image);
 
-          const multi = await runGeminiVinMultiPass(photo, image, dynamicRegions, evidence, gen);
+          const multi = await runGeminiVinMultiPass(photo, image, regions, evidence, gen);
           if (gen !== vinReadGen) return;
           geminiResult = multi.best;
           geminiFailed = multi.geminiFailed;
           geminiApiError = multi.geminiApiError;
 
-          if (geminiFailed && (geminiResult?.error === 'rate_limit' || geminiApiError.includes('OCR'))) {
-            state.vinStatus = geminiApiError || 'უფასო OCR-ით იკითხება…';
+          if (VIN_READ_MODE === 'ai') {
+            const result = finalizeAiOnlyVin(evidence, geminiResult);
+            if (result.vin && isGeminiVinUsable(geminiResult)) {
+              applyVinReadResult(result, evidence, geminiApiError, gen, geminiFailed);
+              return;
+            }
+            state.vin = '';
+            if (!getStoredGeminiKey()) {
+              showGeminiKeySetup(true);
+              state.vinStatus = 'VIN-ს AI წაიკითხავს — ჩაწერეთ უფასო Gemini key (https://aistudio.google.com/apikey)';
+            } else if (geminiFailed) {
+              state.vinStatus = geminiApiError || 'Gemini AI ვერ მუშაობს — შეადარეთ E ველს და ჩაწერეთ VIN ხელით.';
+            } else {
+              state.vinStatus = 'VIN ვერ წაიკითხა AI-ით — შეადარეთ E ველს და ჩაწერეთ ხელით.';
+            }
+            return;
+          }
+
+          built = await buildDocumentOcrPasses(await preparePhotoForOcr(photo));
+          image = built.image;
+          ocrPhoto = await preparePhotoForOcr(photo);
+          dynamicRegions = detectVinFieldRegions(image, []) ;
+          if (!dynamicRegions.length) dynamicRegions = regions;
+
+          if (geminiFailed && geminiApiError) {
+            state.vinStatus = geminiApiError;
             renderVinLookup(true);
           }
         }
+
+        if (VIN_READ_MODE === 'ai') return;
 
         if (geminiFailed && gen === vinReadGen && !state.vin) {
           state.vinStatus = geminiApiError || 'უფასო OCR-ით იკითხება…';
@@ -5194,6 +5251,7 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
         return;
       }
       if (capturedKey === 'tech_back') {
+        if (VIN_READ_MODE === 'ai' && !getStoredGeminiKey()) showGeminiKeySetup(true);
         const fromQr = await readRegistrationFromQr();
         if (!fromQr) {
           state.plateStatus = 'QR ვერ ამოიცნო — A ველიდან OCR-ით იკითხება…';
