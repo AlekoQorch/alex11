@@ -6,7 +6,7 @@
  *
  * Environment variables:
  *   GEMINI_API_KEY  — from https://aistudio.google.com/apikey (Free Tier)
- *   GEMINI_MODEL    — optional, default gemini-3.6-flash (free tier)
+ *   GEMINI_MODEL    — optional, default gemini-2.0-flash (free tier)
  *
  * Tasks:
  *   extract_vin    — read VIN from field E only
@@ -34,48 +34,63 @@ export default {
       }
 
       const task = body.task || 'extract_vin';
-      const model = env.GEMINI_MODEL || 'gemini-3.6-flash';
+      const models = [
+        env.GEMINI_MODEL,
+        'gemini-2.0-flash',
+        'gemini-2.0-flash-lite',
+        'gemini-1.5-flash'
+      ].filter((m, i, a) => m && a.indexOf(m) === i);
       const prompt = buildPrompt(task, body);
       const { mime, data } = parseDataUrl(image);
 
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              { text: prompt },
-              { inline_data: { mime_type: mime, data } }
-            ]
-          }],
-          generationConfig: {
-            temperature: 0,
-            responseMimeType: 'application/json'
-          }
-        })
-      });
+      let lastError = null;
+      for (const model of models) {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                { text: prompt },
+                { inline_data: { mime_type: mime, data } }
+              ]
+            }],
+            generationConfig: {
+              temperature: 0,
+              responseMimeType: 'application/json'
+            }
+          })
+        });
 
-      const raw = await res.json().catch(() => ({}));
+        const raw = await res.json().catch(() => ({}));
 
-      if (res.status === 429) {
-        return cors(json({
-          error: 'rate_limit',
-          message: 'Gemini free tier quota exceeded. Please try again later.'
-        }, 429));
-      }
-
-      if (!res.ok) {
-        const msg = raw?.error?.message || `Gemini API error (${res.status})`;
-        if (/quota|rate|limit|resource exhausted/i.test(msg)) {
-          return cors(json({ error: 'rate_limit', message: msg }, 429));
+        if (res.status === 429) {
+          return cors(json({
+            error: 'rate_limit',
+            message: 'Gemini free tier quota exceeded. Please try again later.'
+          }, 429));
         }
-        return cors(json({ error: 'gemini_error', message: msg }, res.status));
+
+        if (!res.ok) {
+          const msg = raw?.error?.message || `Gemini API error (${res.status})`;
+          if (/quota|rate|limit|resource exhausted/i.test(msg)) {
+            return cors(json({ error: 'rate_limit', message: msg }, 429));
+          }
+          lastError = { error: 'gemini_error', message: msg, status: res.status };
+          if (res.status === 404 || /not found|unsupported/i.test(msg)) continue;
+          return cors(json({ error: lastError.error, message: lastError.message }, res.status));
+        }
+
+        const text = raw?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('') || '';
+        const parsed = parseJsonFromText(text);
+        return cors(json(normalizeResponse(parsed, task)));
       }
 
-      const text = raw?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('') || '';
-      const parsed = parseJsonFromText(text);
-      return cors(json(normalizeResponse(parsed, task)));
+      if (lastError) {
+        return cors(json({ error: lastError.error, message: lastError.message }, lastError.status || 502));
+      }
+      return cors(json({ error: 'gemini_error', message: 'No Gemini model available' }, 502));
     } catch (e) {
       return cors(json({ error: 'server', message: String(e.message || e) }, 500));
     }

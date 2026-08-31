@@ -21,6 +21,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Inject shared Gemini API key (auto AI for all users)
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: node scripts/inject-gemini-key.mjs
+
       - name: Publish docs to gh-pages branch
         uses: peaceiris/actions-gh-pages@v4
         with:

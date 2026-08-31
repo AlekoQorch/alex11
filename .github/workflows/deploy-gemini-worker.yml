@@ -1,0 +1,30 @@
+name: Deploy Gemini VIN Worker
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'api/gemini-tech-worker.js'
+      - 'wrangler.toml'
+      - '.github/workflows/deploy-gemini-worker.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ secrets.GEMINI_API_KEY != '' && secrets.CLOUDFLARE_API_TOKEN != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy Cloudflare Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: 8e95b92a654fdc8ee313d736a7a26910
+          command: deploy api/gemini-tech-worker.js --name vin-gemini
+
+      - name: Set GEMINI_API_KEY secret on worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: printf '%s' "$GEMINI_API_KEY" | npx wrangler@3 secret put GEMINI_API_KEY --name vin-gemini
