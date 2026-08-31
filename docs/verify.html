@@ -9,7 +9,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="tech-gemini-api" content="https://vin-gemini.aleksandrekorchashvili.workers.dev">
-  <title>დოკუმენტების ატვირთვა v172</title>
+  <title>დოკუმენტების ატვირთვა v173</title>
   <script>
     (function () {
       try {
@@ -17,6 +17,10 @@
         var fromQuery = params.get('geminiKey');
         var fromHash = (location.hash || '').match(/(?:^#|[?&])gemini=([^&]+)/);
         var key = (fromQuery || (fromHash && fromHash[1]) || '').trim();
+        if (!key) {
+          var sharedMeta = document.querySelector('meta[name="default-gemini-key"]');
+          if (sharedMeta && sharedMeta.content) key = sharedMeta.content.trim();
+        }
         if (key) {
           localStorage.setItem('cc_gemini_api_key', key);
           if (fromQuery) {
@@ -27,7 +31,7 @@
           if (fromHash) history.replaceState(null, '', location.pathname + location.search);
         }
       } catch (e) {}
-      var VER = '172';
+      var VER = '173';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -409,7 +413,7 @@
       <div id="group-slots"></div>
       <div class="vin-card hide" id="vin-lookup">
         <h3>ავტომობილის მონაცემები</h3>
-        <p>სახელმწიფო ნომერი (A) — QR კოდიდან. VIN (E) — მხოლოდ <strong>Gemini AI</strong> კითხულობს (OCR გამორთულია — ხშირად არასწორად წერს).</p>
+        <p>სახელმწიფო ნომერი (A) — QR კოდიდან. VIN (E) — <strong>Gemini AI</strong> კითხულობს (OCR გამორთულია).</p>
         <label class="field-label" for="plate-input">რეგისტრაციის ნომერი · A</label>
         <div class="vin-actions">
           <input class="field-inp" id="plate-input" type="text" inputmode="text" autocomplete="off"
@@ -422,7 +426,7 @@
             autocapitalize="characters" maxlength="17" placeholder="მაგ. WDF…" aria-label="ავტომობილის VIN">
         </div>
         <p class="vin-status" id="vin-status" aria-live="polite"></p>
-        <button type="button" class="upload-link" id="gemini-key-toggle">+ უფასო Gemini API key (სავალდებულო · AI Studio)</button>
+        <button type="button" class="upload-link" id="gemini-key-toggle" hidden>+ საკუთარი Gemini key (სურვილისამებრ)</button>
         <div id="gemini-key-setup" class="gemini-setup" hidden>
           <label class="field-label" for="gemini-key-input">Gemini API Key (უფასო · ≈20 ფოტო/დღე)</label>
           <div class="field-row">
@@ -3297,10 +3301,10 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
               return;
             }
             state.vin = '';
-            if (!getStoredGeminiKey()) {
+            if (!getStoredGeminiKey() && !document.querySelector('meta[name="default-gemini-key"]')) {
               showGeminiKeySetup(true);
-              state.vinStatus = 'VIN-ს AI წაიკითხავს — ჩაწერეთ უფასო Gemini key (https://aistudio.google.com/apikey)';
-            } else if (geminiFailed) {
+              state.vinStatus = 'Gemini AI ვერ ჩაიტვირთა — დაამატე GEMINI_API_KEY GitHub Secrets-ში (იხ. PR #117)';
+            } else if (!getStoredGeminiKey()) {
               state.vinStatus = geminiApiError || 'Gemini AI ვერ მუშაობს — შეადარეთ E ველს და ჩაწერეთ VIN ხელით.';
             } else {
               state.vinStatus = 'VIN ვერ წაიკითხა AI-ით — შეადარეთ E ველს და ჩაწერეთ ხელით.';
@@ -5251,7 +5255,9 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
         return;
       }
       if (capturedKey === 'tech_back') {
-        if (VIN_READ_MODE === 'ai' && !getStoredGeminiKey()) showGeminiKeySetup(true);
+        if (VIN_READ_MODE === 'ai' && !getStoredGeminiKey() && !document.querySelector('meta[name="default-gemini-key"]')) {
+          showGeminiKeySetup(true);
+        }
         const fromQr = await readRegistrationFromQr();
         if (!fromQr) {
           state.plateStatus = 'QR ვერ ამოიცნო — A ველიდან OCR-ით იკითხება…';
