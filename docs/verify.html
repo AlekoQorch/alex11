@@ -12,7 +12,7 @@
   <meta name="default-gemini-key" content="">
   <!-- gemini-key-slot -->
   <meta name="default-gemini-keys" content="">
-  <title>დოკუმენტების ატვირთვა v188</title>
+  <title>დოკუმენტების ატვირთვა v189</title>
   <script>
     (function () {
       try {
@@ -192,7 +192,7 @@
     #group-slots.multi {
       grid-template-columns: 1fr 1fr;
       grid-template-rows: none;
-      grid-auto-rows: minmax(118px, 26vw);
+      grid-auto-rows: minmax(148px, 34vw);
       align-content: start;
       overflow: auto;
       -webkit-overflow-scrolling: touch;
@@ -200,6 +200,26 @@
     }
     #group-slots.multi .slot-label { font-size: 12px; }
     #group-slots.multi .slot-tap-hint { font-size: 10px; bottom: 10px; }
+    #group-slots.multi .slot.car-slot .schematic {
+      padding: 6px 8px 30px;
+      align-items: center;
+    }
+    #group-slots.multi .slot.car-slot .schematic svg {
+      max-height: 92%;
+      width: 100%;
+      opacity: 1;
+      filter: drop-shadow(0 0 8px rgba(255,255,255,0.12));
+    }
+    .slot.car-slot::before {
+      content: '';
+      position: absolute;
+      inset: 7px 7px 34px;
+      border: 2px dashed rgba(255,255,255,0.38);
+      border-radius: 10px;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .slot.car-slot .schematic { z-index: 1; }
     .slot-block {
       min-height: 0;
       display: flex;
@@ -725,12 +745,13 @@
     function carMaskSvg(guide, opts) {
       opts = opts || {};
       const cam = !!opts.cam;
+      const slot = !!opts.slot;
       const ok = !!opts.ok;
-      const fill = ok ? 'rgba(74,222,128,0.20)' : (cam ? 'rgba(255,255,255,0.18)' : 'rgba(243,244,246,0.10)');
-      const stroke = ok ? 'rgba(187,247,208,0.98)' : (cam ? 'rgba(255,255,255,0.95)' : '#e5e7eb');
-      const glass = ok ? 'rgba(74,222,128,0.14)' : (cam ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.08)');
+      const fill = ok ? 'rgba(74,222,128,0.20)' : ((cam || slot) ? 'rgba(255,255,255,0.22)' : 'rgba(243,244,246,0.10)');
+      const stroke = ok ? 'rgba(187,247,208,0.98)' : ((cam || slot) ? 'rgba(255,255,255,0.96)' : '#e5e7eb');
+      const glass = ok ? 'rgba(74,222,128,0.14)' : ((cam || slot) ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.08)');
       const ink = stroke;
-      const sw = cam ? 3.2 : 2.4;
+      const sw = cam ? 3.2 : (slot ? 3.1 : 2.4);
       const g = guide;
       let inner = '';
 
@@ -875,12 +896,12 @@
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" width="800" height="440">${inner}</svg>`;
     }
 
-    function svgCarFront() { return carMaskSvg('car-front', { cam: false }); }
-    function svgCarRear() { return carMaskSvg('car-rear', { cam: false }); }
-    function svgCarSide(flip) { return carMaskSvg(flip ? 'car-right' : 'car-left', { cam: false }); }
-    function svgCarCorner(kind) { return carMaskSvg('car-' + kind, { cam: false }); }
-    function svgCarOdo() { return carMaskSvg('car-odo', { cam: false }); }
-    function svgCarGlass() { return carMaskSvg('car-glass', { cam: false }); }
+    function svgCarFront() { return carMaskSvg('car-front', { slot: true }); }
+    function svgCarRear() { return carMaskSvg('car-rear', { slot: true }); }
+    function svgCarSide(flip) { return carMaskSvg(flip ? 'car-right' : 'car-left', { slot: true }); }
+    function svgCarCorner(kind) { return carMaskSvg('car-' + kind, { slot: true }); }
+    function svgCarOdo() { return carMaskSvg('car-odo', { slot: true }); }
+    function svgCarGlass() { return carMaskSvg('car-glass', { slot: true }); }
 
     const _carMaskImgs = {};
     function getCarMaskImage(guide, ok) {
@@ -3873,9 +3894,11 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
       $('group-title').textContent = g.title;
       $('group-sub').textContent = g.sub;
       const isTech = g.id === 'tech';
+      const isCar = g.id === 'car';
       const slotsEl = $('group-slots');
       slotsEl.classList.toggle('multi', g.sides.length > 2);
       slotsEl.classList.toggle('tech-slots', isTech);
+      slotsEl.classList.toggle('car-slots', isCar);
       $('step-group').classList.toggle('tech-step', isTech);
       slotsEl.innerHTML = g.sides.map((s) => {
         const photo = state.photos[s.key];
@@ -3884,7 +3907,7 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
         return `
           <div class="slot-block">
             <div class="slot-label">${s.label}</div>
-            <button type="button" class="slot ${isTech ? 'tech-slot' : ''} ${showPhoto ? 'has-photo' : ''} ${processing ? 'processing' : ''}" data-capture="${s.key}" aria-label="${s.label} გადაღება">
+            <button type="button" class="slot ${isTech ? 'tech-slot' : ''} ${isCar ? 'car-slot' : ''} ${showPhoto ? 'has-photo' : ''} ${processing ? 'processing' : ''}" data-capture="${s.key}" aria-label="${s.label} გადაღება">
               ${showPhoto
                 ? `<img class="preview" src="${photo}" alt="">`
                 : `<div class="schematic">${schematicFor(s)}</div>`}
@@ -5243,30 +5266,28 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
     }
 
     function drawCarChrome(ctx, w, h, x, y, rw, rh, ok) {
-      // Soft full-screen vignette — no dashed document card
-      const grd = ctx.createRadialGradient(
-        w * 0.5, h * 0.48, Math.min(w, h) * 0.16,
-        w * 0.5, h * 0.5, Math.max(w, h) * 0.72
-      );
-      grd.addColorStop(0, 'rgba(0,0,0,0)');
-      grd.addColorStop(0.55, 'rgba(0,0,0,0.18)');
-      grd.addColorStop(1, 'rgba(0,0,0,0.58)');
-      ctx.fillStyle = grd;
+      // Dim outside capture area — clear square with car silhouette inside
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
       ctx.fillRect(0, 0, w, h);
+      ctx.clearRect(x, y, rw, rh);
 
-      // subtle guide bracket corners only
-      const col = ok ? 'rgba(74,222,128,0.85)' : 'rgba(255,255,255,0.55)';
+      const col = ok ? 'rgba(74,222,128,0.95)' : 'rgba(255,255,255,0.82)';
       ctx.strokeStyle = col;
-      ctx.lineWidth = Math.max(2.2, w * 0.004);
+      ctx.lineWidth = Math.max(2.5, w * 0.0045);
+      ctx.setLineDash([12, 8]);
+      roundRect(ctx, x, y, rw, rh, Math.min(14, rw * 0.04));
+      ctx.stroke();
+      ctx.setLineDash([]);
+
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
-      const c = Math.min(rw, rh) * 0.09;
-      const inset = 2;
+      const c = Math.min(rw, rh) * 0.11;
+      ctx.lineWidth = Math.max(3, w * 0.0055);
       [
-        [x + inset, y + inset, 1, 1],
-        [x + rw - inset, y + inset, -1, 1],
-        [x + inset, y + rh - inset, 1, -1],
-        [x + rw - inset, y + rh - inset, -1, -1]
+        [x, y, 1, 1],
+        [x + rw, y, -1, 1],
+        [x, y + rh, 1, -1],
+        [x + rw, y + rh, -1, -1]
       ].forEach(([cx, cy, sx, sy]) => {
         ctx.beginPath();
         ctx.moveTo(cx, cy + sy * c);
