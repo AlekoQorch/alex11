@@ -9,10 +9,11 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="tech-gemini-api" content="https://vin-gemini.aleksandrekorchashvili.workers.dev">
+  <meta name="submit-package-api" content="https://cc-submit.aleksandrekorchashvili.workers.dev">
   <meta name="default-gemini-key" content="">
   <!-- gemini-key-slot -->
   <meta name="default-gemini-keys" content="">
-  <title>დოკუმენტების ატვირთვა v190</title>
+  <title>დოკუმენტების ატვირთვა v191</title>
   <script>
     (function () {
       try {
@@ -515,7 +516,7 @@
 
     <section id="step-done" class="hide">
       <div class="topbar"><h1>მადლობა</h1></div>
-      <p class="sub">დოკუმენტები შენახულია ამ მოწყობილობაზე.</p>
+      <p class="sub" id="done-sub">დოკუმენტები შენახულია. ZIP გაიგზავნა მეილზე.</p>
       <div class="row-btns">
         <button class="btn" id="share-btn" type="button">გაზიარება</button>
         <button class="btn secondary" id="download-btn" type="button">გადმოწერა</button>
@@ -541,6 +542,7 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <script>
     const GROUPS = [
       {
@@ -2091,6 +2093,20 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
     })();
 
     const TECH_AI_ENABLED = !!TECH_GEMINI_API || !!TECH_VISION_API || !!getStoredGeminiKey();
+
+    const SUBMIT_PACKAGE_API = (() => {
+      try {
+        const params = new URLSearchParams(location.search);
+        const fromQuery = params.get('submitApi');
+        if (fromQuery) return fromQuery;
+        const meta = document.querySelector('meta[name="submit-package-api"]');
+        return (meta && meta.content) || '';
+      } catch (_) {
+        return '';
+      }
+    })();
+
+    const SUBMIT_TO_EMAIL = 'alex.Korchashvili@gmail.com';
 
     function createVinEvidence() {
       return {
@@ -3966,15 +3982,90 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
     }
 
     $('finish-btn').onclick = async () => {
+      $('finish-status').textContent = 'ZIP იქმნება და იგზავნება…';
+      $('finish-btn').disabled = true;
+      let zipBlob = null;
       try {
         await saveSubmission();
+        zipBlob = await buildSubmissionZip();
+        let emailNote = '';
+        if (SUBMIT_PACKAGE_API) {
+          try {
+            const sent = await submitPackageByEmail(zipBlob);
+            emailNote = `გაიგზავნა ${sent.to || SUBMIT_TO_EMAIL}-ზე`;
+            if (sent.bidcars && sent.bidcars.searchUrl) {
+              emailNote += sent.bidcars.found ? ' · bid.cars ლოტი ნაპოვნია' : ' · bid.cars ძებნა თანდართულია';
+            }
+          } catch (mailErr) {
+            console.warn('submitPackageByEmail failed', mailErr);
+            emailNote = `მეილი ვერ გაიგზავნა (${mailErr.message || mailErr}) — ZIP ჩამოიტვირთება`;
+            downloadZipBlob(zipBlob);
+          }
+        } else {
+          emailNote = 'მეილის API არ არის — ZIP ჩამოიტვირთება';
+          downloadZipBlob(zipBlob);
+        }
         $('finish-status').textContent = 'შენახულია ✓';
+        $('done-sub').textContent = emailNote || 'დოკუმენტები შენახულია.';
         show('done');
         setProgress(100);
-      } catch {
-        $('finish-status').textContent = 'შენახვა ვერ მოხერხდა';
+      } catch (err) {
+        console.error('finish failed', err);
+        if (zipBlob) downloadZipBlob(zipBlob);
+        $('finish-status').textContent = err.message || 'შენახვა ვერ მოხერხდა';
+      } finally {
+        $('finish-btn').disabled = false;
       }
     };
+
+    async function buildSubmissionZip() {
+      if (!window.JSZip) throw new Error('ZIP ბიბლიოთეკა ვერ ჩაიტვირთა');
+      const zip = new JSZip();
+      const manifest = {
+        phone: state.phone,
+        name: state.name,
+        plate: state.plate,
+        vin: state.vin,
+        techExtracted: state.techExtracted,
+        at: new Date().toISOString()
+      };
+      zip.file('manifest.json', JSON.stringify(manifest, null, 2));
+      for (const [key, dataUrl] of Object.entries(state.photos)) {
+        if (!dataUrl) continue;
+        zip.file(`${key}.jpg`, dataUrlToFile(dataUrl, `${key}.jpg`));
+      }
+      return zip.generateAsync({
+        type: 'blob',
+        compression: 'DEFLATE',
+        compressionOptions: { level: 6 }
+      });
+    }
+
+    function downloadZipBlob(blob) {
+      const stamp = (state.phone || 'docs').replace(/\s/g, '');
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `documents_${stamp}_${Date.now()}.zip`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    }
+
+    async function submitPackageByEmail(zipBlob) {
+      const fd = new FormData();
+      const stamp = (state.phone || 'docs').replace(/\s/g, '');
+      fd.append('zip', zipBlob, `documents_${stamp}_${Date.now()}.zip`);
+      fd.append('meta', JSON.stringify({
+        phone: state.phone,
+        name: state.name,
+        plate: state.plate,
+        vin: state.vin,
+        at: new Date().toISOString()
+      }));
+      const res = await fetch(SUBMIT_PACKAGE_API, { method: 'POST', body: fd });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || data.error || `HTTP ${res.status}`);
+      return data;
+    }
 
     async function saveSubmission() {
       if (state.photos.tech_front && state.photos.tech_back && !state.techDataConfirmed) {
@@ -4037,15 +4128,21 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
       } catch {}
     };
 
-    $('download-btn').onclick = () => {
-      Object.entries(state.photos).forEach(([k, v], i) => {
-        setTimeout(() => {
-          const a = document.createElement('a');
-          a.href = v;
-          a.download = `${(state.phone || 'docs').replace(/\s/g, '')}_${k}.jpg`;
-          a.click();
-        }, i * 250);
-      });
+    $('download-btn').onclick = async () => {
+      try {
+        const zipBlob = await buildSubmissionZip();
+        downloadZipBlob(zipBlob);
+      } catch (err) {
+        console.error('zip download failed', err);
+        Object.entries(state.photos).forEach(([k, v], i) => {
+          setTimeout(() => {
+            const a = document.createElement('a');
+            a.href = v;
+            a.download = `${(state.phone || 'docs').replace(/\s/g, '')}_${k}.jpg`;
+            a.click();
+          }, i * 250);
+        });
+      }
     };
 
     function isCarCapture() {

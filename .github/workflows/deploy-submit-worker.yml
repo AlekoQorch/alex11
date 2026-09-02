@@ -1,0 +1,31 @@
+name: Deploy Submit Package Worker
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'api/submit-package-worker.js'
+      - 'wrangler-submit.toml'
+      - '.github/workflows/deploy-submit-worker.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && secrets.RESEND_API_KEY != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy Cloudflare Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: 8e95b92a654fdc8ee313d736a7a26910
+          wranglerVersion: '3'
+          command: deploy --config wrangler-submit.toml
+
+      - name: Set RESEND_API_KEY secret on worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        run: printf '%s' "$RESEND_API_KEY" | npx wrangler@3 secret put RESEND_API_KEY --config wrangler-submit.toml
