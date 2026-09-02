@@ -12,8 +12,16 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Verify required secrets
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::GitHub Secret CLOUDFLARE_API_TOKEN არ არის (Settings → Secrets → Actions)"; exit 1; }
+          test -n "$RESEND_API_KEY" || { echo "::error::GitHub Secret RESEND_API_KEY არ არის"; exit 1; }
 
       - name: Deploy Cloudflare Worker
         uses: cloudflare/wrangler-action@v3
@@ -24,7 +32,4 @@ jobs:
           command: deploy --config wrangler-submit.toml
 
       - name: Set RESEND_API_KEY secret on worker
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
         run: printf '%s' "$RESEND_API_KEY" | npx wrangler@3 secret put RESEND_API_KEY --config wrangler-submit.toml
