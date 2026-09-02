@@ -7,7 +7,7 @@ on:
       - 'api/submit-package-worker.js'
       - 'wrangler-submit.toml'
       - '.github/workflows/deploy-submit-worker.yml'
-  workflow_dispatch:
+  workflow_dispatch: # manual redeploy after secrets configured
 
 jobs:
   deploy:
