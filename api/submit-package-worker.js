@@ -5,7 +5,7 @@
  *   RESEND_API_KEY     — https://resend.com/api-keys
  *
  * Vars:
- *   SUBMIT_TO_EMAIL    — default alex.Korchashvili@gmail.com
+ *   SUBMIT_TO_EMAIL    — default alex.korchashvili@gmail.com (must match Resend account email in test mode)
  *   SUBMIT_FROM_EMAIL  — verified sender in Resend (e.g. onboarding@resend.dev)
  */
 export default {
@@ -38,7 +38,8 @@ export default {
       } catch (_) {}
 
       const vin = String(meta.vin || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 17);
-      const toEmail = (env.SUBMIT_TO_EMAIL || 'alex.Korchashvili@gmail.com').trim();
+      // Resend test mode (onboarding@resend.dev) only allows the account email — match exactly (lowercase).
+      const toEmail = (env.SUBMIT_TO_EMAIL || 'alex.korchashvili@gmail.com').trim().toLowerCase();
       const fromEmail = (env.SUBMIT_FROM_EMAIL || 'onboarding@resend.dev').trim();
       const zipBytes = new Uint8Array(await zipFile.arrayBuffer());
       const zipB64 = bytesToBase64(zipBytes);
