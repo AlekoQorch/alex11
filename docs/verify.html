@@ -13,7 +13,7 @@
   <meta name="default-gemini-key" content="">
   <!-- gemini-key-slot -->
   <meta name="default-gemini-keys" content="">
-  <title>დოკუმენტების ატვირთვა v191</title>
+  <title>დოკუმენტების ატვირთვა v193</title>
   <script>
     (function () {
       try {
@@ -39,7 +39,7 @@
           if (fromHash) history.replaceState(null, '', location.pathname + location.search);
         }
       } catch (e) {}
-      var VER = '187';
+      var VER = '193';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -1839,7 +1839,7 @@
       'gemini-3.5-flash-lite',
       'gemini-3.6-flash'
     ];
-    const GEMINI_FETCH_TIMEOUT_MS = 12000;
+    const GEMINI_FETCH_TIMEOUT_MS = 8000;
 
     function isDailyGeminiQuota(raw, message) {
       const blob = JSON.stringify(raw || {}) + String(message || '');
@@ -1881,8 +1881,7 @@
     function getGeminiApiKeys() {
       const keys = [];
       try {
-        const stored = (localStorage.getItem(GEMINI_KEY_STORAGE) || '').trim();
-        if (stored) keys.push(stored);
+        // Injected keys first so all 3 rotate even if localStorage has a stale key.
         const listMeta = document.querySelector('meta[name="default-gemini-keys"]');
         if (listMeta && listMeta.content) {
           listMeta.content.split(/[,;\s]+/).forEach((part) => {
@@ -1892,6 +1891,8 @@
         }
         const singleMeta = document.querySelector('meta[name="default-gemini-key"]');
         if (singleMeta && singleMeta.content) keys.push(singleMeta.content.trim());
+        const stored = (localStorage.getItem(GEMINI_KEY_STORAGE) || '').trim();
+        if (stored) keys.push(stored);
       } catch (_) {}
       return [...new Set(keys.filter(Boolean))];
     }
@@ -1989,6 +1990,81 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
       return out;
     }
 
+    async function callGeminiOnce(apiKey, model, dataUrlMatch, prompt, task) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
+      const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      const timeoutId = controller ? setTimeout(() => controller.abort(), GEMINI_FETCH_TIMEOUT_MS) : null;
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller ? controller.signal : undefined,
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                { text: prompt },
+                { inline_data: { mime_type: dataUrlMatch[1], data: dataUrlMatch[2] } }
+              ]
+            }],
+            generationConfig: { temperature: 0, responseMimeType: 'application/json', maxOutputTokens: 128 }
+          })
+        });
+        if (timeoutId) clearTimeout(timeoutId);
+        const raw = await res.json().catch(() => ({}));
+        const msg = raw?.error?.message || '';
+        const kind = classifyGeminiErrorMessage(msg || String(res.status));
+        if (res.status === 429 || kind === 'rate_limit') {
+          return {
+            error: 'rate_limit',
+            message: geminiErrorUserMessage('rate_limit', msg, raw),
+            kind: 'rate_limit',
+            daily: isDailyGeminiQuota(raw, msg)
+          };
+        }
+        if (!res.ok) {
+          return {
+            error: kind === 'overloaded' ? 'overloaded' : (kind === 'auth' ? 'auth' : 'gemini_error'),
+            message: geminiErrorUserMessage(kind, msg, raw),
+            kind
+          };
+        }
+        const text = raw?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('') || '';
+        return parseVisionVinResponse(normalizeGeminiApiPayload(parseGeminiJsonFromText(text), task || 'extract_tech'));
+      } catch (_) {
+        if (timeoutId) clearTimeout(timeoutId);
+        return { error: 'timeout', message: 'Gemini ნელია — OCR-ით იკითხება…', kind: 'timeout' };
+      }
+    }
+
+    function raceGeminiKeys(apiKeys, model, match, prompt, task) {
+      return new Promise((resolve) => {
+        let remaining = apiKeys.length;
+        let lastError = null;
+        let bestPartial = null;
+        let settled = false;
+        if (!remaining) {
+          resolve({ result: null, error: { error: 'config', message: 'Gemini API key არ არის შენახული' } });
+          return;
+        }
+        apiKeys.forEach(async (apiKey) => {
+          const parsed = await callGeminiOnce(apiKey, model, match, prompt, task);
+          if (settled) return;
+          if (parsed && !parsed.error && parsed.vin && isGeminiVinUsable(parsed)) {
+            settled = true;
+            resolve({ result: parsed, error: null });
+            return;
+          }
+          if (parsed && !parsed.error && parsed.vin && !bestPartial) bestPartial = parsed;
+          if (parsed && parsed.error) lastError = parsed;
+          remaining -= 1;
+          if (remaining <= 0) {
+            settled = true;
+            resolve({ result: bestPartial, error: lastError });
+          }
+        });
+      });
+    }
+
     async function callGeminiDirect(dataUrl, task, extra) {
       const apiKeys = getGeminiApiKeys();
       if (!apiKeys.length) return { error: 'config', message: 'Gemini API key არ არის შენახული' };
@@ -1997,70 +2073,16 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
       const prompt = buildGeminiPrompt(task || 'extract_tech', extra || {});
       const models = GEMINI_FALLBACK_MODELS;
       let lastError = null;
-      for (let k = 0; k < apiKeys.length; k++) {
-        const apiKey = apiKeys[k];
-        for (let m = 0; m < models.length; m++) {
-          for (let attempt = 0; attempt < 2; attempt++) {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${models[m]}:generateContent?key=${encodeURIComponent(apiKey)}`;
-            const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
-            const timeoutId = controller ? setTimeout(() => controller.abort(), GEMINI_FETCH_TIMEOUT_MS) : null;
-            let res;
-            try {
-              res = await fetch(url, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              signal: controller ? controller.signal : undefined,
-              body: JSON.stringify({
-                contents: [{
-                  parts: [
-                    { text: prompt },
-                    { inline_data: { mime_type: match[1], data: match[2] } }
-                  ]
-                }],
-                generationConfig: { temperature: 0, responseMimeType: 'application/json', maxOutputTokens: 128 }
-              })
-            });
-            } catch (fetchErr) {
-              if (timeoutId) clearTimeout(timeoutId);
-              lastError = { error: 'timeout', message: 'Gemini ნელია — სცადე თავიდან ან OCR…', kind: 'timeout' };
-              break;
-            }
-            if (timeoutId) clearTimeout(timeoutId);
-            const raw = await res.json().catch(() => ({}));
-            const msg = raw?.error?.message || '';
-            const kind = classifyGeminiErrorMessage(msg || String(res.status));
-            if (res.status === 429 || kind === 'rate_limit') {
-              lastError = {
-                error: 'rate_limit',
-                message: geminiErrorUserMessage('rate_limit', msg, raw),
-                kind: 'rate_limit',
-                daily: isDailyGeminiQuota(raw, msg)
-              };
-              const retryMs = parseGeminiRetryMs(msg);
-              if (retryMs && attempt < 2 && !lastError.daily) {
-                await sleepMs(retryMs);
-                continue;
-              }
-              break;
-            }
-            if (!res.ok) {
-              lastError = { error: kind === 'overloaded' ? 'overloaded' : 'gemini_error', message: geminiErrorUserMessage(kind, msg, raw), kind };
-              if (kind === 'overloaded' && attempt < 2) {
-                await sleepMs(1200 * (attempt + 1));
-                continue;
-              }
-              if (kind === 'overloaded' && m < models.length - 1) break;
-              if (kind === 'auth') return lastError;
-              break;
-            }
-            const text = raw?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('') || '';
-            const parsed = parseVisionVinResponse(normalizeGeminiApiPayload(parseGeminiJsonFromText(text), task || 'extract_tech'));
-            if (parsed && parsed.vin && isGeminiVinUsable(parsed)) return parsed;
-            if (parsed && parsed.vin) lastError = null;
-            return parsed;
-          }
-        }
+      let bestPartial = null;
+
+      // Race all keys in parallel per model — first usable VIN returns immediately.
+      for (let m = 0; m < models.length; m++) {
+        const raced = await raceGeminiKeys(apiKeys, models[m], match, prompt, task);
+        if (raced.result && isGeminiVinUsable(raced.result)) return raced.result;
+        if (raced.result && raced.result.vin && !bestPartial) bestPartial = raced.result;
+        if (raced.error) lastError = raced.error;
       }
+      if (bestPartial && bestPartial.vin) return bestPartial;
       return lastError || { error: 'gemini_error', message: 'Gemini API error' };
     }
 
@@ -2688,7 +2710,9 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
         if (gen !== vinReadGen) return { best, geminiFailed, geminiApiError, rateLimited: false };
         full = await readVinViaVision(vinCrop, task, null, true);
         if (gen !== vinReadGen) return { best, geminiFailed, geminiApiError, rateLimited: false };
-        if (!full || full.error || !isGeminiVinUsable(full)) {
+        // Skip full-image retry on hard API failures (timeout/quota) — go straight to next step.
+        const hardFail = full && (full.error === 'timeout' || full.error === 'rate_limit' || full.error === 'auth' || full.error === 'config');
+        if (!hardFail && (!full || full.error || !isGeminiVinUsable(full))) {
           const preparedFull = await preparePhotoForGemini(photo);
           if (gen !== vinReadGen) return { best, geminiFailed, geminiApiError, rateLimited: false };
           const retry = await readVinViaVision(preparedFull, task, null, true);
@@ -3247,12 +3271,21 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
 
     function isGeminiVinUsable(geminiResult) {
       if (!geminiResult || geminiResult.error || !geminiResult.vin) return false;
-      const vin = normalizeVinWmiPrefix(geminiResult.vin);
+      let vin = normalizeVinWmiPrefix(geminiResult.vin);
       if (!vin || vin === 'VIN_NOT_CONFIDENT') return false;
       if (!isValidVinFormat(vin) || !serialSectionValid(vin) || !isPlausibleVinStructure(vin)) return false;
-      if (!vinHasValidCheckDigit(vin)) return false;
+      if (!vinHasValidCheckDigit(vin)) {
+        const repaired = repairVinByCheckDigit(vin);
+        if (repaired && vinHasValidCheckDigit(repaired)) {
+          geminiResult.vin = repaired;
+          vin = repaired;
+        }
+      }
       if (geminiResult.readable === false) return false;
-      return geminiConfidenceScore(geminiResult) >= 0.4;
+      const score = geminiConfidenceScore(geminiResult);
+      // Prefer Gemini over slow OCR: accept format-valid high-confidence VIN even if check digit is off.
+      if (vinHasValidCheckDigit(vin)) return score >= 0.35;
+      return score >= 0.7;
     }
     function isGeminiVinTrusted(geminiResult) {
       if (!isGeminiVinUsable(geminiResult)) return false;
@@ -3305,7 +3338,6 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
         let layoutLines = [];
         let dynamicRegions = [];
 
-        const ocrPreload = VIN_READ_MODE === 'ai' ? loadOcrLibrary().catch(() => null) : null;
         if (TECH_AI_ENABLED) {
           const multi = await runGeminiVinRead(photo, evidence, gen);
           if (gen !== vinReadGen) return;
@@ -3317,6 +3349,11 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
             const result = finalizeAiOnlyVin(evidence, geminiResult);
             if (result.vin && isGeminiVinUsable(geminiResult)) {
               applyVinReadResult(result, evidence, geminiApiError, gen, geminiFailed);
+              return;
+            }
+            // Accept format-valid Gemini VIN even when check-digit is imperfect — avoid OCR lag.
+            if (result.vin && isValidVinFormat(result.vin) && serialSectionValid(result.vin)) {
+              applyVinReadResult(result, evidence, geminiApiError, gen, false);
               return;
             }
             if (!getStoredGeminiKey() && !document.querySelector('meta[name="default-gemini-key"]') && !document.querySelector('meta[name="default-gemini-keys"]')) {
@@ -3351,7 +3388,7 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
 
         let Tesseract;
         try {
-          Tesseract = (ocrPreload ? await ocrPreload : null) || await loadOcrLibrary();
+          Tesseract = await loadOcrLibrary();
         } catch (loadErr) {
           console.error('loadOcrLibrary failed', loadErr);
           if (gen === vinReadGen) {
@@ -4018,6 +4055,23 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
       }
     };
 
+    async function buildInnerPhotoZip(fileKeys) {
+      const inner = new JSZip();
+      let count = 0;
+      for (const key of fileKeys) {
+        const dataUrl = state.photos[key];
+        if (!dataUrl) continue;
+        inner.file(`${key}.jpg`, dataUrlToFile(dataUrl, `${key}.jpg`));
+        count += 1;
+      }
+      if (!count) return null;
+      return inner.generateAsync({
+        type: 'blob',
+        compression: 'DEFLATE',
+        compressionOptions: { level: 6 }
+      });
+    }
+
     async function buildSubmissionZip() {
       if (!window.JSZip) throw new Error('ZIP ბიბლიოთეკა ვერ ჩაიტვირთა');
       const zip = new JSZip();
@@ -4027,13 +4081,38 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
         plate: state.plate,
         vin: state.vin,
         techExtracted: state.techExtracted,
-        at: new Date().toISOString()
+        at: new Date().toISOString(),
+        packages: {
+          piradoba: ['id_front', 'id_back'],
+          martvis_motsmoba: ['license_front', 'license_back'],
+          tekpasporti: ['tech_front', 'tech_back'],
+          manqanis_fotoebi: GROUPS.find((g) => g.id === 'car')?.sides.map((s) => s.key) || []
+        }
       };
       zip.file('manifest.json', JSON.stringify(manifest, null, 2));
-      for (const [key, dataUrl] of Object.entries(state.photos)) {
-        if (!dataUrl) continue;
-        zip.file(`${key}.jpg`, dataUrlToFile(dataUrl, `${key}.jpg`));
+
+      const packages = [
+        { name: '01_piradoba.zip', keys: ['id_front', 'id_back'] },
+        { name: '02_martvis_motsmoba.zip', keys: ['license_front', 'license_back'] },
+        { name: '03_tekpasporti.zip', keys: ['tech_front', 'tech_back'] },
+        {
+          name: '04_manqanis_fotoebi.zip',
+          keys: (GROUPS.find((g) => g.id === 'car')?.sides || []).map((s) => s.key)
+        }
+      ];
+
+      for (const pkg of packages) {
+        const blob = await buildInnerPhotoZip(pkg.keys);
+        if (blob) zip.file(pkg.name, blob);
       }
+
+      // Any unexpected photos not covered by packages (safety net).
+      const covered = new Set(packages.flatMap((p) => p.keys));
+      for (const [key, dataUrl] of Object.entries(state.photos)) {
+        if (!dataUrl || covered.has(key)) continue;
+        zip.file(`other/${key}.jpg`, dataUrlToFile(dataUrl, `${key}.jpg`));
+      }
+
       return zip.generateAsync({
         type: 'blob',
         compression: 'DEFLATE',
