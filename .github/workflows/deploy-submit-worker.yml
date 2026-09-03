@@ -33,3 +33,5 @@ jobs:
 
       - name: Set RESEND_API_KEY secret on worker
         run: printf '%s' "$RESEND_API_KEY" | npx wrangler@3 secret put RESEND_API_KEY --config wrangler-submit.toml
+
+# redeploy after CLOUDFLARE_API_TOKEN
