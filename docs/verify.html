@@ -13,7 +13,7 @@
   <meta name="default-gemini-key" content="">
   <!-- gemini-key-slot -->
   <meta name="default-gemini-keys" content="">
-  <title>დოკუმენტების ატვირთვა v211</title>
+  <title>დოკუმენტების ატვირთვა v212</title>
   <script>
     (function () {
       try {
@@ -39,7 +39,7 @@
           if (fromHash) history.replaceState(null, '', location.pathname + location.search);
         }
       } catch (e) {}
-      var VER = '211';
+      var VER = '212';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -267,10 +267,10 @@
       flex-shrink: 0;
     }
     #step-intro .card {
-      /* slightly above true center */
-      margin-top: auto;
-      margin-bottom: auto;
-      transform: translateY(-62vh);
+      /* real layout gap under title — transform was clipped by overflow:hidden */
+      margin-top: 12vh;
+      margin-bottom: 0;
+      transform: none;
       width: 100%;
     }
     #step-group.tech-step {
