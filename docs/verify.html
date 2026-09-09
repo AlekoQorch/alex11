@@ -13,7 +13,7 @@
   <meta name="default-gemini-key" content="">
   <!-- gemini-key-slot -->
   <meta name="default-gemini-keys" content="">
-  <title>დოკუმენტების ატვირთვა v212</title>
+  <title>დოკუმენტების ატვირთვა v213</title>
   <script>
     (function () {
       try {
@@ -39,7 +39,7 @@
           if (fromHash) history.replaceState(null, '', location.pathname + location.search);
         }
       } catch (e) {}
-      var VER = '212';
+      var VER = '213';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -72,18 +72,18 @@
       --bg1: #ffffff;
       --paper: #ffffff;
       --surface: rgba(255,255,255,.92);
-      --ink: #132b2c;
-      --ink-soft: #2a4544;
+      --ink: #1a3d3a;
+      --ink-soft: #3a5f5c;
       --dim: #5e7473;
       --line: rgba(19,43,44,.10);
       --line-strong: rgba(19,43,44,.16);
-      --green: #163c3a;
-      --green-mid: #1f5551;
-      --green-soft: #d7ebe7;
+      --green: #2f7a72;
+      --green-mid: #3a8f85;
+      --green-soft: #e5f5f1;
       --accent: #1f5551;
       --accent-ink: #f7fffd;
       --danger: #c43c3c;
-      --ok: #1d7a4c;
+      --ok: #2f9a64;
       --shadow: 0 14px 36px rgba(19,43,44,.08);
       --radius: 20px;
       --radius-sm: 14px;
@@ -121,7 +121,7 @@
     }
     .progress > i {
       display: block; height: 100%; width: 0;
-      background: linear-gradient(90deg, #1a4a47, var(--green-mid));
+      background: linear-gradient(90deg, #3a8f85, #5bb5aa);
       border-radius: inherit;
       transition: width .35s var(--ease);
     }
