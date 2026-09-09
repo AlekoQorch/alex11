@@ -13,7 +13,7 @@
   <meta name="default-gemini-key" content="">
   <!-- gemini-key-slot -->
   <meta name="default-gemini-keys" content="">
-  <title>დოკუმენტების ატვირთვა v200</title>
+  <title>დოკუმენტების ატვირთვა v201</title>
   <script>
     (function () {
       try {
@@ -39,7 +39,7 @@
           if (fromHash) history.replaceState(null, '', location.pathname + location.search);
         }
       } catch (e) {}
-      var VER = '200';
+      var VER = '201';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -180,21 +180,6 @@
       font-size: .95rem;
       max-width: 30ch;
       line-height: 1.45;
-    }
-    .step-dots {
-      display: flex;
-      gap: 6px;
-      margin: 2px 0 16px;
-      flex-wrap: wrap;
-    }
-    .step-dots span {
-      font-size: .72rem;
-      font-weight: 600;
-      color: var(--green-mid);
-      padding: 5px 9px;
-      border-radius: 999px;
-      border: 1px solid rgba(31,85,81,.14);
-      background: rgba(215,235,231,.65);
     }
     .card, .vin-card {
       background: var(--paper);
@@ -649,13 +634,7 @@
     <section id="step-intro">
       <div class="brand-hero">
         <h1>დოკუმენტების ატვირთვა</h1>
-        <p>ოთხი მარტივი ნაბიჯი — პირადობა, მოწმობა, ტექპასპორტი და მანქანის ფოტოები.</p>
-      </div>
-      <div class="step-dots" aria-hidden="true">
-        <span>1 · პირადობა</span>
-        <span>2 · მოწმობა</span>
-        <span>3 · ტექპასპორტი</span>
-        <span>4 · მანქანა</span>
+        <p>გთხოვთ შეიყვანოთ თქვენი ნომერი და სახელი და გვარი</p>
       </div>
       <div class="card">
         <label class="field-label" for="phone">ტელეფონის ნომერი</label>
