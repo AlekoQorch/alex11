@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="theme-color" content="#f4f7f5">
+  <meta name="theme-color" content="#ffffff">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
@@ -13,7 +13,7 @@
   <meta name="default-gemini-key" content="">
   <!-- gemini-key-slot -->
   <meta name="default-gemini-keys" content="">
-  <title>დოკუმენტების ატვირთვა v199</title>
+  <title>დოკუმენტების ატვირთვა v200</title>
   <script>
     (function () {
       try {
@@ -39,7 +39,7 @@
           if (fromHash) history.replaceState(null, '', location.pathname + location.search);
         }
       } catch (e) {}
-      var VER = '199';
+      var VER = '200';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -68,8 +68,8 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     :root {
-      --bg0: #f3f6f4;
-      --bg1: #eef3f0;
+      --bg0: #ffffff;
+      --bg1: #ffffff;
       --paper: #ffffff;
       --surface: rgba(255,255,255,.92);
       --ink: #132b2c;
@@ -97,20 +97,7 @@
       color: var(--ink);
       min-height: 100dvh;
       line-height: 1.45;
-      background:
-        radial-gradient(900px 520px at 8% -8%, rgba(31,85,81,.10), transparent 55%),
-        radial-gradient(800px 480px at 100% 0%, rgba(31,85,81,.10), transparent 50%),
-        linear-gradient(180deg, var(--bg0), var(--bg1));
-      background-attachment: fixed;
-    }
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      opacity: .035;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-      z-index: 0;
+      background: #ffffff;
     }
     .app {
       position: relative;
@@ -229,7 +216,7 @@
     .field-label:first-child { margin-top: 0; }
     .field-inp {
       width: 100%;
-      background: #f7faf8;
+      background: #ffffff;
       border: 1px solid var(--line-strong);
       border-radius: var(--radius-sm);
       color: var(--ink);
@@ -374,7 +361,7 @@
       position: relative;
       border: 1.5px dashed rgba(31,85,81,.28);
       border-radius: var(--radius-sm);
-      background: linear-gradient(180deg, #fbfdfc, #f1f7f5);
+      background: #ffffff;
       overflow: hidden;
       flex: 1;
       min-height: 0;
@@ -492,7 +479,7 @@
       padding: 12px;
       border: 1px solid var(--line);
       border-radius: var(--radius-sm);
-      background: #f7faf8;
+      background: #ffffff;
     }
     .btn-secondary {
       margin-top: 8px;
