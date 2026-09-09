@@ -13,7 +13,7 @@
   <meta name="default-gemini-key" content="">
   <!-- gemini-key-slot -->
   <meta name="default-gemini-keys" content="">
-  <title>დოკუმენტების ატვირთვა v196</title>
+  <title>დოკუმენტების ატვირთვა v197</title>
   <script>
     (function () {
       try {
@@ -39,7 +39,7 @@
           if (fromHash) history.replaceState(null, '', location.pathname + location.search);
         }
       } catch (e) {}
-      var VER = '196';
+      var VER = '197';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -83,8 +83,8 @@
       --green: #163c3a;
       --green-mid: #1f5551;
       --green-soft: #d7ebe7;
-      --yellow: #f5f000;
-      --yellow-ink: #1a2200;
+      --accent: #1f5551;
+      --accent-ink: #f7fffd;
       --danger: #c43c3c;
       --ok: #1d7a4c;
       --shadow: 0 14px 36px rgba(19,43,44,.08);
@@ -101,7 +101,7 @@
       min-height: 100dvh;
       line-height: 1.45;
       background:
-        radial-gradient(900px 520px at 8% -8%, rgba(245,240,0,.18), transparent 55%),
+        radial-gradient(900px 520px at 8% -8%, rgba(31,85,81,.10), transparent 55%),
         radial-gradient(800px 480px at 100% 0%, rgba(31,85,81,.10), transparent 50%),
         linear-gradient(180deg, var(--bg0), var(--bg1));
       background-attachment: fixed;
@@ -137,7 +137,7 @@
     }
     .progress > i {
       display: block; height: 100%; width: 0;
-      background: linear-gradient(90deg, var(--green-mid), var(--yellow));
+      background: linear-gradient(90deg, #1a4a47, var(--green-mid));
       border-radius: inherit;
       transition: width .35s var(--ease);
     }
@@ -184,15 +184,13 @@
       margin: 4px 0 16px;
       animation: rise .55s var(--ease) both;
     }
-    .brand-logo {
-      width: min(168px, 46vw);
-      height: auto;
-      display: block;
-      filter: drop-shadow(0 8px 18px rgba(19,43,44,.12));
-      animation: rise .6s var(--ease) both;
-    }
     .brand-mark {
-      display: none;
+      font-family: var(--display);
+      font-size: clamp(1.9rem, 7vw, 2.35rem);
+      font-weight: 700;
+      letter-spacing: -.02em;
+      line-height: 1.1;
+      color: var(--green);
     }
     .brand-hero h1 {
       font-family: var(--display);
@@ -285,9 +283,9 @@
       box-shadow: none;
     }
     .btn.green {
-      background: linear-gradient(180deg, #ffe84a, var(--yellow));
-      color: var(--yellow-ink);
-      box-shadow: 0 10px 22px rgba(245,240,0,.28);
+      background: var(--green-mid);
+      color: #f7fffd;
+      box-shadow: 0 10px 22px rgba(19,43,44,.16);
     }
     .row-btns { display: flex; gap: 10px; margin-top: 14px; }
     .row-btns .btn { flex: 1; }
@@ -482,9 +480,9 @@
       border: 1px solid rgba(31,85,81,.12);
     }
     .slot.has-photo .slot-tap-hint {
-      color: var(--ink);
-      background: rgba(245,240,0,.85);
-      border-color: rgba(245,240,0,.4);
+      color: #f7fffd;
+      background: var(--green-mid);
+      border-color: rgba(31,85,81,.35);
     }
     #step-group.tech-step .vin-card,
     #step-group.tech-step #group-next { flex-shrink: 0; }
@@ -577,7 +575,7 @@
       margin: 18px 0 10px;
       animation: rise .55s var(--ease) both;
     }
-    .done-hero .brand-logo { width: min(140px, 40vw); }
+    
     .done-hero h1 {
       font-family: var(--display);
       font-size: 1.6rem;
@@ -635,7 +633,7 @@
         margin-top: 0; width: 92px; height: 52px;
       }
     }
-    .take.ready { background: var(--yellow); color: var(--yellow-ink); }
+    .take.ready { background: var(--green-mid); color: #f7fffd; }
     .cam-stage { flex: 1; position: relative; overflow: hidden; background: #000; }
     .cam-stage video, .cam-stage canvas.guide {
       position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
@@ -649,10 +647,10 @@
     .take {
       width: min(100%, 360px);
       border: none; border-radius: 16px; padding: 16px;
-      background: linear-gradient(180deg, #ffe84a, var(--yellow));
-      color: var(--yellow-ink); font-size: 1.05rem; font-weight: 800;
+      background: var(--green);
+      color: #f7fffd; font-size: 1.05rem; font-weight: 800;
       font-family: inherit;
-      box-shadow: 0 12px 28px rgba(245,240,0,.28);
+      box-shadow: 0 12px 28px rgba(19,43,44,.22);
     }
     .upload-link {
       border: none; background: transparent; color: rgba(255,255,255,.82);
@@ -674,7 +672,6 @@
 
     <section id="step-intro">
       <div class="brand-hero">
-        <img class="brand-logo" src="brand/logo.png" width="168" height="72" alt="ალექსი">
         <h1>დოკუმენტების ატვირთვა</h1>
         <p>ოთხი მარტივი ნაბიჯი — პირადობა, მოწმობა, ტექპასპორტი და მანქანის ფოტოები.</p>
       </div>
@@ -749,7 +746,6 @@
 
     <section id="step-done" class="hide">
       <div class="done-hero">
-        <img class="brand-logo" src="brand/logo.png" width="140" height="60" alt="ალექსი">
         <h1>მადლობა</h1>
         <p id="done-sub">დოკუმენტები შენახულია. ZIP გაიგზავნა მეილზე.</p>
       </div>
