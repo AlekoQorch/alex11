@@ -13,7 +13,7 @@
   <meta name="default-gemini-key" content="">
   <!-- gemini-key-slot -->
   <meta name="default-gemini-keys" content="">
-  <title>დოკუმენტების ატვირთვა v218</title>
+  <title>დოკუმენტების ატვირთვა v219</title>
   <script>
     (function () {
       try {
@@ -4743,13 +4743,13 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
       } else {
         const ratio = isTech ? 0.58 : 0.63;
         if (landscape) {
-          const topChrome = h * 0.18;
-          const botChrome = h * 0.06;
-          const leftChrome = w * 0.04;
-          const rightChrome = w * 0.11;
+          const topChrome = h * 0.26;
+          const botChrome = h * 0.08;
+          const leftChrome = w * 0.05;
+          const rightChrome = w * 0.14;
           const maxW = Math.max(1, w - leftChrome - rightChrome);
           const maxH = Math.max(1, h - topChrome - botChrome);
-          rw = Math.min(maxW * 0.96, maxH / ratio);
+          rw = Math.min(maxW * 0.88, maxH / ratio);
           rh = rw * ratio;
           if (rh > maxH) {
             rh = maxH;
@@ -4771,10 +4771,10 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
 
     function carOverlayRect(w, h) {
       const landscape = w > h;
-      const topPad = h * (landscape ? 0.16 : 0.11);
-      const botPad = h * (landscape ? 0.08 : 0.07);
-      const sidePadL = w * (landscape ? 0.03 : 0.03);
-      const sidePadR = w * (landscape ? 0.12 : 0.03);
+      const topPad = h * (landscape ? 0.22 : 0.11);
+      const botPad = h * (landscape ? 0.10 : 0.07);
+      const sidePadL = w * (landscape ? 0.04 : 0.03);
+      const sidePadR = w * (landscape ? 0.14 : 0.03);
       return {
         x: sidePadL,
         y: topPad,
