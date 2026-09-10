@@ -621,26 +621,28 @@
     }
     /* Landscape: thin top chrome + right shutter — keep text out of the frame */
     @media (orientation: landscape) {
-      .cam-top {
+      .cam-overlay .cam-top {
         left: 0;
         right: 68px;
         top: 0;
         bottom: auto;
         max-width: none;
+        max-height: 22%;
         display: flex;
         flex-wrap: wrap;
         align-items: center;
         gap: 4px 8px;
         padding: calc(6px + env(safe-area-inset-top)) 8px 6px max(8px, env(safe-area-inset-left));
         background: linear-gradient(180deg, rgba(0,0,0,.7) 0%, rgba(0,0,0,.35) 70%, transparent);
+        overflow: hidden;
       }
-      .cam-top .close {
+      .cam-overlay .cam-top .close {
         margin-bottom: 0;
         min-height: 28px;
         padding: 5px 10px;
         font-size: .78rem;
       }
-      .cam-top h3 {
+      .cam-overlay .cam-top h3 {
         flex: 1 1 auto;
         min-width: 0;
         font-size: .78rem;
@@ -651,19 +653,8 @@
         overflow: hidden;
         text-overflow: ellipsis;
       }
-      .cam-top p {
-        display: none;
-        width: 100%;
-        font-size: .68rem;
-        max-width: none;
-        margin-top: 0;
-        line-height: 1.25;
-      }
-      .cam-top p.ok {
-        display: block;
-        -webkit-line-clamp: unset;
-      }
-      .cam-bottom {
+      .cam-overlay .cam-top p { display: none !important; }
+      .cam-overlay .cam-bottom {
         left: auto;
         right: 0;
         top: 0;
@@ -676,7 +667,7 @@
         gap: 12px;
         background: linear-gradient(270deg, rgba(0,0,0,.5), transparent);
       }
-      .take,
+      .cam-overlay .take,
       .cam-overlay.car-mode .take {
         width: 44px;
         height: 44px;
@@ -689,7 +680,7 @@
         border: 2.5px solid rgba(255,255,255,.92);
         box-shadow: 0 4px 14px rgba(0,0,0,.35);
       }
-      .cam-bottom .upload-link {
+      .cam-overlay .cam-bottom .upload-link {
         position: static;
         order: 2;
         max-width: 52px;
@@ -703,7 +694,7 @@
         text-align: center;
         min-height: 0;
       }
-      .cam-bottom .upload-link::after {
+      .cam-overlay .cam-bottom .upload-link::after {
         content: "გალერეა";
         display: block;
         color: rgba(255,255,255,.9);
@@ -711,8 +702,8 @@
         line-height: 1.2;
         font-family: inherit;
       }
-      .take { order: 1; }
-      .cam-ref.show,
+      .cam-overlay .take { order: 1; }
+      .cam-overlay .cam-ref.show,
       .cam-overlay.car-mode .cam-ref {
         position: absolute;
         top: calc(6px + env(safe-area-inset-top));
@@ -721,7 +712,98 @@
         width: 72px;
         height: 42px;
       }
-      .cam-overlay.car-mode .cam-top p { font-size: .68rem; }
+    }
+    /* Same landscape chrome when JS sets .is-landscape (more reliable on some WebKits) */
+    .cam-overlay.is-landscape .cam-top {
+      left: 0;
+      right: 68px;
+      top: 0;
+      bottom: auto;
+      max-width: none;
+      max-height: 22%;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px 8px;
+      padding: calc(6px + env(safe-area-inset-top)) 8px 6px max(8px, env(safe-area-inset-left));
+      background: linear-gradient(180deg, rgba(0,0,0,.7) 0%, rgba(0,0,0,.35) 70%, transparent);
+      overflow: hidden;
+    }
+    .cam-overlay.is-landscape .cam-top .close {
+      margin-bottom: 0;
+      min-height: 28px;
+      padding: 5px 10px;
+      font-size: .78rem;
+    }
+    .cam-overlay.is-landscape .cam-top h3 {
+      flex: 1 1 auto;
+      min-width: 0;
+      font-size: .78rem;
+      font-weight: 700;
+      line-height: 1.2;
+      padding-right: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .cam-overlay.is-landscape .cam-top p { display: none !important; }
+    .cam-overlay.is-landscape .cam-bottom {
+      left: auto;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: auto;
+      min-width: 56px;
+      padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) 6px;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      background: linear-gradient(270deg, rgba(0,0,0,.5), transparent);
+    }
+    .cam-overlay.is-landscape .take,
+    .cam-overlay.is-landscape.car-mode .take {
+      width: 44px;
+      height: 44px;
+      min-height: 44px;
+      border-radius: 50%;
+      padding: 0;
+      font-size: 0;
+      line-height: 0;
+      color: transparent;
+      border: 2.5px solid rgba(255,255,255,.92);
+      box-shadow: 0 4px 14px rgba(0,0,0,.35);
+    }
+    .cam-overlay.is-landscape .cam-bottom .upload-link {
+      position: static;
+      order: 2;
+      max-width: 52px;
+      background: rgba(0,0,0,.45);
+      padding: 6px 6px;
+      border-radius: 10px;
+      text-decoration: none;
+      color: transparent;
+      font-size: 0;
+      line-height: 0;
+      text-align: center;
+      min-height: 0;
+    }
+    .cam-overlay.is-landscape .cam-bottom .upload-link::after {
+      content: "გალერეა";
+      display: block;
+      color: rgba(255,255,255,.9);
+      font-size: .62rem;
+      line-height: 1.2;
+      font-family: inherit;
+    }
+    .cam-overlay.is-landscape .take { order: 1; }
+    .cam-overlay.is-landscape .cam-ref.show,
+    .cam-overlay.is-landscape.car-mode .cam-ref {
+      position: absolute;
+      top: calc(6px + env(safe-area-inset-top));
+      right: 68px;
+      margin-top: 0;
+      width: 72px;
+      height: 42px;
     }
     #gemini-key-toggle.upload-link { color: var(--green-mid); }
     @media (prefers-reduced-motion: reduce) {
@@ -4543,6 +4625,7 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
       if (car) state.alignOk = true;
       $('cam').classList.remove('hide');
       $('cam').classList.toggle('car-mode', car);
+      syncCamOrientation();
       const refEl = $('cam-ref');
       const refImg = $('cam-ref-img');
       if (car && CAR_PNG[state.captureGuide]) {
@@ -4599,7 +4682,7 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
       stopAlignLoop();
       stopStream();
       $('cam').classList.add('hide');
-      $('cam').classList.remove('car-mode');
+      $('cam').classList.remove('car-mode', 'is-landscape');
       const refEl = $('cam-ref');
       const refImg = $('cam-ref-img');
       if (refEl) {
@@ -4614,10 +4697,27 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
 
     $('cam-close').onclick = closeCamera;
 
+    function syncCamOrientation() {
+      const cam = $('cam');
+      if (!cam) return;
+      const land = window.matchMedia('(orientation: landscape)').matches
+        || (window.innerWidth > window.innerHeight);
+      cam.classList.toggle('is-landscape', land);
+    }
+
     window.addEventListener('resize', () => {
       if ($('cam').classList.contains('hide')) return;
+      syncCamOrientation();
       resizeGuide();
       drawGuide();
+    });
+    window.addEventListener('orientationchange', () => {
+      setTimeout(() => {
+        if ($('cam').classList.contains('hide')) return;
+        syncCamOrientation();
+        resizeGuide();
+        drawGuide();
+      }, 80);
     });
 
     function resizeGuide() {
