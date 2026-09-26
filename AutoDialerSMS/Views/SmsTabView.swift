@@ -10,6 +10,7 @@ struct SmsTabView: View {
     @State private var offerCar = ""
     @State private var offerThird = "10000$"
     @State private var offerHealth = "20000$"
+    @State private var offerIsElectric = false
     @State private var showComposer = false
     @State private var composerBody = ""
     @State private var showUnavailable = false
@@ -83,6 +84,7 @@ struct SmsTabView: View {
             TextField("ავტომობილი ($)", text: $offerCar).keyboardType(.decimalPad)
             limitPicker("მესამე პირი", options: AldagiMessages.thirdLimits, selection: $offerThird)
             limitPicker("ჯანმრთელობა", options: AldagiMessages.healthLimits, selection: $offerHealth)
+            Toggle("ავტომობილი ელექტროა", isOn: $offerIsElectric)
             Text(offerPreview).font(.caption).foregroundStyle(.secondary)
             Button("SMS") { send(offerPreview) }
                 .buttonStyle(.borderedProminent)
@@ -94,7 +96,13 @@ struct SmsTabView: View {
     }
 
     private var offerPreview: String {
-        AldagiMessages.fullOffer(tariff: offerTariff, car: offerCar, third: offerThird, health: offerHealth)
+        AldagiMessages.fullOffer(
+            tariff: offerTariff,
+            car: offerCar,
+            third: offerThird,
+            health: offerHealth,
+            isElectric: offerIsElectric
+        )
     }
 
     private func limitPicker(_ label: String, options: [String], selection: Binding<String>) -> some View {

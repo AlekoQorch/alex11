@@ -35,16 +35,23 @@ enum AldagiMessages {
     ტვირთად გადაადგილების დროს დაზიანება.
     """
 
-    static let tail = """
+    static let extras = """
     + ჩანაცვლების სერვისიც შეგვიძლია მოვნიშნოთ (თუ დაგიზიანდებათ ავტომობილი სხვა ავტომობილით ჩაგინაცვლებთ ავტომობილს ჩვენი კომპანია სანამ თქვენი ავტომობილი შეკეთდება)
 
     + უხეში გაუფრთხილებაც თუ მოვნიშნავთ — თუ წითელზე გაივლით ან bus line-ში ან საპირისპირო ზოლში გადახვალთ, ამ შემთხვევაშიც ანაზღაურდება ზიანი
+    """
 
+    static let benefitsIntro = """
     ბენეფიტები:
     ავტოასისტანსის (საწვავის მიტანა, საბურავის შეცვლა, დაბერვა, დაქოქვაში დახმარება) და ევაკუატორის სერვისი უფასოდ საქართველოს 7 დიდ ქალაქში: თბილისი, თელავი, გორი, ქუთაისი, ბათუმი, ფოთი და ზუგდიდი
 
     საჩუქრები:
-    1. საწვავის ფასდაკლება 20 თთრი
+    """
+
+    static let giftFuel = "1. 20 თეთრიანი ფასდაკლება საწვავზე"
+    static let giftEV = "1. დატენვაზე 20 %-ანი ფასდაკლება EV Power-ში"
+
+    static let giftsRest = """
     2. 25%-იანი ფასდაკლება "ამბოლში"
     3. 20% ფასდაკლება "დელფი მოტორსში" ავტოდითეილინგ მომსახურებაზე
     4. 10%-იანი ფასდაკლება ქონების დაზღვევაზე
@@ -63,8 +70,9 @@ enum AldagiMessages {
         }
     }
 
-    static func fullOffer(tariff: String, car: String, third: String, health: String) -> String {
-        """
+    static func fullOffer(tariff: String, car: String, third: String, health: String, isElectric: Bool = false) -> String {
+        let gift1 = isElectric ? giftEV : giftFuel
+        return """
         \(head)
 
         ტარიფი: \(formatUsd(tariff))
@@ -72,7 +80,11 @@ enum AldagiMessages {
         მესამე პირი: \(third)
         მძღოლისა და მგზავრების ჯანმრთელობა: \(health)
 
-        \(tail)
+        \(extras)
+
+        \(benefitsIntro.trimmingCharacters(in: .whitespacesAndNewlines))
+        \(gift1)
+        \(giftsRest.trimmingCharacters(in: .whitespacesAndNewlines))
         """
     }
 
