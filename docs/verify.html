@@ -13,7 +13,7 @@
   <meta name="default-gemini-key" content="">
   <!-- gemini-key-slot -->
   <meta name="default-gemini-keys" content="">
-  <title>დოკუმენტების ატვირთვა v221</title>
+  <title>დოკუმენტების ატვირთვა v222</title>
   <script>
     (function () {
       try {
@@ -39,7 +39,7 @@
           if (fromHash) history.replaceState(null, '', location.pathname + location.search);
         }
       } catch (e) {}
-      var VER = '215';
+      var VER = '222';
       try {
         var k = 'cc_verify_v';
         if (localStorage.getItem(k) !== VER) {
@@ -849,7 +849,7 @@
       <div id="group-slots"></div>
       <div class="vin-card hide" id="vin-lookup">
         <h3>ავტომობილის მონაცემები</h3>
-        <p>ნომერი და VIN ავტომატურად იკითხება. გადაამოწმეთ და დაადასტურეთ.</p>
+        <p>რეგისტრაციის ნომერი — უკანა გვერდის QR-დან; VIN — E ველიდან. გადაამოწმეთ და დაადასტურეთ.</p>
         <label class="field-label" for="plate-input">რეგისტრაციის ნომერი · A</label>
         <div class="vin-actions">
           <input class="field-inp" id="plate-input" type="text" inputmode="text" autocomplete="off"
@@ -974,6 +974,7 @@
       phone: '', name: '',
       photos: {},
       photosOcr: {},
+      photosRaw: {},
       groupIndex: 0,
       captureKey: '',
       captureSide: 'front',
@@ -4034,37 +4035,95 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
       return qrLibraryPromise;
     }
 
+    function isPlateLikeToken(token) {
+      const t = String(token || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+      if (!t || t.length < 5 || t.length > 10) return false;
+      if (!/[A-Z]/.test(t) || !/\d/.test(t)) return false;
+      if (/^\d+$/.test(t)) return false;
+      if (isGeorgianPlateFormat(t)) return true;
+      // Custom / vanity plates still appear as the first QR field.
+      return /^(?=.*[A-Z])(?=.*\d)[A-Z0-9]{5,10}$/.test(t);
+    }
+
     function registrationFromQr(payload) {
       const raw = String(payload || '').trim();
       if (!raw) return '';
-      const firstValue = raw.split(/[\/|\r\n;]/)[0]
-        .toUpperCase()
-        .replace(/[^A-Z0-9]/g, '');
-      return isGeorgianPlateFormat(firstValue) ? firstValue : '';
+      // Official format: PLATE/INTERNAL_ID/MODEL — plate is first field.
+      const parts = raw.split(/[\/|\r\n;]+/).map((p) => p.trim()).filter(Boolean);
+      if (parts.length) {
+        const first = parts[0].toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (isPlateLikeToken(first)) return first;
+      }
+      for (const part of parts.slice(1)) {
+        const compact = part.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (isGeorgianPlateFormat(compact)) return compact;
+      }
+      return findPlatePattern(raw) || '';
     }
 
     function qrRegions(width, height) {
       const full = { x: 0, y: 0, w: width, h: height };
       const right = {
-        x: Math.round(width * 0.55),
-        y: Math.round(height * 0.15),
-        w: Math.round(width * 0.42),
-        h: Math.round(height * 0.55)
+        x: Math.round(width * 0.52),
+        y: Math.round(height * 0.10),
+        w: Math.round(width * 0.46),
+        h: Math.round(height * 0.70)
+      };
+      const midRight = {
+        x: Math.round(width * 0.58),
+        y: Math.round(height * 0.18),
+        w: Math.round(width * 0.38),
+        h: Math.round(height * 0.50)
       };
       const tight = {
-        x: Math.round(width * 0.60),
-        y: Math.round(height * 0.20),
-        w: Math.round(width * 0.35),
-        h: Math.round(height * 0.45)
+        x: Math.round(width * 0.62),
+        y: Math.round(height * 0.22),
+        w: Math.round(width * 0.32),
+        h: Math.round(height * 0.42)
       };
+      const lowerRight = {
+        x: Math.round(width * 0.55),
+        y: Math.round(height * 0.35),
+        w: Math.round(width * 0.42),
+        h: Math.round(height * 0.50)
+      };
+      // Avoid upscaling already-large full frames (memory / Safari crashes).
+      const fullScale = Math.max(width, height) >= 1600 ? 1 : 2;
       return [
         { ...full, scale: 1 },
-        { ...full, scale: 2 },
+        { ...full, scale: fullScale },
         { ...right, scale: 2 },
         { ...right, scale: 3 },
+        { ...midRight, scale: 3 },
         { ...tight, scale: 3 },
-        { ...tight, scale: 4 }
+        { ...tight, scale: 4 },
+        { ...lowerRight, scale: 3 }
       ];
+    }
+
+    function canvasFromImageDownscaled(image, maxSide) {
+      const iw = image.naturalWidth || image.width;
+      const ih = image.naturalHeight || image.height;
+      const scale = Math.min(1, (maxSide || 1800) / Math.max(iw, ih, 1));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(iw * scale));
+      canvas.height = Math.max(1, Math.round(ih * scale));
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(image, 0, 0, iw, ih, 0, 0, canvas.width, canvas.height);
+      return canvas;
+    }
+
+    function contrastCloneCanvas(src, filter) {
+      const canvas = document.createElement('canvas');
+      canvas.width = src.width;
+      canvas.height = src.height;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      ctx.filter = filter || 'none';
+      ctx.drawImage(src, 0, 0);
+      ctx.filter = 'none';
+      return canvas;
     }
 
     function decodeQrRegion(jsQR, ctx, region) {
@@ -4072,41 +4131,88 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
       const scale = region.scale || 1;
       const sw = Math.max(1, w);
       const sh = Math.max(1, h);
+      const outW = Math.min(2400, sw * scale);
+      const outH = Math.min(2400, sh * scale);
       const canvas = document.createElement('canvas');
-      canvas.width = sw * scale;
-      canvas.height = sh * scale;
+      canvas.width = outW;
+      canvas.height = outH;
       const out = canvas.getContext('2d', { willReadFrequently: true });
-      out.drawImage(ctx.canvas, x, y, sw, sh, 0, 0, canvas.width, canvas.height);
-      const pixels = out.getImageData(0, 0, canvas.width, canvas.height);
+      out.imageSmoothingEnabled = true;
+      out.imageSmoothingQuality = 'high';
+      out.drawImage(ctx.canvas, x, y, sw, sh, 0, 0, outW, outH);
+      const pixels = out.getImageData(0, 0, outW, outH);
       return jsQR(pixels.data, pixels.width, pixels.height, { inversionAttempts: 'attemptBoth' });
+    }
+
+    async function decodeQrWithBarcodeDetector(dataUrl) {
+      if (typeof BarcodeDetector === 'undefined') return '';
+      try {
+        const formats = await BarcodeDetector.getSupportedFormats();
+        if (!formats.includes('qr_code')) return '';
+        const detector = new BarcodeDetector({ formats: ['qr_code'] });
+        const blob = await (await fetch(dataUrl)).blob();
+        const bitmap = await createImageBitmap(blob);
+        const codes = await detector.detect(bitmap);
+        if (bitmap.close) bitmap.close();
+        for (const code of codes || []) {
+          const plate = registrationFromQr(code.rawValue || code.data || '');
+          if (plate) return plate;
+        }
+      } catch (_) {}
+      return '';
+    }
+
+    async function decodeQrPayloadFromPhoto(dataUrl) {
+      if (!dataUrl) return '';
+      const fromNative = await decodeQrWithBarcodeDetector(dataUrl);
+      if (fromNative) return fromNative;
+      const jsQR = await loadQrLibrary();
+      const image = await loadImageElement(dataUrl);
+      const base = canvasFromImageDownscaled(image, 1800);
+      const variants = [
+        base,
+        contrastCloneCanvas(base, 'contrast(1.35) brightness(1.05)'),
+        contrastCloneCanvas(base, 'contrast(1.8) brightness(1.1) grayscale(1)'),
+        contrastCloneCanvas(base, 'contrast(2.2) brightness(0.95) grayscale(1)')
+      ];
+      for (const canvas of variants) {
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        for (const region of qrRegions(canvas.width, canvas.height)) {
+          try {
+            const decoded = decodeQrRegion(jsQR, ctx, region);
+            const value = registrationFromQr(decoded && decoded.data);
+            if (value) return value;
+          } catch (_) {}
+        }
+      }
+      return '';
     }
 
     function ocrTechPhoto(key) {
       return state.photosOcr[key] || state.photos[key] || '';
     }
 
+    function techBackPhotosForQr() {
+      const urls = [];
+      const push = (u) => { if (u && !urls.includes(u)) urls.push(u); };
+      // Prefer original capture — crop/slot-fit can clip or soften the QR.
+      push(state.photosRaw && state.photosRaw.tech_back);
+      push(state.photos.tech_back);
+      push(state.photosOcr.tech_back);
+      return urls;
+    }
+
     async function readRegistrationFromQr() {
-      const photo = ocrTechPhoto('tech_back');
-      if (!photo) return false;
+      const photos = techBackPhotosForQr();
+      if (!photos.length) return false;
       state.plateReading = true;
       state.plateStatus = 'რეგისტრაციის ნომერი იკითხება QR კოდიდან…';
       renderVinLookup(true);
       try {
-        const jsQR = await loadQrLibrary();
-        const image = await loadImageElement(photo);
-        const canvas = document.createElement('canvas');
-        canvas.width = image.naturalWidth;
-        canvas.height = image.naturalHeight;
-        const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        ctx.drawImage(image, 0, 0);
         let registration = '';
-        for (const region of qrRegions(canvas.width, canvas.height)) {
-          const decoded = decodeQrRegion(jsQR, ctx, region);
-          const value = registrationFromQr(decoded && decoded.data);
-          if (value) {
-            registration = value;
-            break;
-          }
+        for (const photo of photos) {
+          registration = await decodeQrPayloadFromPhoto(photo);
+          if (registration) break;
         }
         if (!registration) return false;
         state.plate = registration;
@@ -5878,6 +5984,8 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
     async function processTechPhoto(capturedKey, dataUrl) {
       state.techPhotoProcessing = state.techPhotoProcessing || {};
       state.techPhotoProcessing[capturedKey] = true;
+      state.photosRaw = state.photosRaw || {};
+      state.photosRaw[capturedKey] = dataUrl;
       renderGroup();
       let scanned = dataUrl;
       try {
@@ -5905,6 +6013,7 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
         if (VIN_READ_MODE === 'ai' && !getStoredGeminiKey() && !document.querySelector('meta[name="default-gemini-key"]')) {
           showGeminiKeySetup(true);
         }
+        // Read QR from original first (before crop softens/clips it), then cropped.
         const fromQr = await readRegistrationFromQr();
         if (!fromQr) {
           state.plateStatus = 'QR ვერ ამოიცნო — A ველიდან OCR-ით იკითხება…';
@@ -5940,6 +6049,7 @@ If the VIN is genuinely unreadable, return vin as "VIN_NOT_CONFIDENT" and confid
         state.techPhotoProcessing[capturedKey] = true;
         delete state.photos[capturedKey];
         delete state.photosOcr[capturedKey];
+        if (state.photosRaw) delete state.photosRaw[capturedKey];
         if (capturedKey === 'tech_back') state.vinStatus = 'დოკუმენტი მოირგვა…';
         else state.plateStatus = 'დოკუმენტი მოირგვა…';
       } else {
