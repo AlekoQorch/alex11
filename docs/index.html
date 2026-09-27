@@ -11,7 +11,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>Cold Caller v98</title>
+  <title>Cold Caller v99</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '174';
+    window.__CC_VER = '175';
     (function () {
       function go(v) {
         try {
@@ -725,7 +725,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v98</div>
+      <div class="ver">v99</div>
     </header>
 
     <div class="tabs">
@@ -887,7 +887,7 @@ ${ALDAGI_GIFTS_REST}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '174';
+      const v = window.__CC_VER || '175';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -978,11 +978,10 @@ ${link}
       const list = $('num-list');
       const cur = getNumInputs().map(i => i.value);
       const activeIdx = focusIdx ?? getNumInputs().findIndex(i => i === document.activeElement);
+      const stamp = Date.now().toString(36);
       list.innerHTML = '';
       for (let i = 0; i < count; i++) {
-        const row = document.createElement('div');
-        row.className = 'num-row';
-        row.innerHTML = `<span class="num-lbl">${i + 1}.</span><input class="num-inp" type="tel" inputmode="tel" autocomplete="off" spellcheck="false" placeholder="ნომერი"><span class="num-row-actions"><button type="button" class="row-sms" data-row-send="sms">SMS</button><button type="button" class="row-wa" data-row-send="wa">WA</button></span><span class="num-mark"></span>`;
+        const row = makeNumRow(i, stamp);
         const inp = row.querySelector('.num-inp');
         inp.value = cur[i] || '';
         list.appendChild(row);
@@ -1069,6 +1068,20 @@ ${link}
       saveNums();
       saveSession();
       updateStartBtn();
+    }
+
+    let numSaveLock = 0;
+    function saveNums() {
+      if (numSaveLock) return;
+      localStorage.setItem('nums', getNumsText());
+    }
+
+    function makeNumRow(i, stamp) {
+      const row = document.createElement('div');
+      row.className = 'num-row';
+      const id = `ccn-${stamp}-${i}`;
+      row.innerHTML = `<span class="num-lbl">${i + 1}.</span><input class="num-inp" id="${id}" name="${id}" type="tel" inputmode="tel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="ნომერი"><span class="num-row-actions"><button type="button" class="row-sms" data-row-send="sms">SMS</button><button type="button" class="row-wa" data-row-send="wa">WA</button></span><span class="num-mark"></span>`;
+      return row;
     }
 
     function filterPhoneInput(inp) {
@@ -1523,8 +1536,8 @@ ${link}
       $('stop').classList.add('hide');
       setNumsDisabled(false);
       markNumRows();
-      $('after-call-modal').classList.add('hide');
-      $('time-modal').classList.add('hide');
+      $('after-call-modal')?.classList.add('hide');
+      $('time-modal')?.classList.add('hide');
     }
 
     function done() {
@@ -1551,7 +1564,12 @@ ${link}
     }
 
     /** ერთი დაჭერა: აჩერებს სესიას და სრულად ასუფთავებს ნომრებს */
-    function clearAll() {
+    function clearAll(e) {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      numSaveLock++;
       dialWatch = null;
       S.run = false;
       S.wait = false;
@@ -1564,25 +1582,42 @@ ${link}
       $('start').classList.remove('hide');
       $('stop').classList.add('hide');
       $('start').textContent = 'დაწყება';
-      $('after-call-modal').classList.add('hide');
-      $('time-modal').classList.add('hide');
-      $('num-list').classList.remove('running');
+      $('after-call-modal')?.classList.add('hide');
+      $('time-modal')?.classList.add('hide');
 
       const list = $('num-list');
+      list.classList.remove('running');
+      const stamp = 'clr' + Date.now().toString(36);
       list.innerHTML = '';
       for (let i = 0; i < NUM_ROWS_START; i++) {
-        const row = document.createElement('div');
-        row.className = 'num-row';
-        row.innerHTML = `<span class="num-lbl">${i + 1}.</span><input class="num-inp" type="tel" inputmode="tel" autocomplete="off" spellcheck="false" placeholder="ნომერი"><span class="num-row-actions"><button type="button" class="row-sms" data-row-send="sms">SMS</button><button type="button" class="row-wa" data-row-send="wa">WA</button></span><span class="num-mark"></span>`;
-        list.appendChild(row);
+        list.appendChild(makeNumRow(i, stamp));
       }
+      getNumInputs().forEach(inp => {
+        inp.disabled = false;
+        inp.value = '';
+        inp.defaultValue = '';
+      });
 
       try { localStorage.removeItem('nums'); } catch {}
       clearSession();
-      $('sms-num').value = '';
+      if ($('sms-num')) $('sms-num').value = '';
       count();
       markNumRows();
       setStatus('გასუფთავდა');
+
+      // iOS ხშირად ავტომატურად აბრუნებს tel ველებს — ხელახლა ვასუფთავებთ
+      const wipe = () => {
+        getNumInputs().forEach(inp => { inp.value = ''; inp.defaultValue = ''; });
+        try { localStorage.removeItem('nums'); } catch {}
+        count();
+        markNumRows();
+      };
+      requestAnimationFrame(wipe);
+      setTimeout(wipe, 50);
+      setTimeout(() => {
+        wipe();
+        numSaveLock = Math.max(0, numSaveLock - 1);
+      }, 350);
     }
 
     function introMsg(lang) {
@@ -1886,9 +1921,6 @@ ${extras}${buildAldagiBenefits(isElectric)}`;
       if ('Notification' in window) Notification.requestPermission();
     };
     $('perm-skip').onclick = () => $('perm-modal').classList.add('hide');
-    function saveNums() {
-      localStorage.setItem('nums', getNumsText());
-    }
 
     $('paste').onclick = async () => {
       try {
@@ -1896,7 +1928,9 @@ ${extras}${buildAldagiBenefits(isElectric)}`;
         if (t) applyPaste(t);
       } catch { setStatus('ჩასმა ვერ მოხერხდა'); }
     };
-    $('clear').onclick = () => { clearAll(); };
+    const clearBtn = $('clear');
+    clearBtn.onclick = null;
+    clearBtn.addEventListener('click', clearAll);
     $('clr-hist').onclick = () => { localStorage.removeItem('hist'); showHist(); };
 
     $('hist').addEventListener('click', e => {
