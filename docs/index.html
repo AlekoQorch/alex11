@@ -11,7 +11,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>Cold Caller v96</title>
+  <title>Cold Caller v97</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '172';
+    window.__CC_VER = '173';
     (function () {
       function go(v) {
         try {
@@ -725,7 +725,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v96</div>
+      <div class="ver">v97</div>
     </header>
 
     <div class="tabs">
@@ -887,7 +887,7 @@ ${ALDAGI_GIFTS_REST}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '172';
+      const v = window.__CC_VER || '173';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -1862,6 +1862,7 @@ ${extras}${buildAldagiBenefits(isElectric)}`;
       } catch { setStatus('ჩასმა ვერ მოხერხდა'); }
     };
     $('clear').onclick = () => {
+      if (S.run) stopAll();
       S.called = {};
       S.i = 0;
       setNumsFromList([]);
@@ -1869,6 +1870,7 @@ ${extras}${buildAldagiBenefits(isElectric)}`;
       localStorage.removeItem('nums');
       clearSession();
       updateStartBtn();
+      setStatus('გასუფთავდა');
     };
     $('clr-hist').onclick = () => { localStorage.removeItem('hist'); showHist(); };
 
