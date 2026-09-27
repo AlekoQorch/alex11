@@ -82,6 +82,9 @@ struct DialTabView: View {
                         .foregroundStyle(.secondary)
                     Spacer()
                     Button("გასუფთავება", role: .destructive) {
+                        if callManager.isActive {
+                            callManager.stop()
+                        }
                         rows = Array(repeating: "", count: 5)
                         callManager.calledNumbers = []
                     }
