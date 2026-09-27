@@ -6,12 +6,12 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Cold Caller">
-  <meta name="theme-color" content="#161618">
+  <meta name="theme-color" content="#111113">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>Cold Caller v95</title>
+  <title>Cold Caller v96</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '171';
+    window.__CC_VER = '172';
     (function () {
       function go(v) {
         try {
@@ -64,10 +64,10 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     :root {
-      --bg: #161618;
-      --surface: #222226;
-      --line: #343438;
-      --border: #45454c;
+      --bg: #111113;
+      --surface: #1c1c1f;
+      --line: #2e2e32;
+      --border: #3c3c42;
       --text: #eeeeef;
       --dim: #9a9aa0;
       --blue: #4d9fff;
@@ -100,7 +100,7 @@
       /* Background goes under Dynamic Island; title starts below it */
       padding: calc(env(safe-area-inset-top, 47px) + 12px) 20px 14px;
       text-align: center;
-      background: #161618;
+      background: var(--bg);
       border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     }
     .brand::after {
@@ -725,7 +725,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v95</div>
+      <div class="ver">v96</div>
     </header>
 
     <div class="tabs">
@@ -887,7 +887,7 @@ ${ALDAGI_GIFTS_REST}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '171';
+      const v = window.__CC_VER || '172';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
