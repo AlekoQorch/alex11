@@ -11,7 +11,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>Cold Caller v88</title>
+  <title>Cold Caller v89</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '164';
+    window.__CC_VER = '165';
     (function () {
       function go(v) {
         try {
@@ -450,62 +450,24 @@
     .offer-check {
       display: flex;
       align-items: center;
+      justify-content: space-between;
       gap: 12px;
-      margin-top: 14px;
-      padding: 12px 14px;
-      border: 1px solid #3a3a40;
-      border-radius: 12px;
-      background: linear-gradient(180deg, #252528 0%, #1c1c1f 100%);
+      margin-top: 12px;
+      padding: 11px 12px;
+      border: 1px solid #4a4a50;
+      border-radius: 8px;
+      background: var(--bg);
       color: var(--text);
       cursor: pointer;
       user-select: none;
-      transition: border-color .18s ease, background .18s ease, box-shadow .18s ease;
     }
     .offer-check:has(input:checked) {
-      border-color: rgba(77, 159, 255, 0.55);
-      background: linear-gradient(180deg, #1c2a3a 0%, #182230 100%);
-      box-shadow: 0 0 0 1px rgba(77, 159, 255, 0.12);
-    }
-    .offer-check-ico {
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
-      display: grid;
-      place-items: center;
-      flex-shrink: 0;
-      background: #2a2a2e;
-      color: #b8b8bc;
-      transition: background .18s ease, color .18s ease;
-    }
-    .offer-check:has(input:checked) .offer-check-ico {
-      background: rgba(77, 159, 255, 0.18);
-      color: var(--blue);
-    }
-    .offer-check-ico svg {
-      width: 18px;
-      height: 18px;
-      display: block;
-    }
-    .offer-check-copy {
-      flex: 1;
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
+      border-color: var(--blue);
+      background: #1a2a3a;
     }
     .offer-check-title {
-      font-size: 15px;
-      font-weight: 600;
-      letter-spacing: -0.01em;
-      line-height: 1.25;
-    }
-    .offer-check-hint {
-      font-size: 12px;
-      color: var(--dim);
+      font-size: 14px;
       line-height: 1.3;
-    }
-    .offer-check:has(input:checked) .offer-check-hint {
-      color: #8eb8e8;
     }
     .offer-check input {
       position: absolute;
@@ -516,30 +478,29 @@
     }
     .offer-switch {
       position: relative;
-      width: 46px;
-      height: 28px;
+      width: 40px;
+      height: 24px;
       border-radius: 999px;
       background: #3a3a40;
       flex-shrink: 0;
-      transition: background .18s ease;
+      transition: background .15s ease;
     }
     .offer-switch::after {
       content: '';
       position: absolute;
-      top: 3px;
-      left: 3px;
-      width: 22px;
-      height: 22px;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
       border-radius: 50%;
       background: #f2f2f4;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
-      transition: transform .18s ease;
+      transition: transform .15s ease;
     }
     .offer-check:has(input:checked) .offer-switch {
       background: var(--blue);
     }
     .offer-check:has(input:checked) .offer-switch::after {
-      transform: translateX(18px);
+      transform: translateX(16px);
     }
 
     .hist {
@@ -717,7 +678,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v88</div>
+      <div class="ver">v89</div>
     </header>
 
     <div class="tabs">
@@ -879,7 +840,7 @@ ${ALDAGI_GIFTS_REST}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '164';
+      const v = window.__CC_VER || '165';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -1703,15 +1664,7 @@ ${link}
               ${OFFER_LIMITS.health.map(v => `<button type="button" data-k="health" data-val="${v}" class="${v === offerPick.health ? 'on' : ''}">${v}</button>`).join('')}
             </div>
             <label class="offer-check" for="offer-electric">
-              <span class="offer-check-ico" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none">
-                  <path d="M13 2 4.5 13.5h6L11 22l8.5-11.5h-6L13 2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-                </svg>
-              </span>
-              <span class="offer-check-copy">
-                <span class="offer-check-title">ავტომობილი ელექტროა</span>
-                <span class="offer-check-hint">EV Power ფასდაკლება საჩუქრებში</span>
-              </span>
+              <span class="offer-check-title">ავტომობილი ელექტროა</span>
               <input type="checkbox" id="offer-electric">
               <span class="offer-switch" aria-hidden="true"></span>
             </label>
