@@ -11,7 +11,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>Cold Caller v99</title>
+  <title>Cold Caller v100</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '175';
+    window.__CC_VER = '176';
     (function () {
       function go(v) {
         try {
@@ -355,6 +355,48 @@
       border-radius: 14px;
       padding: 15px;
       margin-bottom: 14px;
+    }
+    .sms-card-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--line);
+    }
+    .sms-card-head h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin: 0;
+      padding: 0;
+      border: none;
+      color: var(--text);
+      letter-spacing: -0.01em;
+      min-width: 0;
+      flex: 1;
+    }
+    .sms-to {
+      flex-shrink: 0;
+      max-width: 46%;
+      font-size: 12px;
+      font-weight: 500;
+      line-height: 1.3;
+      color: #7a7a82;
+      font-family: ui-monospace, "SF Mono", "Menlo", "Cascadia Mono", "Roboto Mono", monospace;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.02em;
+      text-align: right;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .sms-to.is-empty {
+      color: #55555c;
+      font-family: inherit;
+      font-weight: 400;
+      letter-spacing: 0;
+      font-variant-numeric: normal;
     }
     .sms-card h3 {
       font-size: 15px;
@@ -725,7 +767,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v99</div>
+      <div class="ver">v100</div>
     </header>
 
     <div class="tabs">
@@ -887,7 +929,7 @@ ${ALDAGI_GIFTS_REST}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '175';
+      const v = window.__CC_VER || '176';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -1240,11 +1282,16 @@ ${link}
 
     function fillSmsTarget() {
       // თუ SMS გრაფაში ხელით ჩაწერა/შეცვლა — ნუ გადააწერ
-      if (S.smsManual) return;
+      if (S.smsManual) {
+        updateDocsPreview();
+        updateSmsCardTargets();
+        return;
+      }
       // ბოლო ✓ (დარეკილი) ნომერი — პრიორიტეტი SMS-ში
       const n = S.last || getBlueOrActiveNumber() || firstNumFromText() || '';
       $('sms-num').value = n ? formatPhoneDisplay(n) : '';
       updateDocsPreview();
+      updateSmsCardTargets();
     }
 
     /** SMS/WA: ჯერ გრაფა (რაც ჩაწერე), მერე ბოლო ✓ / ლურჯი */
@@ -1255,6 +1302,29 @@ ${link}
       return tel(S.last || getBlueOrActiveNumber() || '');
     }
 
+    function smsTargetLabel() {
+      const raw = ($('sms-num')?.value || '').trim();
+      if (raw && localDigitCount(raw) >= 9) return formatPhoneDisplay(raw);
+      const ph = getPhone();
+      if (ph && localDigitCount(ph) >= 9) return formatPhoneDisplay(ph);
+      return '';
+    }
+
+    function updateSmsCardTargets() {
+      const label = smsTargetLabel();
+      document.querySelectorAll('[data-sms-to]').forEach(el => {
+        if (label) {
+          el.textContent = label;
+          el.classList.remove('is-empty');
+          el.title = label;
+        } else {
+          el.textContent = 'ნომერი არაა';
+          el.classList.add('is-empty');
+          el.title = '';
+        }
+      });
+    }
+
     function setLastCalled(n) {
       const v = tel(n || '');
       if (!v) return;
@@ -1262,6 +1332,7 @@ ${link}
       if (!S.smsManual) {
         $('sms-num').value = formatPhoneDisplay(v);
       }
+      updateSmsCardTargets();
     }
 
     function syncFromDial() {
@@ -1274,11 +1345,13 @@ ${link}
         S.last = '';
         S.smsManual = false;
         $('sms-num').value = '';
+        updateSmsCardTargets();
         return;
       }
       if (!S.smsManual) {
         $('sms-num').value = formatPhoneDisplay(v);
       }
+      updateSmsCardTargets();
     }
 
     document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => goTab(b.dataset.v));
@@ -1289,6 +1362,7 @@ ${link}
       const t = tel($('sms-num').value);
       if (localDigitCount(t) >= 9) S.last = t;
       updateDocsPreview();
+      updateSmsCardTargets();
     });
 
     function parse(t) {
@@ -1740,7 +1814,10 @@ ${link}
     function renderSmsList() {
       let html = `
         <div class="sms-card" data-id="intro">
-          <h3>პატარა SMS-ის დატოვება</h3>
+          <div class="sms-card-head">
+            <h3>პატარა SMS-ის დატოვება</h3>
+            <span class="sms-to is-empty" data-sms-to>ნომერი არაა</span>
+          </div>
           <div class="lang-pick">
             <button type="button" class="on" data-lang="ka">ქართული</button>
             <button type="button" data-lang="en">ინგლისური</button>
@@ -1750,7 +1827,10 @@ ${link}
           <button type="button" data-send="intro-sms">გაგზავნა SMS</button>
         </div>
         <div class="sms-card" data-id="noanswer">
-          <h3>არ პასუხობს</h3>
+          <div class="sms-card-head">
+            <h3>არ პასუხობს</h3>
+            <span class="sms-to is-empty" data-sms-to>ნომერი არაა</span>
+          </div>
           <div class="sms-text">${NO_ANSWER_MSG.replace(/</g, '&lt;')}</div>
           <div class="send-row">
             <button type="button" data-send="noanswer-sms">SMS</button>
@@ -1758,7 +1838,10 @@ ${link}
           </div>
         </div>
         <div class="sms-card" data-id="tariff">
-          <h3>ტარიფის დაანგარიშება</h3>
+          <div class="sms-card-head">
+            <h3>ტარიფის დაანგარიშება</h3>
+            <span class="sms-to is-empty" data-sms-to>ნომერი არაა</span>
+          </div>
           <div class="sms-text">${TARIFF_MSG.replace(/</g, '&lt;')}</div>
           <div class="send-row">
             <button type="button" data-send="tariff-sms">SMS</button>
@@ -1766,7 +1849,10 @@ ${link}
           </div>
         </div>
         <div class="sms-card" data-id="aldagi">
-          <h3>სრული შეთავაზება</h3>
+          <div class="sms-card-head">
+            <h3>სრული შეთავაზება</h3>
+            <span class="sms-to is-empty" data-sms-to>ნომერი არაა</span>
+          </div>
           <div class="offer-fields">
             <span class="field-label">ტარიფი ($)</span>
             <input class="field-inp" id="offer-tariff" type="text" inputmode="decimal" placeholder="მაგ: 150$">
@@ -1802,7 +1888,10 @@ ${link}
           </div>
         </div>
         <div class="sms-card" data-id="docs">
-          <h3>დოკუმენტების ლინკი</h3>
+          <div class="sms-card-head">
+            <h3>დოკუმენტების ლინკი</h3>
+            <span class="sms-to is-empty" data-sms-to>ნომერი არაა</span>
+          </div>
           <p class="sms-hint" style="margin:0 0 8px">პირადობა · მართვის მოწმობა · ტექპასპორტი</p>
           <div class="sms-text" id="docs-preview"></div>
           <div class="send-row">
@@ -1814,6 +1903,7 @@ ${link}
       $('sms-list').innerHTML = html;
       updateAldagiPreview();
       updateDocsPreview();
+      updateSmsCardTargets();
     }
 
     function updateDocsPreview() {
