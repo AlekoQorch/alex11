@@ -72,13 +72,14 @@ enum AldagiMessages {
 
     static func fullOffer(tariff: String, car: String, third: String, health: String, isElectric: Bool = false) -> String {
         let gift1 = isElectric ? giftEV : giftFuel
+        let franchise = isElectric ? "\nფრანშიზა 20% ელექტრო ნაწილებზე." : ""
         return """
         \(head)
 
         ტარიფი: \(formatUsd(tariff))
         ავტომობილი: \(formatUsd(car))
         მესამე პირი: \(third)
-        მძღოლისა და მგზავრების ჯანმრთელობა: \(health)
+        მძღოლისა და მგზავრების ჯანმრთელობა: \(health)\(franchise)
 
         \(extras)
 
