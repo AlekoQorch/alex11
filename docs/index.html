@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '190';
+    window.__CC_VER = '191';
     (function () {
       function go(v) {
         try {
@@ -598,12 +598,13 @@
     .chat-dd-menu {
       position: absolute;
       left: 0;
-      right: auto;
+      right: 0;
       top: calc(100% + 6px);
       z-index: 90;
-      width: max-content;
-      min-width: 148px;
-      max-width: 180px;
+      width: 100%;
+      min-width: 0;
+      max-width: none;
+      box-sizing: border-box;
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 12px;
@@ -636,7 +637,6 @@
       border: none;
       border-radius: 0;
       background: transparent;
-      color: var(--text);
       font-size: 14px;
       font-weight: 600;
       font-family: inherit;
@@ -645,11 +645,26 @@
       z-index: 1;
     }
     .chat-dd-menu button + button { border-top: 1px solid var(--line); }
-    .chat-dd-menu button:active { background: var(--bg); }
-    .chat-dd-menu .ch-ico { width: 18px; height: 18px; flex-shrink: 0; }
-    .chat-dd-menu .ch-wa { color: #25d366; }
-    .chat-dd-menu .ch-viber { color: #7360f2; }
-    .chat-dd-menu .ch-tg { color: #229ed9; }
+    .chat-dd-menu button:active { filter: brightness(1.08); }
+    .chat-dd-menu .ch-ico { width: 18px; height: 18px; flex-shrink: 0; color: inherit; }
+    .sms-card .chat-dd-menu button.ch-wa,
+    .send-row .chat-dd-menu button.ch-wa,
+    .chat-dd-menu button.ch-wa {
+      color: #25d366 !important;
+      background: rgba(37, 211, 102, 0.08);
+    }
+    .sms-card .chat-dd-menu button.ch-viber,
+    .send-row .chat-dd-menu button.ch-viber,
+    .chat-dd-menu button.ch-viber {
+      color: #7360f2 !important;
+      background: rgba(115, 96, 242, 0.08);
+    }
+    .sms-card .chat-dd-menu button.ch-tg,
+    .send-row .chat-dd-menu button.ch-tg,
+    .chat-dd-menu button.ch-tg {
+      color: #229ed9 !important;
+      background: rgba(34, 158, 217, 0.08);
+    }
     .num-row-actions .chat-dd,
     .hist-actions .chat-dd { flex-shrink: 0; }
     .num-row-actions .chat-dd-toggle,
@@ -673,8 +688,8 @@
     .hist-actions .ch-chev svg { width: 11px; height: 11px; }
     .num-row-actions .chat-dd-menu,
     .hist-actions .chat-dd-menu {
-      min-width: 140px;
-      max-width: 160px;
+      width: max-content;
+      min-width: 148px;
       left: auto;
       right: 0;
       top: calc(100% + 4px);
@@ -686,8 +701,6 @@
       justify-content: flex-start !important;
       padding: 9px 12px;
       font-size: 12px;
-      color: var(--text);
-      background: transparent;
     }
 
     .offer-fields { margin-bottom: 12px; }
@@ -1004,7 +1017,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v113</div>
+      <div class="ver">v114</div>
     </header>
 
     <div class="tabs">
@@ -1214,7 +1227,7 @@ ${ALDAGI_GIFTS_REST}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '190';
+      const v = window.__CC_VER || '191';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
