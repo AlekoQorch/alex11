@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '194';
+    window.__CC_VER = '195';
     (function () {
       function go(v) {
         try {
@@ -584,13 +584,13 @@
     .chat-dd-sep {
       width: 1px;
       flex-shrink: 0;
-      margin: 8px 0;
-      background: rgba(255,255,255,.55);
+      margin: 9px 0;
+      background: rgba(255,255,255,.38);
     }
     .sms-card .ch-chev,
     .ch-chev {
       flex-shrink: 0;
-      width: 28px;
+      width: 26px;
       height: 100%;
       display: inline-flex !important;
       align-items: center;
@@ -599,29 +599,30 @@
       margin: 0;
       border: none !important;
       border-radius: 0 !important;
-      background: rgba(255,255,255,.22) !important;
+      background: rgba(0,0,0,.07) !important;
       color: #fff !important;
       cursor: pointer;
-      box-shadow: inset 1px 0 0 rgba(255,255,255,.18);
+      box-shadow: none;
     }
     .ch-chev:active {
-      background: rgba(255,255,255,.32) !important;
+      background: rgba(0,0,0,.12) !important;
     }
     .ch-chev svg {
-      width: 14px;
-      height: 14px;
+      width: 13px;
+      height: 13px;
       display: block;
       transition: transform .16s ease;
       pointer-events: none;
-      filter: drop-shadow(0 1px 1px rgba(0,0,0,.25));
+      opacity: 0.95;
+      filter: none;
     }
     .chat-dd.open .ch-chev {
-      background: rgba(255,255,255,.34) !important;
+      background: rgba(0,0,0,.11) !important;
     }
     .chat-dd.open .ch-chev svg { transform: rotate(180deg); }
     .chat-dd.open .chat-dd-toggle {
-      border-color: rgba(255,255,255,.45);
-      box-shadow: 0 0 0 1px rgba(255,255,255,.14);
+      border-color: rgba(255,255,255,.28);
+      box-shadow: none;
     }
     .chat-dd-menu {
       position: absolute;
@@ -1045,7 +1046,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v117</div>
+      <div class="ver">v118</div>
     </header>
 
     <div class="tabs">
@@ -1255,7 +1256,7 @@ ${ALDAGI_GIFTS_REST}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '194';
+      const v = window.__CC_VER || '195';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
