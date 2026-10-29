@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '187';
+    window.__CC_VER = '188';
     (function () {
       function go(v) {
         try {
@@ -464,12 +464,29 @@
       flex: 1 1 0;
       min-width: 0;
       width: 0;
+      min-height: 46px;
+      box-sizing: border-box;
+    }
+    .send-row > .chat-dd {
+      display: flex;
+      flex-direction: column;
     }
     .sms-card .send-row > button[data-send] {
-      padding: 12px 10px !important;
+      padding: 0 10px !important;
       font-size: 14px !important;
+      line-height: 1 !important;
+      border: 1px solid transparent !important;
+      border-radius: 12px !important;
+      min-height: 46px !important;
+      height: 100%;
+      box-sizing: border-box !important;
     }
     .send-row .btn-wa { font-size: 14px; }
+    .send-row .ch-ico,
+    .send-row .ch-ico-sms {
+      width: 18px;
+      height: 18px;
+    }
     .btn-wa {
       background: #25d366 !important;
       border-color: #1faa52 !important;
@@ -517,6 +534,8 @@
     .sms-card .chat-dd-toggle,
     .chat-dd-toggle {
       width: 100%;
+      height: 100%;
+      min-height: 46px;
       padding: 0 !important;
       border: 1px solid rgba(255,255,255,.18);
       border-radius: 12px;
@@ -525,6 +544,8 @@
       font-size: 14px;
       font-weight: 600;
       font-family: inherit;
+      line-height: 1;
+      box-sizing: border-box;
       display: inline-flex !important;
       align-items: stretch;
       justify-content: stretch;
@@ -538,7 +559,7 @@
       align-items: center;
       justify-content: center;
       gap: 6px;
-      padding: 12px 8px 12px 10px;
+      padding: 0 8px 0 10px;
     }
     .chat-dd-sep {
       width: 1px;
@@ -974,7 +995,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v110</div>
+      <div class="ver">v111</div>
     </header>
 
     <div class="tabs">
@@ -1184,7 +1205,7 @@ ${ALDAGI_GIFTS_REST}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '187';
+      const v = window.__CC_VER || '188';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
