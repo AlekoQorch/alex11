@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '191';
+    window.__CC_VER = '192';
     (function () {
       function go(v) {
         try {
@@ -560,15 +560,26 @@
       gap: 0;
       overflow: hidden;
     }
+    .sms-card .chat-dd-main,
     .chat-dd-main {
       flex: 1;
       min-width: 0;
-      display: inline-flex;
+      height: 100%;
+      display: inline-flex !important;
       align-items: center;
       justify-content: center;
       gap: 5px;
-      padding: 0 6px 0 8px;
+      padding: 0 6px 0 8px !important;
+      margin: 0;
+      border: none !important;
+      border-radius: 0 !important;
+      background: transparent !important;
+      color: inherit !important;
+      font: inherit;
+      font-size: 14px !important;
+      font-weight: 600;
       line-height: 1;
+      cursor: pointer;
     }
     .chat-dd-sep {
       width: 1px;
@@ -576,19 +587,28 @@
       margin: 10px 0;
       background: rgba(255,255,255,.42);
     }
+    .sms-card .ch-chev,
     .ch-chev {
       flex-shrink: 0;
       width: 24px;
-      display: inline-flex;
+      height: 100%;
+      display: inline-flex !important;
       align-items: center;
       justify-content: center;
-      background: rgba(0,0,0,.12);
+      padding: 0 !important;
+      margin: 0;
+      border: none !important;
+      border-radius: 0 !important;
+      background: rgba(0,0,0,.12) !important;
+      color: inherit !important;
+      cursor: pointer;
     }
     .ch-chev svg {
       width: 12px;
       height: 12px;
       display: block;
       transition: transform .16s ease;
+      pointer-events: none;
     }
     .chat-dd.open .ch-chev svg { transform: rotate(180deg); }
     .chat-dd.open .chat-dd-toggle {
@@ -1017,7 +1037,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v114</div>
+      <div class="ver">v115</div>
     </header>
 
     <div class="tabs">
@@ -1125,15 +1145,15 @@
     function channelLabel(ch, text) {
       return `${CH_ICO[ch] || CH_ICO.sms}<span>${text}</span>`;
     }
-    const CH_CHEV = `<span class="ch-chev" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M6.7 9.3a1 1 0 0 1 1.4 0L12 13.17l3.9-3.88a1 1 0 1 1 1.4 1.42l-4.6 4.58a1 1 0 0 1-1.4 0l-4.6-4.58a1 1 0 0 1 0-1.42z"/></svg></span>`;
+    const CH_CHEV = `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6.7 9.3a1 1 0 0 1 1.4 0L12 13.17l3.9-3.88a1 1 0 1 1 1.4 1.42l-4.6 4.58a1 1 0 0 1-1.4 0l-4.6-4.58a1 1 0 0 1 0-1.42z"/></svg>`;
     function chatDropdownHtml(compact) {
       const label = compact ? 'WA' : 'WhatsApp';
       return `<div class="chat-dd">
-        <button type="button" class="btn-wa chat-dd-toggle" aria-haspopup="menu" aria-expanded="false">
-          <span class="chat-dd-main">${channelLabel('wa', label)}</span>
+        <div class="btn-wa chat-dd-toggle">
+          <button type="button" class="chat-dd-main" data-chat-go="wa">${channelLabel('wa', label)}</button>
           <span class="chat-dd-sep" aria-hidden="true"></span>
-          ${CH_CHEV}
-        </button>
+          <button type="button" class="ch-chev chat-dd-caret" aria-haspopup="menu" aria-expanded="false" aria-label="არხის არჩევა">${CH_CHEV}</button>
+        </div>
         <div class="chat-dd-menu hide" role="menu">
           <button type="button" data-chat="wa" class="ch-wa" role="menuitem">${channelLabel('wa', 'WhatsApp')}</button>
           <button type="button" data-chat="viber" class="ch-viber" role="menuitem">${channelLabel('viber', 'Viber')}</button>
@@ -1144,11 +1164,11 @@
     function setChatMenuOpen(dd, open) {
       if (!dd) return;
       const menu = dd.querySelector('.chat-dd-menu');
-      const btn = dd.querySelector('.chat-dd-toggle');
-      if (!menu || !btn) return;
+      const caret = dd.querySelector('.chat-dd-caret');
+      if (!menu) return;
       dd.classList.toggle('open', !!open);
       menu.classList.toggle('hide', !open);
-      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (caret) caret.setAttribute('aria-expanded', open ? 'true' : 'false');
     }
     function closeAllChatMenus(except) {
       document.querySelectorAll('.chat-dd').forEach(dd => {
@@ -1227,7 +1247,7 @@ ${ALDAGI_GIFTS_REST}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '191';
+      const v = window.__CC_VER || '192';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -1497,11 +1517,23 @@ ${link}
         }
       });
       $('num-list').addEventListener('click', e => {
-        const ddToggle = e.target.closest('.chat-dd-toggle');
-        if (ddToggle) {
+        const caret = e.target.closest('.chat-dd-caret');
+        if (caret) {
           e.preventDefault();
           e.stopPropagation();
-          toggleChatMenu(ddToggle.closest('.chat-dd'));
+          toggleChatMenu(caret.closest('.chat-dd'));
+          return;
+        }
+        const goWa = e.target.closest('[data-chat-go]');
+        if (goWa && goWa.closest('#num-list')) {
+          e.preventDefault();
+          e.stopPropagation();
+          closeAllChatMenus();
+          const row = goWa.closest('.num-row');
+          const inp = row?.querySelector('.num-inp');
+          const num = tel(inp?.value || '');
+          if (!num) return;
+          showTemplatePicker(num, goWa.dataset.chatGo || 'wa');
           return;
         }
         const chatBtn = e.target.closest('[data-chat]');
@@ -2359,11 +2391,23 @@ ${extras}${buildAldagiBenefits(isElectric)}`;
         return;
       }
 
-      const ddToggle = e.target.closest('.chat-dd-toggle');
-      if (ddToggle) {
+      const caret = e.target.closest('.chat-dd-caret');
+      if (caret) {
         e.preventDefault();
         e.stopPropagation();
-        toggleChatMenu(ddToggle.closest('.chat-dd'));
+        toggleChatMenu(caret.closest('.chat-dd'));
+        return;
+      }
+
+      const goWa = e.target.closest('[data-chat-go]');
+      if (goWa) {
+        e.preventDefault();
+        e.stopPropagation();
+        closeAllChatMenus();
+        const card = goWa.closest('.sms-card');
+        const tpl = goWa.closest('[data-chat-tpl]')?.dataset.chatTpl || card?.dataset.id;
+        const title = card?.querySelector('h3')?.textContent || 'გაგზავნა';
+        openChatFromMenu(goWa.dataset.chatGo || 'wa', tpl, title);
         return;
       }
 
@@ -2427,11 +2471,22 @@ ${extras}${buildAldagiBenefits(isElectric)}`;
     $('clr-hist').onclick = () => { localStorage.removeItem('hist'); showHist(); };
 
     $('hist').addEventListener('click', e => {
-      const ddToggle = e.target.closest('.chat-dd-toggle');
-      if (ddToggle) {
+      const caret = e.target.closest('.chat-dd-caret');
+      if (caret) {
         e.preventDefault();
         e.stopPropagation();
-        toggleChatMenu(ddToggle.closest('.chat-dd'));
+        toggleChatMenu(caret.closest('.chat-dd'));
+        return;
+      }
+      const goWa = e.target.closest('[data-chat-go]');
+      if (goWa) {
+        e.preventDefault();
+        e.stopPropagation();
+        closeAllChatMenus();
+        const row = goWa.closest('.hist');
+        const num = tel(row?.dataset.num || '');
+        if (!num) return;
+        showTemplatePicker(num, goWa.dataset.chatGo || 'wa');
         return;
       }
       const chatBtn = e.target.closest('[data-chat]');
