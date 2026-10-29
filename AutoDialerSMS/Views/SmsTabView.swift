@@ -1,5 +1,6 @@
 import MessageUI
 import SwiftUI
+import UIKit
 
 struct SmsTabView: View {
     @EnvironmentObject private var callManager: CallQueueManager
@@ -86,9 +87,15 @@ struct SmsTabView: View {
             limitPicker("ჯანმრთელობა", options: AldagiMessages.healthLimits, selection: $offerHealth)
             Toggle("ავტომობილი ელექტროა", isOn: $offerIsElectric)
             Text(offerPreview).font(.caption).foregroundStyle(.secondary)
-            Button("SMS") { send(offerPreview) }
-                .buttonStyle(.borderedProminent)
-                .frame(maxWidth: .infinity)
+            HStack(spacing: 8) {
+                Button("SMS") { send(offerPreview) }
+                    .buttonStyle(.borderedProminent)
+                    .frame(maxWidth: .infinity)
+                Button("Viber") { sendViber(offerPreview) }
+                    .buttonStyle(.borderedProminent)
+                    .tint(Color(red: 0.45, green: 0.376, blue: 0.95))
+                    .frame(maxWidth: .infinity)
+            }
         }
         .padding()
         .background(Color(.secondarySystemBackground))
@@ -134,5 +141,16 @@ struct SmsTabView: View {
         } else {
             showUnavailable = true
         }
+    }
+
+    private func sendViber(_ body: String) {
+        guard !resolvedNumber.isEmpty else { return }
+        var digits = resolvedNumber.filter(\.isNumber)
+        if digits.count == 9, digits.hasPrefix("5") {
+            digits = "995" + digits
+        }
+        UIPasteboard.general.string = body
+        guard let url = URL(string: "viber://chat?number=\(digits)") else { return }
+        UIApplication.shared.open(url)
     }
 }
