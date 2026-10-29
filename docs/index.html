@@ -350,6 +350,7 @@
       line-height: 1.4;
     }
     .sms-card {
+      position: relative;
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 14px;
@@ -500,11 +501,11 @@
     .send-confirm-card .ch-ico { width: 18px; height: 18px; }
     .chat-dd { position: relative; z-index: 1; }
     .chat-dd.open { z-index: 80; }
-    .sms-card { position: relative; }
     .sms-card:has(.chat-dd.open) { z-index: 6; }
+    .sms-card .chat-dd-toggle,
     .chat-dd-toggle {
       width: 100%;
-      padding: 0;
+      padding: 0 !important;
       border: 1px solid rgba(255,255,255,.18);
       border-radius: 12px;
       background: #25d366;
