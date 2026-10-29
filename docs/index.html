@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '181';
+    window.__CC_VER = '182';
     (function () {
       function go(v) {
         try {
@@ -456,10 +456,11 @@
     .send-row {
       display: flex;
       gap: 8px;
+      align-items: stretch;
     }
-    .send-row button { flex: 1; }
-    .send-row button.btn-viber,
-    .send-row button.btn-wa { font-size: 14px; }
+    .send-row > button,
+    .send-row > .chat-dd { flex: 1; min-width: 0; }
+    .send-row .btn-wa { font-size: 14px; }
     .btn-wa {
       background: #25d366 !important;
       border-color: #1faa52 !important;
@@ -470,10 +471,16 @@
       border-color: #5b4bd6 !important;
       color: #fff !important;
     }
+    .btn-tg {
+      background: #229ed9 !important;
+      border-color: #1a8fc4 !important;
+      color: #fff !important;
+    }
     .sms-card > button[data-send],
     .send-row button,
     .num-row-actions button,
-    .hist-actions button {
+    .hist-actions button,
+    .chat-dd-toggle {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -487,13 +494,83 @@
       line-height: 0;
     }
     .ch-ico svg { width: 100%; height: 100%; display: block; }
-    .ch-ico-imessage { width: 18px; height: 18px; }
     .num-row-actions .ch-ico,
     .hist-actions .ch-ico { width: 13px; height: 13px; }
-    .num-row-actions .ch-ico-imessage,
-    .hist-actions .ch-ico-imessage { width: 14px; height: 14px; }
     .send-confirm-card .ch-ico { width: 17px; height: 17px; }
-    .send-confirm-card .ch-ico-imessage { width: 18px; height: 18px; }
+    .chat-dd { position: relative; }
+    .chat-dd-toggle {
+      width: 100%;
+      padding: 13px;
+      border: 1px solid transparent;
+      border-radius: 12px;
+      background: #25d366;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+    }
+    .chat-dd-toggle .ch-chev {
+      font-size: 10px;
+      opacity: 0.9;
+      margin-left: 2px;
+    }
+    .chat-dd-menu {
+      position: absolute;
+      left: 0; right: 0;
+      top: calc(100% + 4px);
+      z-index: 40;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 10px 28px rgba(0,0,0,.35);
+    }
+    .chat-dd-menu.hide { display: none !important; }
+    .chat-dd-menu button {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      border: none;
+      border-radius: 0;
+      background: transparent;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      text-align: left;
+    }
+    .chat-dd-menu button + button { border-top: 1px solid var(--line); }
+    .chat-dd-menu button:active { background: var(--bg); }
+    .chat-dd-menu .ch-ico { width: 18px; height: 18px; }
+    .chat-dd-menu .ch-wa { color: #25d366; }
+    .chat-dd-menu .ch-viber { color: #7360f2; }
+    .chat-dd-menu .ch-tg { color: #229ed9; }
+    .num-row-actions .chat-dd,
+    .hist-actions .chat-dd { flex-shrink: 0; }
+    .num-row-actions .chat-dd-toggle,
+    .hist-actions .chat-dd-toggle {
+      width: auto;
+      padding: 5px 8px;
+      border: none;
+      border-radius: 6px;
+      font-size: 11px;
+      line-height: 1.2;
+    }
+    .num-row-actions .chat-dd-menu,
+    .hist-actions .chat-dd-menu {
+      min-width: 148px;
+      left: auto; right: 0;
+      top: calc(100% + 3px);
+    }
+    .num-row-actions .chat-dd-menu button,
+    .hist-actions .chat-dd-menu button {
+      padding: 9px 11px;
+      font-size: 12px;
+      color: var(--text);
+      background: transparent;
+    }
 
     .offer-fields { margin-bottom: 12px; }
     .field-label {
@@ -797,6 +874,11 @@
       background: #7360f2 !important;
       border-color: #5b4bd6 !important;
     }
+    .send-confirm-card .send-row .btn-tg {
+      background: #229ed9 !important;
+      border-color: #1a8fc4 !important;
+    }
+    .box .go.btn-tg { background: #229ed9; color: #fff; }
     .hide { display: none !important; }
   </style>
 </head>
@@ -804,7 +886,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v104</div>
+      <div class="ver">v105</div>
     </header>
 
     <div class="tabs">
@@ -902,14 +984,32 @@
   </div>
 
   <script>
-    /** iMessage / WhatsApp / Viber ლოგოები ღილაკებზე */
+    /** SMS / WhatsApp / Viber / Telegram ლოგოები */
     const CH_ICO = {
-      sms: `<span class="ch-ico ch-ico-imessage" aria-hidden="true"><svg viewBox="0 0 24 24"><rect width="24" height="24" rx="6.2" fill="#34C759"/><path fill="#fff" d="M12 5.15c-3.72 0-6.75 2.38-6.75 5.32 0 1.82 1.08 3.42 2.78 4.4l-.58 2.62 2.95-1.48c.5.1 1.02.16 1.6.16 3.72 0 6.75-2.38 6.75-5.32S15.72 5.15 12 5.15z"/></svg></span>`,
+      sms: `<span class="ch-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 3.2c-4.6 0-8.3 3.05-8.3 6.8 0 2.2 1.25 4.15 3.2 5.4L5.4 20.2l3.85-1.9c.85.22 1.75.34 2.75.34 4.6 0 8.3-3.05 8.3-6.8S16.6 3.2 12 3.2z"/></svg></span>`,
       wa: `<span class="ch-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12.04 2C6.58 2 2.15 6.4 2.15 11.84c0 1.96.52 3.8 1.44 5.4L2 22l4.92-1.55a9.9 9.9 0 0 0 5.12 1.4h.01c5.46 0 9.9-4.4 9.9-9.84C21.94 6.4 17.5 2 12.04 2zm5.76 13.95c-.24.68-1.4 1.24-1.93 1.32-.5.07-1.13.1-1.82-.11-.42-.13-.96-.31-1.65-.61-2.9-1.26-4.79-4.18-4.93-4.38-.14-.2-1.17-1.56-1.17-2.98 0-1.42.74-2.12 1-2.41.26-.29.57-.36.76-.36h.55c.18 0 .42-.07.65.5.24.58.82 2 .89 2.14.07.14.12.3.02.49-.1.2-.14.32-.28.5-.14.17-.3.38-.42.51-.14.14-.28.29-.12.56.16.28.7 1.15 1.5 1.86 1.03.92 1.9 1.2 2.17 1.34.27.14.43.12.59-.07.16-.2.68-.79.86-1.06.18-.27.36-.22.61-.13.24.09 1.55.73 1.82.86.26.14.44.2.5.31.07.11.07.64-.17 1.32z"/></svg></span>`,
-      viber: `<span class="ch-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M11.4 2.02C6.1 2.3 2.2 6.4 2.02 11.7c-.1 2.8.9 5.3 2.7 7.2v3.5l3.4-1.9c.9.3 1.9.4 2.9.4h.1c5.4-.1 9.7-4.5 9.6-9.9-.1-5.2-4.4-9.2-9.32-8.98zm.4 16.4h-.08c-.9 0-1.8-.2-2.6-.5l-.19-.08-2 .1.1-1.9-.12-.15a6.6 6.6 0 0 1-1.5-4.2c.1-3.7 3.2-6.7 7-6.8 1.9 0 3.6.7 4.9 2 1.3 1.3 2 3 2 4.9-.1 3.8-3.2 6.9-7.51 6.93zm4.1-4.95c-.2-.1-1.3-.65-1.5-.72-.2-.08-.35-.12-.5.12-.14.23-.57.72-.7.87-.13.14-.26.16-.48.05-.22-.1-.92-.34-1.75-1.08-.65-.58-1.08-1.3-1.21-1.52-.13-.23-.01-.35.1-.46.1-.1.22-.26.33-.39.11-.13.14-.23.22-.38.07-.15.04-.28-.02-.39-.06-.12-.5-1.2-.68-1.64-.18-.44-.36-.37-.5-.38h-.42c-.15 0-.39.05-.59.28-.2.23-.78.76-.78 1.85s.8 2.15.91 2.3c.11.14 1.57 2.4 3.8 3.36.53.23.95.37 1.27.47.54.17 1.02.15 1.41.09.43-.06 1.3-.53 1.49-1.05.18-.51.18-.95.13-1.04-.05-.1-.2-.15-.41-.26z"/></svg></span>`
+      viber: `<span class="ch-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M11.4 2.02C6.1 2.3 2.2 6.4 2.02 11.7c-.1 2.8.9 5.3 2.7 7.2v3.5l3.4-1.9c.9.3 1.9.4 2.9.4h.1c5.4-.1 9.7-4.5 9.6-9.9-.1-5.2-4.4-9.2-9.32-8.98zm.4 16.4h-.08c-.9 0-1.8-.2-2.6-.5l-.19-.08-2 .1.1-1.9-.12-.15a6.6 6.6 0 0 1-1.5-4.2c.1-3.7 3.2-6.7 7-6.8 1.9 0 3.6.7 4.9 2 1.3 1.3 2 3 2 4.9-.1 3.8-3.2 6.9-7.51 6.93zm4.1-4.95c-.2-.1-1.3-.65-1.5-.72-.2-.08-.35-.12-.5.12-.14.23-.57.72-.7.87-.13.14-.26.16-.48.05-.22-.1-.92-.34-1.75-1.08-.65-.58-1.08-1.3-1.21-1.52-.13-.23-.01-.35.1-.46.1-.1.22-.26.33-.39.11-.13.14-.23.22-.38.07-.15.04-.28-.02-.39-.06-.12-.5-1.2-.68-1.64-.18-.44-.36-.37-.5-.38h-.42c-.15 0-.39.05-.59.28-.2.23-.78.76-.78 1.85s.8 2.15.91 2.3c.11.14 1.57 2.4 3.8 3.36.53.23.95.37 1.27.47.54.17 1.02.15 1.41.09.43-.06 1.3-.53 1.49-1.05.18-.51.18-.95.13-1.04-.05-.1-.2-.15-.41-.26z"/></svg></span>`,
+      tg: `<span class="ch-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8-1.55 7.31c-.12.53-.42.66-.86.41l-2.37-1.75-1.14 1.1c-.13.13-.23.23-.47.23l.17-2.4 4.37-3.95c.19-.17-.04-.26-.29-.1l-5.4 3.4-2.33-.73c-.5-.16-.51-.5.11-.74l9.1-3.51c.42-.15.79.1.66.63z"/></svg></span>`
     };
     function channelLabel(ch, text) {
       return `${CH_ICO[ch] || CH_ICO.sms}<span>${text}</span>`;
+    }
+    function chatDropdownHtml(compact) {
+      const label = compact ? 'WA' : 'WhatsApp';
+      return `<div class="chat-dd">
+        <button type="button" class="btn-wa chat-dd-toggle">${channelLabel('wa', label)}<span class="ch-chev" aria-hidden="true">▾</span></button>
+        <div class="chat-dd-menu hide">
+          <button type="button" data-chat="wa" class="ch-wa">${channelLabel('wa', 'WhatsApp')}</button>
+          <button type="button" data-chat="viber" class="ch-viber">${channelLabel('viber', 'Viber')}</button>
+          <button type="button" data-chat="tg" class="ch-tg">${channelLabel('tg', 'Telegram')}</button>
+        </div>
+      </div>`;
+    }
+    function closeAllChatMenus(except) {
+      document.querySelectorAll('.chat-dd-menu').forEach(m => {
+        if (except && m === except) return;
+        m.classList.add('hide');
+      });
     }
 
     const INTRO_KA = 'ალექსანდრე ქორჩაშვილი გწერთ სადაზღვეო კომპანია ალდაგიდან. მოინიშნეთ ეს ნომერი და დამიკავშირდით ნებისმიერ კითხვით.';
@@ -976,7 +1076,7 @@ ${ALDAGI_GIFTS_REST}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '181';
+      const v = window.__CC_VER || '182';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -1169,7 +1269,7 @@ ${link}
       const row = document.createElement('div');
       row.className = 'num-row';
       const id = `ccn-${stamp}-${i}`;
-      row.innerHTML = `<span class="num-lbl">${i + 1}.</span><input class="num-inp" id="${id}" name="${id}" type="tel" inputmode="tel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="ნომერი"><span class="num-row-actions"><button type="button" class="row-sms" data-row-send="sms">${channelLabel('sms', 'SMS')}</button><button type="button" class="row-wa" data-row-send="wa">${channelLabel('wa', 'WA')}</button></span><span class="num-mark"></span>`;
+      row.innerHTML = `<span class="num-lbl">${i + 1}.</span><input class="num-inp" id="${id}" name="${id}" type="tel" inputmode="tel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="ნომერი"><span class="num-row-actions"><button type="button" class="row-sms" data-row-send="sms">${channelLabel('sms', 'SMS')}</button>${chatDropdownHtml(true)}</span><span class="num-mark"></span>`;
       return row;
     }
 
@@ -1246,6 +1346,29 @@ ${link}
         }
       });
       $('num-list').addEventListener('click', e => {
+        const ddToggle = e.target.closest('.chat-dd-toggle');
+        if (ddToggle) {
+          e.preventDefault();
+          e.stopPropagation();
+          const menu = ddToggle.closest('.chat-dd')?.querySelector('.chat-dd-menu');
+          if (!menu) return;
+          const open = menu.classList.contains('hide');
+          closeAllChatMenus();
+          if (open) menu.classList.remove('hide');
+          return;
+        }
+        const chatBtn = e.target.closest('[data-chat]');
+        if (chatBtn && chatBtn.closest('#num-list')) {
+          e.preventDefault();
+          e.stopPropagation();
+          closeAllChatMenus();
+          const row = chatBtn.closest('.num-row');
+          const inp = row?.querySelector('.num-inp');
+          const num = tel(inp?.value || '');
+          if (!num) return;
+          showTemplatePicker(num, chatBtn.dataset.chat);
+          return;
+        }
         const sendBtn = e.target.closest('[data-row-send]');
         if (sendBtn) {
           e.preventDefault();
@@ -1502,7 +1625,7 @@ ${link}
               </div>
               <span class="hist-actions">
                 <button type="button" class="row-sms" data-hist-send="sms">${channelLabel('sms', 'SMS')}</button>
-                <button type="button" class="row-wa" data-hist-send="wa">${channelLabel('wa', 'WA')}</button>
+                ${chatDropdownHtml(true)}
               </span>
             </div>`;
           }).join('')
@@ -1772,12 +1895,32 @@ ${link}
       location.href = 'viber://chat?number=' + n;
     }
 
+    /** Telegram: ჩატი ნომრით + ტექსტი clipboard-ზე */
+    function sendTelegramTo(num, msg) {
+      const n = intlDigits(num);
+      if (msg && navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText(msg).catch(() => {});
+      }
+      location.href = 'tg://resolve?phone=' + n;
+    }
+
+    function normalizeChannel(type) {
+      if (type === 'viber' || type === 'tg' || type === 'wa' || type === 'sms') return type;
+      return 'sms';
+    }
+
+    function channelTitle(type) {
+      if (type === 'viber') return 'Viber';
+      if (type === 'tg') return 'Telegram';
+      if (type === 'wa') return 'WhatsApp';
+      return 'SMS';
+    }
+
     function showTemplatePicker(num, type) {
       pendingTpl.num = tel(num || '');
-      pendingTpl.type = type === 'viber' ? 'viber' : (type === 'wa' ? 'wa' : 'sms');
+      pendingTpl.type = normalizeChannel(type);
       $('tpl-picker-num').textContent = formatPhoneDisplay(num);
-      $('tpl-picker-channel').textContent =
-        type === 'viber' ? 'Viber' : (type === 'wa' ? 'WhatsApp' : 'SMS');
+      $('tpl-picker-channel').textContent = channelTitle(pendingTpl.type);
       $('tpl-picker-modal').classList.remove('hide');
       document.body.style.overflow = 'hidden';
     }
@@ -1819,10 +1962,14 @@ ${link}
       }
       $('send-preview').textContent = msg;
       const btn = $('send-go');
-      if (type === 'viber') {
+      const ch = normalizeChannel(type);
+      if (ch === 'viber') {
         btn.innerHTML = channelLabel('viber', 'დიახ, Viber');
         btn.className = 'btn-viber';
-      } else if (type === 'wa') {
+      } else if (ch === 'tg') {
+        btn.innerHTML = channelLabel('tg', 'დიახ, Telegram');
+        btn.className = 'btn-tg';
+      } else if (ch === 'wa') {
         btn.innerHTML = channelLabel('wa', 'დიახ, WhatsApp');
         btn.className = 'btn-wa';
       } else {
@@ -1849,8 +1996,18 @@ ${link}
       const type = pendingSend.type;
       closeSendModal();
       if (type === 'viber') sendViberTo(num, msg);
+      else if (type === 'tg') sendTelegramTo(num, msg);
       else if (type === 'wa') sendWaTo(num, msg);
       else sendSmsTo(num, msg);
+    }
+
+    function msgForTpl(tpl, num) {
+      if (tpl === 'intro') return introMsg(langPick.intro);
+      if (tpl === 'noanswer') return NO_ANSWER_MSG;
+      if (tpl === 'tariff') return TARIFF_MSG;
+      if (tpl === 'aldagi') return buildAldagiMsg();
+      if (tpl === 'docs') return buildDocsLinkMsg(num);
+      return '';
     }
 
     function openSendFromBtn(btn) {
@@ -1860,14 +2017,16 @@ ${link}
       const action = btn.dataset.send;
       if (action === 'intro-sms') showSendConfirm(n, introMsg(langPick.intro), 'sms', title);
       else if (action === 'noanswer-sms') showSendConfirm(n, NO_ANSWER_MSG, 'sms', title);
-      else if (action === 'noanswer-wa') showSendConfirm(n, NO_ANSWER_MSG, 'wa', title);
       else if (action === 'tariff-sms') showSendConfirm(n, TARIFF_MSG, 'sms', title);
-      else if (action === 'tariff-wa') showSendConfirm(n, TARIFF_MSG, 'wa', title);
       else if (action === 'aldagi-sms') showSendConfirm(n, buildAldagiMsg(), 'sms', title);
-      else if (action === 'aldagi-wa') showSendConfirm(n, buildAldagiMsg(), 'wa', title);
-      else if (action === 'aldagi-viber') showSendConfirm(n, buildAldagiMsg(), 'viber', title);
       else if (action === 'docs-sms') showSendConfirm(n, buildDocsLinkMsg(n), 'sms', title);
-      else if (action === 'docs-wa') showSendConfirm(n, buildDocsLinkMsg(n), 'wa', title);
+    }
+
+    function openChatFromMenu(chat, tpl, title) {
+      const n = getPhone();
+      const msg = msgForTpl(tpl, n);
+      if (!msg) return;
+      showSendConfirm(n, msg, chat, title || 'გაგზავნა');
     }
 
     function showAfterCall(n) {
@@ -1897,7 +2056,10 @@ ${link}
             <button type="button" data-lang="both">ორივე</button>
           </div>
           <div class="sms-text" id="intro-preview">${introMsg('ka')}</div>
-          <button type="button" data-send="intro-sms">${channelLabel('sms', 'გაგზავნა SMS')}</button>
+          <div class="send-row" data-chat-tpl="intro">
+            <button type="button" data-send="intro-sms">${channelLabel('sms', 'SMS')}</button>
+            ${chatDropdownHtml(false)}
+          </div>
         </div>
         <div class="sms-card" data-id="noanswer">
           <div class="sms-card-head">
@@ -1905,9 +2067,9 @@ ${link}
             <span class="sms-to is-empty" data-sms-to>ნომერი არაა</span>
           </div>
           <div class="sms-text">${NO_ANSWER_MSG.replace(/</g, '&lt;')}</div>
-          <div class="send-row">
+          <div class="send-row" data-chat-tpl="noanswer">
             <button type="button" data-send="noanswer-sms">${channelLabel('sms', 'SMS')}</button>
-            <button type="button" class="btn-wa" data-send="noanswer-wa">${channelLabel('wa', 'WhatsApp')}</button>
+            ${chatDropdownHtml(false)}
           </div>
         </div>
         <div class="sms-card" data-id="tariff">
@@ -1916,9 +2078,9 @@ ${link}
             <span class="sms-to is-empty" data-sms-to>ნომერი არაა</span>
           </div>
           <div class="sms-text">${TARIFF_MSG.replace(/</g, '&lt;')}</div>
-          <div class="send-row">
+          <div class="send-row" data-chat-tpl="tariff">
             <button type="button" data-send="tariff-sms">${channelLabel('sms', 'SMS')}</button>
-            <button type="button" class="btn-wa" data-send="tariff-wa">${channelLabel('wa', 'WhatsApp')}</button>
+            ${chatDropdownHtml(false)}
           </div>
         </div>
         <div class="sms-card" data-id="aldagi">
@@ -1955,10 +2117,9 @@ ${link}
             </label>
           </div>
           <div class="sms-text long" id="aldagi-preview"></div>
-          <div class="send-row">
+          <div class="send-row" data-chat-tpl="aldagi">
             <button type="button" data-send="aldagi-sms">${channelLabel('sms', 'SMS')}</button>
-            <button type="button" class="btn-wa" data-send="aldagi-wa">${channelLabel('wa', 'WhatsApp')}</button>
-            <button type="button" class="btn-viber" data-send="aldagi-viber">${channelLabel('viber', 'Viber')}</button>
+            ${chatDropdownHtml(false)}
           </div>
         </div>
         <div class="sms-card" data-id="docs">
@@ -1968,9 +2129,9 @@ ${link}
           </div>
           <p class="sms-hint" style="margin:0 0 8px">პირადობა · მართვის მოწმობა · ტექპასპორტი</p>
           <div class="sms-text" id="docs-preview"></div>
-          <div class="send-row">
+          <div class="send-row" data-chat-tpl="docs">
             <button type="button" data-send="docs-sms">${channelLabel('sms', 'SMS')}</button>
-            <button type="button" class="btn-wa" data-send="docs-wa">${channelLabel('wa', 'WhatsApp')}</button>
+            ${chatDropdownHtml(false)}
           </div>
         </div>`;
 
@@ -2051,6 +2212,30 @@ ${extras}${buildAldagiBenefits(isElectric)}`;
         return;
       }
 
+      const ddToggle = e.target.closest('.chat-dd-toggle');
+      if (ddToggle) {
+        e.preventDefault();
+        e.stopPropagation();
+        const menu = ddToggle.closest('.chat-dd')?.querySelector('.chat-dd-menu');
+        if (!menu) return;
+        const open = menu.classList.contains('hide');
+        closeAllChatMenus();
+        if (open) menu.classList.remove('hide');
+        return;
+      }
+
+      const chatBtn = e.target.closest('[data-chat]');
+      if (chatBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        closeAllChatMenus();
+        const card = chatBtn.closest('.sms-card');
+        const tpl = chatBtn.closest('[data-chat-tpl]')?.dataset.chatTpl || card?.dataset.id;
+        const title = card?.querySelector('h3')?.textContent || 'გაგზავნა';
+        openChatFromMenu(chatBtn.dataset.chat, tpl, title);
+        return;
+      }
+
       const btn = e.target.closest('[data-send]');
       if (!btn) return;
       e.preventDefault();
@@ -2099,6 +2284,28 @@ ${extras}${buildAldagiBenefits(isElectric)}`;
     $('clr-hist').onclick = () => { localStorage.removeItem('hist'); showHist(); };
 
     $('hist').addEventListener('click', e => {
+      const ddToggle = e.target.closest('.chat-dd-toggle');
+      if (ddToggle) {
+        e.preventDefault();
+        e.stopPropagation();
+        const menu = ddToggle.closest('.chat-dd')?.querySelector('.chat-dd-menu');
+        if (!menu) return;
+        const open = menu.classList.contains('hide');
+        closeAllChatMenus();
+        if (open) menu.classList.remove('hide');
+        return;
+      }
+      const chatBtn = e.target.closest('[data-chat]');
+      if (chatBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        closeAllChatMenus();
+        const row = chatBtn.closest('.hist');
+        const num = tel(row?.dataset.num || '');
+        if (!num) return;
+        showTemplatePicker(num, chatBtn.dataset.chat);
+        return;
+      }
       const btn = e.target.closest('[data-hist-send]');
       if (!btn) return;
       e.preventDefault();
@@ -2107,6 +2314,11 @@ ${extras}${buildAldagiBenefits(isElectric)}`;
       if (!num) return;
       const type = btn.dataset.histSend;
       showTemplatePicker(num, type);
+    });
+
+    document.addEventListener('click', e => {
+      if (e.target.closest('.chat-dd')) return;
+      closeAllChatMenus();
     });
 
     document.addEventListener('visibilitychange', () => {
