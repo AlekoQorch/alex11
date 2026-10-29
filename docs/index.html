@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '189';
+    window.__CC_VER = '190';
     (function () {
       function go(v) {
         try {
@@ -456,15 +456,16 @@
     }
     .send-row {
       --send-h: 44px;
-      display: flex;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
       gap: 8px;
       align-items: center;
     }
     .send-row > button,
     .send-row > .chat-dd {
-      flex: 1 1 0;
+      width: 100% !important;
+      max-width: 100%;
       min-width: 0;
-      width: 0;
       height: var(--send-h);
       min-height: var(--send-h);
       max-height: var(--send-h);
@@ -480,6 +481,7 @@
       line-height: 1 !important;
       border: 1px solid transparent !important;
       border-radius: 12px !important;
+      width: 100% !important;
       height: var(--send-h) !important;
       min-height: var(--send-h) !important;
       max-height: var(--send-h) !important;
@@ -1002,7 +1004,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v112</div>
+      <div class="ver">v113</div>
     </header>
 
     <div class="tabs">
@@ -1212,7 +1214,7 @@ ${ALDAGI_GIFTS_REST}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '189';
+      const v = window.__CC_VER || '190';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
