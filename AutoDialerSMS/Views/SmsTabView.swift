@@ -56,7 +56,9 @@ struct SmsTabView: View {
             Text(AldagiMessages.intro(lang: introLang))
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            Button("გაგზავნა SMS") { send(AldagiMessages.intro(lang: introLang)) }
+            Button { send(AldagiMessages.intro(lang: introLang)) } label: {
+                Label("გაგზავნა SMS", systemImage: "message.fill")
+            }
                 .buttonStyle(.borderedProminent)
                 .frame(maxWidth: .infinity)
         }
@@ -69,7 +71,9 @@ struct SmsTabView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title).font(.headline)
             Text(message).font(.caption).foregroundStyle(.secondary)
-            Button("SMS") { send(message) }
+            Button { send(message) } label: {
+                Label("SMS", systemImage: "message.fill")
+            }
                 .buttonStyle(.borderedProminent)
                 .frame(maxWidth: .infinity)
         }
@@ -88,10 +92,14 @@ struct SmsTabView: View {
             Toggle("ავტომობილი ელექტროა", isOn: $offerIsElectric)
             Text(offerPreview).font(.caption).foregroundStyle(.secondary)
             HStack(spacing: 8) {
-                Button("SMS") { send(offerPreview) }
+                Button { send(offerPreview) } label: {
+                    Label("SMS", systemImage: "message.fill")
+                }
                     .buttonStyle(.borderedProminent)
                     .frame(maxWidth: .infinity)
-                Button("Viber") { sendViber(offerPreview) }
+                Button { sendViber(offerPreview) } label: {
+                    Label("Viber", systemImage: "phone.bubble.fill")
+                }
                     .buttonStyle(.borderedProminent)
                     .tint(Color(red: 0.45, green: 0.376, blue: 0.95))
                     .frame(maxWidth: .infinity)

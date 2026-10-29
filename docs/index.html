@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '180';
+    window.__CC_VER = '181';
     (function () {
       function go(v) {
         try {
@@ -470,6 +470,30 @@
       border-color: #5b4bd6 !important;
       color: #fff !important;
     }
+    .sms-card > button[data-send],
+    .send-row button,
+    .num-row-actions button,
+    .hist-actions button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .ch-ico {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      display: inline-flex;
+      line-height: 0;
+    }
+    .ch-ico svg { width: 100%; height: 100%; display: block; }
+    .ch-ico-imessage { width: 18px; height: 18px; }
+    .num-row-actions .ch-ico,
+    .hist-actions .ch-ico { width: 13px; height: 13px; }
+    .num-row-actions .ch-ico-imessage,
+    .hist-actions .ch-ico-imessage { width: 14px; height: 14px; }
+    .send-confirm-card .ch-ico { width: 17px; height: 17px; }
+    .send-confirm-card .ch-ico-imessage { width: 18px; height: 18px; }
 
     .offer-fields { margin-bottom: 12px; }
     .field-label {
@@ -780,7 +804,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v103</div>
+      <div class="ver">v104</div>
     </header>
 
     <div class="tabs">
@@ -878,6 +902,16 @@
   </div>
 
   <script>
+    /** iMessage / WhatsApp / Viber ლოგოები ღილაკებზე */
+    const CH_ICO = {
+      sms: `<span class="ch-ico ch-ico-imessage" aria-hidden="true"><svg viewBox="0 0 24 24"><rect width="24" height="24" rx="6.2" fill="#34C759"/><path fill="#fff" d="M12 5.15c-3.72 0-6.75 2.38-6.75 5.32 0 1.82 1.08 3.42 2.78 4.4l-.58 2.62 2.95-1.48c.5.1 1.02.16 1.6.16 3.72 0 6.75-2.38 6.75-5.32S15.72 5.15 12 5.15z"/></svg></span>`,
+      wa: `<span class="ch-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12.04 2C6.58 2 2.15 6.4 2.15 11.84c0 1.96.52 3.8 1.44 5.4L2 22l4.92-1.55a9.9 9.9 0 0 0 5.12 1.4h.01c5.46 0 9.9-4.4 9.9-9.84C21.94 6.4 17.5 2 12.04 2zm5.76 13.95c-.24.68-1.4 1.24-1.93 1.32-.5.07-1.13.1-1.82-.11-.42-.13-.96-.31-1.65-.61-2.9-1.26-4.79-4.18-4.93-4.38-.14-.2-1.17-1.56-1.17-2.98 0-1.42.74-2.12 1-2.41.26-.29.57-.36.76-.36h.55c.18 0 .42-.07.65.5.24.58.82 2 .89 2.14.07.14.12.3.02.49-.1.2-.14.32-.28.5-.14.17-.3.38-.42.51-.14.14-.28.29-.12.56.16.28.7 1.15 1.5 1.86 1.03.92 1.9 1.2 2.17 1.34.27.14.43.12.59-.07.16-.2.68-.79.86-1.06.18-.27.36-.22.61-.13.24.09 1.55.73 1.82.86.26.14.44.2.5.31.07.11.07.64-.17 1.32z"/></svg></span>`,
+      viber: `<span class="ch-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M11.4 2.02C6.1 2.3 2.2 6.4 2.02 11.7c-.1 2.8.9 5.3 2.7 7.2v3.5l3.4-1.9c.9.3 1.9.4 2.9.4h.1c5.4-.1 9.7-4.5 9.6-9.9-.1-5.2-4.4-9.2-9.32-8.98zm.4 16.4h-.08c-.9 0-1.8-.2-2.6-.5l-.19-.08-2 .1.1-1.9-.12-.15a6.6 6.6 0 0 1-1.5-4.2c.1-3.7 3.2-6.7 7-6.8 1.9 0 3.6.7 4.9 2 1.3 1.3 2 3 2 4.9-.1 3.8-3.2 6.9-7.51 6.93zm4.1-4.95c-.2-.1-1.3-.65-1.5-.72-.2-.08-.35-.12-.5.12-.14.23-.57.72-.7.87-.13.14-.26.16-.48.05-.22-.1-.92-.34-1.75-1.08-.65-.58-1.08-1.3-1.21-1.52-.13-.23-.01-.35.1-.46.1-.1.22-.26.33-.39.11-.13.14-.23.22-.38.07-.15.04-.28-.02-.39-.06-.12-.5-1.2-.68-1.64-.18-.44-.36-.37-.5-.38h-.42c-.15 0-.39.05-.59.28-.2.23-.78.76-.78 1.85s.8 2.15.91 2.3c.11.14 1.57 2.4 3.8 3.36.53.23.95.37 1.27.47.54.17 1.02.15 1.41.09.43-.06 1.3-.53 1.49-1.05.18-.51.18-.95.13-1.04-.05-.1-.2-.15-.41-.26z"/></svg></span>`
+    };
+    function channelLabel(ch, text) {
+      return `${CH_ICO[ch] || CH_ICO.sms}<span>${text}</span>`;
+    }
+
     const INTRO_KA = 'ალექსანდრე ქორჩაშვილი გწერთ სადაზღვეო კომპანია ალდაგიდან. მოინიშნეთ ეს ნომერი და დამიკავშირდით ნებისმიერ კითხვით.';
     const INTRO_EN = 'Aleksandre Korchashvili is writing to you from Aldagi Insurance. Please save this number and contact me if you have any questions.';
 
@@ -942,7 +976,7 @@ ${ALDAGI_GIFTS_REST}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '180';
+      const v = window.__CC_VER || '181';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -1135,7 +1169,7 @@ ${link}
       const row = document.createElement('div');
       row.className = 'num-row';
       const id = `ccn-${stamp}-${i}`;
-      row.innerHTML = `<span class="num-lbl">${i + 1}.</span><input class="num-inp" id="${id}" name="${id}" type="tel" inputmode="tel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="ნომერი"><span class="num-row-actions"><button type="button" class="row-sms" data-row-send="sms">SMS</button><button type="button" class="row-wa" data-row-send="wa">WA</button></span><span class="num-mark"></span>`;
+      row.innerHTML = `<span class="num-lbl">${i + 1}.</span><input class="num-inp" id="${id}" name="${id}" type="tel" inputmode="tel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="ნომერი"><span class="num-row-actions"><button type="button" class="row-sms" data-row-send="sms">${channelLabel('sms', 'SMS')}</button><button type="button" class="row-wa" data-row-send="wa">${channelLabel('wa', 'WA')}</button></span><span class="num-mark"></span>`;
       return row;
     }
 
@@ -1467,8 +1501,8 @@ ${link}
                 <span class="hist-time">${x.t || ''}</span>
               </div>
               <span class="hist-actions">
-                <button type="button" class="row-sms" data-hist-send="sms">SMS</button>
-                <button type="button" class="row-wa" data-hist-send="wa">WA</button>
+                <button type="button" class="row-sms" data-hist-send="sms">${channelLabel('sms', 'SMS')}</button>
+                <button type="button" class="row-wa" data-hist-send="wa">${channelLabel('wa', 'WA')}</button>
               </span>
             </div>`;
           }).join('')
@@ -1786,13 +1820,13 @@ ${link}
       $('send-preview').textContent = msg;
       const btn = $('send-go');
       if (type === 'viber') {
-        btn.textContent = 'დიახ, Viber';
+        btn.innerHTML = channelLabel('viber', 'დიახ, Viber');
         btn.className = 'btn-viber';
       } else if (type === 'wa') {
-        btn.textContent = 'დიახ, WhatsApp';
+        btn.innerHTML = channelLabel('wa', 'დიახ, WhatsApp');
         btn.className = 'btn-wa';
       } else {
-        btn.textContent = 'დიახ, SMS';
+        btn.innerHTML = channelLabel('sms', 'დიახ, SMS');
         btn.className = '';
       }
       $('send-modal').classList.remove('hide');
@@ -1863,7 +1897,7 @@ ${link}
             <button type="button" data-lang="both">ორივე</button>
           </div>
           <div class="sms-text" id="intro-preview">${introMsg('ka')}</div>
-          <button type="button" data-send="intro-sms">გაგზავნა SMS</button>
+          <button type="button" data-send="intro-sms">${channelLabel('sms', 'გაგზავნა SMS')}</button>
         </div>
         <div class="sms-card" data-id="noanswer">
           <div class="sms-card-head">
@@ -1872,8 +1906,8 @@ ${link}
           </div>
           <div class="sms-text">${NO_ANSWER_MSG.replace(/</g, '&lt;')}</div>
           <div class="send-row">
-            <button type="button" data-send="noanswer-sms">SMS</button>
-            <button type="button" class="btn-wa" data-send="noanswer-wa">WhatsApp</button>
+            <button type="button" data-send="noanswer-sms">${channelLabel('sms', 'SMS')}</button>
+            <button type="button" class="btn-wa" data-send="noanswer-wa">${channelLabel('wa', 'WhatsApp')}</button>
           </div>
         </div>
         <div class="sms-card" data-id="tariff">
@@ -1883,8 +1917,8 @@ ${link}
           </div>
           <div class="sms-text">${TARIFF_MSG.replace(/</g, '&lt;')}</div>
           <div class="send-row">
-            <button type="button" data-send="tariff-sms">SMS</button>
-            <button type="button" class="btn-wa" data-send="tariff-wa">WhatsApp</button>
+            <button type="button" data-send="tariff-sms">${channelLabel('sms', 'SMS')}</button>
+            <button type="button" class="btn-wa" data-send="tariff-wa">${channelLabel('wa', 'WhatsApp')}</button>
           </div>
         </div>
         <div class="sms-card" data-id="aldagi">
@@ -1922,9 +1956,9 @@ ${link}
           </div>
           <div class="sms-text long" id="aldagi-preview"></div>
           <div class="send-row">
-            <button type="button" data-send="aldagi-sms">SMS</button>
-            <button type="button" class="btn-wa" data-send="aldagi-wa">WhatsApp</button>
-            <button type="button" class="btn-viber" data-send="aldagi-viber">Viber</button>
+            <button type="button" data-send="aldagi-sms">${channelLabel('sms', 'SMS')}</button>
+            <button type="button" class="btn-wa" data-send="aldagi-wa">${channelLabel('wa', 'WhatsApp')}</button>
+            <button type="button" class="btn-viber" data-send="aldagi-viber">${channelLabel('viber', 'Viber')}</button>
           </div>
         </div>
         <div class="sms-card" data-id="docs">
@@ -1935,8 +1969,8 @@ ${link}
           <p class="sms-hint" style="margin:0 0 8px">პირადობა · მართვის მოწმობა · ტექპასპორტი</p>
           <div class="sms-text" id="docs-preview"></div>
           <div class="send-row">
-            <button type="button" data-send="docs-sms">SMS</button>
-            <button type="button" class="btn-wa" data-send="docs-wa">WhatsApp</button>
+            <button type="button" data-send="docs-sms">${channelLabel('sms', 'SMS')}</button>
+            <button type="button" class="btn-wa" data-send="docs-wa">${channelLabel('wa', 'WhatsApp')}</button>
           </div>
         </div>`;
 
