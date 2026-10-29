@@ -56,11 +56,7 @@ struct SmsTabView: View {
             Text(AldagiMessages.intro(lang: introLang))
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            Button { send(AldagiMessages.intro(lang: introLang)) } label: {
-                Label("გაგზავნა SMS", systemImage: "message.fill")
-            }
-                .buttonStyle(.borderedProminent)
-                .frame(maxWidth: .infinity)
+            channelButtons(for: AldagiMessages.intro(lang: introLang))
         }
         .padding()
         .background(Color(.secondarySystemBackground))
@@ -71,11 +67,7 @@ struct SmsTabView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title).font(.headline)
             Text(message).font(.caption).foregroundStyle(.secondary)
-            Button { send(message) } label: {
-                Label("SMS", systemImage: "message.fill")
-            }
-                .buttonStyle(.borderedProminent)
-                .frame(maxWidth: .infinity)
+            channelButtons(for: message)
         }
         .padding()
         .background(Color(.secondarySystemBackground))
@@ -91,23 +83,33 @@ struct SmsTabView: View {
             limitPicker("ჯანმრთელობა", options: AldagiMessages.healthLimits, selection: $offerHealth)
             Toggle("ავტომობილი ელექტროა", isOn: $offerIsElectric)
             Text(offerPreview).font(.caption).foregroundStyle(.secondary)
-            HStack(spacing: 8) {
-                Button { send(offerPreview) } label: {
-                    Label("SMS", systemImage: "message.fill")
-                }
-                    .buttonStyle(.borderedProminent)
-                    .frame(maxWidth: .infinity)
-                Button { sendViber(offerPreview) } label: {
-                    Label("Viber", systemImage: "phone.bubble.fill")
-                }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color(red: 0.45, green: 0.376, blue: 0.95))
-                    .frame(maxWidth: .infinity)
-            }
+            channelButtons(for: offerPreview)
         }
         .padding()
         .background(Color(.secondarySystemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    private func channelButtons(for body: String) -> some View {
+        HStack(spacing: 8) {
+            Button { send(body) } label: {
+                Label("SMS", systemImage: "message.fill")
+            }
+            .buttonStyle(.borderedProminent)
+            .frame(maxWidth: .infinity)
+
+            Menu {
+                Button("WhatsApp") { openChat(scheme: "https://wa.me/", body: body, wa: true) }
+                Button("Viber") { openChat(scheme: "viber://chat?number=", body: body, wa: false) }
+                Button("Telegram") { openChat(scheme: "tg://resolve?phone=", body: body, wa: false) }
+            } label: {
+                Label("WhatsApp", systemImage: "phone.fill")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(Color(red: 0.145, green: 0.827, blue: 0.4))
+            .frame(maxWidth: .infinity)
+        }
     }
 
     private var offerPreview: String {
@@ -151,14 +153,25 @@ struct SmsTabView: View {
         }
     }
 
-    private func sendViber(_ body: String) {
-        guard !resolvedNumber.isEmpty else { return }
+    private func intlDigits() -> String {
         var digits = resolvedNumber.filter(\.isNumber)
         if digits.count == 9, digits.hasPrefix("5") {
             digits = "995" + digits
         }
-        UIPasteboard.general.string = body
-        guard let url = URL(string: "viber://chat?number=\(digits)") else { return }
+        return digits
+    }
+
+    private func openChat(scheme: String, body: String, wa: Bool) {
+        guard !resolvedNumber.isEmpty else { return }
+        let digits = intlDigits()
+        if !wa { UIPasteboard.general.string = body }
+        let urlString: String
+        if wa {
+            urlString = "https://wa.me/\(digits)?text=\(body.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
+        } else {
+            urlString = scheme + digits
+        }
+        guard let url = URL(string: urlString) else { return }
         UIApplication.shared.open(url)
     }
 }
