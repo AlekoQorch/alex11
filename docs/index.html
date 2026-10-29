@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '192';
+    window.__CC_VER = '193';
     (function () {
       function go(v) {
         try {
@@ -1037,7 +1037,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v115</div>
+      <div class="ver">v116</div>
     </header>
 
     <div class="tabs">
@@ -1128,7 +1128,7 @@
         <div class="sms-text" id="send-preview"></div>
         <div class="send-row">
           <button type="button" class="btn-no" id="send-cancel">არა</button>
-          <button type="button" id="send-go">დიახ, SMS</button>
+          <button type="button" id="send-go">SMS</button>
         </div>
       </div>
     </div>
@@ -1247,7 +1247,7 @@ ${ALDAGI_GIFTS_REST}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '192';
+      const v = window.__CC_VER || '193';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -2143,16 +2143,16 @@ ${link}
       const btn = $('send-go');
       const ch = normalizeChannel(type);
       if (ch === 'viber') {
-        btn.innerHTML = channelLabel('viber', 'დიახ, Viber');
+        btn.innerHTML = channelLabel('viber', 'Viber');
         btn.className = 'btn-viber';
       } else if (ch === 'tg') {
-        btn.innerHTML = channelLabel('tg', 'დიახ, Telegram');
+        btn.innerHTML = channelLabel('tg', 'Telegram');
         btn.className = 'btn-tg';
       } else if (ch === 'wa') {
-        btn.innerHTML = channelLabel('wa', 'დიახ, WhatsApp');
+        btn.innerHTML = channelLabel('wa', 'WhatsApp');
         btn.className = 'btn-wa';
       } else {
-        btn.innerHTML = channelLabel('sms', 'დიახ, SMS');
+        btn.innerHTML = channelLabel('sms', 'SMS');
         btn.className = '';
       }
       $('send-modal').classList.remove('hide');
