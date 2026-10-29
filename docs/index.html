@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '183';
+    window.__CC_VER = '184';
     (function () {
       function go(v) {
         try {
@@ -350,6 +350,7 @@
       line-height: 1.4;
     }
     .sms-card {
+      position: relative;
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 14px;
@@ -498,33 +499,82 @@
     .num-row-actions .ch-ico,
     .hist-actions .ch-ico { width: 14px; height: 14px; }
     .send-confirm-card .ch-ico { width: 18px; height: 18px; }
-    .chat-dd { position: relative; }
+    .chat-dd { position: relative; z-index: 1; }
+    .chat-dd.open { z-index: 80; }
+    .sms-card:has(.chat-dd.open) { z-index: 6; }
+    .sms-card .chat-dd-toggle,
     .chat-dd-toggle {
       width: 100%;
-      padding: 13px;
-      border: 1px solid transparent;
+      padding: 0 !important;
+      border: 1px solid rgba(255,255,255,.18);
       border-radius: 12px;
       background: #25d366;
       color: #fff;
       font-size: 14px;
       font-weight: 600;
       font-family: inherit;
+      display: inline-flex !important;
+      align-items: stretch;
+      justify-content: stretch;
+      gap: 0;
+      overflow: hidden;
     }
-    .chat-dd-toggle .ch-chev {
-      font-size: 10px;
-      opacity: 0.9;
-      margin-left: 2px;
+    .chat-dd-main {
+      flex: 1;
+      min-width: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 12px 10px 12px 12px;
+    }
+    .chat-dd-sep {
+      width: 1px;
+      flex-shrink: 0;
+      margin: 7px 0;
+      background: rgba(255,255,255,.42);
+    }
+    .ch-chev {
+      flex-shrink: 0;
+      width: 42px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,.12);
+    }
+    .ch-chev svg {
+      width: 18px;
+      height: 18px;
+      display: block;
+      transition: transform .16s ease;
+    }
+    .chat-dd.open .ch-chev svg { transform: rotate(180deg); }
+    .chat-dd.open .chat-dd-toggle {
+      border-color: rgba(255,255,255,.35);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.12);
     }
     .chat-dd-menu {
       position: absolute;
       left: 0; right: 0;
-      top: calc(100% + 4px);
-      z-index: 40;
+      top: calc(100% + 6px);
+      z-index: 90;
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 12px;
       overflow: hidden;
-      box-shadow: 0 10px 28px rgba(0,0,0,.35);
+      box-shadow: 0 12px 32px rgba(0,0,0,.45);
+    }
+    .chat-dd-menu::before {
+      content: "";
+      position: absolute;
+      top: -5px;
+      right: 16px;
+      width: 10px;
+      height: 10px;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      border-top: 1px solid var(--border);
+      transform: rotate(45deg);
     }
     .chat-dd-menu.hide { display: none !important; }
     .chat-dd-menu button {
@@ -532,7 +582,7 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 12px 14px;
+      padding: 13px 14px;
       border: none;
       border-radius: 0;
       background: transparent;
@@ -541,6 +591,8 @@
       font-weight: 600;
       font-family: inherit;
       text-align: left;
+      position: relative;
+      z-index: 1;
     }
     .chat-dd-menu button + button { border-top: 1px solid var(--line); }
     .chat-dd-menu button:active { background: var(--bg); }
@@ -553,21 +605,33 @@
     .num-row-actions .chat-dd-toggle,
     .hist-actions .chat-dd-toggle {
       width: auto;
-      padding: 5px 8px;
       border: none;
       border-radius: 6px;
       font-size: 11px;
       line-height: 1.2;
     }
+    .num-row-actions .chat-dd-main,
+    .hist-actions .chat-dd-main {
+      padding: 5px 6px 5px 8px;
+      gap: 4px;
+    }
+    .num-row-actions .chat-dd-sep,
+    .hist-actions .chat-dd-sep { margin: 4px 0; }
+    .num-row-actions .ch-chev,
+    .hist-actions .ch-chev { width: 22px; }
+    .num-row-actions .ch-chev svg,
+    .hist-actions .ch-chev svg { width: 12px; height: 12px; }
     .num-row-actions .chat-dd-menu,
     .hist-actions .chat-dd-menu {
-      min-width: 148px;
+      min-width: 160px;
       left: auto; right: 0;
-      top: calc(100% + 3px);
+      top: calc(100% + 4px);
     }
+    .num-row-actions .chat-dd-menu::before,
+    .hist-actions .chat-dd-menu::before { right: 10px; }
     .num-row-actions .chat-dd-menu button,
     .hist-actions .chat-dd-menu button {
-      padding: 9px 11px;
+      padding: 10px 12px;
       font-size: 12px;
       color: var(--text);
       background: transparent;
@@ -887,7 +951,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v106</div>
+      <div class="ver">v107</div>
     </header>
 
     <div class="tabs">
@@ -995,22 +1059,42 @@
     function channelLabel(ch, text) {
       return `${CH_ICO[ch] || CH_ICO.sms}<span>${text}</span>`;
     }
+    const CH_CHEV = `<span class="ch-chev" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M6.7 9.3a1 1 0 0 1 1.4 0L12 13.17l3.9-3.88a1 1 0 1 1 1.4 1.42l-4.6 4.58a1 1 0 0 1-1.4 0l-4.6-4.58a1 1 0 0 1 0-1.42z"/></svg></span>`;
     function chatDropdownHtml(compact) {
       const label = compact ? 'WA' : 'WhatsApp';
       return `<div class="chat-dd">
-        <button type="button" class="btn-wa chat-dd-toggle">${channelLabel('wa', label)}<span class="ch-chev" aria-hidden="true">▾</span></button>
-        <div class="chat-dd-menu hide">
-          <button type="button" data-chat="wa" class="ch-wa">${channelLabel('wa', 'WhatsApp')}</button>
-          <button type="button" data-chat="viber" class="ch-viber">${channelLabel('viber', 'Viber')}</button>
-          <button type="button" data-chat="tg" class="ch-tg">${channelLabel('tg', 'Telegram')}</button>
+        <button type="button" class="btn-wa chat-dd-toggle" aria-haspopup="menu" aria-expanded="false">
+          <span class="chat-dd-main">${channelLabel('wa', label)}</span>
+          <span class="chat-dd-sep" aria-hidden="true"></span>
+          ${CH_CHEV}
+        </button>
+        <div class="chat-dd-menu hide" role="menu">
+          <button type="button" data-chat="wa" class="ch-wa" role="menuitem">${channelLabel('wa', 'WhatsApp')}</button>
+          <button type="button" data-chat="viber" class="ch-viber" role="menuitem">${channelLabel('viber', 'Viber')}</button>
+          <button type="button" data-chat="tg" class="ch-tg" role="menuitem">${channelLabel('tg', 'Telegram')}</button>
         </div>
       </div>`;
     }
+    function setChatMenuOpen(dd, open) {
+      if (!dd) return;
+      const menu = dd.querySelector('.chat-dd-menu');
+      const btn = dd.querySelector('.chat-dd-toggle');
+      if (!menu || !btn) return;
+      dd.classList.toggle('open', !!open);
+      menu.classList.toggle('hide', !open);
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
     function closeAllChatMenus(except) {
-      document.querySelectorAll('.chat-dd-menu').forEach(m => {
-        if (except && m === except) return;
-        m.classList.add('hide');
+      document.querySelectorAll('.chat-dd').forEach(dd => {
+        if (except && dd === except) return;
+        setChatMenuOpen(dd, false);
       });
+    }
+    function toggleChatMenu(dd) {
+      if (!dd) return;
+      const willOpen = !dd.classList.contains('open');
+      closeAllChatMenus();
+      if (willOpen) setChatMenuOpen(dd, true);
     }
 
     const INTRO_KA = 'ალექსანდრე ქორჩაშვილი გწერთ სადაზღვეო კომპანია ალდაგიდან. მოინიშნეთ ეს ნომერი და დამიკავშირდით ნებისმიერ კითხვით.';
@@ -1077,7 +1161,7 @@ ${ALDAGI_GIFTS_REST}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '183';
+      const v = window.__CC_VER || '184';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -1351,11 +1435,7 @@ ${link}
         if (ddToggle) {
           e.preventDefault();
           e.stopPropagation();
-          const menu = ddToggle.closest('.chat-dd')?.querySelector('.chat-dd-menu');
-          if (!menu) return;
-          const open = menu.classList.contains('hide');
-          closeAllChatMenus();
-          if (open) menu.classList.remove('hide');
+          toggleChatMenu(ddToggle.closest('.chat-dd'));
           return;
         }
         const chatBtn = e.target.closest('[data-chat]');
@@ -2217,11 +2297,7 @@ ${extras}${buildAldagiBenefits(isElectric)}`;
       if (ddToggle) {
         e.preventDefault();
         e.stopPropagation();
-        const menu = ddToggle.closest('.chat-dd')?.querySelector('.chat-dd-menu');
-        if (!menu) return;
-        const open = menu.classList.contains('hide');
-        closeAllChatMenus();
-        if (open) menu.classList.remove('hide');
+        toggleChatMenu(ddToggle.closest('.chat-dd'));
         return;
       }
 
@@ -2289,11 +2365,7 @@ ${extras}${buildAldagiBenefits(isElectric)}`;
       if (ddToggle) {
         e.preventDefault();
         e.stopPropagation();
-        const menu = ddToggle.closest('.chat-dd')?.querySelector('.chat-dd-menu');
-        if (!menu) return;
-        const open = menu.classList.contains('hide');
-        closeAllChatMenus();
-        if (open) menu.classList.remove('hide');
+        toggleChatMenu(ddToggle.closest('.chat-dd'));
         return;
       }
       const chatBtn = e.target.closest('[data-chat]');
