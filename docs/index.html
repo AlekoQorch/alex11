@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '200';
+    window.__CC_VER = '201';
     (function () {
       function go(v) {
         try {
@@ -358,13 +358,12 @@
       margin-bottom: 14px;
     }
     .sms-card-head {
-      position: relative;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 5px;
       margin-bottom: 12px;
-      padding: 0 52px 10px;
+      padding-bottom: 10px;
       border-bottom: 1px solid var(--line);
       text-align: center;
     }
@@ -422,27 +421,32 @@
       white-space: pre-wrap;
       word-break: break-word;
     }
+    .sms-edit-wrap {
+      position: relative;
+      margin-bottom: 12px;
+    }
     .sms-card .sms-edit-btn {
       position: absolute;
-      top: 0;
-      right: 0;
+      top: 8px;
+      right: 8px;
       width: auto;
       min-width: 0;
       padding: 5px 9px;
       border: 1px solid var(--border);
       border-radius: 8px;
-      background: var(--bg);
+      background: var(--surface);
       color: var(--dim);
       font-size: 11px;
       font-weight: 600;
       font-family: inherit;
       line-height: 1.2;
       white-space: nowrap;
-      z-index: 1;
+      z-index: 2;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
     }
     .sms-card .sms-edit-btn.on {
       border-color: rgba(77, 159, 255, 0.65);
-      background: rgba(77, 159, 255, 0.16);
+      background: rgba(77, 159, 255, 0.22);
       color: #fff;
     }
     textarea.sms-edit {
@@ -454,7 +458,8 @@
       outline: none;
       -webkit-appearance: none;
       appearance: none;
-      margin-bottom: 12px;
+      margin-bottom: 0;
+      padding-right: 58px;
       box-sizing: border-box;
       cursor: default;
     }
@@ -1132,7 +1137,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v123</div>
+      <div class="ver">v124</div>
     </header>
 
     <div class="tabs">
@@ -1342,7 +1347,7 @@ ${ALDAGI_GIFTS_REST}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '200';
+      const v = window.__CC_VER || '201';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -2328,16 +2333,15 @@ ${link}
       $('after-call-modal').classList.remove('hide');
     }
 
-    function smsEditBtn(tpl) {
-      return `<button type="button" class="sms-edit-btn" data-edit-tpl="${tpl}">Edit</button>`;
-    }
-
     function smsEditField(tpl, opts = {}) {
       const id = opts.id ? ` id="${opts.id}"` : '';
       const rows = opts.rows || 4;
       const long = opts.long ? ' long' : '';
       const label = opts.label || 'ტექსტი';
-      return `<textarea class="sms-text sms-edit${long}"${id} data-tpl="${tpl}" rows="${rows}" readonly aria-label="${label}"></textarea>`;
+      return `<div class="sms-edit-wrap">
+            <button type="button" class="sms-edit-btn" data-edit-tpl="${tpl}">Edit</button>
+            <textarea class="sms-text sms-edit${long}"${id} data-tpl="${tpl}" rows="${rows}" readonly aria-label="${label}"></textarea>
+          </div>`;
     }
 
     function setSmsEditing(ta, on) {
@@ -2379,7 +2383,6 @@ ${link}
       let html = `
         <div class="sms-card" data-id="intro">
           <div class="sms-card-head">
-            ${smsEditBtn('intro')}
             <h3>პატარა SMS-ის დატოვება</h3>
             <span class="sms-to is-empty" data-sms-to>ნომერი არაა</span>
           </div>
@@ -2396,7 +2399,6 @@ ${link}
         </div>
         <div class="sms-card" data-id="noanswer">
           <div class="sms-card-head">
-            ${smsEditBtn('noanswer')}
             <h3>არ პასუხობს</h3>
             <span class="sms-to is-empty" data-sms-to>ნომერი არაა</span>
           </div>
@@ -2408,7 +2410,6 @@ ${link}
         </div>
         <div class="sms-card" data-id="tariff">
           <div class="sms-card-head">
-            ${smsEditBtn('tariff')}
             <h3>ტარიფის დაანგარიშება</h3>
             <span class="sms-to is-empty" data-sms-to>ნომერი არაა</span>
           </div>
@@ -2420,7 +2421,6 @@ ${link}
         </div>
         <div class="sms-card" data-id="aldagi">
           <div class="sms-card-head">
-            ${smsEditBtn('aldagi')}
             <h3>სრული შეთავაზება</h3>
             <span class="sms-to is-empty" data-sms-to>ნომერი არაა</span>
           </div>
@@ -2460,7 +2460,6 @@ ${link}
         </div>
         <div class="sms-card" data-id="docs">
           <div class="sms-card-head">
-            ${smsEditBtn('docs')}
             <h3>დოკუმენტების ლინკი</h3>
             <span class="sms-to is-empty" data-sms-to>ნომერი არაა</span>
           </div>
