@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '196';
+    window.__CC_VER = '197';
     (function () {
       function go(v) {
         try {
@@ -420,6 +420,27 @@
       margin-bottom: 12px;
       white-space: pre-wrap;
       word-break: break-word;
+    }
+    textarea.sms-edit {
+      display: block;
+      width: 100%;
+      min-height: 96px;
+      resize: vertical;
+      font-family: inherit;
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+      margin-bottom: 12px;
+      box-sizing: border-box;
+    }
+    textarea.sms-edit:focus {
+      border-color: rgba(77, 159, 255, 0.65);
+      box-shadow: 0 0 0 2px rgba(77, 159, 255, 0.18);
+    }
+    textarea.sms-edit.long {
+      min-height: 180px;
+      max-height: none;
+      font-size: 14px;
     }
     .sms-card button {
       width: 100%;
@@ -1077,7 +1098,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v119</div>
+      <div class="ver">v120</div>
     </header>
 
     <div class="tabs">
@@ -1287,7 +1308,7 @@ ${ALDAGI_GIFTS_REST}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '196';
+      const v = window.__CC_VER || '197';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -2220,13 +2241,25 @@ ${link}
       else sendSmsTo(num, msg);
     }
 
-    function msgForTpl(tpl, num) {
+    function defaultMsgForTpl(tpl, num) {
       if (tpl === 'intro') return introMsg(langPick.intro);
       if (tpl === 'noanswer') return NO_ANSWER_MSG;
       if (tpl === 'tariff') return TARIFF_MSG;
       if (tpl === 'aldagi') return buildAldagiMsg();
-      if (tpl === 'docs') return buildDocsLinkMsg(num);
+      if (tpl === 'docs') return buildDocsLinkMsg(num || getPhone());
       return '';
+    }
+
+    function editedMsgForTpl(tpl) {
+      const el = document.querySelector(`textarea.sms-edit[data-tpl="${tpl}"]`);
+      if (!el) return '';
+      return el.value;
+    }
+
+    function msgForTpl(tpl, num) {
+      const edited = editedMsgForTpl(tpl);
+      if (edited.trim()) return edited;
+      return defaultMsgForTpl(tpl, num);
     }
 
     function openSendFromBtn(btn) {
@@ -2234,11 +2267,10 @@ ${link}
       const title = card?.querySelector('h3')?.textContent || 'გაგზავნა';
       const n = getPhone();
       const action = btn.dataset.send;
-      if (action === 'intro-sms') showSendConfirm(n, introMsg(langPick.intro), 'sms', title);
-      else if (action === 'noanswer-sms') showSendConfirm(n, NO_ANSWER_MSG, 'sms', title);
-      else if (action === 'tariff-sms') showSendConfirm(n, TARIFF_MSG, 'sms', title);
-      else if (action === 'aldagi-sms') showSendConfirm(n, buildAldagiMsg(), 'sms', title);
-      else if (action === 'docs-sms') showSendConfirm(n, buildDocsLinkMsg(n), 'sms', title);
+      const tpl = action?.replace(/-sms$/, '') || card?.dataset.id;
+      const msg = msgForTpl(tpl, n);
+      if (!msg) return;
+      showSendConfirm(n, msg, 'sms', title);
     }
 
     function openChatFromMenu(chat, tpl, title) {
@@ -2274,7 +2306,7 @@ ${link}
             <button type="button" data-lang="en">ინგლისური</button>
             <button type="button" data-lang="both">ორივე</button>
           </div>
-          <div class="sms-text" id="intro-preview">${introMsg('ka')}</div>
+          <textarea class="sms-text sms-edit" id="intro-preview" data-tpl="intro" rows="4" aria-label="პატარა SMS ტექსტი"></textarea>
           <div class="send-row" data-chat-tpl="intro">
             <button type="button" data-send="intro-sms">${channelLabel('sms', 'SMS')}</button>
             ${chatDropdownHtml(false)}
@@ -2285,7 +2317,7 @@ ${link}
             <h3>არ პასუხობს</h3>
             <span class="sms-to is-empty" data-sms-to>ნომერი არაა</span>
           </div>
-          <div class="sms-text">${NO_ANSWER_MSG.replace(/</g, '&lt;')}</div>
+          <textarea class="sms-text sms-edit" data-tpl="noanswer" rows="4" aria-label="არ პასუხობს ტექსტი"></textarea>
           <div class="send-row" data-chat-tpl="noanswer">
             <button type="button" data-send="noanswer-sms">${channelLabel('sms', 'SMS')}</button>
             ${chatDropdownHtml(false)}
@@ -2296,7 +2328,7 @@ ${link}
             <h3>ტარიფის დაანგარიშება</h3>
             <span class="sms-to is-empty" data-sms-to>ნომერი არაა</span>
           </div>
-          <div class="sms-text">${TARIFF_MSG.replace(/</g, '&lt;')}</div>
+          <textarea class="sms-text sms-edit" data-tpl="tariff" rows="8" aria-label="ტარიფის ტექსტი"></textarea>
           <div class="send-row" data-chat-tpl="tariff">
             <button type="button" data-send="tariff-sms">${channelLabel('sms', 'SMS')}</button>
             ${chatDropdownHtml(false)}
@@ -2335,7 +2367,7 @@ ${link}
               <span class="offer-switch" aria-hidden="true"></span>
             </label>
           </div>
-          <div class="sms-text long" id="aldagi-preview"></div>
+          <textarea class="sms-text sms-edit long" id="aldagi-preview" data-tpl="aldagi" rows="12" aria-label="სრული შეთავაზება ტექსტი"></textarea>
           <div class="send-row" data-chat-tpl="aldagi">
             <button type="button" data-send="aldagi-sms">${channelLabel('sms', 'SMS')}</button>
             ${chatDropdownHtml(false)}
@@ -2347,7 +2379,7 @@ ${link}
             <span class="sms-to is-empty" data-sms-to>ნომერი არაა</span>
           </div>
           <p class="sms-hint" style="margin:0 0 8px">პირადობა · მართვის მოწმობა · ტექპასპორტი</p>
-          <div class="sms-text" id="docs-preview"></div>
+          <textarea class="sms-text sms-edit" id="docs-preview" data-tpl="docs" rows="6" aria-label="დოკუმენტების ლინკი ტექსტი"></textarea>
           <div class="send-row" data-chat-tpl="docs">
             <button type="button" data-send="docs-sms">${channelLabel('sms', 'SMS')}</button>
             ${chatDropdownHtml(false)}
@@ -2355,6 +2387,12 @@ ${link}
         </div>`;
 
       $('sms-list').innerHTML = html;
+      const introEl = document.querySelector('textarea.sms-edit[data-tpl="intro"]');
+      const noEl = document.querySelector('textarea.sms-edit[data-tpl="noanswer"]');
+      const tariffEl = document.querySelector('textarea.sms-edit[data-tpl="tariff"]');
+      if (introEl) introEl.value = introMsg(langPick.intro || 'ka');
+      if (noEl) noEl.value = NO_ANSWER_MSG;
+      if (tariffEl) tariffEl.value = TARIFF_MSG;
       updateAldagiPreview();
       updateDocsPreview();
       updateSmsCardTargets();
@@ -2362,7 +2400,7 @@ ${link}
 
     function updateDocsPreview() {
       const el = $('docs-preview');
-      if (el) el.textContent = buildDocsLinkMsg(getPhone());
+      if (el) el.value = buildDocsLinkMsg(getPhone());
     }
 
     function formatUsd(val) {
@@ -2404,7 +2442,7 @@ ${extras}${buildAldagiBenefits(isElectric)}`;
 
     function updateAldagiPreview() {
       const el = $('aldagi-preview');
-      if (el) el.textContent = buildAldagiMsg();
+      if (el) el.value = buildAldagiMsg();
     }
 
     function initOfferFields() {
@@ -2427,7 +2465,8 @@ ${extras}${buildAldagiBenefits(isElectric)}`;
         const card = langBtn.closest('[data-id="intro"]');
         card.querySelectorAll('[data-lang]').forEach(b => b.classList.toggle('on', b === langBtn));
         langPick.intro = langBtn.dataset.lang;
-        $('intro-preview').textContent = introMsg(langPick.intro);
+        const introEl = $('intro-preview');
+        if (introEl) introEl.value = introMsg(langPick.intro);
         return;
       }
 
