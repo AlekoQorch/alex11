@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '195';
+    window.__CC_VER = '196';
     (function () {
       function go(v) {
         try {
@@ -90,7 +90,7 @@
       display: flex;
       flex-direction: column;
       padding-top: 0;
-      padding-bottom: calc(var(--bar) + env(safe-area-inset-bottom) + 48px);
+      padding-bottom: calc(var(--bar) + env(safe-area-inset-bottom, 0px) + 24px);
     }
 
     .brand {
@@ -695,26 +695,55 @@
       background: rgba(34, 158, 217, 0.08);
     }
     .num-row-actions .chat-dd,
-    .hist-actions .chat-dd { flex-shrink: 0; }
+    .hist-actions .chat-dd {
+      flex-shrink: 0;
+      align-self: center;
+      height: auto;
+      min-height: 0;
+      max-height: none;
+    }
     .num-row-actions .chat-dd-toggle,
     .hist-actions .chat-dd-toggle {
-      width: auto;
-      border: none;
-      border-radius: 6px;
-      font-size: 11px;
-      line-height: 1.2;
+      width: auto !important;
+      height: 28px !important;
+      min-height: 28px !important;
+      max-height: 28px !important;
+      border: none !important;
+      border-radius: 6px !important;
+      font-size: 11px !important;
+      line-height: 1.2 !important;
     }
     .num-row-actions .chat-dd-main,
     .hist-actions .chat-dd-main {
-      padding: 5px 6px 5px 8px;
-      gap: 4px;
+      padding: 0 5px 0 7px !important;
+      gap: 3px !important;
+      font-size: 11px !important;
+      height: 100% !important;
     }
     .num-row-actions .chat-dd-sep,
-    .hist-actions .chat-dd-sep { margin: 4px 0; }
+    .hist-actions .chat-dd-sep { margin: 5px 0; }
     .num-row-actions .ch-chev,
-    .hist-actions .ch-chev { width: 18px; }
+    .hist-actions .ch-chev {
+      width: 16px !important;
+      height: 100% !important;
+    }
     .num-row-actions .ch-chev svg,
-    .hist-actions .ch-chev svg { width: 11px; height: 11px; }
+    .hist-actions .ch-chev svg { width: 10px !important; height: 10px !important; }
+    .num-row-actions .row-sms,
+    .hist-actions .row-sms {
+      height: 28px;
+      padding: 0 8px !important;
+      display: inline-flex !important;
+      align-items: center;
+      box-sizing: border-box;
+    }
+    .num-row-actions .ch-ico,
+    .num-row-actions .ch-ico-sms,
+    .hist-actions .ch-ico,
+    .hist-actions .ch-ico-sms {
+      width: 13px !important;
+      height: 13px !important;
+    }
     .num-row-actions .chat-dd-menu,
     .hist-actions .chat-dd-menu {
       width: max-content;
@@ -895,8 +924,10 @@
 
     .bar {
       position: fixed;
-      left: 0; right: 0; bottom: env(safe-area-inset-bottom);
-      padding: 18px 16px 28px;
+      left: 0; right: 0;
+      bottom: 0;
+      z-index: 200;
+      padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
       background: var(--bg);
       border-top: 1px solid var(--line);
     }
@@ -1046,7 +1077,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v118</div>
+      <div class="ver">v119</div>
     </header>
 
     <div class="tabs">
@@ -1256,7 +1287,7 @@ ${ALDAGI_GIFTS_REST}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '195';
+      const v = window.__CC_VER || '196';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
