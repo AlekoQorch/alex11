@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '197';
+    window.__CC_VER = '198';
     (function () {
       function go(v) {
         try {
@@ -421,21 +421,53 @@
       white-space: pre-wrap;
       word-break: break-word;
     }
+    .sms-edit-bar {
+      display: flex;
+      justify-content: flex-end;
+      margin: 0 0 6px;
+    }
+    .sms-card .sms-edit-btn {
+      width: auto;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--dim);
+      font-size: 12px;
+      font-weight: 600;
+      font-family: inherit;
+      line-height: 1.2;
+    }
+    .sms-card .sms-edit-btn.on {
+      border-color: rgba(77, 159, 255, 0.65);
+      background: rgba(77, 159, 255, 0.16);
+      color: #fff;
+    }
     textarea.sms-edit {
       display: block;
       width: 100%;
       min-height: 96px;
-      resize: vertical;
+      resize: none;
       font-family: inherit;
       outline: none;
       -webkit-appearance: none;
       appearance: none;
       margin-bottom: 12px;
       box-sizing: border-box;
+      cursor: default;
     }
-    textarea.sms-edit:focus {
+    textarea.sms-edit[readonly] {
+      color: var(--text);
+      caret-color: transparent;
+    }
+    textarea.sms-edit:not([readonly]) {
+      resize: vertical;
+      cursor: text;
       border-color: rgba(77, 159, 255, 0.65);
       box-shadow: 0 0 0 2px rgba(77, 159, 255, 0.18);
+    }
+    textarea.sms-edit:not([readonly]):focus {
+      border-color: rgba(77, 159, 255, 0.85);
     }
     textarea.sms-edit.long {
       min-height: 180px;
@@ -1098,7 +1130,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v120</div>
+      <div class="ver">v121</div>
     </header>
 
     <div class="tabs">
@@ -1308,7 +1340,7 @@ ${ALDAGI_GIFTS_REST}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '197';
+      const v = window.__CC_VER || '198';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -2294,6 +2326,52 @@ ${link}
       $('after-call-modal').classList.remove('hide');
     }
 
+    function smsEditField(tpl, opts = {}) {
+      const id = opts.id ? ` id="${opts.id}"` : '';
+      const rows = opts.rows || 4;
+      const long = opts.long ? ' long' : '';
+      const label = opts.label || 'ტექსტი';
+      return `<div class="sms-edit-bar">
+            <button type="button" class="sms-edit-btn" data-edit-tpl="${tpl}">რედაქტირება</button>
+          </div>
+          <textarea class="sms-text sms-edit${long}"${id} data-tpl="${tpl}" rows="${rows}" readonly aria-label="${label}"></textarea>`;
+    }
+
+    function setSmsEditing(ta, on) {
+      if (!ta) return;
+      const editBtn = document.querySelector(`.sms-edit-btn[data-edit-tpl="${ta.dataset.tpl}"]`);
+      if (on) {
+        ta.removeAttribute('readonly');
+        ta.focus();
+        const len = ta.value.length;
+        try { ta.setSelectionRange(len, len); } catch (_) {}
+        if (editBtn) {
+          editBtn.classList.add('on');
+          editBtn.textContent = 'მზადაა';
+        }
+      } else {
+        ta.setAttribute('readonly', '');
+        ta.blur();
+        if (editBtn) {
+          editBtn.classList.remove('on');
+          editBtn.textContent = 'რედაქტირება';
+        }
+      }
+    }
+
+    function toggleSmsEditing(tpl) {
+      const ta = document.querySelector(`textarea.sms-edit[data-tpl="${tpl}"]`);
+      if (!ta) return;
+      setSmsEditing(ta, ta.hasAttribute('readonly'));
+    }
+
+    function lockAllSmsEditing(except) {
+      document.querySelectorAll('textarea.sms-edit').forEach(ta => {
+        if (except && ta === except) return;
+        if (!ta.hasAttribute('readonly')) setSmsEditing(ta, false);
+      });
+    }
+
     function renderSmsList() {
       let html = `
         <div class="sms-card" data-id="intro">
@@ -2306,7 +2384,7 @@ ${link}
             <button type="button" data-lang="en">ინგლისური</button>
             <button type="button" data-lang="both">ორივე</button>
           </div>
-          <textarea class="sms-text sms-edit" id="intro-preview" data-tpl="intro" rows="4" aria-label="პატარა SMS ტექსტი"></textarea>
+          ${smsEditField('intro', { id: 'intro-preview', rows: 4, label: 'პატარა SMS ტექსტი' })}
           <div class="send-row" data-chat-tpl="intro">
             <button type="button" data-send="intro-sms">${channelLabel('sms', 'SMS')}</button>
             ${chatDropdownHtml(false)}
@@ -2317,7 +2395,7 @@ ${link}
             <h3>არ პასუხობს</h3>
             <span class="sms-to is-empty" data-sms-to>ნომერი არაა</span>
           </div>
-          <textarea class="sms-text sms-edit" data-tpl="noanswer" rows="4" aria-label="არ პასუხობს ტექსტი"></textarea>
+          ${smsEditField('noanswer', { rows: 4, label: 'არ პასუხობს ტექსტი' })}
           <div class="send-row" data-chat-tpl="noanswer">
             <button type="button" data-send="noanswer-sms">${channelLabel('sms', 'SMS')}</button>
             ${chatDropdownHtml(false)}
@@ -2328,7 +2406,7 @@ ${link}
             <h3>ტარიფის დაანგარიშება</h3>
             <span class="sms-to is-empty" data-sms-to>ნომერი არაა</span>
           </div>
-          <textarea class="sms-text sms-edit" data-tpl="tariff" rows="8" aria-label="ტარიფის ტექსტი"></textarea>
+          ${smsEditField('tariff', { rows: 8, label: 'ტარიფის ტექსტი' })}
           <div class="send-row" data-chat-tpl="tariff">
             <button type="button" data-send="tariff-sms">${channelLabel('sms', 'SMS')}</button>
             ${chatDropdownHtml(false)}
@@ -2367,7 +2445,7 @@ ${link}
               <span class="offer-switch" aria-hidden="true"></span>
             </label>
           </div>
-          <textarea class="sms-text sms-edit long" id="aldagi-preview" data-tpl="aldagi" rows="12" aria-label="სრული შეთავაზება ტექსტი"></textarea>
+          ${smsEditField('aldagi', { id: 'aldagi-preview', rows: 12, long: true, label: 'სრული შეთავაზება ტექსტი' })}
           <div class="send-row" data-chat-tpl="aldagi">
             <button type="button" data-send="aldagi-sms">${channelLabel('sms', 'SMS')}</button>
             ${chatDropdownHtml(false)}
@@ -2379,7 +2457,7 @@ ${link}
             <span class="sms-to is-empty" data-sms-to>ნომერი არაა</span>
           </div>
           <p class="sms-hint" style="margin:0 0 8px">პირადობა · მართვის მოწმობა · ტექპასპორტი</p>
-          <textarea class="sms-text sms-edit" id="docs-preview" data-tpl="docs" rows="6" aria-label="დოკუმენტების ლინკი ტექსტი"></textarea>
+          ${smsEditField('docs', { id: 'docs-preview', rows: 6, label: 'დოკუმენტების ლინკი ტექსტი' })}
           <div class="send-row" data-chat-tpl="docs">
             <button type="button" data-send="docs-sms">${channelLabel('sms', 'SMS')}</button>
             ${chatDropdownHtml(false)}
@@ -2396,6 +2474,30 @@ ${link}
       updateAldagiPreview();
       updateDocsPreview();
       updateSmsCardTargets();
+      initSmsEditInteractions();
+    }
+
+    let smsTapStamp = { t: 0, el: null };
+    function initSmsEditInteractions() {
+      document.querySelectorAll('textarea.sms-edit').forEach(ta => {
+        ta.addEventListener('dblclick', e => {
+          e.preventDefault();
+          lockAllSmsEditing(ta);
+          setSmsEditing(ta, true);
+        });
+        ta.addEventListener('touchend', e => {
+          if (!ta.hasAttribute('readonly')) return;
+          const now = Date.now();
+          if (smsTapStamp.el === ta && now - smsTapStamp.t < 350) {
+            e.preventDefault();
+            lockAllSmsEditing(ta);
+            setSmsEditing(ta, true);
+            smsTapStamp = { t: 0, el: null };
+            return;
+          }
+          smsTapStamp = { t: now, el: ta };
+        }, { passive: false });
+      });
     }
 
     function updateDocsPreview() {
@@ -2460,6 +2562,19 @@ ${extras}${buildAldagiBenefits(isElectric)}`;
     }
 
     $('sms-list').addEventListener('click', e => {
+      const editBtn = e.target.closest('.sms-edit-btn');
+      if (editBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const tpl = editBtn.dataset.editTpl;
+        const ta = document.querySelector(`textarea.sms-edit[data-tpl="${tpl}"]`);
+        if (!ta) return;
+        const unlocking = ta.hasAttribute('readonly');
+        if (unlocking) lockAllSmsEditing(ta);
+        setSmsEditing(ta, unlocking);
+        return;
+      }
+
       const langBtn = e.target.closest('[data-lang]');
       if (langBtn) {
         const card = langBtn.closest('[data-id="intro"]');
