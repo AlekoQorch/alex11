@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '199';
+    window.__CC_VER = '200';
     (function () {
       function go(v) {
         try {
@@ -364,7 +364,7 @@
       align-items: center;
       gap: 5px;
       margin-bottom: 12px;
-      padding: 0 78px 10px;
+      padding: 0 52px 10px;
       border-bottom: 1px solid var(--line);
       text-align: center;
     }
@@ -1132,7 +1132,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v122</div>
+      <div class="ver">v123</div>
     </header>
 
     <div class="tabs">
@@ -1342,7 +1342,7 @@ ${ALDAGI_GIFTS_REST}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '199';
+      const v = window.__CC_VER || '200';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -2329,7 +2329,7 @@ ${link}
     }
 
     function smsEditBtn(tpl) {
-      return `<button type="button" class="sms-edit-btn" data-edit-tpl="${tpl}">რედაქტირება</button>`;
+      return `<button type="button" class="sms-edit-btn" data-edit-tpl="${tpl}">Edit</button>`;
     }
 
     function smsEditField(tpl, opts = {}) {
@@ -2350,14 +2350,14 @@ ${link}
         try { ta.setSelectionRange(len, len); } catch (_) {}
         if (editBtn) {
           editBtn.classList.add('on');
-          editBtn.textContent = 'მზადაა';
+          editBtn.textContent = 'Done';
         }
       } else {
         ta.setAttribute('readonly', '');
         ta.blur();
         if (editBtn) {
           editBtn.classList.remove('on');
-          editBtn.textContent = 'რედაქტირება';
+          editBtn.textContent = 'Edit';
         }
       }
     }
