@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '202';
+    window.__CC_VER = '203';
     (function () {
       function go(v) {
         try {
@@ -448,6 +448,35 @@
       border-color: rgba(77, 159, 255, 0.65);
       background: rgba(77, 159, 255, 0.22);
       color: #fff;
+    }
+    .sms-card .sms-edit-btn.saved {
+      border-color: rgba(52, 199, 89, 0.7);
+      background: rgba(52, 199, 89, 0.22);
+      color: #fff;
+    }
+    .sms-saved-toast {
+      position: fixed;
+      left: 50%;
+      bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+      transform: translateX(-50%) translateY(12px);
+      z-index: 120;
+      padding: 10px 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(52, 199, 89, 0.45);
+      background: rgba(28, 28, 32, 0.94);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      letter-spacing: 0.01em;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .18s ease, transform .18s ease;
+    }
+    .sms-saved-toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
     }
     textarea.sms-edit {
       display: block;
@@ -1137,7 +1166,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v125</div>
+      <div class="ver">v126</div>
     </header>
 
     <div class="tabs">
@@ -2367,7 +2396,17 @@ ${link}
           </div>`;
     }
 
-    function setSmsEditing(ta, on) {
+    let smsSavedToastTimer = 0;
+    let smsEditBtnSavedTimer = 0;
+    function showSmsSavedToast() {
+      const toast = $('sms-saved-toast');
+      if (!toast) return;
+      toast.classList.add('show');
+      clearTimeout(smsSavedToastTimer);
+      smsSavedToastTimer = setTimeout(() => toast.classList.remove('show'), 1600);
+    }
+
+    function setSmsEditing(ta, on, opts = {}) {
       if (!ta) return;
       const editBtn = document.querySelector(`.sms-edit-btn[data-edit-tpl="${ta.dataset.tpl}"]`);
       if (on) {
@@ -2376,6 +2415,8 @@ ${link}
         const len = ta.value.length;
         try { ta.setSelectionRange(len, len); } catch (_) {}
         if (editBtn) {
+          clearTimeout(smsEditBtnSavedTimer);
+          editBtn.classList.remove('saved');
           editBtn.classList.add('on');
           editBtn.textContent = 'Done';
         }
@@ -2385,7 +2426,21 @@ ${link}
         ta.blur();
         if (editBtn) {
           editBtn.classList.remove('on');
-          editBtn.textContent = 'Edit';
+          if (opts.toast) {
+            editBtn.classList.add('saved');
+            editBtn.textContent = 'Saved';
+            clearTimeout(smsEditBtnSavedTimer);
+            smsEditBtnSavedTimer = setTimeout(() => {
+              editBtn.classList.remove('saved');
+              editBtn.textContent = 'Edit';
+            }, 1200);
+            showSmsSavedToast();
+          } else {
+            editBtn.classList.remove('saved');
+            editBtn.textContent = 'Edit';
+          }
+        } else if (opts.toast) {
+          showSmsSavedToast();
         }
       }
     }
@@ -2585,7 +2640,7 @@ ${extras}${buildAldagiBenefits(isElectric)}`;
         if (!ta) return;
         const unlocking = ta.hasAttribute('readonly');
         if (unlocking) lockAllSmsEditing(ta);
-        setSmsEditing(ta, unlocking);
+        setSmsEditing(ta, unlocking, unlocking ? undefined : { toast: true });
         return;
       }
 
@@ -2768,5 +2823,6 @@ ${extras}${buildAldagiBenefits(isElectric)}`;
       setStatus(`შენახულია · განაგრძე ${resumeDone}/${resumeTotal}-დან`);
     }
   </script>
+  <div id="sms-saved-toast" class="sms-saved-toast" role="status" aria-live="polite">Saved</div>
 </body>
 </html>
