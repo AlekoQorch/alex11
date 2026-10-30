@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '201';
+    window.__CC_VER = '202';
     (function () {
       function go(v) {
         try {
@@ -1137,7 +1137,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v124</div>
+      <div class="ver">v125</div>
     </header>
 
     <div class="tabs">
@@ -1344,10 +1344,31 @@ ${ALDAGI_GIFTS_REST}`;
 
     const NO_ANSWER_MSG = `გამარჯობა, ავტომობილის დაზღვევასთან დაკავშირებით გირეკავდით, სადაზღვეო კომპანია ალდაგიდან თუ დაინტერესდებით ამ ნომერზე დამიკავშირდით.`;
 
+    const SMS_EDITS_KEY = 'cc_sms_edits';
+    function loadSmsEdits() {
+      try { return JSON.parse(localStorage.getItem(SMS_EDITS_KEY) || '{}') || {}; }
+      catch { return {}; }
+    }
+    function getSmsEdit(tpl) {
+      const v = loadSmsEdits()[tpl];
+      return typeof v === 'string' ? v : null;
+    }
+    function saveSmsEdit(tpl, text) {
+      if (!tpl) return;
+      const all = loadSmsEdits();
+      all[tpl] = String(text ?? '');
+      try { localStorage.setItem(SMS_EDITS_KEY, JSON.stringify(all)); } catch {}
+    }
+    function fillSmsField(tpl, el, fallback) {
+      if (!el) return;
+      const saved = getSmsEdit(tpl);
+      el.value = saved != null ? saved : fallback;
+    }
+
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '201';
+      const v = window.__CC_VER || '202';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -2214,13 +2235,13 @@ ${link}
       const type = pendingTpl.type;
       let msg = '';
       let title = '';
-      if (tpl === 'intro-ka') { msg = introMsg('ka'); title = 'პატარა SMS (ქართული)'; }
-      else if (tpl === 'intro-en') { msg = introMsg('en'); title = 'პატარა SMS (ინგლისური)'; }
-      else if (tpl === 'intro-both') { msg = introMsg('both'); title = 'პატარა SMS (ორივე)'; }
-      else if (tpl === 'noanswer') { msg = NO_ANSWER_MSG; title = 'არ პასუხობს'; }
-      else if (tpl === 'tariff') { msg = TARIFF_MSG; title = 'ტარიფის დაანგარიშება'; }
-      else if (tpl === 'aldagi') { msg = buildAldagiMsg(); title = 'სრული შეთავაზება'; }
-      else if (tpl === 'docs') { msg = buildDocsLinkMsg(num); title = 'დოკუმენტების ლინკი'; }
+      if (tpl === 'intro-ka') { msg = getSmsEdit('intro') ?? introMsg('ka'); title = 'პატარა SMS (ქართული)'; }
+      else if (tpl === 'intro-en') { msg = getSmsEdit('intro') ?? introMsg('en'); title = 'პატარა SMS (ინგლისური)'; }
+      else if (tpl === 'intro-both') { msg = getSmsEdit('intro') ?? introMsg('both'); title = 'პატარა SMS (ორივე)'; }
+      else if (tpl === 'noanswer') { msg = getSmsEdit('noanswer') ?? NO_ANSWER_MSG; title = 'არ პასუხობს'; }
+      else if (tpl === 'tariff') { msg = getSmsEdit('tariff') ?? TARIFF_MSG; title = 'ტარიფის დაანგარიშება'; }
+      else if (tpl === 'aldagi') { msg = getSmsEdit('aldagi') ?? buildAldagiMsg(); title = 'სრული შეთავაზება'; }
+      else if (tpl === 'docs') { msg = getSmsEdit('docs') ?? buildDocsLinkMsg(num); title = 'დოკუმენტების ლინკი'; }
       else return;
       hideTemplatePicker();
       showSendConfirm(num, msg, type, title);
@@ -2298,6 +2319,8 @@ ${link}
     function msgForTpl(tpl, num) {
       const edited = editedMsgForTpl(tpl);
       if (edited.trim()) return edited;
+      const saved = getSmsEdit(tpl);
+      if (saved != null && String(saved).trim()) return saved;
       return defaultMsgForTpl(tpl, num);
     }
 
@@ -2357,6 +2380,7 @@ ${link}
           editBtn.textContent = 'Done';
         }
       } else {
+        if (ta.dataset.tpl) saveSmsEdit(ta.dataset.tpl, ta.value);
         ta.setAttribute('readonly', '');
         ta.blur();
         if (editBtn) {
@@ -2472,12 +2496,9 @@ ${link}
         </div>`;
 
       $('sms-list').innerHTML = html;
-      const introEl = document.querySelector('textarea.sms-edit[data-tpl="intro"]');
-      const noEl = document.querySelector('textarea.sms-edit[data-tpl="noanswer"]');
-      const tariffEl = document.querySelector('textarea.sms-edit[data-tpl="tariff"]');
-      if (introEl) introEl.value = introMsg(langPick.intro || 'ka');
-      if (noEl) noEl.value = NO_ANSWER_MSG;
-      if (tariffEl) tariffEl.value = TARIFF_MSG;
+      fillSmsField('intro', document.querySelector('textarea.sms-edit[data-tpl="intro"]'), introMsg(langPick.intro || 'ka'));
+      fillSmsField('noanswer', document.querySelector('textarea.sms-edit[data-tpl="noanswer"]'), NO_ANSWER_MSG);
+      fillSmsField('tariff', document.querySelector('textarea.sms-edit[data-tpl="tariff"]'), TARIFF_MSG);
       updateAldagiPreview();
       updateDocsPreview();
       updateSmsCardTargets();
@@ -2485,7 +2506,9 @@ ${link}
 
     function updateDocsPreview() {
       const el = $('docs-preview');
-      if (el) el.value = buildDocsLinkMsg(getPhone());
+      if (!el) return;
+      if (!el.hasAttribute('readonly')) return;
+      fillSmsField('docs', el, buildDocsLinkMsg(getPhone()));
     }
 
     function formatUsd(val) {
@@ -2527,7 +2550,9 @@ ${extras}${buildAldagiBenefits(isElectric)}`;
 
     function updateAldagiPreview() {
       const el = $('aldagi-preview');
-      if (el) el.value = buildAldagiMsg();
+      if (!el) return;
+      if (!el.hasAttribute('readonly')) return;
+      fillSmsField('aldagi', el, buildAldagiMsg());
     }
 
     function initOfferFields() {
@@ -2543,6 +2568,12 @@ ${extras}${buildAldagiBenefits(isElectric)}`;
         };
       });
     }
+
+    $('sms-list').addEventListener('input', e => {
+      const ta = e.target.closest('textarea.sms-edit');
+      if (!ta || ta.hasAttribute('readonly') || !ta.dataset.tpl) return;
+      saveSmsEdit(ta.dataset.tpl, ta.value);
+    });
 
     $('sms-list').addEventListener('click', e => {
       const editBtn = e.target.closest('.sms-edit-btn');
@@ -2564,7 +2595,9 @@ ${extras}${buildAldagiBenefits(isElectric)}`;
         card.querySelectorAll('[data-lang]').forEach(b => b.classList.toggle('on', b === langBtn));
         langPick.intro = langBtn.dataset.lang;
         const introEl = $('intro-preview');
-        if (introEl) introEl.value = introMsg(langPick.intro);
+        if (introEl && introEl.hasAttribute('readonly') && getSmsEdit('intro') == null) {
+          introEl.value = introMsg(langPick.intro);
+        }
         return;
       }
 
