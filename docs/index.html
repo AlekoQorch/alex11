@@ -1397,7 +1397,7 @@ ${ALDAGI_GIFTS_REST}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '202';
+      const v = window.__CC_VER || '203';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
