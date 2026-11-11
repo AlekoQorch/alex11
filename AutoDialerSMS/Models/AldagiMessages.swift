@@ -59,6 +59,13 @@ enum AldagiMessages {
     დეტალურად: https://aldagi.ge/individual/auto-insurance
     """
 
+    static let disclaimer = """
+    ალკოჰოლური, ფსიქოტროპული ან ნარკოტიკული თრობის ქვეშ.
+    თუ უხეში გაუფრთხილებლობის გარეშეა პოლისი. შემთხვევა ბასლაინში, ორმაგი ღერძულას გადაკვეთისას, სიჩქარის გადაჭარბების შედეგად ან წითელზე გავლისას. ასევე ავტომობილი არ უნდა გადაადგილოთ თუ რაიმე სადაზღვეო შემთხვევა შეიქმება და უნდა დარეკოთ ცხელ ხაზზე და 112-ში.
+
+    გაუქმების შემთხვევაში დარჩენილი თვეების 20% იქნება გადასახდელი, ხოლო თუ ზარალი იქნება წლიური პრემიის 70%-ზე მეტი, ამ შემთხვევაში სრულად უნდა დაფაროთ დარჩენილი პრემია.
+    """
+
     static let thirdLimits = ["5000$", "10000$", "25000$", "50000$"]
     static let healthLimits = ["20000$", "40000$", "100000$"]
 
@@ -86,6 +93,8 @@ enum AldagiMessages {
         \(benefitsIntro.trimmingCharacters(in: .whitespacesAndNewlines))
         \(gift1)
         \(giftsRest.trimmingCharacters(in: .whitespacesAndNewlines))
+
+        \(disclaimer.trimmingCharacters(in: .whitespacesAndNewlines))
         """
     }
 
