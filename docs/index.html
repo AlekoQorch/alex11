@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '204';
+    window.__CC_VER = '205';
     (function () {
       function go(v) {
         try {
@@ -1166,7 +1166,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v127</div>
+      <div class="ver">v128</div>
     </header>
 
     <div class="tabs">
@@ -1332,9 +1332,13 @@
     const ALDAGI_NEGLIGENCE = `+ უხეში გაუფრთხილებაც თუ მოვნიშნავთ — თუ წითელზე გაივლით ან bus line-ში ან საპირისპირო ზოლში გადახვალთ, ამ შემთხვევაშიც ანაზღაურდება ზიანი`;
 
     const ALDAGI_BENEFITS_INTRO = `ბენეფიტები:
-ავტოასისტანსის (საწვავის მიტანა, საბურავის შეცვლა, დაბერვა, დაქოქვაში დახმარება) და ევაკუატორის სერვისი უფასოდ საქართველოს 7 დიდ ქალაქში: თბილისი, თელავი, გორი, ქუთაისი, ბათუმი, ფოთი და ზუგდიდი
+ავტოასისტანსის (საწვავის მიტანა, საბურავის შეცვლა, დაბერვა, დაქოქვაში დახმარება) და ევაკუატორის სერვისი უფასოდ საქართველოს 7 დიდ ქალაქში: თბილისი, თელავი, გორი, ქუთაისი, ბათუმი, ფოთი და ზუგდიდი`;
 
-საჩუქრები:`;
+    const ALDAGI_DISCLAIMER = `გამონაკლისები:
+ალკოჰოლური, ფსიქოტროპული ან ნარკოტიკული თრობის ქვეშ.
+თუ უხეში გაუფრთხილებლობის გარეშეა პოლისი. შემთხვევა ბასლაინში, ორმაგი ღერძულას გადაკვეთისას, სიჩქარის გადაჭარბების შედეგად ან წითელზე გავლისას. ასევე ავტომობილი არ უნდა გადაადგილოთ თუ რაიმე სადაზღვეო შემთხვევა შეიქმება და გა დარეკოთ ცხელ ხაზზე და 112-ში.
+
+გაუქმების შემთხვევაში დარჩენილი თვეების 20% იქნება გადასახდელი, ხოლო თუ ზარალი იქნება წლიური პრემიის 70%-ზე მეტი, ამ შემთხვევაში სრულად გა დაფაროთ დარჩენილი პრემია.`;
 
     const ALDAGI_GIFT_FUEL = '1. 20 თეთრიანი ფასდაკლება საწვავზე';
     const ALDAGI_GIFT_EV = '1. დატენვაზე 20 %-ანი ფასდაკლება EV Power-ში';
@@ -1345,14 +1349,13 @@
 
 დეტალურად: https://aldagi.ge/individual/auto-insurance`;
 
-    const ALDAGI_DISCLAIMER = `ალკოჰოლური, ფსიქოტროპული ან ნარკოტიკული თრობის ქვეშ.
-თუ უხეში გაუფრთხილებლობის გარეშეა პოლისი. შემთხვევა ბასლაინში, ორმაგი ღერძულას გადაკვეთისას, სიჩქარის გადაჭარბების შედეგად ან წითელზე გავლისას. ასევე ავტომობილი არ უნდა გადაადგილოთ თუ რაიმე სადაზღვეო შემთხვევა შეიქმება და უნდა დარეკოთ ცხელ ხაზზე და 112-ში.
-
-გაუქმების შემთხვევაში დარჩენილი თვეების 20% იქნება გადასახდელი, ხოლო თუ ზარალი იქნება წლიური პრემიის 70%-ზე მეტი, ამ შემთხვევაში სრულად უნდა დაფაროთ დარჩენილი პრემია.`;
-
     function buildAldagiBenefits(isElectric) {
       const gift1 = isElectric ? ALDAGI_GIFT_EV : ALDAGI_GIFT_FUEL;
       return `${ALDAGI_BENEFITS_INTRO}
+
+${ALDAGI_DISCLAIMER}
+
+საჩუქრები:
 ${gift1}
 ${ALDAGI_GIFTS_REST}`;
     }
@@ -1380,7 +1383,7 @@ ${ALDAGI_GIFTS_REST}`;
 
     const SMS_EDITS_KEY = 'cc_sms_edits';
     const SMS_TPL_VER_KEY = 'cc_sms_tpl_ver';
-    const SMS_TPL_VER = '3';
+    const SMS_TPL_VER = '4';
     function loadSmsEdits() {
       try { return JSON.parse(localStorage.getItem(SMS_EDITS_KEY) || '{}') || {}; }
       catch { return {}; }
@@ -1414,7 +1417,7 @@ ${ALDAGI_GIFTS_REST}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '204';
+      const v = window.__CC_VER || '205';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -2617,9 +2620,7 @@ ${link}
 მესამე პირი: ${offerPick.third}
 მძღოლისა და მგზავრების ჯანმრთელობა: ${offerPick.health}${franchise}
 
-${extras}${buildAldagiBenefits(isElectric)}
-
-${ALDAGI_DISCLAIMER}`;
+${extras}${buildAldagiBenefits(isElectric)}`;
     }
 
     function updateAldagiPreview(opts = {}) {
