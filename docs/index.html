@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '206';
+    window.__CC_VER = '207';
     (function () {
       function go(v) {
         try {
@@ -1166,7 +1166,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v129</div>
+      <div class="ver">v130</div>
     </header>
 
     <div class="tabs">
@@ -1334,30 +1334,34 @@
     const ALDAGI_BENEFITS_INTRO = `ბენეფიტები:
 ავტოასისტანსის (საწვავის მიტანა, საბურავის შეცვლა, დაბერვა, დაქოქვაში დახმარება) და ევაკუატორის სერვისი უფასოდ საქართველოს 7 დიდ ქალაქში: თბილისი, თელავი, გორი, ქუთაისი, ბათუმი, ფოთი და ზუგდიდი`;
 
-    const ALDAGI_DISCLAIMER = `გამონაკლისები:
-ალკოჰოლური, ფსიქოტროპული ან ნარკოტიკული თრობის ქვეშ.
-თუ უხეში გაუფრთხილებლობის გარეშეა პოლისი: შემთხვევა ბასლაინში, ორმაგი ღერძულას გადაკვეთისას, სიჩქარის გადაჭარბების შედეგად ან წითელზე გავლისას. ასევე ავტომობილი არ უნდა გადაადგილოთ თუ რაიმე სადაზღვეო შემთხვევა შეიქმება და გა დარეკოთ ცხელ ხაზზე და 112-ში.
-
-გაუქმების შემთხვევაში დარჩენილი თვეების 20% იქნება გადასახდელი, ხოლო თუ ზარალი იქნება წლიური პრემიის 70%-ზე მეტი, ამ შემთხვევაში სრულად გა დაფაროთ დარჩენილი პრემია.`;
-
     const ALDAGI_GIFT_FUEL = '1. 20 თეთრიანი ფასდაკლება საწვავზე';
     const ALDAGI_GIFT_EV = '1. დატენვაზე 20 %-ანი ფასდაკლება EV Power-ში';
 
     const ALDAGI_GIFTS_REST = `2. 25%-იანი ფასდაკლება "ამბოლში"
 3. 20% ფასდაკლება "დელფი მოტორსში" ავტოდითეილინგ მომსახურებაზე
-4. 10%-იანი ფასდაკლება ქონების დაზღვევაზე
+4. 10%-იანი ფასდაკლება ქონების დაზღვევაზე`;
 
-დეტალურად: https://aldagi.ge/individual/auto-insurance`;
+    const ALDAGI_DISCLAIMER = `გამონაკლისები:
+
+ალკოჰოლური, ფსიქოტროპული ან ნარკოტიკული თრობის ქვეშ.
+
+თუ უხეში გაუფრთხილებლობის გარეშეა პოლისი არ ანაზღაურდება: შემთხვევა ბასლაინში, ორმაგი ღერძულას გადაკვეთისას, სიჩქარის გადაჭარბების შედეგად ან წითელზე გავლის შედეგად მომხდარი ზარალები. ასევე სადაზღვეო შემთხვევის დროს ავტომობილი არ უნდა გადაადგილოთ და უნდა დარეკოთ ალდაგის ცხელ ხაზზე 032 2 444 999 და 112-ში.
+
+გაუქმების შემთხვევაში დარჩენილი თვეების 20% იქნება გადასახდელი, ხოლო თუ ზარალი იქნება წლიური პრემიის 70%-ზე მეტი, ამ შემთხვევაში სრულად გა დაფაროთ დარჩენილი პრემია.`;
+
+    const ALDAGI_DETAILS = 'დეტალურად: https://aldagi.ge/individual/auto-insurance';
 
     function buildAldagiBenefits(isElectric) {
       const gift1 = isElectric ? ALDAGI_GIFT_EV : ALDAGI_GIFT_FUEL;
       return `${ALDAGI_BENEFITS_INTRO}
 
-${ALDAGI_DISCLAIMER}
-
 საჩუქრები:
 ${gift1}
-${ALDAGI_GIFTS_REST}`;
+${ALDAGI_GIFTS_REST}
+
+${ALDAGI_DISCLAIMER}
+
+${ALDAGI_DETAILS}`;
     }
 
     const OFFER_LIMITS = {
@@ -1383,7 +1387,7 @@ ${ALDAGI_GIFTS_REST}`;
 
     const SMS_EDITS_KEY = 'cc_sms_edits';
     const SMS_TPL_VER_KEY = 'cc_sms_tpl_ver';
-    const SMS_TPL_VER = '5';
+    const SMS_TPL_VER = '6';
     function loadSmsEdits() {
       try { return JSON.parse(localStorage.getItem(SMS_EDITS_KEY) || '{}') || {}; }
       catch { return {}; }
@@ -1417,7 +1421,7 @@ ${ALDAGI_GIFTS_REST}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '206';
+      const v = window.__CC_VER || '207';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
