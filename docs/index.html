@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '205';
+    window.__CC_VER = '206';
     (function () {
       function go(v) {
         try {
@@ -1166,7 +1166,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v128</div>
+      <div class="ver">v129</div>
     </header>
 
     <div class="tabs">
@@ -1336,7 +1336,7 @@
 
     const ALDAGI_DISCLAIMER = `გამონაკლისები:
 ალკოჰოლური, ფსიქოტროპული ან ნარკოტიკული თრობის ქვეშ.
-თუ უხეში გაუფრთხილებლობის გარეშეა პოლისი. შემთხვევა ბასლაინში, ორმაგი ღერძულას გადაკვეთისას, სიჩქარის გადაჭარბების შედეგად ან წითელზე გავლისას. ასევე ავტომობილი არ უნდა გადაადგილოთ თუ რაიმე სადაზღვეო შემთხვევა შეიქმება და გა დარეკოთ ცხელ ხაზზე და 112-ში.
+თუ უხეში გაუფრთხილებლობის გარეშეა პოლისი: შემთხვევა ბასლაინში, ორმაგი ღერძულას გადაკვეთისას, სიჩქარის გადაჭარბების შედეგად ან წითელზე გავლისას. ასევე ავტომობილი არ უნდა გადაადგილოთ თუ რაიმე სადაზღვეო შემთხვევა შეიქმება და გა დარეკოთ ცხელ ხაზზე და 112-ში.
 
 გაუქმების შემთხვევაში დარჩენილი თვეების 20% იქნება გადასახდელი, ხოლო თუ ზარალი იქნება წლიური პრემიის 70%-ზე მეტი, ამ შემთხვევაში სრულად გა დაფაროთ დარჩენილი პრემია.`;
 
@@ -1383,7 +1383,7 @@ ${ALDAGI_GIFTS_REST}`;
 
     const SMS_EDITS_KEY = 'cc_sms_edits';
     const SMS_TPL_VER_KEY = 'cc_sms_tpl_ver';
-    const SMS_TPL_VER = '4';
+    const SMS_TPL_VER = '5';
     function loadSmsEdits() {
       try { return JSON.parse(localStorage.getItem(SMS_EDITS_KEY) || '{}') || {}; }
       catch { return {}; }
@@ -1417,7 +1417,7 @@ ${ALDAGI_GIFTS_REST}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '205';
+      const v = window.__CC_VER || '206';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
