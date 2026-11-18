@@ -19,6 +19,7 @@
 		B10000052E00000100000001 /* CallQueueManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000152E00000100000001 /* CallQueueManager.swift */; };
 		B10000062E00000100000001 /* MessageComposeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000162E00000100000001 /* MessageComposeView.swift */; };
 		B10000072E00000100000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10000172E00000100000001 /* Assets.xcassets */; };
+		B30000012E00000100000001 /* dasurateba.pdf in Resources */ = {isa = PBXBuildFile; fileRef = B30000102E00000100000001 /* dasurateba.pdf */; };
 		B10000082E00000100000001 /* PermissionsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000192E00000100000001 /* PermissionsManager.swift */; };
 		B10000092E00000100000001 /* PermissionsOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100001A2E00000100000001 /* PermissionsOnboardingView.swift */; };
 /* End PBXBuildFile section */
@@ -37,6 +38,7 @@
 		B10000152E00000100000001 /* CallQueueManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallQueueManager.swift; sourceTree = "<group>"; };
 		B10000162E00000100000001 /* MessageComposeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageComposeView.swift; sourceTree = "<group>"; };
 		B10000172E00000100000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B30000102E00000100000001 /* dasurateba.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = dasurateba.pdf; sourceTree = "<group>"; };
 		B10000182E00000100000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B10000192E00000100000001 /* PermissionsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionsManager.swift; sourceTree = "<group>"; };
 		B100001A2E00000100000001 /* PermissionsOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionsOnboardingView.swift; sourceTree = "<group>"; };
@@ -70,6 +72,7 @@
 				B10000342E00000100000001 /* Services */,
 				B10000352E00000100000001 /* Views */,
 				B10000172E00000100000001 /* Assets.xcassets */,
+				B30000102E00000100000001 /* dasurateba.pdf */,
 				B10000182E00000100000001 /* Info.plist */,
 			);
 			path = AutoDialerSMS;
@@ -174,6 +177,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B10000072E00000100000001 /* Assets.xcassets in Resources */,
+				B30000012E00000100000001 /* dasurateba.pdf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

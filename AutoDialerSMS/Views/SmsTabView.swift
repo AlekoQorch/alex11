@@ -1,6 +1,7 @@
 import MessageUI
 import SwiftUI
 import UIKit
+import UniformTypeIdentifiers
 
 struct SmsTabView: View {
     @EnvironmentObject private var callManager: CallQueueManager
@@ -14,6 +15,7 @@ struct SmsTabView: View {
     @State private var offerIsElectric = false
     @State private var showComposer = false
     @State private var composerBody = ""
+    @State private var composerAttachments: [(data: Data, typeIdentifier: String, filename: String)] = []
     @State private var showUnavailable = false
 
     var body: some View {
@@ -28,7 +30,7 @@ struct SmsTabView: View {
                 templateCard("არ პასუხობს", message: AldagiMessages.noAnswer)
                 templateCard("ტარიფის დაანგარიშება", message: AldagiMessages.tariff)
                 offerCard
-                templateCard("დასურათების ინსტრუქცია", message: AldagiMessages.photosInstruction)
+                templateCard("დასურათების ინსტრუქცია", message: AldagiMessages.photosInstruction, attachPhotosPdf: true)
             }
             .padding()
         }
@@ -36,7 +38,11 @@ struct SmsTabView: View {
             if let n, smsNumber.isEmpty { smsNumber = n }
         }
         .sheet(isPresented: $showComposer) {
-            MessageComposeView(recipients: [resolvedNumber], body: composerBody) {
+            MessageComposeView(
+                recipients: [resolvedNumber],
+                body: composerBody,
+                attachments: composerAttachments
+            ) {
                 showComposer = false
             }
         }
@@ -64,11 +70,11 @@ struct SmsTabView: View {
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
-    private func templateCard(_ title: String, message: String) -> some View {
+    private func templateCard(_ title: String, message: String, attachPhotosPdf: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title).font(.headline)
             Text(message).font(.caption).foregroundStyle(.secondary)
-            channelButtons(for: message)
+            channelButtons(for: message, attachPhotosPdf: attachPhotosPdf)
         }
         .padding()
         .background(Color(.secondarySystemBackground))
@@ -91,18 +97,18 @@ struct SmsTabView: View {
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
-    private func channelButtons(for body: String) -> some View {
+    private func channelButtons(for body: String, attachPhotosPdf: Bool = false) -> some View {
         HStack(spacing: 8) {
-            Button { send(body) } label: {
+            Button { send(body, attachPhotosPdf: attachPhotosPdf) } label: {
                 Label("SMS", systemImage: "message.fill")
             }
             .buttonStyle(.borderedProminent)
             .frame(maxWidth: .infinity)
 
             Menu {
-                Button("WhatsApp") { openChat(scheme: "https://wa.me/", body: body, wa: true) }
-                Button("Viber") { openChat(scheme: "viber://chat?number=", body: body, wa: false) }
-                Button("Telegram") { openChat(scheme: "tg://resolve?phone=", body: body, wa: false) }
+                Button("WhatsApp") { openChat(scheme: "https://wa.me/", body: body, wa: true, attachPhotosPdf: attachPhotosPdf) }
+                Button("Viber") { openChat(scheme: "viber://chat?number=", body: body, wa: false, attachPhotosPdf: attachPhotosPdf) }
+                Button("Telegram") { openChat(scheme: "tg://resolve?phone=", body: body, wa: false, attachPhotosPdf: attachPhotosPdf) }
             } label: {
                 Label("WhatsApp", systemImage: "phone.fill")
                     .frame(maxWidth: .infinity)
@@ -144,9 +150,20 @@ struct SmsTabView: View {
         return callManager.smsTargetNumber
     }
 
-    private func send(_ body: String) {
+    private func photosPdfAttachment() -> (data: Data, typeIdentifier: String, filename: String)? {
+        guard let url = Bundle.main.url(forResource: "dasurateba", withExtension: "pdf"),
+              let data = try? Data(contentsOf: url) else { return nil }
+        return (data, UTType.pdf.identifier, "დასურათების ინსტრუქცია.pdf")
+    }
+
+    private func send(_ body: String, attachPhotosPdf: Bool = false) {
         guard !resolvedNumber.isEmpty else { return }
         composerBody = body
+        if attachPhotosPdf, let pdf = photosPdfAttachment() {
+            composerAttachments = [pdf]
+        } else {
+            composerAttachments = []
+        }
         if MFMessageComposeViewController.canSendText() {
             showComposer = true
         } else {
@@ -162,8 +179,17 @@ struct SmsTabView: View {
         return digits
     }
 
-    private func openChat(scheme: String, body: String, wa: Bool) {
+    private func openChat(scheme: String, body: String, wa: Bool, attachPhotosPdf: Bool = false) {
         guard !resolvedNumber.isEmpty else { return }
+        if attachPhotosPdf, let pdf = photosPdfAttachment() {
+            let temp = FileManager.default.temporaryDirectory.appendingPathComponent(pdf.filename)
+            try? pdf.data.write(to: temp)
+            let av = UIActivityViewController(activityItems: [body, temp], applicationActivities: nil)
+            guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                  let root = scene.windows.first?.rootViewController else { return }
+            root.present(av, animated: true)
+            return
+        }
         let digits = intlDigits()
         if !wa { UIPasteboard.general.string = body }
         let urlString: String
