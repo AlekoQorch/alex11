@@ -12,7 +12,7 @@ struct SmsTabView: View {
     @State private var offerCar = ""
     @State private var offerThird = "10000$"
     @State private var offerHealth = "20000$"
-    @State private var offerFranchise = "3%"
+    @State private var offerFranchise = ""
     @State private var offerIsElectric = false
     @State private var showComposer = false
     @State private var composerBody = ""
@@ -87,7 +87,7 @@ struct SmsTabView: View {
             Text("ᲡᲠᲣᲚᲘ ᲨᲔᲗᲐᲕᲐᲖᲔᲑᲐ").font(.headline)
             TextField("ტარიფი ($)", text: $offerTariff).keyboardType(.decimalPad)
             TextField("ავტომობილი ($)", text: $offerCar).keyboardType(.decimalPad)
-            limitPicker("ფრანშიზა (%)", options: AldagiMessages.franchisePercents, selection: $offerFranchise)
+            limitPicker("ფრანშიზა (%)", options: AldagiMessages.franchisePercents, selection: $offerFranchise, allowsDeselect: true)
             limitPicker("მესამე პირი", options: AldagiMessages.thirdLimits, selection: $offerThird)
             limitPicker("ჯანმრთელობა", options: AldagiMessages.healthLimits, selection: $offerHealth)
             Toggle("ავტომობილი ელექტროა", isOn: $offerIsElectric)
@@ -138,7 +138,9 @@ struct SmsTabView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack {
                     ForEach(options, id: \.self) { opt in
-                        Button(opt) { selection.wrappedValue = opt }
+                        Button(opt) {
+                            selection.wrappedValue = selection.wrappedValue == opt ? "" : opt
+                        }
                             .buttonStyle(.bordered)
                             .tint(selection.wrappedValue == opt ? .blue : .gray)
                     }
