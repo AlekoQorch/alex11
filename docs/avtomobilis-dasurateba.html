@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>ავტომობილის დასურათების ინსტრუქცია</title>
+  <meta name="description" content="ავტომობილის დასურათების ინსტრუქცია — ალდაგი">
+  <meta property="og:title" content="ავტომობილის დასურათების ინსტრუქცია">
+  <meta property="og:description" content="გთხოვთ გადაიღოთ ავტომობილის ფოტოები ინსტრუქციის მიხედვით">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="ka_GE">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="ავტომობილის დასურათების ინსტრუქცია">
+  <meta name="theme-color" content="#0b3d2e">
+  <style>
+    :root {
+      --bg: #0f1412;
+      --card: #1a221e;
+      --text: #f4f7f5;
+      --dim: #a7b5ad;
+      --accent: #1faa5b;
+      --line: rgba(255,255,255,.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans Georgian", sans-serif;
+      background:
+        radial-gradient(900px 420px at 10% -10%, rgba(31,170,91,.18), transparent 60%),
+        radial-gradient(700px 380px at 100% 0%, rgba(77,159,255,.12), transparent 55%),
+        var(--bg);
+      color: var(--text);
+      display: grid;
+      place-items: center;
+      padding: 24px 16px;
+    }
+    .card {
+      width: min(440px, 100%);
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 22px 18px 18px;
+      box-shadow: 0 18px 50px rgba(0,0,0,.35);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .brand strong {
+      font-size: 18px;
+      letter-spacing: -0.02em;
+    }
+    .tag {
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+      background: var(--accent);
+      border-radius: 999px;
+      padding: 6px 10px;
+    }
+    h1 {
+      margin: 0 0 10px;
+      font-size: 22px;
+      line-height: 1.35;
+      letter-spacing: -0.02em;
+    }
+    p {
+      margin: 0 0 18px;
+      color: var(--dim);
+      line-height: 1.55;
+      font-size: 15px;
+    }
+    .actions {
+      display: grid;
+      gap: 10px;
+    }
+    a.btn {
+      display: block;
+      text-align: center;
+      text-decoration: none;
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-weight: 700;
+      font-size: 15px;
+    }
+    a.btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+    a.btn-secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="brand">
+      <strong>ალდაგი</strong>
+      <span class="tag">ინსტრუქცია</span>
+    </div>
+    <h1>ავტომობილის დასურათების ინსტრუქცია</h1>
+    <p>გთხოვთ გადაიღოთ თქვენი ავტომანქანის ფოტო შემდეგი რეკომენდაციების გათვალისწინებით. გახსენით ან ჩამოტვირთეთ ინსტრუქციის PDF.</p>
+    <div class="actions">
+      <a class="btn btn-primary" href="dasurateba.pdf" target="_blank" rel="noopener">PDF-ის გახსნა</a>
+      <a class="btn btn-secondary" href="dasurateba.pdf" download="ავტომობილის დასურათების ინსტრუქცია.pdf">PDF-ის ჩამოტვირთვა</a>
+    </div>
+  </main>
+</body>
+</html>
