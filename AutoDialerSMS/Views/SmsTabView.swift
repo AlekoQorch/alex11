@@ -28,6 +28,7 @@ struct SmsTabView: View {
                 templateCard("არ პასუხობს", message: AldagiMessages.noAnswer)
                 templateCard("ტარიფის დაანგარიშება", message: AldagiMessages.tariff)
                 offerCard
+                templateCard("დასურათების ინსტრუქცია", message: AldagiMessages.photosInstruction)
             }
             .padding()
         }
