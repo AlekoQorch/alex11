@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '218';
+    window.__CC_VER = '219';
     (function () {
       function go(v) {
         try {
@@ -576,7 +576,9 @@
       z-index: 2;
     }
     .sms-card-head.has-del {
-      padding-left: 40px;
+      /* equal side padding so title + ნომერი stay truly centered with × on the left */
+      padding-left: 36px;
+      padding-right: 36px;
     }
     .sms-card-title-inp {
       width: 100%;
@@ -1256,7 +1258,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v141</div>
+      <div class="ver">v142</div>
     </header>
 
     <div class="tabs">
@@ -1588,7 +1590,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '218';
+      const v = window.__CC_VER || '219';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
