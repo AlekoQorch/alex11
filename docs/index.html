@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '220';
+    window.__CC_VER = '221';
     (function () {
       function go(v) {
         try {
@@ -362,7 +362,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 5px;
+      gap: 1px;
       margin-bottom: 10px;
       padding-bottom: 0;
       border-bottom: none;
@@ -393,7 +393,7 @@
       background: transparent;
       font-size: 12px;
       font-weight: 500;
-      line-height: 1.3;
+      line-height: 1.2;
       color: #7a7a82;
       font-family: ui-monospace, "SF Mono", "Menlo", "Cascadia Mono", "Roboto Mono", monospace;
       font-variant-numeric: tabular-nums;
@@ -403,7 +403,7 @@
       overflow: hidden;
       text-overflow: ellipsis;
       padding: 0;
-      margin: 0;
+      margin: -2px 0 0;
       outline: none;
       -webkit-appearance: none;
       appearance: none;
@@ -1278,7 +1278,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v143</div>
+      <div class="ver">v144</div>
     </header>
 
     <div class="tabs">
@@ -1610,7 +1610,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '220';
+      const v = window.__CC_VER || '221';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
