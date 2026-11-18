@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '219';
+    window.__CC_VER = '220';
     (function () {
       function go(v) {
         try {
@@ -363,9 +363,9 @@
       flex-direction: column;
       align-items: center;
       gap: 5px;
-      margin-bottom: 12px;
-      padding-bottom: 10px;
-      border-bottom: 1px solid var(--line);
+      margin-bottom: 10px;
+      padding-bottom: 0;
+      border-bottom: none;
       text-align: center;
     }
     .sms-card-head h3 {
@@ -385,6 +385,12 @@
       text-transform: uppercase;
     }
     .sms-to {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      border: none;
+      background: transparent;
       font-size: 12px;
       font-weight: 500;
       line-height: 1.3;
@@ -393,10 +399,21 @@
       font-variant-numeric: tabular-nums;
       letter-spacing: 0.02em;
       text-align: center;
-      max-width: 100%;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      padding: 0;
+      margin: 0;
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .sms-to::placeholder {
+      color: #55555c;
+      font-family: inherit;
+      font-weight: 400;
+      letter-spacing: 0;
+      opacity: 1;
     }
     .sms-to.is-empty {
       color: #55555c;
@@ -404,6 +421,9 @@
       font-weight: 400;
       letter-spacing: 0;
       font-variant-numeric: normal;
+    }
+    .sms-to:focus {
+      color: #c8c8ce;
     }
     .sms-card h3 {
       font-size: 15px;
@@ -1258,7 +1278,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v142</div>
+      <div class="ver">v143</div>
     </header>
 
     <div class="tabs">
@@ -1590,7 +1610,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '219';
+      const v = window.__CC_VER || '220';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -2020,19 +2040,32 @@ ${link}
       return '';
     }
 
-    function updateSmsCardTargets() {
+    function updateSmsCardTargets(except) {
       const label = smsTargetLabel();
       document.querySelectorAll('[data-sms-to]').forEach(el => {
+        if (except && el === except) return;
+        if (document.activeElement === el) return;
         if (label) {
-          el.textContent = label;
+          el.value = label;
           el.classList.remove('is-empty');
           el.title = label;
         } else {
-          el.textContent = 'ნომერი არაა';
+          el.value = '';
           el.classList.add('is-empty');
           el.title = '';
         }
       });
+    }
+
+    function applySmsNumberFromField(raw, sourceEl) {
+      filterPhoneInput(sourceEl || $('sms-num'));
+      S.smsManual = true;
+      const display = (sourceEl || $('sms-num')).value;
+      const t = tel(display);
+      $('sms-num').value = display;
+      if (localDigitCount(t) >= 9) S.last = t;
+      updateDocsPreview();
+      updateSmsCardTargets(sourceEl);
     }
 
     function setLastCalled(n) {
@@ -2067,12 +2100,13 @@ ${link}
     document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => goTab(b.dataset.v));
 
     $('sms-num').addEventListener('input', () => {
-      filterPhoneInput($('sms-num'));
-      S.smsManual = true;
-      const t = tel($('sms-num').value);
-      if (localDigitCount(t) >= 9) S.last = t;
-      updateDocsPreview();
-      updateSmsCardTargets();
+      applySmsNumberFromField($('sms-num').value, $('sms-num'));
+    });
+
+    document.addEventListener('input', e => {
+      const el = e.target.closest('[data-sms-to]');
+      if (!el) return;
+      applySmsNumberFromField(el.value, el);
     });
 
     function parse(t) {
@@ -2709,7 +2743,7 @@ ${link}
           <div class="sms-card-head has-del">
             ${smsDelBtn('intro')}
             <h3>ᲞᲐᲢᲐᲠᲐ SMS-ᲘᲡ ᲓᲐᲢᲝᲕᲔᲑᲐ</h3>
-            <span class="sms-to is-empty" data-sms-to>ნომერი არაა</span>
+            <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
           </div>
           <div class="lang-pick">
             <button type="button" class="${(langPick.intro || 'ka') === 'ka' ? 'on' : ''}" data-lang="ka">ქართული</button>
@@ -2729,7 +2763,7 @@ ${link}
           <div class="sms-card-head has-del">
             ${smsDelBtn('noanswer')}
             <h3>ᲐᲠ ᲞᲐᲡᲣᲮᲝᲑᲡ</h3>
-            <span class="sms-to is-empty" data-sms-to>ნომერი არაა</span>
+            <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
           </div>
           ${smsEditField('noanswer', { rows: 4, label: 'არ პასუხობს ტექსტი' })}
           <div class="send-row" data-chat-tpl="noanswer">
@@ -2744,7 +2778,7 @@ ${link}
           <div class="sms-card-head has-del">
             ${smsDelBtn('tariff')}
             <h3>ᲢᲐᲠᲘᲤᲘᲡ ᲓᲐᲐᲜᲒᲐᲠᲘᲨᲔᲑᲐ</h3>
-            <span class="sms-to is-empty" data-sms-to>ნომერი არაა</span>
+            <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
           </div>
           ${smsEditField('tariff', { rows: 8, label: 'ტარიფის ტექსტი' })}
           <div class="send-row" data-chat-tpl="tariff">
@@ -2759,7 +2793,7 @@ ${link}
           <div class="sms-card-head has-del">
             ${smsDelBtn('aldagi')}
             <h3>ᲡᲠᲣᲚᲘ ᲨᲔᲗᲐᲕᲐᲖᲔᲑᲐ</h3>
-            <span class="sms-to is-empty" data-sms-to>ნომერი არაა</span>
+            <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
           </div>
           <div class="offer-fields">
             <span class="field-label">ტარიფი ($)</span>
@@ -2802,7 +2836,7 @@ ${link}
           <div class="sms-card-head has-del">
             ${smsDelBtn('docs')}
             <h3>ᲓᲝᲙᲣᲛᲔᲜᲢᲔᲑᲘᲡ ᲚᲘᲜᲙᲘ</h3>
-            <span class="sms-to is-empty" data-sms-to>ნომერი არაა</span>
+            <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
           </div>
           <p class="sms-hint" style="margin:0 0 8px">პირადობა · მართვის მოწმობა · ტექპასპორტი</p>
           ${smsEditField('docs', { id: 'docs-preview', rows: 6, label: 'დოკუმენტების ლინკი ტექსტი' })}
@@ -2818,7 +2852,7 @@ ${link}
           <div class="sms-card-head has-del">
             ${smsDelBtn('photos')}
             <h3>ᲓᲐᲡᲣᲠᲐᲗᲔᲑᲘᲡ ᲘᲜᲡᲢᲠᲣᲥᲪᲘᲐ</h3>
-            <span class="sms-to is-empty" data-sms-to>ნომერი არაა</span>
+            <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
           </div>
           ${smsEditField('photos', { id: 'photos-preview', rows: 7, label: 'დასურათების ინსტრუქცია ტექსტი' })}
           <div class="send-row" data-chat-tpl="photos">
@@ -2833,7 +2867,7 @@ ${link}
           <div class="sms-card-head has-del">
             ${smsDelBtn(c.id)}
             <input class="sms-card-title-inp" data-custom-title="${c.id}" value="${escapeHtml(c.title)}" aria-label="შაბლონის სახელი">
-            <span class="sms-to is-empty" data-sms-to>ნომერი არაა</span>
+            <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
           </div>
           ${smsEditField(c.id, { rows: 6, label: (c.title || 'შაბლონი') + ' ტექსტი' })}
           <div class="send-row" data-chat-tpl="${c.id}">
