@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '208';
+    window.__CC_VER = '209';
     (function () {
       function go(v) {
         try {
@@ -358,6 +358,7 @@
       margin-bottom: 14px;
     }
     .sms-card-head {
+      position: relative;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -551,6 +552,57 @@
       font-weight: 800;
     }
     .sms-file span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .sms-card-head .sms-del-btn {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: auto;
+      min-width: 0;
+      padding: 4px 8px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      color: #ff6b6b;
+      font-size: 14px;
+      font-weight: 700;
+      font-family: inherit;
+      line-height: 1;
+      z-index: 2;
+    }
+    .sms-card-head.has-del {
+      padding-left: 40px;
+    }
+    .sms-card-title-inp {
+      width: 100%;
+      border: none;
+      background: transparent;
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 600;
+      font-family: inherit;
+      text-align: center;
+      letter-spacing: -0.01em;
+      padding: 0;
+      outline: none;
+    }
+    .sms-card-title-inp:focus {
+      color: #fff;
+    }
+    .sms-add-btn {
+      width: 100%;
+      margin: 4px 0 18px;
+      padding: 13px;
+      border: 1px dashed var(--border);
+      border-radius: 14px;
+      background: transparent;
+      color: var(--dim);
+      font-size: 15px;
+      font-weight: 600;
+      font-family: inherit;
+    }
+    .sms-add-btn:active { opacity: 0.85; }
+
 
 
     .lang-pick {
@@ -1196,7 +1248,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v131</div>
+      <div class="ver">v132</div>
     </header>
 
     <div class="tabs">
@@ -1222,8 +1274,9 @@
 
       <div class="page" id="p-sms">
         <input type="tel" id="sms-num" placeholder="ტელეფონის ნომერი" inputmode="tel">
-        <p class="sms-hint">შაბლონები: პატარა SMS · არ პასუხობს · ტარიფი · შეთავაზება · დოკუმენტების ლინკი · დასურათება</p>
+        <p class="sms-hint">შაბლონები შეგიძლია დაამატო ან წაშალო</p>
         <div id="sms-list"></div>
+        <button type="button" id="sms-add-tpl" class="sms-add-btn">+ შაბლონის დამატება</button>
       </div>
 
       <div class="page" id="p-history">
@@ -1449,10 +1502,84 @@ ${ALDAGI_DETAILS}`;
     }
     migrateSmsEdits();
 
+    const SMS_CUSTOM_KEY = 'cc_sms_custom';
+    const SMS_HIDDEN_KEY = 'cc_sms_hidden';
+    const BUILTIN_SMS_IDS = ['intro', 'noanswer', 'tariff', 'aldagi', 'docs', 'photos'];
+
+    function escapeHtml(s) {
+      return String(s ?? '').replace(/[&<>"']/g, ch => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[ch]));
+    }
+    function loadCustomSms() {
+      try {
+        const raw = JSON.parse(localStorage.getItem(SMS_CUSTOM_KEY) || '[]');
+        return Array.isArray(raw) ? raw.filter(x => x && typeof x.id === 'string') : [];
+      } catch { return []; }
+    }
+    function saveCustomSms(list) {
+      try { localStorage.setItem(SMS_CUSTOM_KEY, JSON.stringify(list || [])); } catch {}
+    }
+    function loadHiddenSms() {
+      try {
+        const raw = JSON.parse(localStorage.getItem(SMS_HIDDEN_KEY) || '[]');
+        return Array.isArray(raw) ? raw.map(String) : [];
+      } catch { return []; }
+    }
+    function saveHiddenSms(list) {
+      try { localStorage.setItem(SMS_HIDDEN_KEY, JSON.stringify(list || [])); } catch {}
+    }
+    function isSmsHidden(id) {
+      return loadHiddenSms().includes(id);
+    }
+    function isCustomSmsId(id) {
+      return String(id || '').startsWith('c_');
+    }
+    function getCustomSms(id) {
+      return loadCustomSms().find(x => x.id === id) || null;
+    }
+    function addCustomSmsTpl() {
+      const id = 'c_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      const list = loadCustomSms();
+      list.push({ id, title: 'ახალი შაბლონი' });
+      saveCustomSms(list);
+      saveSmsEdit(id, '');
+      return id;
+    }
+    function renameCustomSmsTpl(id, title) {
+      const list = loadCustomSms();
+      const item = list.find(x => x.id === id);
+      if (!item) return;
+      item.title = String(title || '').trim() || 'ახალი შაბლონი';
+      saveCustomSms(list);
+    }
+    function removeSmsEdit(tpl) {
+      const all = loadSmsEdits();
+      if (!(tpl in all)) return;
+      delete all[tpl];
+      try { localStorage.setItem(SMS_EDITS_KEY, JSON.stringify(all)); } catch {}
+    }
+    function deleteSmsTpl(id) {
+      if (isCustomSmsId(id)) {
+        saveCustomSms(loadCustomSms().filter(x => x.id !== id));
+        removeSmsEdit(id);
+        return;
+      }
+      const hidden = loadHiddenSms();
+      if (!hidden.includes(id)) {
+        hidden.push(id);
+        saveHiddenSms(hidden);
+      }
+    }
+    function smsDelBtn(id) {
+      return `<button type="button" class="sms-del-btn" data-del-tpl="${id}" aria-label="შაბლონის წაშლა">×</button>`;
+    }
+
+
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '208';
+      const v = window.__CC_VER || '209';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -2311,11 +2438,38 @@ ${photosInstrPdfUrl()}`;
       return 'SMS';
     }
 
+    function rebuildTplPickerButtons() {
+      const box = document.querySelector('#tpl-picker-modal .box.tpl-picker');
+      if (!box) return;
+      const cancel = $('tpl-picker-cancel');
+      box.querySelectorAll('.tpl-btn').forEach(b => b.remove());
+      const addBtn = (tpl, label, small) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'tpl-btn';
+        b.dataset.tpl = tpl;
+        b.innerHTML = small ? `${label}<small>${small}</small>` : label;
+        box.insertBefore(b, cancel);
+      };
+      if (!isSmsHidden('intro')) {
+        addBtn('intro-ka', 'პატარა SMS', 'ქართული');
+        addBtn('intro-en', 'პატარა SMS', 'ინგლისური');
+        addBtn('intro-both', 'პატარა SMS', 'ორივე');
+      }
+      if (!isSmsHidden('noanswer')) addBtn('noanswer', 'არ პასუხობს');
+      if (!isSmsHidden('tariff')) addBtn('tariff', 'ტარიფის დაანგარიშება');
+      if (!isSmsHidden('aldagi')) addBtn('aldagi', 'სრული შეთავაზება');
+      if (!isSmsHidden('docs')) addBtn('docs', 'დოკუმენტების ლინკი');
+      if (!isSmsHidden('photos')) addBtn('photos', 'დასურათების ინსტრუქცია');
+      loadCustomSms().forEach(c => addBtn(c.id, escapeHtml(c.title)));
+    }
+
     function showTemplatePicker(num, type) {
       pendingTpl.num = tel(num || '');
       pendingTpl.type = normalizeChannel(type);
       $('tpl-picker-num').textContent = formatPhoneDisplay(num);
       $('tpl-picker-channel').textContent = channelTitle(pendingTpl.type);
+      rebuildTplPickerButtons();
       $('tpl-picker-modal').classList.remove('hide');
       document.body.style.overflow = 'hidden';
     }
@@ -2338,6 +2492,11 @@ ${photosInstrPdfUrl()}`;
       else if (tpl === 'aldagi') { msg = getSmsEdit('aldagi') ?? buildAldagiMsg(); title = 'სრული შეთავაზება'; }
       else if (tpl === 'docs') { msg = getSmsEdit('docs') ?? buildDocsLinkMsg(num); title = 'დოკუმენტების ლინკი'; }
       else if (tpl === 'photos') { msg = getSmsEdit('photos') ?? buildPhotosInstrMsg(); title = 'დასურათების ინსტრუქცია'; }
+      else if (isCustomSmsId(tpl)) {
+        const c = getCustomSms(tpl);
+        msg = getSmsEdit(tpl) ?? '';
+        title = c?.title || 'შაბლონი';
+      }
       else return;
       hideTemplatePicker();
       showSendConfirm(num, msg, type, title);
@@ -2404,6 +2563,7 @@ ${photosInstrPdfUrl()}`;
       if (tpl === 'aldagi') return buildAldagiMsg();
       if (tpl === 'docs') return buildDocsLinkMsg(num || getPhone());
       if (tpl === 'photos') return buildPhotosInstrMsg();
+      if (isCustomSmsId(tpl)) return getSmsEdit(tpl) ?? '';
       return '';
     }
 
@@ -2423,7 +2583,9 @@ ${photosInstrPdfUrl()}`;
 
     function openSendFromBtn(btn) {
       const card = btn.closest('.sms-card');
-      const title = card?.querySelector('h3')?.textContent || 'გაგზავნა';
+      const title = card?.querySelector('h3')?.textContent
+        || card?.querySelector('[data-custom-title]')?.value
+        || 'გაგზავნა';
       const n = getPhone();
       const action = btn.dataset.send;
       const tpl = action?.replace(/-sms$/, '') || card?.dataset.id;
@@ -2527,25 +2689,32 @@ ${photosInstrPdfUrl()}`;
     }
 
     function renderSmsList() {
-      let html = `
+      const parts = [];
+      if (!isSmsHidden('intro')) {
+        parts.push(`
         <div class="sms-card" data-id="intro">
-          <div class="sms-card-head">
+          <div class="sms-card-head has-del">
+            ${smsDelBtn('intro')}
             <h3>პატარა SMS-ის დატოვება</h3>
             <span class="sms-to is-empty" data-sms-to>ნომერი არაა</span>
           </div>
           <div class="lang-pick">
-            <button type="button" class="on" data-lang="ka">ქართული</button>
-            <button type="button" data-lang="en">ინგლისური</button>
-            <button type="button" data-lang="both">ორივე</button>
+            <button type="button" class="${(langPick.intro || 'ka') === 'ka' ? 'on' : ''}" data-lang="ka">ქართული</button>
+            <button type="button" class="${langPick.intro === 'en' ? 'on' : ''}" data-lang="en">ინგლისური</button>
+            <button type="button" class="${langPick.intro === 'both' ? 'on' : ''}" data-lang="both">ორივე</button>
           </div>
           ${smsEditField('intro', { id: 'intro-preview', rows: 4, label: 'პატარა SMS ტექსტი' })}
           <div class="send-row" data-chat-tpl="intro">
             <button type="button" data-send="intro-sms">${channelLabel('sms', 'SMS')}</button>
             ${chatDropdownHtml(false)}
           </div>
-        </div>
+        </div>`);
+      }
+      if (!isSmsHidden('noanswer')) {
+        parts.push(`
         <div class="sms-card" data-id="noanswer">
-          <div class="sms-card-head">
+          <div class="sms-card-head has-del">
+            ${smsDelBtn('noanswer')}
             <h3>არ პასუხობს</h3>
             <span class="sms-to is-empty" data-sms-to>ნომერი არაა</span>
           </div>
@@ -2554,9 +2723,13 @@ ${photosInstrPdfUrl()}`;
             <button type="button" data-send="noanswer-sms">${channelLabel('sms', 'SMS')}</button>
             ${chatDropdownHtml(false)}
           </div>
-        </div>
+        </div>`);
+      }
+      if (!isSmsHidden('tariff')) {
+        parts.push(`
         <div class="sms-card" data-id="tariff">
-          <div class="sms-card-head">
+          <div class="sms-card-head has-del">
+            ${smsDelBtn('tariff')}
             <h3>ტარიფის დაანგარიშება</h3>
             <span class="sms-to is-empty" data-sms-to>ნომერი არაა</span>
           </div>
@@ -2565,9 +2738,13 @@ ${photosInstrPdfUrl()}`;
             <button type="button" data-send="tariff-sms">${channelLabel('sms', 'SMS')}</button>
             ${chatDropdownHtml(false)}
           </div>
-        </div>
+        </div>`);
+      }
+      if (!isSmsHidden('aldagi')) {
+        parts.push(`
         <div class="sms-card" data-id="aldagi">
-          <div class="sms-card-head">
+          <div class="sms-card-head has-del">
+            ${smsDelBtn('aldagi')}
             <h3>სრული შეთავაზება</h3>
             <span class="sms-to is-empty" data-sms-to>ნომერი არაა</span>
           </div>
@@ -2604,9 +2781,13 @@ ${photosInstrPdfUrl()}`;
             <button type="button" data-send="aldagi-sms">${channelLabel('sms', 'SMS')}</button>
             ${chatDropdownHtml(false)}
           </div>
-        </div>
+        </div>`);
+      }
+      if (!isSmsHidden('docs')) {
+        parts.push(`
         <div class="sms-card" data-id="docs">
-          <div class="sms-card-head">
+          <div class="sms-card-head has-del">
+            ${smsDelBtn('docs')}
             <h3>დოკუმენტების ლინკი</h3>
             <span class="sms-to is-empty" data-sms-to>ნომერი არაა</span>
           </div>
@@ -2616,9 +2797,13 @@ ${photosInstrPdfUrl()}`;
             <button type="button" data-send="docs-sms">${channelLabel('sms', 'SMS')}</button>
             ${chatDropdownHtml(false)}
           </div>
-        </div>
+        </div>`);
+      }
+      if (!isSmsHidden('photos')) {
+        parts.push(`
         <div class="sms-card" data-id="photos">
-          <div class="sms-card-head">
+          <div class="sms-card-head has-del">
+            ${smsDelBtn('photos')}
             <h3>დასურათების ინსტრუქცია</h3>
             <span class="sms-to is-empty" data-sms-to>ნომერი არაა</span>
           </div>
@@ -2631,16 +2816,42 @@ ${photosInstrPdfUrl()}`;
             <button type="button" data-send="photos-sms">${channelLabel('sms', 'SMS')}</button>
             ${chatDropdownHtml(false)}
           </div>
-        </div>`;
+        </div>`);
+      }
+      loadCustomSms().forEach(c => {
+        parts.push(`
+        <div class="sms-card" data-id="${c.id}" data-custom="1">
+          <div class="sms-card-head has-del">
+            ${smsDelBtn(c.id)}
+            <input class="sms-card-title-inp" data-custom-title="${c.id}" value="${escapeHtml(c.title)}" aria-label="შაბლონის სახელი">
+            <span class="sms-to is-empty" data-sms-to>ნომერი არაა</span>
+          </div>
+          ${smsEditField(c.id, { rows: 6, label: (c.title || 'შაბლონი') + ' ტექსტი' })}
+          <div class="send-row" data-chat-tpl="${c.id}">
+            <button type="button" data-send="${c.id}-sms">${channelLabel('sms', 'SMS')}</button>
+            ${chatDropdownHtml(false)}
+          </div>
+        </div>`);
+      });
 
-      $('sms-list').innerHTML = html;
+      const prevTariff = $('offer-tariff')?.value || '';
+      const prevCar = $('offer-car')?.value || '';
+      const prevElectric = !!$('offer-electric')?.checked;
+      $('sms-list').innerHTML = parts.join('');
       fillSmsField('intro', document.querySelector('textarea.sms-edit[data-tpl="intro"]'), introMsg(langPick.intro || 'ka'));
       fillSmsField('noanswer', document.querySelector('textarea.sms-edit[data-tpl="noanswer"]'), NO_ANSWER_MSG);
       fillSmsField('tariff', document.querySelector('textarea.sms-edit[data-tpl="tariff"]'), TARIFF_MSG);
+      if ($('offer-tariff')) $('offer-tariff').value = prevTariff;
+      if ($('offer-car')) $('offer-car').value = prevCar;
+      if ($('offer-electric')) $('offer-electric').checked = prevElectric;
       updateAldagiPreview();
       updateDocsPreview();
       fillSmsField('photos', document.querySelector('textarea.sms-edit[data-tpl="photos"]'), buildPhotosInstrMsg());
+      loadCustomSms().forEach(c => {
+        fillSmsField(c.id, document.querySelector(`textarea.sms-edit[data-tpl="${c.id}"]`), '');
+      });
       updateSmsCardTargets();
+      initOfferFields();
     }
 
     function updateDocsPreview() {
@@ -2702,9 +2913,15 @@ ${extras}${buildAldagiBenefits(isElectric)}`;
 
     function initOfferFields() {
       const refreshFromOffer = () => updateAldagiPreview({ fromOffer: true });
-      $('offer-tariff')?.addEventListener('input', refreshFromOffer);
-      $('offer-car')?.addEventListener('input', refreshFromOffer);
-      $('offer-electric')?.addEventListener('change', refreshFromOffer);
+      const tariff = $('offer-tariff');
+      const car = $('offer-car');
+      const electric = $('offer-electric');
+      if (tariff) tariff.oninput = refreshFromOffer;
+      if (car) car.oninput = refreshFromOffer;
+      if (electric) {
+        electric.checked = !!electric.checked;
+        electric.onchange = refreshFromOffer;
+      }
       document.querySelectorAll('.lim-pick button').forEach(b => {
         b.onclick = () => {
           const k = b.dataset.k;
@@ -2716,12 +2933,29 @@ ${extras}${buildAldagiBenefits(isElectric)}`;
     }
 
     $('sms-list').addEventListener('input', e => {
+      const titleInp = e.target.closest('[data-custom-title]');
+      if (titleInp) {
+        renameCustomSmsTpl(titleInp.dataset.customTitle, titleInp.value);
+        return;
+      }
       const ta = e.target.closest('textarea.sms-edit');
       if (!ta || ta.hasAttribute('readonly') || !ta.dataset.tpl) return;
       saveSmsEdit(ta.dataset.tpl, ta.value);
     });
 
     $('sms-list').addEventListener('click', e => {
+      const delBtn = e.target.closest('.sms-del-btn');
+      if (delBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const id = delBtn.dataset.delTpl;
+        if (!id) return;
+        if (!confirm('წავშალოთ ეს შაბლონი?')) return;
+        deleteSmsTpl(id);
+        renderSmsList();
+        return;
+      }
+
       const editBtn = e.target.closest('.sms-edit-btn');
       if (editBtn) {
         e.preventDefault();
@@ -2762,7 +2996,7 @@ ${extras}${buildAldagiBenefits(isElectric)}`;
         closeAllChatMenus();
         const card = goWa.closest('.sms-card');
         const tpl = goWa.closest('[data-chat-tpl]')?.dataset.chatTpl || card?.dataset.id;
-        const title = card?.querySelector('h3')?.textContent || 'გაგზავნა';
+        const title = card?.querySelector('h3')?.textContent || card?.querySelector('[data-custom-title]')?.value || 'გაგზავნა';
         openChatFromMenu(goWa.dataset.chatGo || 'wa', tpl, title);
         return;
       }
@@ -2774,7 +3008,7 @@ ${extras}${buildAldagiBenefits(isElectric)}`;
         closeAllChatMenus();
         const card = chatBtn.closest('.sms-card');
         const tpl = chatBtn.closest('[data-chat-tpl]')?.dataset.chatTpl || card?.dataset.id;
-        const title = card?.querySelector('h3')?.textContent || 'გაგზავნა';
+        const title = card?.querySelector('h3')?.textContent || card?.querySelector('[data-custom-title]')?.value || 'გაგზავნა';
         openChatFromMenu(chatBtn.dataset.chat, tpl, title);
         return;
       }
@@ -2787,7 +3021,17 @@ ${extras}${buildAldagiBenefits(isElectric)}`;
     });
 
     renderSmsList();
-    initOfferFields();
+    $('sms-add-tpl').onclick = () => {
+      const id = addCustomSmsTpl();
+      renderSmsList();
+      const ta = document.querySelector(`textarea.sms-edit[data-tpl="${id}"]`);
+      if (ta) setSmsEditing(ta, true);
+      const title = document.querySelector(`[data-custom-title="${id}"]`);
+      if (title) {
+        title.focus();
+        title.select();
+      }
+    };
     initNumList();
 
     $('start').onclick = start;
