@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '224';
+    window.__CC_VER = '225';
     (function () {
       function go(v) {
         try {
@@ -977,17 +977,21 @@
     }
     .lim-pick {
       display: flex;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       gap: 6px;
+      width: 100%;
     }
     .lim-pick button {
-      padding: 8px 10px;
+      flex: 1 1 0;
+      min-width: 0;
+      padding: 8px 4px;
       border: 1px solid var(--border);
       border-radius: 8px;
       background: var(--bg);
       color: var(--dim);
       font-size: 13px;
       font-family: inherit;
+      text-align: center;
       transition: border-color .12s ease, background .12s ease, color .12s ease;
     }
     .lim-pick button.on {
@@ -1278,7 +1282,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v147</div>
+      <div class="ver">v148</div>
     </header>
 
     <div class="tabs">
@@ -1611,7 +1615,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '224';
+      const v = window.__CC_VER || '225';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
