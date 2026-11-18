@@ -12,6 +12,7 @@ struct SmsTabView: View {
     @State private var offerCar = ""
     @State private var offerThird = "10000$"
     @State private var offerHealth = "20000$"
+    @State private var offerFranchise = "3%"
     @State private var offerIsElectric = false
     @State private var showComposer = false
     @State private var composerBody = ""
@@ -86,6 +87,7 @@ struct SmsTabView: View {
             Text("ᲡᲠᲣᲚᲘ ᲨᲔᲗᲐᲕᲐᲖᲔᲑᲐ").font(.headline)
             TextField("ტარიფი ($)", text: $offerTariff).keyboardType(.decimalPad)
             TextField("ავტომობილი ($)", text: $offerCar).keyboardType(.decimalPad)
+            limitPicker("ფრანშიზა (%)", options: AldagiMessages.franchisePercents, selection: $offerFranchise)
             limitPicker("მესამე პირი", options: AldagiMessages.thirdLimits, selection: $offerThird)
             limitPicker("ჯანმრთელობა", options: AldagiMessages.healthLimits, selection: $offerHealth)
             Toggle("ავტომობილი ელექტროა", isOn: $offerIsElectric)
@@ -125,7 +127,8 @@ struct SmsTabView: View {
             car: offerCar,
             third: offerThird,
             health: offerHealth,
-            isElectric: offerIsElectric
+            isElectric: offerIsElectric,
+            franchisePercent: offerFranchise
         )
     }
 
