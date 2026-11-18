@@ -132,14 +132,18 @@ struct SmsTabView: View {
         )
     }
 
-    private func limitPicker(_ label: String, options: [String], selection: Binding<String>) -> some View {
+    private func limitPicker(_ label: String, options: [String], selection: Binding<String>, allowsDeselect: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(label).font(.caption).foregroundStyle(.secondary)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack {
                     ForEach(options, id: \.self) { opt in
                         Button(opt) {
-                            selection.wrappedValue = selection.wrappedValue == opt ? "" : opt
+                            if allowsDeselect, selection.wrappedValue == opt {
+                                selection.wrappedValue = ""
+                            } else {
+                                selection.wrappedValue = opt
+                            }
                         }
                             .buttonStyle(.bordered)
                             .tint(selection.wrappedValue == opt ? .blue : .gray)
