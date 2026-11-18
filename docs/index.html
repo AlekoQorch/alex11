@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '230';
+    window.__CC_VER = '231';
     (function () {
       function go(v) {
         try {
@@ -1353,7 +1353,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v153</div>
+      <div class="ver">v154</div>
     </header>
 
     <div class="tabs">
@@ -1768,14 +1768,15 @@ ${ALDAGI_DETAILS}`;
     }
     function fieldDisplayValue(field, vals, fields) {
       const raw = vals[field.id];
+      if (raw == null || String(raw).trim() === '') return '';
       if (field.type === 'percent_of') {
-        if (!raw) return '';
         const src = (fields || []).find(f => f.id === field.source);
         const srcVal = src ? (vals[src.id] || '') : '';
+        if (!parseUsdAmount(srcVal)) return '';
         return franchiseUsdFromCar(srcVal, raw);
       }
-      if (field.type === 'money') return formatUsd(raw || '');
-      return raw == null ? '' : String(raw);
+      if (field.type === 'money') return formatUsd(raw);
+      return String(raw);
     }
     function applyTemplateFields(body, tplId) {
       const c = getCustomSms(tplId);
@@ -1815,7 +1816,7 @@ ${ALDAGI_DETAILS}`;
         html += `<div class="tpl-field-row" data-field-id="${f.id}">`;
         html += `<span class="field-label">${escapeHtml(f.label || f.id)} <span style="opacity:.55">{{${escapeHtml(f.id)}}}</span></span>`;
         if (f.type === 'choice' || f.type === 'percent_of') {
-          const opts = Array.isArray(f.options) && f.options.length ? f.options : (f.type === 'percent_of' ? ['1%','2%','3%','4%','5%'] : []);
+          const opts = Array.isArray(f.options) ? f.options : [];
           html += `<div class="lim-pick" data-custom-pick="${c.id}" data-field="${f.id}">`;
           opts.forEach(opt => {
             const on = vals[f.id] === opt ? ' on' : '';
@@ -1856,14 +1857,12 @@ ${ALDAGI_DETAILS}`;
             ? money.map(f => `<option value="${escapeHtml(f.id)}">${escapeHtml(f.label || f.id)}</option>`).join('')
             : '<option value="">ჯერ დაამატე თანხის ველი</option>';
         }
-        const opts = $('field-options');
-        if (opts && !opts.value.trim()) opts.value = '1%\n2%\n3%\n4%\n5%';
       }
     }
     function openFieldModal(tplId) {
       pendingFieldTpl.id = tplId;
       if ($('field-label')) $('field-label').value = '';
-      if ($('field-type')) $('field-type').value = 'money';
+      if ($('field-type')) $('field-type').value = 'text';
       if ($('field-options')) $('field-options').value = '';
       syncFieldModalType();
       $('field-modal')?.classList.remove('hide');
@@ -1904,22 +1903,16 @@ ${ALDAGI_DETAILS}`;
       }
       fields.push(field);
       updateCustomSmsFields(tplId, fields);
-      // append token into template text if empty-ish
-      let body = getSmsEdit(tplId) ?? '';
-      const token = '{{' + id + '}}';
-      if (!body.includes(token)) {
-        body = (body ? body.replace(/\s*$/, '') + '\n' : '') + (label.replace(/\s*\(\$\)$/, '') + ': ' + token);
-        saveSmsEdit(tplId, body);
-      }
       closeFieldModal();
       renderSmsList();
+      showAppToast('ველი დამატებულია — ჩასმა {{' + id + '}}', 2600);
     }
 
 
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '230';
+      const v = window.__CC_VER || '231';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
