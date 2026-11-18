@@ -153,7 +153,7 @@ struct SmsTabView: View {
     private func photosPdfAttachment() -> (data: Data, typeIdentifier: String, filename: String)? {
         guard let url = Bundle.main.url(forResource: "dasurateba", withExtension: "pdf"),
               let data = try? Data(contentsOf: url) else { return nil }
-        return (data, UTType.pdf.identifier, "დასურათების ინსტრუქცია.pdf")
+        return (data, UTType.pdf.identifier, "ავტომობილის დასურათების ინსტრუქცია.pdf")
     }
 
     private func send(_ body: String, attachPhotosPdf: Bool = false) {
