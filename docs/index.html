@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '222';
+    window.__CC_VER = '223';
     (function () {
       function go(v) {
         try {
@@ -1278,7 +1278,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v145</div>
+      <div class="ver">v146</div>
     </header>
 
     <div class="tabs">
@@ -1348,14 +1348,14 @@
       <div class="lbl">აირჩიე შაბლონი</div>
       <div class="num" id="tpl-picker-num"></div>
       <div class="channel" id="tpl-picker-channel">SMS</div>
+      <button type="button" class="tpl-btn" data-tpl="aldagi">ᲡᲠᲣᲚᲘ ᲨᲔᲗᲐᲕᲐᲖᲔᲑᲐ</button>
+      <button type="button" class="tpl-btn" data-tpl="noanswer">ᲐᲠ ᲞᲐᲡᲣᲮᲝᲑᲡ</button>
+      <button type="button" class="tpl-btn" data-tpl="tariff">ᲢᲐᲠᲘᲤᲘᲡ ᲓᲐᲐᲜᲒᲐᲠᲘᲨᲔᲑᲐ</button>
+      <button type="button" class="tpl-btn" data-tpl="photos">ᲓᲐᲡᲣᲠᲐᲗᲔᲑᲘᲡ ᲘᲜᲡᲢᲠᲣᲥᲪᲘᲐ</button>
       <button type="button" class="tpl-btn" data-tpl="intro-ka">ᲞᲐᲢᲐᲠᲐ SMS<small>ᲥᲐᲠᲗᲣᲚᲘ</small></button>
       <button type="button" class="tpl-btn" data-tpl="intro-en">ᲞᲐᲢᲐᲠᲐ SMS<small>ᲘᲜᲒᲚᲘᲡᲣᲠᲘ</small></button>
       <button type="button" class="tpl-btn" data-tpl="intro-both">ᲞᲐᲢᲐᲠᲐ SMS<small>ᲝᲠᲘᲕᲔ</small></button>
-      <button type="button" class="tpl-btn" data-tpl="noanswer">ᲐᲠ ᲞᲐᲡᲣᲮᲝᲑᲡ</button>
-      <button type="button" class="tpl-btn" data-tpl="tariff">ᲢᲐᲠᲘᲤᲘᲡ ᲓᲐᲐᲜᲒᲐᲠᲘᲨᲔᲑᲐ</button>
-      <button type="button" class="tpl-btn" data-tpl="aldagi">ᲡᲠᲣᲚᲘ ᲨᲔᲗᲐᲕᲐᲖᲔᲑᲐ</button>
       <button type="button" class="tpl-btn" data-tpl="docs">ᲓᲝᲙᲣᲛᲔᲜᲢᲔᲑᲘᲡ ᲚᲘᲜᲙᲘ</button>
-      <button type="button" class="tpl-btn" data-tpl="photos">ᲓᲐᲡᲣᲠᲐᲗᲔᲑᲘᲡ ᲘᲜᲡᲢᲠᲣᲥᲪᲘᲐ</button>
       <button type="button" class="skip" id="tpl-picker-cancel">გაუქმება</button>
     </div>
   </div>
@@ -1535,7 +1535,7 @@ ${ALDAGI_DETAILS}`;
 
     const SMS_CUSTOM_KEY = 'cc_sms_custom';
     const SMS_HIDDEN_KEY = 'cc_sms_hidden';
-    const BUILTIN_SMS_IDS = ['intro', 'noanswer', 'tariff', 'aldagi', 'docs', 'photos'];
+    const BUILTIN_SMS_IDS = ['aldagi', 'noanswer', 'tariff', 'photos', 'intro', 'docs'];
 
     function escapeHtml(s) {
       return String(s ?? '').replace(/[&<>"']/g, ch => ({
@@ -1610,7 +1610,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '222';
+      const v = window.__CC_VER || '223';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -2503,16 +2503,16 @@ ${link}
         b.innerHTML = small ? `${label}<small>${small}</small>` : label;
         box.insertBefore(b, cancel);
       };
+      if (!isSmsHidden('aldagi')) addBtn('aldagi', 'ᲡᲠᲣᲚᲘ ᲨᲔᲗᲐᲕᲐᲖᲔᲑᲐ');
+      if (!isSmsHidden('noanswer')) addBtn('noanswer', 'ᲐᲠ ᲞᲐᲡᲣᲮᲝᲑᲡ');
+      if (!isSmsHidden('tariff')) addBtn('tariff', 'ᲢᲐᲠᲘᲤᲘᲡ ᲓᲐᲐᲜᲒᲐᲠᲘᲨᲔᲑᲐ');
+      if (!isSmsHidden('photos')) addBtn('photos', 'ᲓᲐᲡᲣᲠᲐᲗᲔᲑᲘᲡ ᲘᲜᲡᲢᲠᲣᲥᲪᲘᲐ');
       if (!isSmsHidden('intro')) {
         addBtn('intro-ka', 'ᲞᲐᲢᲐᲠᲐ SMS', 'ᲥᲐᲠᲗᲣᲚᲘ');
         addBtn('intro-en', 'ᲞᲐᲢᲐᲠᲐ SMS', 'ᲘᲜᲒᲚᲘᲡᲣᲠᲘ');
         addBtn('intro-both', 'ᲞᲐᲢᲐᲠᲐ SMS', 'ᲝᲠᲘᲕᲔ');
       }
-      if (!isSmsHidden('noanswer')) addBtn('noanswer', 'ᲐᲠ ᲞᲐᲡᲣᲮᲝᲑᲡ');
-      if (!isSmsHidden('tariff')) addBtn('tariff', 'ᲢᲐᲠᲘᲤᲘᲡ ᲓᲐᲐᲜᲒᲐᲠᲘᲨᲔᲑᲐ');
-      if (!isSmsHidden('aldagi')) addBtn('aldagi', 'ᲡᲠᲣᲚᲘ ᲨᲔᲗᲐᲕᲐᲖᲔᲑᲐ');
       if (!isSmsHidden('docs')) addBtn('docs', 'ᲓᲝᲙᲣᲛᲔᲜᲢᲔᲑᲘᲡ ᲚᲘᲜᲙᲘ');
-      if (!isSmsHidden('photos')) addBtn('photos', 'ᲓᲐᲡᲣᲠᲐᲗᲔᲑᲘᲡ ᲘᲜᲡᲢᲠᲣᲥᲪᲘᲐ');
       loadCustomSms().forEach(c => addBtn(c.id, escapeHtml(c.title)));
     }
 
@@ -2737,56 +2737,6 @@ ${link}
 
     function renderSmsList() {
       const parts = [];
-      if (!isSmsHidden('intro')) {
-        parts.push(`
-        <div class="sms-card" data-id="intro">
-          <div class="sms-card-head has-del">
-            ${smsDelBtn('intro')}
-            <h3>ᲞᲐᲢᲐᲠᲐ SMS-ᲘᲡ ᲓᲐᲢᲝᲕᲔᲑᲐ</h3>
-            <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
-          </div>
-          <div class="lang-pick">
-            <button type="button" class="${(langPick.intro || 'ka') === 'ka' ? 'on' : ''}" data-lang="ka">ქართული</button>
-            <button type="button" class="${langPick.intro === 'en' ? 'on' : ''}" data-lang="en">ინგლისური</button>
-            <button type="button" class="${langPick.intro === 'both' ? 'on' : ''}" data-lang="both">ორივე</button>
-          </div>
-          ${smsEditField('intro', { id: 'intro-preview', rows: 4, label: 'პატარა SMS ტექსტი' })}
-          <div class="send-row" data-chat-tpl="intro">
-            <button type="button" data-send="intro-sms">${channelLabel('sms', 'SMS')}</button>
-            ${chatDropdownHtml(false)}
-          </div>
-        </div>`);
-      }
-      if (!isSmsHidden('noanswer')) {
-        parts.push(`
-        <div class="sms-card" data-id="noanswer">
-          <div class="sms-card-head has-del">
-            ${smsDelBtn('noanswer')}
-            <h3>ᲐᲠ ᲞᲐᲡᲣᲮᲝᲑᲡ</h3>
-            <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
-          </div>
-          ${smsEditField('noanswer', { rows: 4, label: 'არ პასუხობს ტექსტი' })}
-          <div class="send-row" data-chat-tpl="noanswer">
-            <button type="button" data-send="noanswer-sms">${channelLabel('sms', 'SMS')}</button>
-            ${chatDropdownHtml(false)}
-          </div>
-        </div>`);
-      }
-      if (!isSmsHidden('tariff')) {
-        parts.push(`
-        <div class="sms-card" data-id="tariff">
-          <div class="sms-card-head has-del">
-            ${smsDelBtn('tariff')}
-            <h3>ᲢᲐᲠᲘᲤᲘᲡ ᲓᲐᲐᲜᲒᲐᲠᲘᲨᲔᲑᲐ</h3>
-            <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
-          </div>
-          ${smsEditField('tariff', { rows: 8, label: 'ტარიფის ტექსტი' })}
-          <div class="send-row" data-chat-tpl="tariff">
-            <button type="button" data-send="tariff-sms">${channelLabel('sms', 'SMS')}</button>
-            ${chatDropdownHtml(false)}
-          </div>
-        </div>`);
-      }
       if (!isSmsHidden('aldagi')) {
         parts.push(`
         <div class="sms-card" data-id="aldagi">
@@ -2830,18 +2780,32 @@ ${link}
           </div>
         </div>`);
       }
-      if (!isSmsHidden('docs')) {
+      if (!isSmsHidden('noanswer')) {
         parts.push(`
-        <div class="sms-card" data-id="docs">
+        <div class="sms-card" data-id="noanswer">
           <div class="sms-card-head has-del">
-            ${smsDelBtn('docs')}
-            <h3>ᲓᲝᲙᲣᲛᲔᲜᲢᲔᲑᲘᲡ ᲚᲘᲜᲙᲘ</h3>
+            ${smsDelBtn('noanswer')}
+            <h3>ᲐᲠ ᲞᲐᲡᲣᲮᲝᲑᲡ</h3>
             <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
           </div>
-          <p class="sms-hint" style="margin:0 0 8px">პირადობა · მართვის მოწმობა · ტექპასპორტი</p>
-          ${smsEditField('docs', { id: 'docs-preview', rows: 6, label: 'დოკუმენტების ლინკი ტექსტი' })}
-          <div class="send-row" data-chat-tpl="docs">
-            <button type="button" data-send="docs-sms">${channelLabel('sms', 'SMS')}</button>
+          ${smsEditField('noanswer', { rows: 4, label: 'არ პასუხობს ტექსტი' })}
+          <div class="send-row" data-chat-tpl="noanswer">
+            <button type="button" data-send="noanswer-sms">${channelLabel('sms', 'SMS')}</button>
+            ${chatDropdownHtml(false)}
+          </div>
+        </div>`);
+      }
+      if (!isSmsHidden('tariff')) {
+        parts.push(`
+        <div class="sms-card" data-id="tariff">
+          <div class="sms-card-head has-del">
+            ${smsDelBtn('tariff')}
+            <h3>ᲢᲐᲠᲘᲤᲘᲡ ᲓᲐᲐᲜᲒᲐᲠᲘᲨᲔᲑᲐ</h3>
+            <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
+          </div>
+          ${smsEditField('tariff', { rows: 8, label: 'ტარიფის ტექსტი' })}
+          <div class="send-row" data-chat-tpl="tariff">
+            <button type="button" data-send="tariff-sms">${channelLabel('sms', 'SMS')}</button>
             ${chatDropdownHtml(false)}
           </div>
         </div>`);
@@ -2857,6 +2821,42 @@ ${link}
           ${smsEditField('photos', { id: 'photos-preview', rows: 7, label: 'დასურათების ინსტრუქცია ტექსტი' })}
           <div class="send-row" data-chat-tpl="photos">
             <button type="button" data-send="photos-sms">${channelLabel('sms', 'SMS')}</button>
+            ${chatDropdownHtml(false)}
+          </div>
+        </div>`);
+      }
+      if (!isSmsHidden('intro')) {
+        parts.push(`
+        <div class="sms-card" data-id="intro">
+          <div class="sms-card-head has-del">
+            ${smsDelBtn('intro')}
+            <h3>ᲞᲐᲢᲐᲠᲐ SMS-ᲘᲡ ᲓᲐᲢᲝᲕᲔᲑᲐ</h3>
+            <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
+          </div>
+          <div class="lang-pick">
+            <button type="button" class="${(langPick.intro || 'ka') === 'ka' ? 'on' : ''}" data-lang="ka">ქართული</button>
+            <button type="button" class="${langPick.intro === 'en' ? 'on' : ''}" data-lang="en">ინგლისური</button>
+            <button type="button" class="${langPick.intro === 'both' ? 'on' : ''}" data-lang="both">ორივე</button>
+          </div>
+          ${smsEditField('intro', { id: 'intro-preview', rows: 4, label: 'პატარა SMS ტექსტი' })}
+          <div class="send-row" data-chat-tpl="intro">
+            <button type="button" data-send="intro-sms">${channelLabel('sms', 'SMS')}</button>
+            ${chatDropdownHtml(false)}
+          </div>
+        </div>`);
+      }
+      if (!isSmsHidden('docs')) {
+        parts.push(`
+        <div class="sms-card" data-id="docs">
+          <div class="sms-card-head has-del">
+            ${smsDelBtn('docs')}
+            <h3>ᲓᲝᲙᲣᲛᲔᲜᲢᲔᲑᲘᲡ ᲚᲘᲜᲙᲘ</h3>
+            <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
+          </div>
+          <p class="sms-hint" style="margin:0 0 8px">პირადობა · მართვის მოწმობა · ტექპასპორტი</p>
+          ${smsEditField('docs', { id: 'docs-preview', rows: 6, label: 'დოკუმენტების ლინკი ტექსტი' })}
+          <div class="send-row" data-chat-tpl="docs">
+            <button type="button" data-send="docs-sms">${channelLabel('sms', 'SMS')}</button>
             ${chatDropdownHtml(false)}
           </div>
         </div>`);

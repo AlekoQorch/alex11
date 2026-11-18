@@ -26,11 +26,11 @@ struct SmsTabView: View {
                     .textFieldStyle(.roundedBorder)
                     .onAppear { smsNumber = callManager.smsTargetNumber }
 
-                introCard
+                offerCard
                 templateCard("ᲐᲠ ᲞᲐᲡᲣᲮᲝᲑᲡ", message: AldagiMessages.noAnswer)
                 templateCard("ᲢᲐᲠᲘᲤᲘᲡ ᲓᲐᲐᲜᲒᲐᲠᲘᲨᲔᲑᲐ", message: AldagiMessages.tariff)
-                offerCard
                 templateCard("ᲓᲐᲡᲣᲠᲐᲗᲔᲑᲘᲡ ᲘᲜᲡᲢᲠᲣᲥᲪᲘᲐ", message: AldagiMessages.photosInstruction)
+                introCard
             }
             .padding()
         }
