@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '225';
+    window.__CC_VER = '226';
     (function () {
       function go(v) {
         try {
@@ -1282,7 +1282,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v148</div>
+      <div class="ver">v149</div>
     </header>
 
     <div class="tabs">
@@ -1487,7 +1487,7 @@ ${ALDAGI_DETAILS}`;
       health: ['20000$', '40000$', '100000$'],
       franchise: ['1%', '2%', '3%', '4%', '5%']
     };
-    const offerPick = { third: '10000$', health: '20000$', franchise: '3%' };
+    const offerPick = { third: '10000$', health: '20000$', franchise: '' };
 
     const TARIFF_MSG = `გამარჯობა, ალექსანდრე ქორჩაშვილი გწერთ სადაზღვეო კომპანია ალდაგიდან.
 
@@ -1506,7 +1506,7 @@ ${ALDAGI_DETAILS}`;
 
     const SMS_EDITS_KEY = 'cc_sms_edits';
     const SMS_TPL_VER_KEY = 'cc_sms_tpl_ver';
-    const SMS_TPL_VER = '15';
+    const SMS_TPL_VER = '16';
     function loadSmsEdits() {
       try { return JSON.parse(localStorage.getItem(SMS_EDITS_KEY) || '{}') || {}; }
       catch { return {}; }
@@ -1615,7 +1615,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '225';
+      const v = window.__CC_VER || '226';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -2941,6 +2941,7 @@ ${link}
     }
 
     function buildFranchiseBlock(carRaw) {
+      if (!offerPick.franchise) return '';
       const amt = franchiseUsdFromCar(carRaw, offerPick.franchise);
       return `ფრანშიზა(თანამონაწილეობა თქვენი მხრიდან) ${amt}
 (დანარჩენს კომპანია დაფარავს). ფრანშიზა არ ვრცელდება მესამე პირზე და სხვისი ბრალეულობის დროს დამდგარ შემთხვევაზე`;
@@ -2954,10 +2955,9 @@ ${link}
       const isElectric = !!$('offer-electric')?.checked;
       const evFranchise = isElectric ? '\n\nფრანშიზა 20% ელექტრო ნაწილებზე.' : '';
       const franchiseBlock = buildFranchiseBlock(carRaw);
+      const franchiseSection = franchiseBlock ? `\n${franchiseBlock}\n` : '';
       return `${ALDAGI_HEAD}
-
-${franchiseBlock}
-
+${franchiseSection}
 ტარიფი: ${tariff}
 ავტომობილი: ${car}
 მესამე პირი: ${offerPick.third}
@@ -2993,8 +2993,14 @@ ${extras}${buildAldagiBenefits(isElectric)}`;
       document.querySelectorAll('.lim-pick button').forEach(b => {
         b.onclick = () => {
           const k = b.dataset.k;
-          offerPick[k] = b.dataset.val;
-          b.parentElement.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+          const val = b.dataset.val;
+          if (k === 'franchise' && offerPick.franchise === val) {
+            offerPick.franchise = '';
+            b.parentElement.querySelectorAll('button').forEach(x => x.classList.remove('on'));
+          } else {
+            offerPick[k] = val;
+            b.parentElement.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+          }
           refreshFromOffer();
         };
       });

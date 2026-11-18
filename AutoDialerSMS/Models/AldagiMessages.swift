@@ -94,19 +94,22 @@ enum AldagiMessages {
         return formatUsd(String(amt))
     }
 
-    static func fullOffer(tariff: String, car: String, third: String, health: String, isElectric: Bool = false, franchisePercent: String = "3%") -> String {
+    static func fullOffer(tariff: String, car: String, third: String, health: String, isElectric: Bool = false, franchisePercent: String = "") -> String {
         let gift1 = isElectric ? giftEV : giftFuel
         let evFranchise = isElectric ? "\n\nფრანშიზა 20% ელექტრო ნაწილებზე." : ""
-        let franchiseAmt = franchiseAmount(car: car, percent: franchisePercent)
-        let franchiseBlock = """
-        ფრანშიზა(თანამონაწილეობა თქვენი მხრიდან) \(franchiseAmt)
-        (დანარჩენს კომპანია დაფარავს). ფრანშიზა არ ვრცელდება მესამე პირზე და სხვისი ბრალეულობის დროს დამდგარ შემთხვევაზე
-        """
+        let franchiseSection: String
+        if franchisePercent.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            franchiseSection = ""
+        } else {
+            let franchiseAmt = franchiseAmount(car: car, percent: franchisePercent)
+            franchiseSection = """
+
+            ფრანშიზა(თანამონაწილეობა თქვენი მხრიდან) \(franchiseAmt)
+            (დანარჩენს კომპანია დაფარავს). ფრანშიზა არ ვრცელდება მესამე პირზე და სხვისი ბრალეულობის დროს დამდგარ შემთხვევაზე
+            """
+        }
         return """
-        \(head)
-
-        \(franchiseBlock.trimmingCharacters(in: .whitespacesAndNewlines))
-
+        \(head)\(franchiseSection)
         ტარიფი: \(formatUsd(tariff))
         ავტომობილი: \(formatUsd(car))
         მესამე პირი: \(third)
