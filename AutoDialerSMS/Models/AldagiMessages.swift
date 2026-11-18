@@ -75,6 +75,7 @@ enum AldagiMessages {
 
     static let thirdLimits = ["5000$", "10000$", "25000$", "50000$"]
     static let healthLimits = ["20000$", "40000$", "100000$"]
+    static let franchisePercents = ["1%", "2%", "3%", "4%", "5%"]
 
     static func intro(lang: IntroLang) -> String {
         switch lang {
@@ -84,16 +85,32 @@ enum AldagiMessages {
         }
     }
 
-    static func fullOffer(tariff: String, car: String, third: String, health: String, isElectric: Bool = false) -> String {
+    static func franchiseAmount(car: String, percent: String) -> String {
+        let digits = car.filter { $0.isNumber || $0 == "." }
+        let carVal = Double(digits) ?? 0
+        let pct = Double(percent.filter(\.isNumber)) ?? 0
+        guard carVal > 0, pct > 0 else { return "000$" }
+        let amt = Int((carVal * pct / 100.0).rounded())
+        return formatUsd(String(amt))
+    }
+
+    static func fullOffer(tariff: String, car: String, third: String, health: String, isElectric: Bool = false, franchisePercent: String = "3%") -> String {
         let gift1 = isElectric ? giftEV : giftFuel
-        let franchise = isElectric ? "\n\nფრანშიზა 20% ელექტრო ნაწილებზე." : ""
+        let evFranchise = isElectric ? "\n\nფრანშიზა 20% ელექტრო ნაწილებზე." : ""
+        let franchiseAmt = franchiseAmount(car: car, percent: franchisePercent)
+        let franchiseBlock = """
+        ფრანშიზა(თანამონაწილეობა თქვენი მხრიდან) \(franchiseAmt)
+        (დანარჩენს კომპანია დაფარავს). ფრანშიზა არ ვრცელდება მესამე პირზე და სხვისი ბრალეულობის დროს დამდგარ შემთხვევაზე
+        """
         return """
         \(head)
+
+        \(franchiseBlock.trimmingCharacters(in: .whitespacesAndNewlines))
 
         ტარიფი: \(formatUsd(tariff))
         ავტომობილი: \(formatUsd(car))
         მესამე პირი: \(third)
-        მძღოლისა და მგზავრების ჯანმრთელობა: \(health)\(franchise)
+        მძღოლისა და მგზავრების ჯანმრთელობა: \(health)\(evFranchise)
 
         \(extras)
 
