@@ -6,14 +6,10 @@ enum AldagiMessages {
 
     static let noAnswer = "გამარჯობა, ავტომობილის დაზღვევასთან დაკავშირებით გირეკავდით, სადაზღვეო კომპანია ალდაგიდან თუ დაინტერესდებით ამ ნომერზე დამიკავშირდით."
 
-    static let photosPdfURL = "https://alekoqorch.github.io/alex11/dasurateba.pdf"
-
     static let photosInstruction = """
     გიგზავნით ავტომობილის დასურათების ინსტრუქციას.
 
     მთავარი პირობაა, ავტომობილი იყოს გარეცხილ მდგომარეობაში. დასურათებული უნდა იყოს ყველა გვერდიდან და ყველა კუთხიდან, ასევე საქარე მინა უკანა სიდენიიდან, გარბენი და VIN კოდი.
-
-    https://alekoqorch.github.io/alex11/dasurateba.pdf
     """
 
     static let tariff = """

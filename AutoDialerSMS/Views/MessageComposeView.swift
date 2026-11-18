@@ -1,9 +1,11 @@
 import MessageUI
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct MessageComposeView: UIViewControllerRepresentable {
     let recipients: [String]
     let body: String
+    var attachments: [(data: Data, typeIdentifier: String, filename: String)] = []
     var onFinish: (() -> Void)?
 
     func makeCoordinator() -> Coordinator {
@@ -15,6 +17,13 @@ struct MessageComposeView: UIViewControllerRepresentable {
         controller.messageComposeDelegate = context.coordinator
         controller.recipients = recipients
         controller.body = body
+        for item in attachments {
+            controller.addAttachmentData(
+                item.data,
+                typeIdentifier: item.typeIdentifier,
+                filename: item.filename
+            )
+        }
         return controller
     }
 
