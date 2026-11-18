@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '228';
+    window.__CC_VER = '229';
     (function () {
       function go(v) {
         try {
@@ -1288,7 +1288,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v151</div>
+      <div class="ver">v152</div>
     </header>
 
     <div class="tabs">
@@ -1621,7 +1621,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '228';
+      const v = window.__CC_VER || '229';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -2455,14 +2455,53 @@ ${link}
       return INTRO_KA;
     }
 
+    function openExternalUrl(url) {
+      if (!url) return;
+      try {
+        const a = document.createElement('a');
+        a.href = url;
+        a.rel = 'noopener';
+        a.target = '_blank';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        return;
+      } catch (_) {}
+      try { location.href = url; } catch (_) {}
+    }
+
+    function copyTextQuiet(text) {
+      if (!text || !navigator.clipboard?.writeText) return Promise.resolve(false);
+      return navigator.clipboard.writeText(text).then(() => true).catch(() => false);
+    }
+
     function sendSmsTo(num, msg) {
-      location.href = 'sms:' + num + '?body=' + encodeURIComponent(msg);
+      const body = encodeURIComponent(msg || '');
+      const url = 'sms:' + num + '?body=' + body;
+      // iOS sms: URL length limit — fallback: copy + empty body
+      if (url.length > 1500) {
+        copyTextQuiet(msg).then(() => {
+          showAppToast('ტექსტი კოპირებულია — Messages-ში ჩასვი', 3200);
+          openExternalUrl('sms:' + num);
+        });
+        return;
+      }
+      openExternalUrl(url);
     }
 
     function sendWaTo(num, msg) {
-      let n = String(num || '').replace(/\D/g, '');
-      if (n.length === 9 && n.startsWith('5')) n = '995' + n;
-      location.href = 'https://wa.me/' + n + '?text=' + encodeURIComponent(msg);
+      const n = intlDigits(num);
+      const base = 'https://wa.me/' + n;
+      const withText = base + '?text=' + encodeURIComponent(msg || '');
+      // Long full-offer text often fails to open on iOS / in-app browsers
+      if (withText.length > 2000) {
+        copyTextQuiet(msg).then(() => {
+          showAppToast('ტექსტი კოპირებულია — WhatsApp-ში ჩასვი', 3200);
+          openExternalUrl(base);
+        });
+        return;
+      }
+      openExternalUrl(withText);
     }
 
     function intlDigits(num) {
@@ -2474,19 +2513,19 @@ ${link}
     /** Viber: ჩატი ნომრით + ტექსტი clipboard-ზე (paste) */
     function sendViberTo(num, msg) {
       const n = intlDigits(num);
-      if (msg && navigator.clipboard?.writeText) {
-        navigator.clipboard.writeText(msg).catch(() => {});
-      }
-      location.href = 'viber://chat?number=' + n;
+      copyTextQuiet(msg).then(ok => {
+        if (ok) showAppToast('ტექსტი კოპირებულია — Viber-ში ჩასვი', 2800);
+        openExternalUrl('viber://chat?number=' + n);
+      });
     }
 
     /** Telegram: ჩატი ნომრით + ტექსტი clipboard-ზე */
     function sendTelegramTo(num, msg) {
       const n = intlDigits(num);
-      if (msg && navigator.clipboard?.writeText) {
-        navigator.clipboard.writeText(msg).catch(() => {});
-      }
-      location.href = 'tg://resolve?phone=' + n;
+      copyTextQuiet(msg).then(ok => {
+        if (ok) showAppToast('ტექსტი კოპირებულია — Telegram-ში ჩასვი', 2800);
+        openExternalUrl('tg://resolve?phone=' + n);
+      });
     }
 
     function normalizeChannel(type) {
@@ -2869,6 +2908,10 @@ ${link}
             <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
           </div>
           <p class="sms-hint" style="margin:0 0 8px">პირადობა · მართვის მოწმობა · ტექპასპორტი</p>
+          <a class="sms-file" href="${docsVerifyUrl()}" target="_blank" rel="noopener">
+            <span class="sms-file-ico">LINK</span>
+            <span>დოკუმენტების ლინკის გახსნა</span>
+          </a>
           ${smsEditField('docs', { id: 'docs-preview', rows: 6, label: 'დოკუმენტების ლინკი ტექსტი' })}
           <div class="send-row" data-chat-tpl="docs">
             <button type="button" data-send="docs-sms">${channelLabel('sms', 'SMS')}</button>
