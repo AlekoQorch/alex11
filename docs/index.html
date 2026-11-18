@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '207';
+    window.__CC_VER = '208';
     (function () {
       function go(v) {
         try {
@@ -522,6 +522,36 @@
       font-family: inherit;
     }
     .sms-text.long { max-height: 220px; overflow-y: auto; font-size: 14px; }
+
+    .sms-file {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 10px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg);
+      color: var(--text);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .sms-file:active { opacity: 0.85; }
+    .sms-file-ico {
+      flex: 0 0 auto;
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
+      background: rgba(77, 159, 255, 0.16);
+      color: #4d9fff;
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .sms-file span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 
     .lang-pick {
       display: flex;
@@ -1166,7 +1196,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v130</div>
+      <div class="ver">v131</div>
     </header>
 
     <div class="tabs">
@@ -1192,7 +1222,7 @@
 
       <div class="page" id="p-sms">
         <input type="tel" id="sms-num" placeholder="ტელეფონის ნომერი" inputmode="tel">
-        <p class="sms-hint">შაბლონები: პატარა SMS · არ პასუხობს · ტარიფი · შეთავაზება · დოკუმენტების ლინკი</p>
+        <p class="sms-hint">შაბლონები: პატარა SMS · არ პასუხობს · ტარიფი · შეთავაზება · დოკუმენტების ლინკი · დასურათება</p>
         <div id="sms-list"></div>
       </div>
 
@@ -1242,6 +1272,7 @@
       <button type="button" class="tpl-btn" data-tpl="tariff">ტარიფის დაანგარიშება</button>
       <button type="button" class="tpl-btn" data-tpl="aldagi">სრული შეთავაზება</button>
       <button type="button" class="tpl-btn" data-tpl="docs">დოკუმენტების ლინკი</button>
+      <button type="button" class="tpl-btn" data-tpl="photos">დასურათების ინსტრუქცია</button>
       <button type="button" class="skip" id="tpl-picker-cancel">გაუქმება</button>
     </div>
   </div>
@@ -1387,7 +1418,7 @@ ${ALDAGI_DETAILS}`;
 
     const SMS_EDITS_KEY = 'cc_sms_edits';
     const SMS_TPL_VER_KEY = 'cc_sms_tpl_ver';
-    const SMS_TPL_VER = '6';
+    const SMS_TPL_VER = '7';
     function loadSmsEdits() {
       try { return JSON.parse(localStorage.getItem(SMS_EDITS_KEY) || '{}') || {}; }
       catch { return {}; }
@@ -1421,7 +1452,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '207';
+      const v = window.__CC_VER || '208';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -1436,6 +1467,17 @@ ${ALDAGI_DETAILS}`;
 ${link}
 
 მადლობა.`;
+    }
+
+    function photosInstrPdfUrl() {
+      return new URL('dasurateba.pdf', location.href).href.split('?')[0];
+    }
+    function buildPhotosInstrMsg() {
+      return `გიგზავნით ავტომობილის დასურათების ინსტრუქციას.
+
+მთავარი პირობაა, ავტომობილი იყოს გარეცხილ მდგომარეობაში. დასურათებული უნდა იყოს ყველა გვერდიდან და ყველა კუთხიდან, ასევე საქარე მინა უკანა სიდენიიდან, გარბენი და VIN კოდი.
+
+${photosInstrPdfUrl()}`;
     }
 
     const langPick = { intro: 'ka' };
@@ -2295,6 +2337,7 @@ ${link}
       else if (tpl === 'tariff') { msg = getSmsEdit('tariff') ?? TARIFF_MSG; title = 'ტარიფის დაანგარიშება'; }
       else if (tpl === 'aldagi') { msg = getSmsEdit('aldagi') ?? buildAldagiMsg(); title = 'სრული შეთავაზება'; }
       else if (tpl === 'docs') { msg = getSmsEdit('docs') ?? buildDocsLinkMsg(num); title = 'დოკუმენტების ლინკი'; }
+      else if (tpl === 'photos') { msg = getSmsEdit('photos') ?? buildPhotosInstrMsg(); title = 'დასურათების ინსტრუქცია'; }
       else return;
       hideTemplatePicker();
       showSendConfirm(num, msg, type, title);
@@ -2360,6 +2403,7 @@ ${link}
       if (tpl === 'tariff') return TARIFF_MSG;
       if (tpl === 'aldagi') return buildAldagiMsg();
       if (tpl === 'docs') return buildDocsLinkMsg(num || getPhone());
+      if (tpl === 'photos') return buildPhotosInstrMsg();
       return '';
     }
 
@@ -2572,6 +2616,21 @@ ${link}
             <button type="button" data-send="docs-sms">${channelLabel('sms', 'SMS')}</button>
             ${chatDropdownHtml(false)}
           </div>
+        </div>
+        <div class="sms-card" data-id="photos">
+          <div class="sms-card-head">
+            <h3>დასურათების ინსტრუქცია</h3>
+            <span class="sms-to is-empty" data-sms-to>ნომერი არაა</span>
+          </div>
+          <a class="sms-file" href="dasurateba.pdf" target="_blank" rel="noopener">
+            <span class="sms-file-ico">PDF</span>
+            <span>დასურათების ინსტრუქცია.pdf</span>
+          </a>
+          ${smsEditField('photos', { id: 'photos-preview', rows: 7, label: 'დასურათების ინსტრუქცია ტექსტი' })}
+          <div class="send-row" data-chat-tpl="photos">
+            <button type="button" data-send="photos-sms">${channelLabel('sms', 'SMS')}</button>
+            ${chatDropdownHtml(false)}
+          </div>
         </div>`;
 
       $('sms-list').innerHTML = html;
@@ -2580,6 +2639,7 @@ ${link}
       fillSmsField('tariff', document.querySelector('textarea.sms-edit[data-tpl="tariff"]'), TARIFF_MSG);
       updateAldagiPreview();
       updateDocsPreview();
+      fillSmsField('photos', document.querySelector('textarea.sms-edit[data-tpl="photos"]'), buildPhotosInstrMsg());
       updateSmsCardTargets();
     }
 
