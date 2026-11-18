@@ -27,10 +27,10 @@ struct SmsTabView: View {
                     .onAppear { smsNumber = callManager.smsTargetNumber }
 
                 introCard
-                templateCard("არ პასუხობს", message: AldagiMessages.noAnswer)
-                templateCard("ტარიფის დაანგარიშება", message: AldagiMessages.tariff)
+                templateCard("ᲐᲠ ᲞᲐᲡᲣᲮᲝᲑᲡ", message: AldagiMessages.noAnswer)
+                templateCard("ᲢᲐᲠᲘᲤᲘᲡ ᲓᲐᲐᲜᲒᲐᲠᲘᲨᲔᲑᲐ", message: AldagiMessages.tariff)
                 offerCard
-                templateCard("დასურათების ინსტრუქცია", message: AldagiMessages.photosInstruction)
+                templateCard("ᲓᲐᲡᲣᲠᲐᲗᲔᲑᲘᲡ ᲘᲜᲡᲢᲠᲣᲥᲪᲘᲐ", message: AldagiMessages.photosInstruction)
             }
             .padding()
         }
@@ -53,7 +53,7 @@ struct SmsTabView: View {
 
     private var introCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("პატარა SMS-ის დატოვება").font(.headline)
+            Text("ᲞᲐᲢᲐᲠᲐ SMS-ᲘᲡ ᲓᲐᲢᲝᲕᲔᲑᲐ").font(.headline)
             Picker("ენა", selection: $introLang) {
                 ForEach(IntroLang.allCases, id: \.self) { lang in
                     Text(lang.rawValue).tag(lang)
@@ -83,7 +83,7 @@ struct SmsTabView: View {
 
     private var offerCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("სრული შეთავაზება").font(.headline)
+            Text("ᲡᲠᲣᲚᲘ ᲨᲔᲗᲐᲕᲐᲖᲔᲑᲐ").font(.headline)
             TextField("ტარიფი ($)", text: $offerTariff).keyboardType(.decimalPad)
             TextField("ავტომობილი ($)", text: $offerCar).keyboardType(.decimalPad)
             limitPicker("მესამე პირი", options: AldagiMessages.thirdLimits, selection: $offerThird)
