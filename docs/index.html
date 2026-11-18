@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '232';
+    window.__CC_VER = '233';
     (function () {
       function go(v) {
         try {
@@ -1353,7 +1353,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v155</div>
+      <div class="ver">v156</div>
     </header>
 
     <div class="tabs">
@@ -1912,7 +1912,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '232';
+      const v = window.__CC_VER || '233';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -2747,8 +2747,58 @@ ${link}
     }
 
     function copyTextQuiet(text) {
-      if (!text || !navigator.clipboard?.writeText) return;
-      try { navigator.clipboard.writeText(text).catch(() => {}); } catch (_) {}
+      if (!text) return false;
+      try {
+        if (navigator.clipboard?.writeText) {
+          navigator.clipboard.writeText(text).catch(() => { copyTextFallback(text); });
+          return true;
+        }
+      } catch (_) {}
+      return copyTextFallback(text);
+    }
+
+    function copyTextFallback(text) {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.top = '0';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        const ok = document.execCommand('copy');
+        ta.remove();
+        return !!ok;
+      } catch (_) {
+        return false;
+      }
+    }
+
+    function waUrlWithText(phone, msg) {
+      return 'https://wa.me/' + phone + '?text=' + encodeURIComponent(msg || '');
+    }
+
+    /** Fit message into wa.me URL so the chat is never empty */
+    function fitWaMessage(phone, msg, limit) {
+      const full = String(msg || '');
+      if (waUrlWithText(phone, full).length <= limit) return full;
+      let lo = 0, hi = full.length, best = full.slice(0, Math.min(200, full.length));
+      while (lo <= hi) {
+        const mid = (lo + hi) >> 1;
+        const cut = full.slice(0, mid);
+        if (waUrlWithText(phone, cut).length <= limit) {
+          best = cut;
+          lo = mid + 1;
+        } else {
+          hi = mid - 1;
+        }
+      }
+      // prefer cut on paragraph/line boundary
+      const soft = Math.max(best.lastIndexOf('\n\n'), best.lastIndexOf('\n'), best.lastIndexOf(' '));
+      if (soft > best.length * 0.6) best = best.slice(0, soft);
+      return best.trimEnd() + (best.length < full.length ? '\n\n…' : '');
     }
 
     function sendSmsTo(num, msg) {
@@ -2756,8 +2806,9 @@ ${link}
       const url = 'sms:' + num + '?body=' + body;
       if (url.length > 1500) {
         copyTextQuiet(msg);
-        showAppToast('ტექსტი კოპირებულია — Messages-ში ჩასვი', 3200);
-        location.href = 'sms:' + num;
+        const short = String(msg || '').slice(0, 400);
+        showAppToast('სრული ტექსტი კოპირებულია — ჩასვი თუ საჭიროა', 3200);
+        location.href = 'sms:' + num + '?body=' + encodeURIComponent(short);
         return;
       }
       location.href = url;
@@ -2769,16 +2820,18 @@ ${link}
         showAppToast('ნომერი არასწორია', 2000);
         return;
       }
-      const base = 'https://wa.me/' + n;
-      const withText = base + '?text=' + encodeURIComponent(msg || '');
-      // Long full-offer text: copy + open chat (wa.me URL length breaks iOS)
-      if (withText.length > 2500) {
-        copyTextQuiet(msg);
-        showAppToast('ტექსტი კოპირებულია — WhatsApp-ში ჩასვი', 3200);
-        location.href = base;
+      const full = String(msg || '');
+      const LIMIT = 7000; // Georgian % encoding expands a lot
+      const urlFull = waUrlWithText(n, full);
+      if (urlFull.length <= LIMIT) {
+        location.href = urlFull;
         return;
       }
-      location.href = withText;
+      // Still open WITH text (truncated), and copy full message for paste
+      copyTextQuiet(full);
+      const fitted = fitWaMessage(n, full, LIMIT);
+      showAppToast('სრული ტექსტი კოპირებულია — საჭიროების შემთხვევაში ჩასვი', 3600);
+      location.href = waUrlWithText(n, fitted);
     }
 
     function intlDigits(num) {
