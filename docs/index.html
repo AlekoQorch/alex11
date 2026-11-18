@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '211';
+    window.__CC_VER = '212';
     (function () {
       function go(v) {
         try {
@@ -1248,7 +1248,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v134</div>
+      <div class="ver">v135</div>
     </header>
 
     <div class="tabs">
@@ -1471,7 +1471,7 @@ ${ALDAGI_DETAILS}`;
 
     const SMS_EDITS_KEY = 'cc_sms_edits';
     const SMS_TPL_VER_KEY = 'cc_sms_tpl_ver';
-    const SMS_TPL_VER = '9';
+    const SMS_TPL_VER = '10';
     function loadSmsEdits() {
       try { return JSON.parse(localStorage.getItem(SMS_EDITS_KEY) || '{}') || {}; }
       catch { return {}; }
@@ -1580,7 +1580,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '211';
+      const v = window.__CC_VER || '212';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -1603,14 +1603,39 @@ ${link}
     function buildPhotosInstrMsg() {
       return `გიგზავნით ავტომობილის დასურათების ინსტრუქციას.
 
-მთავარი პირობაა, ავტომობილი იყოს გარეცხილ მდგომარეობაში. დასურათებული უნდა იყოს ყველა გვერდიდან და ყველა კუთხიდან, ასევე საქარე მინა უკანა სიდენიიდან, გარბენი და VIN კოდი.
-
-${photosInstrPdfUrl()}`;
+მთავარი პირობაა, ავტომობილი იყოს გარეცხილ მდგომარეობაში. დასურათებული უნდა იყოს ყველა გვერდიდან და ყველა კუთხიდან, ასევე საქარე მინა უკანა სიდენიიდან, გარბენი და VIN კოდი.`;
+    }
+    function stripPhotosPdfLinks(msg) {
+      return String(msg || '')
+        .replace(/\n*https?:\/\/\S*dasurateba\.pdf\S*/gi, '')
+        .replace(/\n*dasurateba\.pdf\S*/gi, '')
+        .trim();
+    }
+    function downloadPhotosPdf() {
+      const a = document.createElement('a');
+      a.href = photosInstrPdfUrl();
+      a.download = 'დასურათების ინსტრუქცია.pdf';
+      a.rel = 'noopener';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+    let smsSavedToastTimer = 0;
+    function showAppToast(text, ms = 2200) {
+      const toast = $('sms-saved-toast');
+      if (!toast) return;
+      toast.textContent = text;
+      toast.classList.add('show');
+      clearTimeout(smsSavedToastTimer);
+      smsSavedToastTimer = setTimeout(() => {
+        toast.classList.remove('show');
+        toast.textContent = 'Saved';
+      }, ms);
     }
 
     const langPick = { intro: 'ka' };
     const S = { q: [], i: 0, run: false, wait: false, last: '', called: {}, smsManual: false };
-    const pendingSend = { num: '', msg: '', type: 'sms' };
+    const pendingSend = { num: '', msg: '', type: 'sms', photosPdf: false };
     const pendingTpl = { num: '', type: 'sms' };
     let rowTapTimer = null;
     let rowTapLast = { t: 0, row: null };
@@ -2500,13 +2525,15 @@ ${photosInstrPdfUrl()}`;
       }
       else return;
       hideTemplatePicker();
-      showSendConfirm(num, msg, type, title);
+      showSendConfirm(num, msg, type, title, { photosPdf: tpl === 'photos' });
     }
 
-    function showSendConfirm(num, msg, type, title) {
+    function showSendConfirm(num, msg, type, title, opts = {}) {
+      const photosPdf = !!opts.photosPdf;
       pendingSend.num = num ? tel(num) : '';
-      pendingSend.msg = msg;
+      pendingSend.msg = photosPdf ? stripPhotosPdfLinks(msg) : msg;
       pendingSend.type = type;
+      pendingSend.photosPdf = photosPdf;
       $('send-title').textContent = title || 'გაგზავნა';
       const numEl = $('send-num');
       if (num) {
@@ -2516,7 +2543,7 @@ ${photosInstrPdfUrl()}`;
         numEl.textContent = 'ნომერი არ არის — შეიყვანე ზემოთ';
         numEl.classList.add('missing');
       }
-      $('send-preview').textContent = msg;
+      $('send-preview').textContent = pendingSend.msg + (photosPdf ? '\n\n📎 PDF ჩამოიტვირთება — ჩატში მიამაგრე' : '');
       const btn = $('send-go');
       const ch = normalizeChannel(type);
       if (ch === 'viber') {
@@ -2548,13 +2575,20 @@ ${photosInstrPdfUrl()}`;
         return;
       }
       const num = pendingSend.num;
-      const msg = pendingSend.msg;
+      const msg = pendingSend.photosPdf ? stripPhotosPdfLinks(pendingSend.msg) : pendingSend.msg;
       const type = pendingSend.type;
+      const photosPdf = pendingSend.photosPdf;
       closeSendModal();
       if (type === 'viber') sendViberTo(num, msg);
       else if (type === 'tg') sendTelegramTo(num, msg);
       else if (type === 'wa') sendWaTo(num, msg);
       else sendSmsTo(num, msg);
+      if (photosPdf) {
+        setTimeout(() => {
+          downloadPhotosPdf();
+          showAppToast('PDF ჩამოტვირთულია — ჩატში 📎 მიამაგრე', 2800);
+        }, 350);
+      }
     }
 
     function defaultMsgForTpl(tpl, num) {
@@ -2592,14 +2626,14 @@ ${photosInstrPdfUrl()}`;
       const tpl = action?.replace(/-sms$/, '') || card?.dataset.id;
       const msg = msgForTpl(tpl, n);
       if (!msg) return;
-      showSendConfirm(n, msg, 'sms', title);
+      showSendConfirm(n, msg, 'sms', title, { photosPdf: tpl === 'photos' });
     }
 
     function openChatFromMenu(chat, tpl, title) {
       const n = getPhone();
       const msg = msgForTpl(tpl, n);
       if (!msg) return;
-      showSendConfirm(n, msg, chat, title || 'გაგზავნა');
+      showSendConfirm(n, msg, chat, title || 'გაგზავნა', { photosPdf: tpl === 'photos' });
     }
 
     function showAfterCall(n) {
@@ -2627,14 +2661,9 @@ ${photosInstrPdfUrl()}`;
           </div>`;
     }
 
-    let smsSavedToastTimer = 0;
     let smsEditBtnSavedTimer = 0;
     function showSmsSavedToast() {
-      const toast = $('sms-saved-toast');
-      if (!toast) return;
-      toast.classList.add('show');
-      clearTimeout(smsSavedToastTimer);
-      smsSavedToastTimer = setTimeout(() => toast.classList.remove('show'), 1600);
+      showAppToast('Saved', 1600);
     }
 
     function setSmsEditing(ta, on, opts = {}) {
@@ -2810,7 +2839,7 @@ ${photosInstrPdfUrl()}`;
           </div>
           <a class="sms-file" href="dasurateba.pdf" target="_blank" rel="noopener">
             <span class="sms-file-ico">PDF</span>
-            <span>დასურათების ინსტრუქცია.pdf</span>
+            <span>დასურათების ინსტრუქცია.pdf · გაგზავნისას ჩამოიტვირთება</span>
           </a>
           ${smsEditField('photos', { id: 'photos-preview', rows: 7, label: 'დასურათების ინსტრუქცია ტექსტი' })}
           <div class="send-row" data-chat-tpl="photos">
