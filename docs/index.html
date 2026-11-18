@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '229';
+    window.__CC_VER = '230';
     (function () {
       function go(v) {
         try {
@@ -630,6 +630,71 @@
       font-family: inherit;
     }
     .sms-add-btn:active { opacity: 0.85; }
+
+    .tpl-fields {
+      margin-bottom: 12px;
+    }
+    .tpl-fields-toolbar {
+      display: flex;
+      gap: 8px;
+      margin: 0 0 10px;
+      flex-wrap: wrap;
+    }
+    .tpl-fields-toolbar button {
+      flex: 1;
+      min-width: 0;
+      padding: 9px 10px;
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      background: transparent;
+      color: var(--dim);
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+    }
+    .tpl-field-row {
+      position: relative;
+      margin-bottom: 4px;
+    }
+    .tpl-field-row .field-tools {
+      display: flex;
+      gap: 6px;
+      margin: 4px 0 8px;
+    }
+    .tpl-field-row .field-tools button {
+      flex: 1;
+      padding: 6px 8px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--dim);
+      font-size: 12px;
+      font-family: inherit;
+    }
+    .tpl-field-row .lim-pick {
+      margin-bottom: 8px;
+    }
+    #field-modal .box label {
+      display: block;
+      font-size: 12px;
+      color: var(--dim);
+      margin: 10px 0 6px;
+    }
+    #field-modal .box input,
+    #field-modal .box select,
+    #field-modal .box textarea {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 11px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 15px;
+      font-family: inherit;
+    }
+    #field-modal .box textarea { min-height: 88px; resize: vertical; }
+    #field-modal .box .go { margin-top: 14px; }
 
 
 
@@ -1288,7 +1353,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v152</div>
+      <div class="ver">v153</div>
     </header>
 
     <div class="tabs">
@@ -1367,6 +1432,32 @@
       <button type="button" class="tpl-btn" data-tpl="intro-both">ᲞᲐᲢᲐᲠᲐ SMS<small>ᲝᲠᲘᲕᲔ</small></button>
       <button type="button" class="tpl-btn" data-tpl="docs">ᲓᲝᲙᲣᲛᲔᲜᲢᲔᲑᲘᲡ ᲚᲘᲜᲙᲘ</button>
       <button type="button" class="skip" id="tpl-picker-cancel">გაუქმება</button>
+    </div>
+  </div>
+
+
+  <div class="overlay hide" id="field-modal">
+    <div class="box">
+      <div class="lbl">ველის დამატება</div>
+      <label for="field-label">სახელი</label>
+      <input id="field-label" type="text" placeholder="მაგ: ავტომობილი ($)">
+      <label for="field-type">ტიპი</label>
+      <select id="field-type">
+        <option value="text">ტექსტი</option>
+        <option value="money">თანხა ($)</option>
+        <option value="choice">არჩევანი</option>
+        <option value="percent_of">%-ით დათვლა</option>
+      </select>
+      <div id="field-options-wrap">
+        <label for="field-options">ოფციები (თითო ხაზზე)</label>
+        <textarea id="field-options" placeholder="1%&#10;2%&#10;3%"></textarea>
+      </div>
+      <div id="field-source-wrap" class="hide">
+        <label for="field-source">რომელი თანხიდან?</label>
+        <select id="field-source"></select>
+      </div>
+      <button class="go" type="button" id="field-save">დამატება</button>
+      <button class="skip" type="button" id="field-cancel">გაუქმება</button>
     </div>
   </div>
 
@@ -1583,7 +1674,7 @@ ${ALDAGI_DETAILS}`;
     function addCustomSmsTpl() {
       const id = 'c_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
       const list = loadCustomSms();
-      list.push({ id, title: 'ახალი შაბლონი' });
+      list.push({ id, title: 'ახალი შაბლონი', fields: [] });
       saveCustomSms(list);
       saveSmsEdit(id, '');
       return id;
@@ -1605,6 +1696,7 @@ ${ALDAGI_DETAILS}`;
       if (isCustomSmsId(id)) {
         saveCustomSms(loadCustomSms().filter(x => x.id !== id));
         removeSmsEdit(id);
+        clearFieldVals(id);
         return;
       }
       const hidden = loadHiddenSms();
@@ -1617,11 +1709,217 @@ ${ALDAGI_DETAILS}`;
       return `<button type="button" class="sms-del-btn" data-del-tpl="${id}" aria-label="შაბლონის წაშლა">×</button>`;
     }
 
+    const SMS_FIELD_VALS_KEY = 'cc_sms_field_vals';
+    const pendingFieldTpl = { id: '' };
+
+    function loadFieldVals() {
+      try { return JSON.parse(localStorage.getItem(SMS_FIELD_VALS_KEY) || '{}') || {}; }
+      catch { return {}; }
+    }
+    function saveFieldVals(all) {
+      try { localStorage.setItem(SMS_FIELD_VALS_KEY, JSON.stringify(all || {})); } catch {}
+    }
+    function getFieldVals(tplId) {
+      const all = loadFieldVals();
+      return (all && typeof all[tplId] === 'object' && all[tplId]) ? all[tplId] : {};
+    }
+    function setFieldVal(tplId, fieldId, value) {
+      const all = loadFieldVals();
+      if (!all[tplId] || typeof all[tplId] !== 'object') all[tplId] = {};
+      all[tplId][fieldId] = value;
+      saveFieldVals(all);
+    }
+    function clearFieldVals(tplId) {
+      const all = loadFieldVals();
+      delete all[tplId];
+      saveFieldVals(all);
+    }
+    function normalizeCustomFields(fields) {
+      if (!Array.isArray(fields)) return [];
+      return fields.filter(f => f && typeof f.id === 'string' && f.id);
+    }
+    function updateCustomSmsFields(tplId, fields) {
+      const list = loadCustomSms();
+      const item = list.find(x => x.id === tplId);
+      if (!item) return;
+      item.fields = normalizeCustomFields(fields);
+      saveCustomSms(list);
+    }
+    function slugifyFieldId(label, used) {
+      let base = String(label || '')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9\u10a0-\u10ff]+/gi, '_')
+        .replace(/^_+|_+$/g, '')
+        .slice(0, 24);
+      if (!base || !/^[a-z]/i.test(base)) base = 'f' + Math.random().toString(36).slice(2, 6);
+      base = base.replace(/[^a-z0-9_]/gi, '_');
+      let id = base, i = 2;
+      const set = new Set(used || []);
+      while (set.has(id)) { id = base + '_' + i; i++; }
+      return id;
+    }
+    function parseOptionsText(text) {
+      return String(text || '')
+        .split(/[\n,;]+/)
+        .map(s => s.trim())
+        .filter(Boolean)
+        .slice(0, 12);
+    }
+    function fieldDisplayValue(field, vals, fields) {
+      const raw = vals[field.id];
+      if (field.type === 'percent_of') {
+        if (!raw) return '';
+        const src = (fields || []).find(f => f.id === field.source);
+        const srcVal = src ? (vals[src.id] || '') : '';
+        return franchiseUsdFromCar(srcVal, raw);
+      }
+      if (field.type === 'money') return formatUsd(raw || '');
+      return raw == null ? '' : String(raw);
+    }
+    function applyTemplateFields(body, tplId) {
+      const c = getCustomSms(tplId);
+      const fields = normalizeCustomFields(c?.fields);
+      if (!fields.length) return String(body || '');
+      const vals = getFieldVals(tplId);
+      return String(body || '').replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (m, id) => {
+        const field = fields.find(f => f.id === id);
+        if (!field) return m;
+        const v = fieldDisplayValue(field, vals, fields);
+        return v || m;
+      });
+    }
+    function rawCustomMsg(tpl) {
+      const el = document.querySelector(`textarea.sms-edit[data-tpl="${tpl}"]`);
+      if (el && !el.hasAttribute('readonly')) return el.value;
+      const saved = getSmsEdit(tpl);
+      if (saved != null) return saved;
+      return '';
+    }
+    function refreshCustomPreview(tplId) {
+      const ta = document.querySelector(`textarea.sms-edit[data-tpl="${tplId}"]`);
+      if (!ta) return;
+      const raw = getSmsEdit(tplId) ?? '';
+      if (ta.hasAttribute('readonly')) ta.value = applyTemplateFields(raw, tplId);
+      else ta.value = raw;
+    }
+    function renderCustomFieldsHtml(c) {
+      const fields = normalizeCustomFields(c.fields);
+      const vals = getFieldVals(c.id);
+      const moneyFields = fields.filter(f => f.type === 'money' || f.type === 'text');
+      let html = `<div class="tpl-fields" data-tpl-fields="${c.id}">`;
+      html += `<div class="tpl-fields-toolbar">
+        <button type="button" data-add-field="${c.id}">+ ველი</button>
+      </div>`;
+      fields.forEach(f => {
+        html += `<div class="tpl-field-row" data-field-id="${f.id}">`;
+        html += `<span class="field-label">${escapeHtml(f.label || f.id)} <span style="opacity:.55">{{${escapeHtml(f.id)}}}</span></span>`;
+        if (f.type === 'choice' || f.type === 'percent_of') {
+          const opts = Array.isArray(f.options) && f.options.length ? f.options : (f.type === 'percent_of' ? ['1%','2%','3%','4%','5%'] : []);
+          html += `<div class="lim-pick" data-custom-pick="${c.id}" data-field="${f.id}">`;
+          opts.forEach(opt => {
+            const on = vals[f.id] === opt ? ' on' : '';
+            html += `<button type="button" class="${on.trim()}" data-custom-opt="${escapeHtml(opt)}">${escapeHtml(opt)}</button>`;
+          });
+          html += `</div>`;
+          if (f.type === 'percent_of') {
+            const shown = fieldDisplayValue(f, vals, fields);
+            html += `<p class="sms-hint" style="margin:0 0 8px">${shown ? ('დათვლა: ' + escapeHtml(shown)) : 'აირჩიე %'}</p>`;
+          }
+        } else {
+          const v = vals[f.id] || '';
+          const mode = f.type === 'money' ? 'decimal' : 'text';
+          html += `<input class="field-inp" data-custom-inp="${c.id}" data-field="${f.id}" type="text" inputmode="${mode}" value="${escapeHtml(v)}" placeholder="${escapeHtml(f.label || '')}">`;
+        }
+        html += `<div class="field-tools">
+          <button type="button" data-insert-token="${c.id}" data-token="${f.id}">ჩასმა {{${escapeHtml(f.id)}}}</button>
+          <button type="button" data-del-field="${c.id}" data-field="${f.id}">წაშლა</button>
+        </div>`;
+        html += `</div>`;
+      });
+      html += `</div>`;
+      return html;
+    }
+    function syncFieldModalType() {
+      const type = $('field-type')?.value || 'text';
+      const optWrap = $('field-options-wrap');
+      const srcWrap = $('field-source-wrap');
+      if (optWrap) optWrap.classList.toggle('hide', type !== 'choice' && type !== 'percent_of');
+      if (srcWrap) srcWrap.classList.toggle('hide', type !== 'percent_of');
+      if (type === 'percent_of') {
+        const tplId = pendingFieldTpl.id;
+        const c = getCustomSms(tplId);
+        const money = normalizeCustomFields(c?.fields).filter(f => f.type === 'money');
+        const sel = $('field-source');
+        if (sel) {
+          sel.innerHTML = money.length
+            ? money.map(f => `<option value="${escapeHtml(f.id)}">${escapeHtml(f.label || f.id)}</option>`).join('')
+            : '<option value="">ჯერ დაამატე თანხის ველი</option>';
+        }
+        const opts = $('field-options');
+        if (opts && !opts.value.trim()) opts.value = '1%\n2%\n3%\n4%\n5%';
+      }
+    }
+    function openFieldModal(tplId) {
+      pendingFieldTpl.id = tplId;
+      if ($('field-label')) $('field-label').value = '';
+      if ($('field-type')) $('field-type').value = 'money';
+      if ($('field-options')) $('field-options').value = '';
+      syncFieldModalType();
+      $('field-modal')?.classList.remove('hide');
+      document.body.style.overflow = 'hidden';
+      $('field-label')?.focus();
+    }
+    function closeFieldModal() {
+      $('field-modal')?.classList.add('hide');
+      document.body.style.overflow = '';
+      pendingFieldTpl.id = '';
+    }
+    function saveFieldFromModal() {
+      const tplId = pendingFieldTpl.id;
+      const c = getCustomSms(tplId);
+      if (!c) return;
+      const label = ($('field-label')?.value || '').trim();
+      if (!label) {
+        $('field-label')?.focus();
+        return;
+      }
+      const type = $('field-type')?.value || 'text';
+      const fields = normalizeCustomFields(c.fields);
+      const id = slugifyFieldId(label, fields.map(f => f.id));
+      const field = { id, label, type };
+      if (type === 'choice' || type === 'percent_of') {
+        field.options = parseOptionsText($('field-options')?.value || '');
+        if (!field.options.length) {
+          showAppToast('ოფციები ჩაწერე', 2000);
+          return;
+        }
+      }
+      if (type === 'percent_of') {
+        field.source = $('field-source')?.value || '';
+        if (!field.source) {
+          showAppToast('ჯერ დაამატე თანხის ველი', 2200);
+          return;
+        }
+      }
+      fields.push(field);
+      updateCustomSmsFields(tplId, fields);
+      // append token into template text if empty-ish
+      let body = getSmsEdit(tplId) ?? '';
+      const token = '{{' + id + '}}';
+      if (!body.includes(token)) {
+        body = (body ? body.replace(/\s*$/, '') + '\n' : '') + (label.replace(/\s*\(\$\)$/, '') + ': ' + token);
+        saveSmsEdit(tplId, body);
+      }
+      closeFieldModal();
+      renderSmsList();
+    }
+
 
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '229';
+      const v = window.__CC_VER || '230';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -2676,6 +2974,10 @@ ${link}
     }
 
     function msgForTpl(tpl, num) {
+      if (isCustomSmsId(tpl)) {
+        const raw = rawCustomMsg(tpl);
+        return applyTemplateFields(raw, tpl);
+      }
       const edited = editedMsgForTpl(tpl);
       if (edited.trim()) return edited;
       const saved = getSmsEdit(tpl);
@@ -2736,7 +3038,9 @@ ${link}
     function setSmsEditing(ta, on, opts = {}) {
       if (!ta) return;
       const editBtn = document.querySelector(`.sms-edit-btn[data-edit-tpl="${ta.dataset.tpl}"]`);
+      const tpl = ta.dataset.tpl;
       if (on) {
+        if (isCustomSmsId(tpl)) ta.value = getSmsEdit(tpl) ?? ta.value;
         ta.removeAttribute('readonly');
         ta.focus();
         const len = ta.value.length;
@@ -2748,7 +3052,8 @@ ${link}
           editBtn.textContent = 'Done';
         }
       } else {
-        if (ta.dataset.tpl) saveSmsEdit(ta.dataset.tpl, ta.value);
+        if (tpl) saveSmsEdit(tpl, ta.value);
+        if (isCustomSmsId(tpl)) ta.value = applyTemplateFields(ta.value, tpl);
         ta.setAttribute('readonly', '');
         ta.blur();
         if (editBtn) {
@@ -2927,7 +3232,8 @@ ${link}
             <input class="sms-card-title-inp" data-custom-title="${c.id}" value="${escapeHtml(c.title)}" aria-label="შაბლონის სახელი">
             <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
           </div>
-          ${smsEditField(c.id, { rows: 6, label: (c.title || 'შაბლონი') + ' ტექსტი' })}
+          ${renderCustomFieldsHtml(c)}
+          ${smsEditField(c.id, { rows: 8, label: (c.title || 'შაბლონი') + ' ტექსტი' })}
           <div class="send-row" data-chat-tpl="${c.id}">
             <button type="button" data-send="${c.id}-sms">${channelLabel('sms', 'SMS')}</button>
             ${chatDropdownHtml(false)}
@@ -2949,7 +3255,11 @@ ${link}
       updateDocsPreview();
       fillSmsField('photos', document.querySelector('textarea.sms-edit[data-tpl="photos"]'), buildPhotosInstrMsg());
       loadCustomSms().forEach(c => {
-        fillSmsField(c.id, document.querySelector(`textarea.sms-edit[data-tpl="${c.id}"]`), '');
+        const ta = document.querySelector(`textarea.sms-edit[data-tpl="${c.id}"]`);
+        fillSmsField(c.id, ta, '');
+        if (ta && ta.hasAttribute('readonly')) {
+          ta.value = applyTemplateFields(getSmsEdit(c.id) ?? ta.value, c.id);
+        }
       });
       updateSmsCardTargets();
       initOfferFields();
@@ -3039,10 +3349,11 @@ ${extras}${buildAldagiBenefits(isElectric)}`;
         electric.checked = !!electric.checked;
         electric.onchange = refreshFromOffer;
       }
-      document.querySelectorAll('.lim-pick button').forEach(b => {
+      document.querySelectorAll('.offer-fields .lim-pick button').forEach(b => {
         b.onclick = () => {
           const k = b.dataset.k;
           const val = b.dataset.val;
+          if (!k) return;
           if (k === 'franchise' && offerPick.franchise === val) {
             offerPick.franchise = '';
             b.parentElement.querySelectorAll('button').forEach(x => x.classList.remove('on'));
@@ -3061,6 +3372,22 @@ ${extras}${buildAldagiBenefits(isElectric)}`;
         renameCustomSmsTpl(titleInp.dataset.customTitle, titleInp.value);
         return;
       }
+      const customInp = e.target.closest('[data-custom-inp]');
+      if (customInp) {
+        const tplId = customInp.dataset.customInp;
+        setFieldVal(tplId, customInp.dataset.field, customInp.value);
+        const card = customInp.closest('.sms-card');
+        const c = getCustomSms(tplId);
+        normalizeCustomFields(c?.fields).filter(f => f.type === 'percent_of' && f.source === customInp.dataset.field)
+          .forEach(f => {
+            const hint = card?.querySelector(`.tpl-field-row[data-field-id="${f.id}"] .sms-hint`);
+            if (!hint) return;
+            const shown = fieldDisplayValue(f, getFieldVals(tplId), c.fields);
+            hint.textContent = shown ? ('დათვლა: ' + shown) : 'აირჩიე %';
+          });
+        refreshCustomPreview(tplId);
+        return;
+      }
       const ta = e.target.closest('textarea.sms-edit');
       if (!ta || ta.hasAttribute('readonly') || !ta.dataset.tpl) return;
       saveSmsEdit(ta.dataset.tpl, ta.value);
@@ -3076,6 +3403,72 @@ ${extras}${buildAldagiBenefits(isElectric)}`;
         if (!confirm('წავშალოთ ეს შაბლონი?')) return;
         deleteSmsTpl(id);
         renderSmsList();
+        return;
+      }
+
+      const addFieldBtn = e.target.closest('[data-add-field]');
+      if (addFieldBtn) {
+        e.preventDefault();
+        openFieldModal(addFieldBtn.dataset.addField);
+        return;
+      }
+
+      const delFieldBtn = e.target.closest('[data-del-field]');
+      if (delFieldBtn) {
+        e.preventDefault();
+        const tplId = delFieldBtn.dataset.delField;
+        const fieldId = delFieldBtn.dataset.field;
+        const c = getCustomSms(tplId);
+        if (!c) return;
+        if (!confirm('წავშალოთ ეს ველი?')) return;
+        updateCustomSmsFields(tplId, normalizeCustomFields(c.fields).filter(f => f.id !== fieldId));
+        const vals = getFieldVals(tplId);
+        delete vals[fieldId];
+        const all = loadFieldVals();
+        all[tplId] = vals;
+        saveFieldVals(all);
+        renderSmsList();
+        return;
+      }
+
+      const insertBtn = e.target.closest('[data-insert-token]');
+      if (insertBtn) {
+        e.preventDefault();
+        const tplId = insertBtn.dataset.insertToken;
+        const token = '{{' + insertBtn.dataset.token + '}}';
+        const ta = document.querySelector(`textarea.sms-edit[data-tpl="${tplId}"]`);
+        if (!ta) return;
+        if (ta.hasAttribute('readonly')) setSmsEditing(ta, true);
+        const start = ta.selectionStart ?? ta.value.length;
+        const end = ta.selectionEnd ?? ta.value.length;
+        ta.value = ta.value.slice(0, start) + token + ta.value.slice(end);
+        saveSmsEdit(tplId, ta.value);
+        try { ta.setSelectionRange(start + token.length, start + token.length); } catch (_) {}
+        ta.focus();
+        return;
+      }
+
+      const optBtn = e.target.closest('[data-custom-pick] button[data-custom-opt]');
+      if (optBtn) {
+        e.preventDefault();
+        const pick = optBtn.closest('[data-custom-pick]');
+        const tplId = pick.dataset.customPick;
+        const fieldId = pick.dataset.field;
+        const val = optBtn.dataset.customOpt;
+        const cur = getFieldVals(tplId)[fieldId];
+        const next = cur === val ? '' : val;
+        setFieldVal(tplId, fieldId, next);
+        pick.querySelectorAll('button').forEach(b => b.classList.toggle('on', next && b.dataset.customOpt === next));
+        const c = getCustomSms(tplId);
+        const field = normalizeCustomFields(c?.fields).find(f => f.id === fieldId);
+        if (field?.type === 'percent_of') {
+          const row = optBtn.closest('.tpl-field-row')?.querySelector('.sms-hint');
+          if (row) {
+            const shown = fieldDisplayValue(field, getFieldVals(tplId), c.fields);
+            row.textContent = shown ? ('დათვლა: ' + shown) : 'აირჩიე %';
+          }
+        }
+        refreshCustomPreview(tplId);
         return;
       }
 
@@ -3155,6 +3548,12 @@ ${extras}${buildAldagiBenefits(isElectric)}`;
         title.select();
       }
     };
+    $('field-type')?.addEventListener('change', syncFieldModalType);
+    $('field-save')?.addEventListener('click', saveFieldFromModal);
+    $('field-cancel')?.addEventListener('click', closeFieldModal);
+    $('field-modal')?.addEventListener('click', e => {
+      if (e.target === $('field-modal')) closeFieldModal();
+    });
     initNumList();
 
     $('start').onclick = start;
