@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '246';
+    window.__CC_VER = '247';
     (function () {
       function go(v) {
         try {
@@ -504,10 +504,13 @@
       background: rgba(52, 199, 89, 0.22);
       color: #fff;
     }
-    .sms-card-head .sms-lang-toggle {
-      position: absolute;
-      top: 0;
-      right: 0;
+    .sms-lang-bar {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      margin: 0 0 10px;
+    }
+    .sms-lang-toggle {
       display: inline-flex;
       flex-shrink: 0;
       border: 1px solid var(--border);
@@ -515,28 +518,27 @@
       overflow: hidden;
       background: var(--bg);
       margin: 0;
-      z-index: 2;
     }
-    .sms-card-head .sms-lang-toggle button {
+    .sms-lang-toggle button {
       width: auto;
       min-width: 0;
       height: auto;
       margin: 0;
-      padding: 4px 7px;
+      padding: 6px 12px;
       border: 0;
       border-radius: 0;
       background: transparent;
       color: var(--dim);
-      font-size: 10px;
+      font-size: 12px;
       font-weight: 700;
       font-family: inherit;
       line-height: 1.2;
       box-shadow: none;
     }
-    .sms-card-head .sms-lang-toggle button + button {
+    .sms-lang-toggle button + button {
       border-left: 1px solid var(--border);
     }
-    .sms-card-head .sms-lang-toggle button.on {
+    .sms-lang-toggle button.on {
       background: rgba(77, 159, 255, 0.22);
       color: #fff;
     }
@@ -656,9 +658,9 @@
       z-index: 2;
     }
     .sms-card-head.has-del {
-      /* × left, ქარ/EN right — keep title centered */
-      padding-left: 64px;
-      padding-right: 64px;
+      /* equal side padding so title stays centered with × on the left */
+      padding-left: 36px;
+      padding-right: 36px;
     }
     .sms-card-title-inp {
       width: 100%;
@@ -1434,7 +1436,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v169</div>
+      <div class="ver">v170</div>
     </header>
 
     <div class="tabs">
@@ -1459,6 +1461,12 @@
       </div>
 
       <div class="page" id="p-sms">
+        <div class="sms-lang-bar">
+          <div class="sms-lang-toggle" id="sms-lang-toggle" role="group" aria-label="გასაგზავნი ტექსტის ენა">
+            <button type="button" data-msg-lang="ka">ქარ</button>
+            <button type="button" data-msg-lang="en">EN</button>
+          </div>
+        </div>
         <input type="tel" id="sms-num" placeholder="ტელეფონის ნომერი" inputmode="tel">
         <p class="sms-hint">შაბლონები შეგიძლია დაამატო ან წაშალო</p>
         <div id="sms-list"></div>
@@ -2264,7 +2272,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '246';
+      const v = window.__CC_VER || '247';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -2314,28 +2322,31 @@ The main requirement is that the car is washed. It must be photographed from all
     }
 
     const langPick = { intro: 'ka' };
-    const MSG_LANGS_KEY = 'cc_msg_langs';
-    function loadMsgLangs() {
+    const MSG_LANG_KEY = 'cc_msg_lang';
+    const MSG_LANGS_LEGACY = 'cc_msg_langs';
+    function loadMsgLang() {
       try {
-        const raw = JSON.parse(localStorage.getItem(MSG_LANGS_KEY) || '{}') || {};
-        return (raw && typeof raw === 'object') ? raw : {};
-      } catch { return {}; }
-    }
-    function saveMsgLangs(map) {
-      try { localStorage.setItem(MSG_LANGS_KEY, JSON.stringify(map || {})); } catch {}
-    }
-    // migrate legacy global msg lang once
-    try {
-      const legacy = localStorage.getItem('cc_msg_lang') || localStorage.getItem('cc_ui_lang');
-      if (legacy === 'en') {
-        const cur = loadMsgLangs();
-        if (!Object.keys(cur).length) {
-          ['aldagi', 'home', 'noanswer', 'tariff', 'photos', 'docs', 'intro'].forEach(id => { cur[id] = 'en'; });
-          saveMsgLangs(cur);
+        const cur = localStorage.getItem(MSG_LANG_KEY);
+        if (cur === 'en' || cur === 'ka') return cur;
+        // migrate per-template map → one global
+        const raw = JSON.parse(localStorage.getItem(MSG_LANGS_LEGACY) || '{}') || {};
+        if (raw && typeof raw === 'object' && Object.values(raw).includes('en')) {
+          localStorage.setItem(MSG_LANG_KEY, 'en');
+          localStorage.removeItem(MSG_LANGS_LEGACY);
+          return 'en';
         }
-        localStorage.removeItem('cc_msg_lang');
-      }
-    } catch {}
+        const ui = localStorage.getItem('cc_ui_lang');
+        if (ui === 'en') {
+          localStorage.setItem(MSG_LANG_KEY, 'en');
+          return 'en';
+        }
+      } catch {}
+      return 'ka';
+    }
+    function saveMsgLang(lang) {
+      try { localStorage.setItem(MSG_LANG_KEY, lang === 'en' ? 'en' : 'ka'); } catch {}
+      try { localStorage.removeItem(MSG_LANGS_LEGACY); } catch {}
+    }
     const UI_STR = {
       edit: 'შეცვლა',
       done: 'მზად',
@@ -2345,28 +2356,18 @@ The main requirement is that the car is washed. It must be photographed from all
       pickLimit: 'აირჩიე ლიმიტი',
       needProperty: 'ჯერ ჩაწერე ქონების ლიმიტი'
     };
-    function tplLang(tpl) {
-      const map = loadMsgLangs();
-      return map[tpl] === 'en' ? 'en' : 'ka';
-    }
-    function isEn(tpl) { return tplLang(tpl) === 'en'; }
+    function msgLang() { return loadMsgLang() === 'en' ? 'en' : 'ka'; }
+    function isEn(_tpl) { return msgLang() === 'en'; }
     function uiT(key) { return UI_STR[key] || key; }
-    function tplLangToggleHtml(tpl) {
-      const lang = tplLang(tpl);
-      return `<div class="sms-lang-toggle" data-tpl-lang="${tpl}" role="group" aria-label="გასაგზავნი ტექსტის ენა">
-            <button type="button" data-msg-lang="ka" class="${lang === 'ka' ? 'on' : ''}">ქარ</button>
-            <button type="button" data-msg-lang="en" class="${lang === 'en' ? 'on' : ''}">EN</button>
-          </div>`;
-    }
-    function syncTplLangToggle(tpl) {
-      const box = document.querySelector(`[data-tpl-lang="${tpl}"]`);
+    function syncMsgLangToggle() {
+      const box = document.getElementById('sms-lang-toggle');
       if (!box) return;
-      const lang = tplLang(tpl);
+      const lang = msgLang();
       box.querySelectorAll('[data-msg-lang]').forEach(b => b.classList.toggle('on', b.dataset.msgLang === lang));
     }
     function refreshTplMessage(tpl) {
       removeSmsEdit(tpl);
-      if (tpl === 'intro') langPick.intro = tplLang('intro') === 'en' ? 'en' : 'ka';
+      if (tpl === 'intro') langPick.intro = msgLang() === 'en' ? 'en' : 'ka';
       if (tpl === 'aldagi') {
         updateAldagiPreview({ fromOffer: true });
       } else if (tpl === 'home') {
@@ -2389,14 +2390,14 @@ The main requirement is that the car is washed. It must be photographed from all
           b.classList.toggle('on', b.dataset.lang === langPick.intro);
         });
       }
-      syncTplLangToggle(tpl);
     }
-    function setTplMsgLang(tpl, lang) {
-      if (!tpl) return;
-      const map = loadMsgLangs();
-      map[tpl] = lang === 'en' ? 'en' : 'ka';
-      saveMsgLangs(map);
-      refreshTplMessage(tpl);
+    function refreshAllMsgLang() {
+      ['aldagi', 'home', 'noanswer', 'tariff', 'photos', 'docs', 'intro'].forEach(refreshTplMessage);
+      syncMsgLangToggle();
+    }
+    function setMsgLang(lang) {
+      saveMsgLang(lang === 'en' ? 'en' : 'ka');
+      refreshAllMsgLang();
       showAppToast(lang === 'en' ? 'ტექსტი: English' : 'ტექსტი: ქართული', 1600);
     }
 
@@ -3563,13 +3564,14 @@ The main requirement is that the car is washed. It must be photographed from all
     }
 
     function renderSmsList() {
+      if (msgLang() === 'en') langPick.intro = 'en';
+      else if (langPick.intro !== 'both') langPick.intro = 'ka';
       const parts = [];
       if (!isSmsHidden('aldagi')) {
         parts.push(`
         <div class="sms-card" data-id="aldagi">
           <div class="sms-card-head has-del">
             ${smsDelBtn('aldagi')}
-            ${tplLangToggleHtml('aldagi')}
             <h3>ᲡᲠᲣᲚᲘ ᲨᲔᲗᲐᲕᲐᲖᲔᲑᲐ</h3>
             <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
           </div>
@@ -3617,7 +3619,6 @@ The main requirement is that the car is washed. It must be photographed from all
         <div class="sms-card" data-id="home">
           <div class="sms-card-head has-del">
             ${smsDelBtn('home')}
-            ${tplLangToggleHtml('home')}
             <h3>ᲑᲘᲜᲐ ᲡᲠᲣᲚᲘ ᲨᲔᲗᲐᲕᲐᲖᲔᲑᲐ</h3>
             <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
           </div>
@@ -3645,7 +3646,6 @@ The main requirement is that the car is washed. It must be photographed from all
         <div class="sms-card" data-id="noanswer">
           <div class="sms-card-head has-del">
             ${smsDelBtn('noanswer')}
-            ${tplLangToggleHtml('noanswer')}
             <h3>ᲐᲠ ᲞᲐᲡᲣᲮᲝᲑᲡ</h3>
             <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
           </div>
@@ -3661,7 +3661,6 @@ The main requirement is that the car is washed. It must be photographed from all
         <div class="sms-card" data-id="tariff">
           <div class="sms-card-head has-del">
             ${smsDelBtn('tariff')}
-            ${tplLangToggleHtml('tariff')}
             <h3>ᲢᲐᲠᲘᲤᲘᲡ ᲓᲐᲐᲜᲒᲐᲠᲘᲨᲔᲑᲐ</h3>
             <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
           </div>
@@ -3677,7 +3676,6 @@ The main requirement is that the car is washed. It must be photographed from all
         <div class="sms-card" data-id="photos">
           <div class="sms-card-head has-del">
             ${smsDelBtn('photos')}
-            ${tplLangToggleHtml('photos')}
             <h3>ᲓᲐᲡᲣᲠᲐᲗᲔᲑᲘᲡ ᲘᲜᲡᲢᲠᲣᲥᲪᲘᲐ</h3>
             <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
           </div>
@@ -3693,7 +3691,6 @@ The main requirement is that the car is washed. It must be photographed from all
         <div class="sms-card" data-id="intro">
           <div class="sms-card-head has-del">
             ${smsDelBtn('intro')}
-            ${tplLangToggleHtml('intro')}
             <h3>ᲞᲐᲢᲐᲠᲐ SMS-ᲘᲡ ᲓᲐᲢᲝᲕᲔᲑᲐ</h3>
             <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
           </div>
@@ -3714,7 +3711,6 @@ The main requirement is that the car is washed. It must be photographed from all
         <div class="sms-card" data-id="docs">
           <div class="sms-card-head has-del">
             ${smsDelBtn('docs')}
-            ${tplLangToggleHtml('docs')}
             <h3>ᲓᲝᲙᲣᲛᲔᲜᲢᲔᲑᲘᲡ ᲚᲘᲜᲙᲘ</h3>
             <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
           </div>
@@ -3774,6 +3770,7 @@ The main requirement is that the car is washed. It must be photographed from all
       updateSmsCardTargets();
       initOfferFields();
       initHomeFields();
+      syncMsgLangToggle();
     }
 
     function updateDocsPreview() {
@@ -4003,16 +4000,6 @@ ${extrasBlock}${buildAldagiBenefits(isElectric)}`;
         return;
       }
 
-      const tplLangBtn = e.target.closest('[data-tpl-lang] [data-msg-lang]');
-      if (tplLangBtn) {
-        e.preventDefault();
-        e.stopPropagation();
-        const wrap = tplLangBtn.closest('[data-tpl-lang]');
-        const tpl = wrap?.dataset.tplLang;
-        if (tpl) setTplMsgLang(tpl, tplLangBtn.dataset.msgLang);
-        return;
-      }
-
       const copyBtn = e.target.closest('.sms-copy-btn');
       if (copyBtn) {
         e.preventDefault();
@@ -4093,6 +4080,13 @@ ${extrasBlock}${buildAldagiBenefits(isElectric)}`;
       openSendFromBtn(btn);
     });
 
+    $('sms-lang-toggle')?.addEventListener('click', e => {
+      const btn = e.target.closest('[data-msg-lang]');
+      if (!btn) return;
+      e.preventDefault();
+      setMsgLang(btn.dataset.msgLang);
+    });
+    syncMsgLangToggle();
     renderSmsList();
     $('sms-add-tpl').onclick = () => {
       const id = addCustomSmsTpl();
