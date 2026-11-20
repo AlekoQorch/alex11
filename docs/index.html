@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '242';
+    window.__CC_VER = '243';
     (function () {
       function go(v) {
         try {
@@ -1437,7 +1437,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v165</div>
+      <div class="ver">v166</div>
     </header>
 
     <div class="tabs">
@@ -1621,13 +1621,12 @@
     const INTRO_KA = 'ალექსანდრე ქორჩაშვილი გწერთ სადაზღვეო კომპანია ალდაგიდან. მოინიშნეთ ეს ნომერი და დამიკავშირდით ნებისმიერ კითხვით.';
     const INTRO_EN = 'Aleksandre Korchashvili is writing to you from Aldagi Insurance. Please save this number and contact me if you have any questions.';
 
-    const ALDAGI_HEAD = `რისკები:
-ავტოსაგზაო შემთხვევა
+    const ALDAGI_HEAD = `ᲓᲐᲖᲦᲕᲔᲣᲚᲘ ᲠᲘᲡᲙᲔᲑᲘ:
+
+ავტოსაგზაო შემთხვევა |
 ხანძარი | აფეთქება
-ვანდალიზმი | ქურდობა | ძარცვა | ყაჩაღობა
-სტიქიური მოვლენები
-საგნის ვარდნა
-დაზიანება დაუდგენელ ვითარებაში
+ვანდალიზმი | ქურდობა | ძარცვა | ყაჩაღობა | სტიქიური მოვლენები |
+საგნის ვარდნა | დაზიანება დაუდგენელ ვითარებაში |
 საქარე მინის დაზიანება
 
 დამატებითი რისკები: ორმოში ჩარტყმა, გარეგანი დაზიანება (მოიცავს ყველაფერს რაც ადამიანის ძალით არ არის გამოწვეული)
@@ -1637,7 +1636,7 @@
 
     const ALDAGI_NEGLIGENCE = `+ უხეში გაუფრთხილებაც თუ მოვნიშნავთ — თუ წითელზე გაივლით ან bus line-ში ან საპირისპირო ზოლში გადახვალთ, ამ შემთხვევაშიც ანაზღაურდება ზიანი`;
 
-    const ALDAGI_BENEFITS_INTRO = `ბენეფიტები:
+    const ALDAGI_BENEFITS_INTRO = `ᲑᲔᲜᲔᲤᲘᲢᲔᲑᲘ:
 ავტოასისტანსის (საწვავის მიტანა, საბურავის შეცვლა, დაბერვა, დაქოქვაში დახმარება) და ევაკუატორის სერვისი უფასოდ საქართველოს 7 დიდ ქალაქში: თბილისი, თელავი, გორი, ქუთაისი, ბათუმი, ფოთი და ზუგდიდი`;
 
     const ALDAGI_GIFT_FUEL = '1. 20 თეთრიანი ფასდაკლება საწვავზე';
@@ -1647,7 +1646,7 @@
 3. 20% ფასდაკლება "დელფი მოტორსში" ავტოდითეილინგ მომსახურებაზე
 4. 10%-იანი ფასდაკლება ქონების დაზღვევაზე`;
 
-    const ALDAGI_DISCLAIMER = `გამონაკლისები:
+    const ALDAGI_DISCLAIMER = `ᲒᲐᲛᲝᲜᲐᲙᲚᲘᲡᲔᲑᲘ:
 
 ალკოჰოლური, ფსიქოტროპული ან ნარკოტიკული თრობის შედეგად დამდგარი ზარალი არ ანაზღაურდება, ასევე თუ უხეში გაუფრთხილებლობის გარეშეა პოლისი არ ანაზღაურდება შემთხვევბი: ბასლაინში, ორმაგი ღერძულას გადაკვეთისას, სიჩქარის გადაჭარბების შედეგად ან წითელზე გავლის შედეგად მომხდარი ზარალები. ასევე სადაზღვეო შემთხვევის დროს ავტომობილი არ უნდა გადაადგილოთ და უნდა დარეკოთ ალდაგის ცხელ ხაზზე 032 2 444 999 და 112-ში.
 
@@ -1668,13 +1667,13 @@
 
 ასევე დაზღვეულია მესამე პირიც, ანუ თქვენივე ბრალეულობით, მაგალითად (წყლის ჩასვლით) თუ დააზიანებთ მეზობელს მასაც ავუნაზღაურებთ ზარალს.
 
-ᲚᲘᲛᲘᲢᲔᲑᲘ:
+ᲢᲐᲠᲘᲤᲘ/ᲚᲘᲛᲘᲢᲔᲑᲘ:
 
 ქონების, რემონტის/ავეჯის/ტექნიკის ლიმიტი: {{property}}
 
-რემონტის/ავეჯის/ტექნიკის ლიმიტი: {{contents}}
+რემონის/ავეჯის/ტექნიკის ლიმიტი: {{contents}}
 
-მესამე პირის ლიმიტი: {{third}}
+მეამე პირის ლიმიტი: {{third}}
 
 ᲐᲠ ᲐᲜᲐᲖᲦᲐᲣᲠᲓᲔᲑᲐ:
 
@@ -1705,13 +1704,12 @@
 შეტყობინება დააფიქრეთ როგორც კი აღმოაჩენთ ზარალს.`;
 
 
-    const ALDAGI_HEAD_EN = `Risks:
-Road traffic accident
+    const ALDAGI_HEAD_EN = `INSURED RISKS:
+
+Road traffic accident |
 Fire | Explosion
-Vandalism | Theft | Robbery | Hold-up
-Natural disasters
-Falling objects
-Damage in undetermined circumstances
+Vandalism | Theft | Robbery | Hold-up | Natural disasters |
+Falling objects | Damage in undetermined circumstances |
 Windshield damage
 
 Additional risks: pothole impact, external damage (covers everything not caused by human force)
@@ -1721,7 +1719,7 @@ Damage during towing/transport.`;
 
     const ALDAGI_NEGLIGENCE_EN = `+ Gross negligence cover can also be added — if you run a red light, drive in a bus lane, or enter the opposite lane, the damage is still covered`;
 
-    const ALDAGI_BENEFITS_INTRO_EN = `Benefits:
+    const ALDAGI_BENEFITS_INTRO_EN = `BENEFITS:
 Roadside assistance (fuel delivery, tire change, jump start, towing help) and tow truck service free in 7 major cities of Georgia: Tbilisi, Telavi, Gori, Kutaisi, Batumi, Poti and Zugdidi`;
 
     const ALDAGI_GIFT_FUEL_EN = '1. 20 tetri discount on fuel';
@@ -1731,7 +1729,7 @@ Roadside assistance (fuel delivery, tire change, jump start, towing help) and to
 3. 20% discount at "Delphi Motors" on auto detailing
 4. 10% discount on property insurance`;
 
-    const ALDAGI_DISCLAIMER_EN = `Exclusions:
+    const ALDAGI_DISCLAIMER_EN = `EXCLUSIONS:
 
 Damage resulting from alcohol, psychotropic or narcotic intoxication is not covered, and if there is gross negligence the policy does not pay: bus lane, crossing a double solid line, speeding, or running a red light. Also, in case of an insured event do not move the vehicle and call Aldagi hotline 032 2 444 999 and 112.
 
@@ -1752,7 +1750,7 @@ COVERED:
 
 Third-party liability is also covered — e.g. if you damage a neighbor (such as water leakage) due to your fault, we will also cover their loss.
 
-LIMITS:
+TARIFF/LIMITS:
 
 Property / renovation / furniture / appliances limit: {{property}}
 
@@ -1918,7 +1916,7 @@ These details are needed to calculate the tariff:
         const gift1 = isElectric ? ALDAGI_GIFT_EV_EN : ALDAGI_GIFT_FUEL_EN;
         return `${ALDAGI_BENEFITS_INTRO_EN}
 
-Gifts:
+GIFTS:
 ${gift1}
 ${ALDAGI_GIFTS_REST_EN}
 
@@ -1929,7 +1927,7 @@ ${ALDAGI_DETAILS_EN}`;
       const gift1 = isElectric ? ALDAGI_GIFT_EV : ALDAGI_GIFT_FUEL;
       return `${ALDAGI_BENEFITS_INTRO}
 
-საჩუქრები:
+ᲡᲐᲩᲣᲥᲠᲔᲑᲘ:
 ${gift1}
 ${ALDAGI_GIFTS_REST}
 
@@ -1965,7 +1963,7 @@ ${ALDAGI_DETAILS}`;
 
     const SMS_EDITS_KEY = 'cc_sms_edits';
     const SMS_TPL_VER_KEY = 'cc_sms_tpl_ver';
-    const SMS_TPL_VER = '25';
+    const SMS_TPL_VER = '26';
     function loadSmsEdits() {
       try { return JSON.parse(localStorage.getItem(SMS_EDITS_KEY) || '{}') || {}; }
       catch { return {}; }
@@ -2275,7 +2273,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '242';
+      const v = window.__CC_VER || '243';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -3797,17 +3795,33 @@ The main requirement is that the car is washed. It must be photographed from all
       const car = formatUsd(carRaw);
       const extras = buildAldagiExtras(carRaw);
       const isElectric = !!$('offer-electric')?.checked;
-      const evFranchise = isElectric ? '\n\nფრანშიზა 20% ელექტრო ნაწილებზე.' : '';
+      const evFranchise = isElectric
+        ? (isEn() ? '\n\nDeductible 20% on electric parts.' : '\n\nფრანშიზა 20% ელექტრო ნაწილებზე.')
+        : '';
       const franchiseBlock = buildFranchiseBlock(carRaw);
       const franchiseSection = franchiseBlock ? `\n${franchiseBlock}\n` : '';
-      return `${ALDAGI_HEAD}
+      const head = isEn() ? ALDAGI_HEAD_EN : ALDAGI_HEAD;
+      const extrasBlock = extras ? `\n${extras}` : '';
+      if (isEn()) {
+        return `${head}
 ${franchiseSection}
+TARIFF/LIMITS
+
+Tariff: ${tariff}
+Vehicle: ${car}
+Third party: ${offerPick.third}
+Driver and passenger health: ${offerPick.health}${evFranchise}
+${extrasBlock}${buildAldagiBenefits(isElectric)}`;
+      }
+      return `${head}
+${franchiseSection}
+ᲢᲐᲠᲘᲤᲘ/ᲚᲘᲛᲘᲢᲔᲑᲘ
+
 ტარიფი: ${tariff}
 ავტომობილი: ${car}
 მესამე პირი: ${offerPick.third}
 მძღოლისა და მგზავრების ჯანმრთელობა: ${offerPick.health}${evFranchise}
-
-${extras}${buildAldagiBenefits(isElectric)}`;
+${extrasBlock}${buildAldagiBenefits(isElectric)}`;
     }
 
     function updateAldagiPreview(opts = {}) {
