@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '253';
+    window.__CC_VER = '254';
     (function () {
       function go(v) {
         try {
@@ -736,6 +736,22 @@
     .tpl-field-row .lim-pick {
       margin-bottom: 8px;
     }
+    .tpl-field-row .lim-pick.lim-pick-col {
+      flex-direction: column;
+      flex-wrap: nowrap;
+    }
+    .tpl-field-row .lim-pick.lim-pick-col button {
+      flex: 0 0 auto;
+      width: 100%;
+      text-align: left;
+      padding: 10px 12px;
+    }
+    .tpl-field-row select.field-inp[data-custom-select] {
+      margin-bottom: 8px;
+    }
+    #field-layout-wrap {
+      margin-top: 0;
+    }
     #field-modal .box label {
       display: block;
       font-size: 12px;
@@ -1436,7 +1452,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v176</div>
+      <div class="ver">v177</div>
     </header>
 
     <div class="tabs">
@@ -1530,17 +1546,25 @@
     <div class="box">
       <div class="lbl">ველის დამატება</div>
       <label for="field-label">სახელი</label>
-      <input id="field-label" type="text" placeholder="მაგ: ავტომობილი ($)">
+      <input id="field-label" type="text" placeholder="მაგ: მესამე პირი / ტარიფი ($)">
       <label for="field-type">ტიპი</label>
       <select id="field-type">
         <option value="text">ტექსტი</option>
         <option value="money">თანხა ($)</option>
-        <option value="choice">არჩევანი</option>
+        <option value="choice">ლიმიტი / არჩევანი</option>
         <option value="percent_of">%-ით დათვლა</option>
       </select>
       <div id="field-options-wrap">
         <label for="field-options">ოფციები (თითო ხაზზე)</label>
-        <textarea id="field-options" placeholder="1%&#10;2%&#10;3%"></textarea>
+        <textarea id="field-options" placeholder="5000$&#10;10000$&#10;25000$&#10;50000$"></textarea>
+      </div>
+      <div id="field-layout-wrap" class="hide">
+        <label for="field-layout">განლაგება</label>
+        <select id="field-layout">
+          <option value="row">სიგანეზე (ღილაკები რიგში)</option>
+          <option value="col">სიგრძეზე (ღილაკები ქვემოთ)</option>
+          <option value="dropdown">ჩამოსაშლელი</option>
+        </select>
       </div>
       <div id="field-source-wrap" class="hide">
         <label for="field-source">რომელი თანხიდან?</label>
@@ -2100,7 +2124,15 @@ ${ALDAGI_DETAILS}`;
     }
     function normalizeCustomFields(fields) {
       if (!Array.isArray(fields)) return [];
-      return fields.filter(f => f && typeof f.id === 'string' && f.id);
+      return fields.filter(f => f && typeof f.id === 'string' && f.id).map(f => {
+        const out = { ...f };
+        if (out.type === 'choice' || out.type === 'percent_of') {
+          const lay = out.layout === 'col' || out.layout === 'dropdown' ? out.layout : 'row';
+          out.layout = lay;
+          if (!Array.isArray(out.options)) out.options = [];
+        }
+        return out;
+      });
     }
     function updateCustomSmsFields(tplId, fields) {
       const list = loadCustomSms();
@@ -2128,7 +2160,7 @@ ${ALDAGI_DETAILS}`;
         .split(/[\n,;]+/)
         .map(s => s.trim())
         .filter(Boolean)
-        .slice(0, 12);
+        .slice(0, 24);
     }
     function fieldDisplayValue(field, vals, fields) {
       const raw = vals[field.id];
@@ -2174,19 +2206,32 @@ ${ALDAGI_DETAILS}`;
       const moneyFields = fields.filter(f => f.type === 'money' || f.type === 'text');
       let html = `<div class="tpl-fields" data-tpl-fields="${c.id}">`;
       html += `<div class="tpl-fields-toolbar">
-        <button type="button" data-add-field="${c.id}">+ ველი</button>
+        <button type="button" data-add-field="${c.id}">+ ველი / ლიმიტი</button>
       </div>`;
       fields.forEach(f => {
         html += `<div class="tpl-field-row" data-field-id="${f.id}">`;
         html += `<span class="field-label">${escapeHtml(f.label || f.id)} <span style="opacity:.55">{{${escapeHtml(f.id)}}}</span></span>`;
         if (f.type === 'choice' || f.type === 'percent_of') {
           const opts = Array.isArray(f.options) ? f.options : [];
-          html += `<div class="lim-pick" data-custom-pick="${c.id}" data-field="${f.id}">`;
-          opts.forEach(opt => {
-            const on = vals[f.id] === opt ? ' on' : '';
-            html += `<button type="button" class="${on.trim()}" data-custom-opt="${escapeHtml(opt)}">${escapeHtml(opt)}</button>`;
-          });
-          html += `</div>`;
+          const layout = f.layout === 'col' || f.layout === 'dropdown' ? f.layout : 'row';
+          const cur = vals[f.id] || '';
+          if (layout === 'dropdown') {
+            html += `<select class="field-inp" data-custom-select="${c.id}" data-field="${f.id}" aria-label="${escapeHtml(f.label || f.id)}">`;
+            html += `<option value="">${f.type === 'percent_of' ? 'აირჩიე %' : 'აირჩიე ლიმიტი'}</option>`;
+            opts.forEach(opt => {
+              const sel = cur === opt ? ' selected' : '';
+              html += `<option value="${escapeHtml(opt)}"${sel}>${escapeHtml(opt)}</option>`;
+            });
+            html += `</select>`;
+          } else {
+            const layCls = layout === 'col' ? ' lim-pick-col' : '';
+            html += `<div class="lim-pick${layCls}" data-custom-pick="${c.id}" data-field="${f.id}">`;
+            opts.forEach(opt => {
+              const on = cur === opt ? ' on' : '';
+              html += `<button type="button" class="${on.trim()}" data-custom-opt="${escapeHtml(opt)}">${escapeHtml(opt)}</button>`;
+            });
+            html += `</div>`;
+          }
           if (f.type === 'percent_of') {
             const shown = fieldDisplayValue(f, vals, fields);
             html += `<p class="sms-hint" style="margin:0 0 8px">${shown ? ('დათვლა: ' + escapeHtml(shown)) : 'აირჩიე %'}</p>`;
@@ -2208,9 +2253,18 @@ ${ALDAGI_DETAILS}`;
     function syncFieldModalType() {
       const type = $('field-type')?.value || 'text';
       const optWrap = $('field-options-wrap');
+      const layWrap = $('field-layout-wrap');
       const srcWrap = $('field-source-wrap');
-      if (optWrap) optWrap.classList.toggle('hide', type !== 'choice' && type !== 'percent_of');
+      const needsOpts = type === 'choice' || type === 'percent_of';
+      if (optWrap) optWrap.classList.toggle('hide', !needsOpts);
+      if (layWrap) layWrap.classList.toggle('hide', !needsOpts);
       if (srcWrap) srcWrap.classList.toggle('hide', type !== 'percent_of');
+      const ta = $('field-options');
+      if (ta && needsOpts) {
+        ta.placeholder = type === 'percent_of'
+          ? '1%\n2%\n3%\n4%\n5%'
+          : '5000$\n10000$\n25000$\n50000$';
+      }
       if (type === 'percent_of') {
         const tplId = pendingFieldTpl.id;
         const c = getCustomSms(tplId);
@@ -2226,8 +2280,9 @@ ${ALDAGI_DETAILS}`;
     function openFieldModal(tplId) {
       pendingFieldTpl.id = tplId;
       if ($('field-label')) $('field-label').value = '';
-      if ($('field-type')) $('field-type').value = 'text';
+      if ($('field-type')) $('field-type').value = 'choice';
       if ($('field-options')) $('field-options').value = '';
+      if ($('field-layout')) $('field-layout').value = 'row';
       syncFieldModalType();
       $('field-modal')?.classList.remove('hide');
       document.body.style.overflow = 'hidden';
@@ -2257,6 +2312,8 @@ ${ALDAGI_DETAILS}`;
           showAppToast('ოფციები ჩაწერე', 2000);
           return;
         }
+        const lay = $('field-layout')?.value || 'row';
+        field.layout = (lay === 'col' || lay === 'dropdown') ? lay : 'row';
       }
       if (type === 'percent_of') {
         field.source = $('field-source')?.value || '';
@@ -2276,7 +2333,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '253';
+      const v = window.__CC_VER || '254';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -3890,6 +3947,27 @@ ${extrasBlock}${buildAldagiBenefits(isElectric)}`;
       });
     }
 
+    function onCustomFieldValueChange(tplId, fieldId, value, card) {
+      setFieldVal(tplId, fieldId, value);
+      const c = getCustomSms(tplId);
+      const field = normalizeCustomFields(c?.fields).find(f => f.id === fieldId);
+      if (field?.type === 'percent_of') {
+        const hint = card?.querySelector(`.tpl-field-row[data-field-id="${fieldId}"] .sms-hint`);
+        if (hint) {
+          const shown = fieldDisplayValue(field, getFieldVals(tplId), c.fields);
+          hint.textContent = shown ? ('დათვლა: ' + shown) : 'აირჩიე %';
+        }
+      }
+      normalizeCustomFields(c?.fields).filter(f => f.type === 'percent_of' && f.source === fieldId)
+        .forEach(f => {
+          const hint = card?.querySelector(`.tpl-field-row[data-field-id="${f.id}"] .sms-hint`);
+          if (!hint) return;
+          const shown = fieldDisplayValue(f, getFieldVals(tplId), c.fields);
+          hint.textContent = shown ? ('დათვლა: ' + shown) : 'აირჩიე %';
+        });
+      refreshCustomPreview(tplId);
+    }
+
     $('sms-list').addEventListener('input', e => {
       const titleInp = e.target.closest('[data-custom-title]');
       if (titleInp) {
@@ -3898,23 +3976,18 @@ ${extrasBlock}${buildAldagiBenefits(isElectric)}`;
       }
       const customInp = e.target.closest('[data-custom-inp]');
       if (customInp) {
-        const tplId = customInp.dataset.customInp;
-        setFieldVal(tplId, customInp.dataset.field, customInp.value);
-        const card = customInp.closest('.sms-card');
-        const c = getCustomSms(tplId);
-        normalizeCustomFields(c?.fields).filter(f => f.type === 'percent_of' && f.source === customInp.dataset.field)
-          .forEach(f => {
-            const hint = card?.querySelector(`.tpl-field-row[data-field-id="${f.id}"] .sms-hint`);
-            if (!hint) return;
-            const shown = fieldDisplayValue(f, getFieldVals(tplId), c.fields);
-            hint.textContent = shown ? ('დათვლა: ' + shown) : 'აირჩიე %';
-          });
-        refreshCustomPreview(tplId);
+        onCustomFieldValueChange(customInp.dataset.customInp, customInp.dataset.field, customInp.value, customInp.closest('.sms-card'));
         return;
       }
       const ta = e.target.closest('textarea.sms-edit');
       if (!ta || ta.hasAttribute('readonly') || !ta.dataset.tpl) return;
       saveSmsEdit(ta.dataset.tpl, ta.value);
+    });
+
+    $('sms-list').addEventListener('change', e => {
+      const sel = e.target.closest('select[data-custom-select]');
+      if (!sel) return;
+      onCustomFieldValueChange(sel.dataset.customSelect, sel.dataset.field, sel.value, sel.closest('.sms-card'));
     });
 
     $('sms-list').addEventListener('click', e => {
