@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '239';
+    window.__CC_VER = '240';
     (function () {
       function go(v) {
         try {
@@ -451,10 +451,17 @@
       position: relative;
       margin-bottom: 12px;
     }
-    .sms-card .sms-edit-btn {
+    .sms-edit-actions {
       position: absolute;
       top: 8px;
       right: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      z-index: 2;
+    }
+    .sms-card .sms-copy-btn,
+    .sms-card .sms-edit-btn {
       width: auto;
       min-width: 0;
       padding: 5px 9px;
@@ -467,8 +474,25 @@
       font-family: inherit;
       line-height: 1.2;
       white-space: nowrap;
-      z-index: 2;
       box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+    }
+    .sms-card .sms-copy-btn {
+      width: 30px;
+      height: 28px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .sms-card .sms-copy-btn svg {
+      width: 14px;
+      height: 14px;
+      display: block;
+    }
+    .sms-card .sms-copy-btn.copied {
+      border-color: rgba(52, 199, 89, 0.7);
+      background: rgba(52, 199, 89, 0.22);
+      color: #fff;
     }
     .sms-card .sms-edit-btn.on {
       border-color: rgba(77, 159, 255, 0.65);
@@ -478,6 +502,45 @@
     .sms-card .sms-edit-btn.saved {
       border-color: rgba(52, 199, 89, 0.7);
       background: rgba(52, 199, 89, 0.22);
+      color: #fff;
+    }
+    .sms-lang-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin: 0 0 10px;
+    }
+    .sms-lang-bar .sms-hint {
+      margin: 0;
+      flex: 1;
+    }
+    .sms-lang-toggle {
+      display: inline-flex;
+      flex-shrink: 0;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      background: var(--surface);
+    }
+    .sms-lang-toggle button {
+      width: auto;
+      min-width: 44px;
+      margin: 0;
+      padding: 7px 10px;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      color: var(--dim);
+      font-size: 12px;
+      font-weight: 700;
+      font-family: inherit;
+    }
+    .sms-lang-toggle button + button {
+      border-left: 1px solid var(--border);
+    }
+    .sms-lang-toggle button.on {
+      background: rgba(77, 159, 255, 0.22);
       color: #fff;
     }
     .sms-saved-toast {
@@ -514,7 +577,7 @@
       -webkit-appearance: none;
       appearance: none;
       margin-bottom: 0;
-      padding-right: 58px;
+      padding-right: 98px;
       box-sizing: border-box;
       cursor: default;
     }
@@ -1374,7 +1437,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v162</div>
+      <div class="ver">v163</div>
     </header>
 
     <div class="tabs">
@@ -1400,7 +1463,13 @@
 
       <div class="page" id="p-sms">
         <input type="tel" id="sms-num" placeholder="ტელეფონის ნომერი" inputmode="tel">
-        <p class="sms-hint">შაბლონები შეგიძლია დაამატო ან წაშალო</p>
+        <div class="sms-lang-bar">
+          <p class="sms-hint" id="sms-page-hint">შაბლონები შეგიძლია დაამატო ან წაშალო</p>
+          <div class="sms-lang-toggle" id="sms-lang-toggle" role="group" aria-label="ენა">
+            <button type="button" data-ui-lang="ka" class="on">ქარ</button>
+            <button type="button" data-ui-lang="en">EN</button>
+          </div>
+        </div>
         <div id="sms-list"></div>
         <button type="button" id="sms-add-tpl" class="sms-add-btn">+ შაბლონის დამატება</button>
       </div>
@@ -1781,7 +1850,7 @@ ${ALDAGI_DETAILS}`;
 
     const SMS_EDITS_KEY = 'cc_sms_edits';
     const SMS_TPL_VER_KEY = 'cc_sms_tpl_ver';
-    const SMS_TPL_VER = '22';
+    const SMS_TPL_VER = '23';
     function loadSmsEdits() {
       try { return JSON.parse(localStorage.getItem(SMS_EDITS_KEY) || '{}') || {}; }
       catch { return {}; }
@@ -2091,7 +2160,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '239';
+      const v = window.__CC_VER || '240';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -2127,6 +2196,60 @@ ${link}
     }
 
     const langPick = { intro: 'ka' };
+    const UI_LANG_KEY = 'cc_ui_lang';
+    let uiLang = (localStorage.getItem(UI_LANG_KEY) === 'en') ? 'en' : 'ka';
+    const UI_STR = {
+      ka: {
+        edit: 'შეცვლა',
+        done: 'მზად',
+        saved: 'შენახულია',
+        copied: 'ტექსტი კოპირებულია',
+        copy: 'კოპირება',
+        smsHint: 'შაბლონები შეგიძლია დაამატო ან წაშალო',
+        addTpl: '+ შაბლონის დამატება',
+        phonePh: 'ტელეფონის ნომერი'
+      },
+      en: {
+        edit: 'Edit',
+        done: 'Done',
+        saved: 'Saved',
+        copied: 'Text copied',
+        copy: 'Copy',
+        smsHint: 'You can add or delete templates',
+        addTpl: '+ Add template',
+        phonePh: 'Phone number'
+      }
+    };
+    function uiT(key) {
+      return (UI_STR[uiLang] && UI_STR[uiLang][key]) || UI_STR.ka[key] || key;
+    }
+    function setUiLang(lang) {
+      uiLang = lang === 'en' ? 'en' : 'ka';
+      try { localStorage.setItem(UI_LANG_KEY, uiLang); } catch {}
+      applyUiLang();
+    }
+    function applyUiLang() {
+      document.querySelectorAll('#sms-lang-toggle [data-ui-lang]').forEach(b => {
+        b.classList.toggle('on', b.dataset.uiLang === uiLang);
+      });
+      const hint = $('sms-page-hint');
+      if (hint) hint.textContent = uiT('smsHint');
+      const add = $('sms-add-tpl');
+      if (add) add.textContent = uiT('addTpl');
+      const phone = $('sms-num');
+      if (phone) phone.placeholder = uiT('phonePh');
+      document.querySelectorAll('.sms-copy-btn').forEach(b => {
+        b.setAttribute('aria-label', uiT('copy'));
+        b.title = uiT('copy');
+      });
+      document.querySelectorAll('.sms-edit-btn').forEach(b => {
+        if (b.classList.contains('on')) b.textContent = uiT('done');
+        else if (b.classList.contains('saved')) b.textContent = uiT('saved');
+        else b.textContent = uiT('edit');
+      });
+      const toast = $('sms-saved-toast');
+      if (toast && !toast.classList.contains('show')) toast.textContent = uiT('saved');
+    }
     const S = { q: [], i: 0, run: false, wait: false, last: '', called: {}, smsManual: false };
     const pendingSend = { num: '', msg: '', type: 'sms' };
     const pendingTpl = { num: '', type: 'sms' };
@@ -3205,14 +3328,33 @@ ${link}
       const long = opts.long ? ' long' : '';
       const label = opts.label || 'ტექსტი';
       return `<div class="sms-edit-wrap">
-            <button type="button" class="sms-edit-btn" data-edit-tpl="${tpl}">Edit</button>
+            <div class="sms-edit-actions">
+              <button type="button" class="sms-copy-btn" data-copy-tpl="${tpl}" aria-label="${uiT('copy')}" title="${uiT('copy')}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+              <button type="button" class="sms-edit-btn" data-edit-tpl="${tpl}">${uiT('edit')}</button>
+            </div>
             <textarea class="sms-text sms-edit${long}"${id} data-tpl="${tpl}" rows="${rows}" readonly aria-label="${label}"></textarea>
           </div>`;
     }
 
     let smsEditBtnSavedTimer = 0;
+    let smsCopyBtnTimer = 0;
     function showSmsSavedToast() {
-      showAppToast('Saved', 1600);
+      showAppToast(uiT('saved'), 1600);
+    }
+
+    function copySmsTplText(tpl) {
+      const ta = document.querySelector(`textarea.sms-edit[data-tpl="${tpl}"]`);
+      const text = (ta && ta.value) ? ta.value : msgForTpl(tpl, getPhone());
+      if (!text) return;
+      const ok = copyTextQuiet(text);
+      showAppToast(uiT('copied'), 1800);
+      const btn = document.querySelector(`.sms-copy-btn[data-copy-tpl="${tpl}"]`);
+      if (btn) {
+        btn.classList.add('copied');
+        clearTimeout(smsCopyBtnTimer);
+        smsCopyBtnTimer = setTimeout(() => btn.classList.remove('copied'), 1200);
+      }
+      return ok;
     }
 
     function setSmsEditing(ta, on, opts = {}) {
@@ -3229,7 +3371,7 @@ ${link}
           clearTimeout(smsEditBtnSavedTimer);
           editBtn.classList.remove('saved');
           editBtn.classList.add('on');
-          editBtn.textContent = 'Done';
+          editBtn.textContent = uiT('done');
         }
       } else {
         if (tpl) saveSmsEdit(tpl, ta.value);
@@ -3240,16 +3382,16 @@ ${link}
           editBtn.classList.remove('on');
           if (opts.toast) {
             editBtn.classList.add('saved');
-            editBtn.textContent = 'Saved';
+            editBtn.textContent = uiT('saved');
             clearTimeout(smsEditBtnSavedTimer);
             smsEditBtnSavedTimer = setTimeout(() => {
               editBtn.classList.remove('saved');
-              editBtn.textContent = 'Edit';
+              editBtn.textContent = uiT('edit');
             }, 1200);
             showSmsSavedToast();
           } else {
             editBtn.classList.remove('saved');
-            editBtn.textContent = 'Edit';
+            editBtn.textContent = uiT('edit');
           }
         } else if (opts.toast) {
           showSmsSavedToast();
@@ -3475,6 +3617,7 @@ ${link}
       updateSmsCardTargets();
       initOfferFields();
       initHomeFields();
+      applyUiLang();
     }
 
     function updateDocsPreview() {
@@ -3684,6 +3827,22 @@ ${extras}${buildAldagiBenefits(isElectric)}`;
         return;
       }
 
+      const uiLangBtn = e.target.closest('#sms-lang-toggle [data-ui-lang]');
+      if (uiLangBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        setUiLang(uiLangBtn.dataset.uiLang);
+        return;
+      }
+
+      const copyBtn = e.target.closest('.sms-copy-btn');
+      if (copyBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        copySmsTplText(copyBtn.dataset.copyTpl);
+        return;
+      }
+
       const editBtn = e.target.closest('.sms-edit-btn');
       if (editBtn) {
         e.preventDefault();
@@ -3697,11 +3856,11 @@ ${extras}${buildAldagiBenefits(isElectric)}`;
         return;
       }
 
-      const langBtn = e.target.closest('[data-lang]');
-      if (langBtn) {
-        const card = langBtn.closest('[data-id="intro"]');
-        card.querySelectorAll('[data-lang]').forEach(b => b.classList.toggle('on', b === langBtn));
-        langPick.intro = langBtn.dataset.lang;
+      const introLangBtn = e.target.closest('[data-lang]');
+      if (introLangBtn) {
+        const card = introLangBtn.closest('[data-id="intro"]');
+        card.querySelectorAll('[data-lang]').forEach(b => b.classList.toggle('on', b === introLangBtn));
+        langPick.intro = introLangBtn.dataset.lang;
         const introEl = $('intro-preview');
         if (introEl && introEl.hasAttribute('readonly') && getSmsEdit('intro') == null) {
           introEl.value = introMsg(langPick.intro);
@@ -3749,6 +3908,7 @@ ${extras}${buildAldagiBenefits(isElectric)}`;
     });
 
     renderSmsList();
+    applyUiLang();
     $('sms-add-tpl').onclick = () => {
       const id = addCustomSmsTpl();
       renderSmsList();
