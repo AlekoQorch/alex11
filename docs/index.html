@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '254';
+    window.__CC_VER = '255';
     (function () {
       function go(v) {
         try {
@@ -1452,7 +1452,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v177</div>
+      <div class="ver">v178</div>
     </header>
 
     <div class="tabs">
@@ -2006,15 +2006,23 @@ ${ALDAGI_DETAILS}`;
         localStorage.setItem(SMS_TPL_VER_KEY, SMS_TPL_VER);
       } catch {}
     }
-    function getSmsEdit(tpl) {
-      const v = loadSmsEdits()[tpl];
+    function smsEditStorageKey(tpl, lang) {
+      if (isCustomSmsId(tpl) && (lang || msgLang()) === 'en') return tpl + '__en';
+      return tpl;
+    }
+    function getSmsEdit(tpl, lang) {
+      const key = smsEditStorageKey(tpl, lang);
+      const v = loadSmsEdits()[key];
       return typeof v === 'string' ? v : null;
     }
-    function saveSmsEdit(tpl, text) {
+    function saveSmsEdit(tpl, text, lang) {
       if (!tpl) return;
+      const useLang = lang || (isCustomSmsId(tpl) ? msgLang() : 'ka');
+      const key = smsEditStorageKey(tpl, useLang);
       const all = loadSmsEdits();
-      all[tpl] = String(text ?? '');
+      all[key] = String(text ?? '');
       try { localStorage.setItem(SMS_EDITS_KEY, JSON.stringify(all)); } catch {}
+      if (isCustomSmsId(tpl) && useLang === 'ka') scheduleCustomEnTranslate(tpl);
     }
     function fillSmsField(tpl, el, fallback) {
       if (!el) return;
@@ -2064,7 +2072,10 @@ ${ALDAGI_DETAILS}`;
       const list = loadCustomSms();
       list.push({ id, title: 'ახალი შაბლონი', fields: [] });
       saveCustomSms(list);
-      saveSmsEdit(id, '');
+      const all = loadSmsEdits();
+      all[id] = '';
+      all[id + '__en'] = '';
+      try { localStorage.setItem(SMS_EDITS_KEY, JSON.stringify(all)); } catch {}
       return id;
     }
     function renameCustomSmsTpl(id, title) {
@@ -2076,8 +2087,10 @@ ${ALDAGI_DETAILS}`;
     }
     function removeSmsEdit(tpl) {
       const all = loadSmsEdits();
-      if (!(tpl in all)) return;
-      delete all[tpl];
+      let changed = false;
+      if (tpl in all) { delete all[tpl]; changed = true; }
+      if (isCustomSmsId(tpl) && (tpl + '__en') in all) { delete all[tpl + '__en']; changed = true; }
+      if (!changed) return;
       try { localStorage.setItem(SMS_EDITS_KEY, JSON.stringify(all)); } catch {}
     }
     function deleteSmsTpl(id) {
@@ -2333,7 +2346,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '254';
+      const v = window.__CC_VER || '255';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -2434,11 +2447,86 @@ The main requirement is that the car is in a washed condition. It must be photog
         });
       }
     }
+    const customEnTranslateTimers = {};
+    async function translateKaToEn(text) {
+      const src = String(text || '');
+      if (!src.trim()) return '';
+      const tokens = [];
+      const masked = src.replace(/\{\{\s*[a-zA-Z0-9_]+\s*\}\}/g, m => {
+        const i = tokens.length;
+        tokens.push(m);
+        return '[[T' + i + ']]';
+      });
+      const chunks = [];
+      let buf = '';
+      masked.split(/(\n+)/).forEach(part => {
+        if ((buf + part).length > 420 && buf) {
+          chunks.push(buf);
+          buf = part;
+        } else buf += part;
+      });
+      if (buf) chunks.push(buf);
+      const outParts = [];
+      for (const chunk of chunks) {
+        if (!chunk.trim()) { outParts.push(chunk); continue; }
+        try {
+          const url = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(chunk) + '&langpair=ka|en';
+          const res = await fetch(url);
+          const data = await res.json();
+          let piece = (data && data.responseData && data.responseData.translatedText) || chunk;
+          // MyMemory sometimes returns the query echoed with ERROR
+          if (/MYMEMORY WARNING/i.test(piece)) piece = chunk;
+          outParts.push(piece);
+        } catch {
+          outParts.push(chunk);
+        }
+      }
+      let out = outParts.join('');
+      out = out.replace(/\[\[T(\d+)\]\]/g, (_, i) => tokens[+i] || '');
+      return out;
+    }
+    function scheduleCustomEnTranslate(tplId) {
+      if (!isCustomSmsId(tplId)) return;
+      clearTimeout(customEnTranslateTimers[tplId]);
+      customEnTranslateTimers[tplId] = setTimeout(async () => {
+        const ka = getSmsEdit(tplId, 'ka');
+        if (ka == null) return;
+        showAppToast('ინგლისური თარგმნა…', 1200);
+        const en = await translateKaToEn(ka);
+        const all = loadSmsEdits();
+        all[tplId + '__en'] = en;
+        try { localStorage.setItem(SMS_EDITS_KEY, JSON.stringify(all)); } catch {}
+        if (msgLang() === 'en') refreshCustomPreview(tplId);
+        showAppToast('ინგლისური მზადაა', 1400);
+      }, 450);
+    }
+    function refreshCustomLangDisplay(tplId) {
+      const ta = document.querySelector(`textarea.sms-edit[data-tpl="${tplId}"]`);
+      if (!ta) return;
+      if (!ta.hasAttribute('readonly')) {
+        // finish edit into current lang before switching display
+        saveSmsEdit(tplId, ta.value);
+        ta.setAttribute('readonly', '');
+        const editBtn = document.querySelector(`.sms-edit-btn[data-edit-tpl="${tplId}"]`);
+        if (editBtn) {
+          editBtn.classList.remove('on', 'saved');
+          editBtn.textContent = uiT('edit');
+        }
+      }
+      if (msgLang() === 'en') {
+        const en = getSmsEdit(tplId, 'en');
+        const ka = getSmsEdit(tplId, 'ka');
+        if ((!en || !String(en).trim()) && ka && String(ka).trim()) scheduleCustomEnTranslate(tplId);
+      }
+      refreshCustomPreview(tplId);
+    }
     function refreshAllMsgLang() {
       ['aldagi', 'home', 'noanswer', 'tariff', 'photos', 'docs', 'intro'].forEach(refreshTplMessage);
+      loadCustomSms().forEach(c => refreshCustomLangDisplay(c.id));
       syncMsgLangToggle();
     }
     function setMsgLang(lang) {
+      lockAllSmsEditing();
       msgLangState = lang === 'en' ? 'en' : 'ka';
       refreshAllMsgLang();
       showAppToast(lang === 'en' ? 'ტექსტი: English' : 'ტექსტი: ქართული', 1600);
@@ -4035,7 +4123,10 @@ ${extrasBlock}${buildAldagiBenefits(isElectric)}`;
         const token = '{{' + insertBtn.dataset.token + '}}';
         const ta = document.querySelector(`textarea.sms-edit[data-tpl="${tplId}"]`);
         if (!ta) return;
-        if (ta.hasAttribute('readonly')) setSmsEditing(ta, true);
+        if (ta.hasAttribute('readonly')) {
+          lockAllSmsEditing(ta);
+          setSmsEditing(ta, true);
+        }
         const start = ta.selectionStart ?? ta.value.length;
         const end = ta.selectionEnd ?? ta.value.length;
         ta.value = ta.value.slice(0, start) + token + ta.value.slice(end);
@@ -4153,15 +4244,17 @@ ${extrasBlock}${buildAldagiBenefits(isElectric)}`;
     syncMsgLangToggle();
     renderSmsList();
     $('sms-add-tpl').onclick = () => {
+      lockAllSmsEditing();
       const id = addCustomSmsTpl();
       renderSmsList();
-      const ta = document.querySelector(`textarea.sms-edit[data-tpl="${id}"]`);
-      if (ta) setSmsEditing(ta, true);
+      const card = document.querySelector(`.sms-card[data-id="${id}"]`);
+      if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       const title = document.querySelector(`[data-custom-title="${id}"]`);
       if (title) {
         title.focus();
         title.select();
       }
+      showAppToast('შაბლონი დამატებულია', 1600);
     };
     $('field-type')?.addEventListener('change', syncFieldModalType);
     $('field-save')?.addEventListener('click', saveFieldFromModal);
