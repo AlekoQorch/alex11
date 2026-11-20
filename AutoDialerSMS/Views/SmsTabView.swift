@@ -14,6 +14,9 @@ struct SmsTabView: View {
     @State private var offerHealth = "20000$"
     @State private var offerFranchise = ""
     @State private var offerIsElectric = false
+    @State private var homeProperty = ""
+    @State private var homeContents = ""
+    @State private var homeThird = ""
     @State private var showComposer = false
     @State private var composerBody = ""
     @State private var composerAttachments: [(data: Data, typeIdentifier: String, filename: String)] = []
@@ -28,6 +31,7 @@ struct SmsTabView: View {
                     .onAppear { smsNumber = callManager.smsTargetNumber }
 
                 offerCard
+                homeOfferCard
                 templateCard("ᲐᲠ ᲞᲐᲡᲣᲮᲝᲑᲡ", message: AldagiMessages.noAnswer)
                 templateCard("ᲢᲐᲠᲘᲤᲘᲡ ᲓᲐᲐᲜᲒᲐᲠᲘᲨᲔᲑᲐ", message: AldagiMessages.tariff)
                 templateCard("ᲓᲐᲡᲣᲠᲐᲗᲔᲑᲘᲡ ᲘᲜᲡᲢᲠᲣᲥᲪᲘᲐ", message: AldagiMessages.photosInstruction)
@@ -129,6 +133,31 @@ struct SmsTabView: View {
             health: offerHealth,
             isElectric: offerIsElectric,
             franchisePercent: offerFranchise
+        )
+    }
+
+    private var homeOfferCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("ᲑᲘᲜᲐ ᲡᲠᲣᲚᲘ ᲨᲔᲗᲐᲕᲐᲖᲔᲑᲐ").font(.headline)
+            TextField("ქონების, რემონტის/ავეჯის/ტექნიკის ლიმიტი ($)", text: $homeProperty)
+                .keyboardType(.decimalPad)
+            TextField("რემონის/ავეჯის/ტექნიკის ლიმიტი ($)", text: $homeContents)
+                .keyboardType(.decimalPad)
+            TextField("მეამე პირის ლიმიტი ($)", text: $homeThird)
+                .keyboardType(.decimalPad)
+            Text(homeOfferPreview).font(.caption).foregroundStyle(.secondary)
+            channelButtons(for: homeOfferPreview)
+        }
+        .padding()
+        .background(Color(.secondarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    private var homeOfferPreview: String {
+        AldagiMessages.homeFullOffer(
+            property: homeProperty,
+            contents: homeContents,
+            third: homeThird
         )
     }
 
