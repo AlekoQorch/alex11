@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '244';
+    window.__CC_VER = '245';
     (function () {
       function go(v) {
         try {
@@ -504,32 +504,36 @@
       background: rgba(52, 199, 89, 0.22);
       color: #fff;
     }
-    .sms-card .sms-lang-toggle {
+    .sms-edit-actions .sms-lang-toggle {
       display: inline-flex;
       flex-shrink: 0;
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: 8px;
       overflow: hidden;
       background: var(--surface);
-      margin: 0 0 10px;
-    }
-    .sms-lang-toggle button {
-      width: auto;
-      min-width: 44px;
       margin: 0;
-      padding: 7px 10px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+    }
+    .sms-edit-actions .sms-lang-toggle button {
+      width: auto;
+      min-width: 0;
+      height: 28px;
+      margin: 0;
+      padding: 0 8px;
       border: 0;
       border-radius: 0;
       background: transparent;
       color: var(--dim);
-      font-size: 12px;
+      font-size: 10px;
       font-weight: 700;
       font-family: inherit;
+      line-height: 1;
+      box-shadow: none;
     }
-    .sms-lang-toggle button + button {
+    .sms-edit-actions .sms-lang-toggle button + button {
       border-left: 1px solid var(--border);
     }
-    .sms-lang-toggle button.on {
+    .sms-edit-actions .sms-lang-toggle button.on {
       background: rgba(77, 159, 255, 0.22);
       color: #fff;
     }
@@ -567,7 +571,7 @@
       -webkit-appearance: none;
       appearance: none;
       margin-bottom: 0;
-      padding-right: 98px;
+      padding-right: 148px;
       box-sizing: border-box;
       cursor: default;
     }
@@ -1427,7 +1431,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v167</div>
+      <div class="ver">v168</div>
     </header>
 
     <div class="tabs">
@@ -2257,7 +2261,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '244';
+      const v = window.__CC_VER || '245';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -3472,6 +3476,7 @@ The main requirement is that the car is washed. It must be photographed from all
       const label = opts.label || 'ტექსტი';
       return `<div class="sms-edit-wrap">
             <div class="sms-edit-actions">
+              ${tplLangToggleHtml(tpl)}
               <button type="button" class="sms-copy-btn" data-copy-tpl="${tpl}" aria-label="${uiT('copy')}" title="${uiT('copy')}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
               <button type="button" class="sms-edit-btn" data-edit-tpl="${tpl}">${uiT('edit')}</button>
             </div>
@@ -3597,7 +3602,6 @@ The main requirement is that the car is washed. It must be photographed from all
               <span class="offer-switch" aria-hidden="true"></span>
             </label>
           </div>
-          ${tplLangToggleHtml('aldagi')}
           ${smsEditField('aldagi', { id: 'aldagi-preview', rows: 12, long: true, label: 'სრული შეთავაზება ტექსტი' })}
           <div class="send-row" data-chat-tpl="aldagi">
             <button type="button" data-send="aldagi-sms">${channelLabel('sms', 'SMS')}</button>
@@ -3625,7 +3629,6 @@ The main requirement is that the car is washed. It must be photographed from all
               ${homeThirdPickHtml()}
             </div>
           </div>
-          ${tplLangToggleHtml('home')}
           ${smsEditField('home', { id: 'home-preview', rows: 14, long: true, label: 'ბინა სრული შეთავაზება ტექსტი' })}
           <div class="send-row" data-chat-tpl="home">
             <button type="button" data-send="home-sms">${channelLabel('sms', 'SMS')}</button>
@@ -3641,7 +3644,6 @@ The main requirement is that the car is washed. It must be photographed from all
             <h3>ᲐᲠ ᲞᲐᲡᲣᲮᲝᲑᲡ</h3>
             <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
           </div>
-          ${tplLangToggleHtml('noanswer')}
           ${smsEditField('noanswer', { rows: 4, label: 'არ პასუხობს ტექსტი' })}
           <div class="send-row" data-chat-tpl="noanswer">
             <button type="button" data-send="noanswer-sms">${channelLabel('sms', 'SMS')}</button>
@@ -3657,7 +3659,6 @@ The main requirement is that the car is washed. It must be photographed from all
             <h3>ᲢᲐᲠᲘᲤᲘᲡ ᲓᲐᲐᲜᲒᲐᲠᲘᲨᲔᲑᲐ</h3>
             <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
           </div>
-          ${tplLangToggleHtml('tariff')}
           ${smsEditField('tariff', { rows: 8, label: 'ტარიფის ტექსტი' })}
           <div class="send-row" data-chat-tpl="tariff">
             <button type="button" data-send="tariff-sms">${channelLabel('sms', 'SMS')}</button>
@@ -3673,7 +3674,6 @@ The main requirement is that the car is washed. It must be photographed from all
             <h3>ᲓᲐᲡᲣᲠᲐᲗᲔᲑᲘᲡ ᲘᲜᲡᲢᲠᲣᲥᲪᲘᲐ</h3>
             <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
           </div>
-          ${tplLangToggleHtml('photos')}
           ${smsEditField('photos', { id: 'photos-preview', rows: 7, label: 'დასურათების ინსტრუქცია ტექსტი' })}
           <div class="send-row" data-chat-tpl="photos">
             <button type="button" data-send="photos-sms">${channelLabel('sms', 'SMS')}</button>
@@ -3694,7 +3694,6 @@ The main requirement is that the car is washed. It must be photographed from all
             <button type="button" class="${langPick.intro === 'en' ? 'on' : ''}" data-lang="en">ინგლისური</button>
             <button type="button" class="${langPick.intro === 'both' ? 'on' : ''}" data-lang="both">ორივე</button>
           </div>
-          ${tplLangToggleHtml('intro')}
           ${smsEditField('intro', { id: 'intro-preview', rows: 4, label: 'პატარა SMS ტექსტი' })}
           <div class="send-row" data-chat-tpl="intro">
             <button type="button" data-send="intro-sms">${channelLabel('sms', 'SMS')}</button>
@@ -3715,7 +3714,6 @@ The main requirement is that the car is washed. It must be photographed from all
             <span class="sms-file-ico">LINK</span>
             <span>დოკუმენტების ლინკის გახსნა</span>
           </a>
-          ${tplLangToggleHtml('docs')}
           ${smsEditField('docs', { id: 'docs-preview', rows: 6, label: 'დოკუმენტების ლინკი ტექსტი' })}
           <div class="send-row" data-chat-tpl="docs">
             <button type="button" data-send="docs-sms">${channelLabel('sms', 'SMS')}</button>
