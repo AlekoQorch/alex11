@@ -147,20 +147,29 @@ struct SmsTabView: View {
                         homeContents = ""
                     }
                 }
-            if AldagiMessages.homeContentsOptions(property: homeProperty).isEmpty {
+            VStack(alignment: .leading, spacing: 4) {
                 Text("რემონტის/ავეჯის/ტექნიკის ლიმიტი")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                Text("ჯერ ჩაწერე ქონების ლიმიტი")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            } else {
-                limitPicker(
-                    "რემონტის/ავეჯის/ტექნიკის ლიმიტი",
-                    options: AldagiMessages.homeContentsOptions(property: homeProperty),
-                    selection: $homeContents,
-                    allowsDeselect: true
-                )
+                let contentsOpts = AldagiMessages.homeContentsOptions(property: homeProperty)
+                if contentsOpts.isEmpty {
+                    Text("ჯერ ჩაწერე ქონების ლიმიტი")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(10)
+                        .background(Color(.tertiarySystemFill))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                } else {
+                    Picker("რემონტის/ავეჯის/ტექნიკის ლიმიტი", selection: $homeContents) {
+                        Text("აირჩიე ლიმიტი").tag("")
+                        ForEach(contentsOpts, id: \.self) { opt in
+                            Text(opt).tag(opt)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
             }
             limitPicker(
                 "მესამე პირის ლიმიტი",
