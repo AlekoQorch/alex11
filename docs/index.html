@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '248';
+    window.__CC_VER = '249';
     (function () {
       function go(v) {
         try {
@@ -1436,7 +1436,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v171</div>
+      <div class="ver">v172</div>
     </header>
 
     <div class="tabs">
@@ -1962,7 +1962,7 @@ ${ALDAGI_DETAILS}`;
 
     const SMS_EDITS_KEY = 'cc_sms_edits';
     const SMS_TPL_VER_KEY = 'cc_sms_tpl_ver';
-    const SMS_TPL_VER = '27';
+    const SMS_TPL_VER = '28';
     function loadSmsEdits() {
       try { return JSON.parse(localStorage.getItem(SMS_EDITS_KEY) || '{}') || {}; }
       catch { return {}; }
@@ -1971,9 +1971,7 @@ ${ALDAGI_DETAILS}`;
       try {
         if (localStorage.getItem(SMS_TPL_VER_KEY) === SMS_TPL_VER) return;
         const all = loadSmsEdits();
-        delete all.aldagi;
-        delete all.home;
-        delete all.photos;
+        ['aldagi', 'home', 'noanswer', 'tariff', 'photos', 'intro', 'docs'].forEach(id => { delete all[id]; });
         localStorage.setItem(SMS_EDITS_KEY, JSON.stringify(all));
         localStorage.setItem(SMS_TPL_VER_KEY, SMS_TPL_VER);
       } catch {}
@@ -2272,7 +2270,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '248';
+      const v = window.__CC_VER || '249';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -2322,31 +2320,13 @@ The main requirement is that the car is washed. It must be photographed from all
     }
 
     const langPick = { intro: 'ka' };
-    const MSG_LANG_KEY = 'cc_msg_lang';
-    const MSG_LANGS_LEGACY = 'cc_msg_langs';
-    function loadMsgLang() {
-      try {
-        const cur = localStorage.getItem(MSG_LANG_KEY);
-        if (cur === 'en' || cur === 'ka') return cur;
-        // migrate per-template map → one global
-        const raw = JSON.parse(localStorage.getItem(MSG_LANGS_LEGACY) || '{}') || {};
-        if (raw && typeof raw === 'object' && Object.values(raw).includes('en')) {
-          localStorage.setItem(MSG_LANG_KEY, 'en');
-          localStorage.removeItem(MSG_LANGS_LEGACY);
-          return 'en';
-        }
-        const ui = localStorage.getItem('cc_ui_lang');
-        if (ui === 'en') {
-          localStorage.setItem(MSG_LANG_KEY, 'en');
-          return 'en';
-        }
-      } catch {}
-      return 'ka';
-    }
-    function saveMsgLang(lang) {
-      try { localStorage.setItem(MSG_LANG_KEY, lang === 'en' ? 'en' : 'ka'); } catch {}
-      try { localStorage.removeItem(MSG_LANGS_LEGACY); } catch {}
-    }
+    // Always start Georgian; EN only for this session if user toggles
+    let msgLangState = 'ka';
+    try {
+      localStorage.removeItem('cc_msg_lang');
+      localStorage.removeItem('cc_msg_langs');
+      localStorage.removeItem('cc_ui_lang');
+    } catch {}
     const UI_STR = {
       edit: 'შეცვლა',
       done: 'მზად',
@@ -2356,7 +2336,7 @@ The main requirement is that the car is washed. It must be photographed from all
       pickLimit: 'აირჩიე ლიმიტი',
       needProperty: 'ჯერ ჩაწერე ქონების ლიმიტი'
     };
-    function msgLang() { return loadMsgLang() === 'en' ? 'en' : 'ka'; }
+    function msgLang() { return msgLangState === 'en' ? 'en' : 'ka'; }
     function isEn(_tpl) { return msgLang() === 'en'; }
     function uiT(key) { return UI_STR[key] || key; }
     function syncMsgLangToggle() {
@@ -2396,7 +2376,7 @@ The main requirement is that the car is washed. It must be photographed from all
       syncMsgLangToggle();
     }
     function setMsgLang(lang) {
-      saveMsgLang(lang === 'en' ? 'en' : 'ka');
+      msgLangState = lang === 'en' ? 'en' : 'ka';
       refreshAllMsgLang();
       showAppToast(lang === 'en' ? 'ტექსტი: English' : 'ტექსტი: ქართული', 1600);
     }
@@ -4024,14 +4004,9 @@ ${extrasBlock}${buildAldagiBenefits(isElectric)}`;
       const introLangBtn = e.target.closest('[data-lang]');
       if (introLangBtn) {
         const card = introLangBtn.closest('[data-id="intro"]');
+        if (!card) return;
         card.querySelectorAll('[data-lang]').forEach(b => b.classList.toggle('on', b === introLangBtn));
         langPick.intro = introLangBtn.dataset.lang;
-        if (langPick.intro === 'en' || langPick.intro === 'ka') {
-          const map = loadMsgLangs();
-          map.intro = langPick.intro;
-          saveMsgLangs(map);
-          syncTplLangToggle('intro');
-        }
         const introEl = $('intro-preview');
         if (introEl && introEl.hasAttribute('readonly')) {
           removeSmsEdit('intro');
