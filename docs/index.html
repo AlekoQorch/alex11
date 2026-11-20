@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '236';
+    window.__CC_VER = '237';
     (function () {
       function go(v) {
         try {
@@ -1353,7 +1353,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v159</div>
+      <div class="ver">v160</div>
     </header>
 
     <div class="tabs">
@@ -1424,6 +1424,7 @@
       <div class="num" id="tpl-picker-num"></div>
       <div class="channel" id="tpl-picker-channel">SMS</div>
       <button type="button" class="tpl-btn" data-tpl="aldagi">ᲡᲠᲣᲚᲘ ᲨᲔᲗᲐᲕᲐᲖᲔᲑᲐ</button>
+      <button type="button" class="tpl-btn" data-tpl="home">ᲑᲘᲜᲐ ᲡᲠᲣᲚᲘ ᲨᲔᲗᲐᲕᲐᲖᲔᲑᲐ</button>
       <button type="button" class="tpl-btn" data-tpl="noanswer">ᲐᲠ ᲞᲐᲡᲣᲮᲝᲑᲡ</button>
       <button type="button" class="tpl-btn" data-tpl="tariff">ᲢᲐᲠᲘᲤᲘᲡ ᲓᲐᲐᲜᲒᲐᲠᲘᲨᲔᲑᲐ</button>
       <button type="button" class="tpl-btn" data-tpl="photos">ᲓᲐᲡᲣᲠᲐᲗᲔᲑᲘᲡ ᲘᲜᲡᲢᲠᲣᲥᲪᲘᲐ</button>
@@ -1564,6 +1565,90 @@
 
     const ALDAGI_DETAILS = 'დეტალურად: https://aldagi.ge/individual/auto-insurance';
 
+    const HOME_OFFER_BODY = `ᲓᲐᲖᲦᲕᲔᲣᲚᲘ ᲠᲘᲡᲙᲔᲑᲘ:
+
+ხანძარი | აფეთქება | წყალსადენების და მილსადენების მწყობრიდან გამოსვლა | ქურდობა, ძარცვა, ყაჩაღობა | ბუნებრივი კატაკლიზმები
+
+ᲓᲐᲖᲦᲕᲔᲣᲚᲘᲐ:
+
+    * რემონტი
+    * ავეჯი
+    * ტექნიკა
+    * კარკასი
+
+ასევე დაზღვეულია მესამე პირიც, ანუ თქვენივე ბრალეულობით, მაგალითად (წყლის ჩასვლით) თუ დააზიანებთ მეზობელს მასაც ავუნაზღაურებთ ზარალს.
+
+ᲚᲘᲛᲘᲢᲔᲑᲘ:
+
+ქონების, რემონტის/ავეჯის/ტექნიკის ლიმიტი: {{property}}
+
+რემონის/ავეჯის/ტექნიკის ლიმიტი: {{contents}}
+
+მეამე პირის ლიმიტი: {{third}}
+
+ᲐᲠ ᲐᲜᲐᲖᲦᲐᲣᲠᲓᲔᲑᲐ:
+
+დაზღვევამდე არსებული დაზიანება,
+უხეში დაუდევრობით გამოწვეული ზარალები მაგალითად: (განზრახ დაზიანება ავეჯის/ტექნიკის/რემონტის) და ა.შ…
+
+ᲤᲠᲐᲜᲨᲘᲖᲐ(ᲗᲐᲜᲐᲛᲝᲜᲐᲬᲘᲚᲔᲝᲑᲐ):
+
+ხანძარი,აფეთქვება,მეხის დაცემა,თვითმფრინავის ნაწილების ჩამოვარდნა -  0%
+
+ბუნებრივი კატაკლიზმები - 1%
+
+მიწისძვრა - 3%
+
+ქურდობა, ძარცვა, ყაჩაღობა 0%
+
+დატბორვა - პირველადი შემთხვევა - 0%,
+ყოველი მომდევნო შემთხვევა - 50%
+
+ᲡᲐᲓᲐᲖᲦᲕᲔᲝ ᲨᲔᲛᲗᲮᲕᲔᲕᲘᲡᲐᲡ:
+
+დარეკეთ ცხელ ხაზზე: 0 32 2 444 999
+
+შეატყობინეთ 112-ს
+
+თუ სიტუაცია არ უკავშირდება ხანძარს, აფეთქებას, მიწისძვრას ან მსგავს საგანგებო შემთხვევებს, ჯერ ალდაგის ცხელ ხაზზე გაიარეთ კონსულტაცია რამდენად საჭირო იქნება 112 ში დარეკვა.
+
+შეტყობინება დააფიქრეთ როგორც კი აღმოაჩენთ ზარალს.`;
+
+    function formatHomeLimit(val) {
+      const v = String(val || '').trim();
+      if (!v) return '';
+      return v.includes('$') ? v : v + '$';
+    }
+
+    function buildHomeMsg() {
+      return HOME_OFFER_BODY
+        .replace('{{property}}', formatHomeLimit($('home-property')?.value))
+        .replace('{{contents}}', formatHomeLimit($('home-contents')?.value))
+        .replace('{{third}}', formatHomeLimit($('home-third')?.value));
+    }
+
+    function updateHomePreview(opts = {}) {
+      const el = $('home-preview');
+      if (!el) return;
+      if (!el.hasAttribute('readonly')) return;
+      if (opts.fromOffer) {
+        const msg = buildHomeMsg();
+        el.value = msg;
+        saveSmsEdit('home', msg);
+        return;
+      }
+      fillSmsField('home', el, buildHomeMsg());
+    }
+
+    function initHomeFields() {
+      const refresh = () => updateHomePreview({ fromOffer: true });
+      ['home-property', 'home-contents', 'home-third'].forEach(id => {
+        const el = $(id);
+        if (el) el.oninput = refresh;
+      });
+    }
+
+
     function buildAldagiBenefits(isElectric) {
       const gift1 = isElectric ? ALDAGI_GIFT_EV : ALDAGI_GIFT_FUEL;
       return `${ALDAGI_BENEFITS_INTRO}
@@ -1601,7 +1686,7 @@ ${ALDAGI_DETAILS}`;
 
     const SMS_EDITS_KEY = 'cc_sms_edits';
     const SMS_TPL_VER_KEY = 'cc_sms_tpl_ver';
-    const SMS_TPL_VER = '19';
+    const SMS_TPL_VER = '20';
     function loadSmsEdits() {
       try { return JSON.parse(localStorage.getItem(SMS_EDITS_KEY) || '{}') || {}; }
       catch { return {}; }
@@ -1611,6 +1696,7 @@ ${ALDAGI_DETAILS}`;
         if (localStorage.getItem(SMS_TPL_VER_KEY) === SMS_TPL_VER) return;
         const all = loadSmsEdits();
         delete all.aldagi;
+        delete all.home;
         delete all.photos;
         localStorage.setItem(SMS_EDITS_KEY, JSON.stringify(all));
         localStorage.setItem(SMS_TPL_VER_KEY, SMS_TPL_VER);
@@ -1635,7 +1721,7 @@ ${ALDAGI_DETAILS}`;
 
     const SMS_CUSTOM_KEY = 'cc_sms_custom';
     const SMS_HIDDEN_KEY = 'cc_sms_hidden';
-    const BUILTIN_SMS_IDS = ['aldagi', 'noanswer', 'tariff', 'photos', 'intro', 'docs'];
+    const BUILTIN_SMS_IDS = ['aldagi', 'home', 'noanswer', 'tariff', 'photos', 'intro', 'docs'];
 
     function escapeHtml(s) {
       return String(s ?? '').replace(/[&<>"']/g, ch => ({
@@ -1910,7 +1996,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '236';
+      const v = window.__CC_VER || '237';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -2848,6 +2934,7 @@ ${link}
         box.insertBefore(b, cancel);
       };
       if (!isSmsHidden('aldagi')) addBtn('aldagi', 'ᲡᲠᲣᲚᲘ ᲨᲔᲗᲐᲕᲐᲖᲔᲑᲐ');
+      if (!isSmsHidden('home')) addBtn('home', 'ᲑᲘᲜᲐ ᲡᲠᲣᲚᲘ ᲨᲔᲗᲐᲕᲐᲖᲔᲑᲐ');
       if (!isSmsHidden('noanswer')) addBtn('noanswer', 'ᲐᲠ ᲞᲐᲡᲣᲮᲝᲑᲡ');
       if (!isSmsHidden('tariff')) addBtn('tariff', 'ᲢᲐᲠᲘᲤᲘᲡ ᲓᲐᲐᲜᲒᲐᲠᲘᲨᲔᲑᲐ');
       if (!isSmsHidden('photos')) addBtn('photos', 'ᲓᲐᲡᲣᲠᲐᲗᲔᲑᲘᲡ ᲘᲜᲡᲢᲠᲣᲥᲪᲘᲐ');
@@ -2886,6 +2973,7 @@ ${link}
       else if (tpl === 'noanswer') { msg = getSmsEdit('noanswer') ?? NO_ANSWER_MSG; title = 'ᲐᲠ ᲞᲐᲡᲣᲮᲝᲑᲡ'; }
       else if (tpl === 'tariff') { msg = getSmsEdit('tariff') ?? TARIFF_MSG; title = 'ᲢᲐᲠᲘᲤᲘᲡ ᲓᲐᲐᲜᲒᲐᲠᲘᲨᲔᲑᲐ'; }
       else if (tpl === 'aldagi') { msg = getSmsEdit('aldagi') ?? buildAldagiMsg(); title = 'ᲡᲠᲣᲚᲘ ᲨᲔᲗᲐᲕᲐᲖᲔᲑᲐ'; }
+      else if (tpl === 'home') { msg = getSmsEdit('home') ?? buildHomeMsg(); title = 'ᲑᲘᲜᲐ ᲡᲠᲣᲚᲘ ᲨᲔᲗᲐᲕᲐᲖᲔᲑᲐ'; }
       else if (tpl === 'docs') { msg = getSmsEdit('docs') ?? buildDocsLinkMsg(num); title = 'ᲓᲝᲙᲣᲛᲔᲜᲢᲔᲑᲘᲡ ᲚᲘᲜᲙᲘ'; }
       else if (tpl === 'photos') { msg = getSmsEdit('photos') ?? buildPhotosInstrMsg(); title = 'ᲓᲐᲡᲣᲠᲐᲗᲔᲑᲘᲡ ᲘᲜᲡᲢᲠᲣᲥᲪᲘᲐ'; }
       else if (isCustomSmsId(tpl)) {
@@ -2957,6 +3045,7 @@ ${link}
       if (tpl === 'noanswer') return NO_ANSWER_MSG;
       if (tpl === 'tariff') return TARIFF_MSG;
       if (tpl === 'aldagi') return buildAldagiMsg();
+      if (tpl === 'home') return buildHomeMsg();
       if (tpl === 'docs') return buildDocsLinkMsg(num || getPhone());
       if (tpl === 'photos') return buildPhotosInstrMsg();
       if (isCustomSmsId(tpl)) return getSmsEdit(tpl) ?? '';
@@ -3135,6 +3224,29 @@ ${link}
           </div>
         </div>`);
       }
+      if (!isSmsHidden('home')) {
+        parts.push(`
+        <div class="sms-card" data-id="home">
+          <div class="sms-card-head has-del">
+            ${smsDelBtn('home')}
+            <h3>ᲑᲘᲜᲐ ᲡᲠᲣᲚᲘ ᲨᲔᲗᲐᲕᲐᲖᲔᲑᲐ</h3>
+            <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
+          </div>
+          <div class="offer-fields">
+            <span class="field-label">ქონების, რემონტის/ავეჯის/ტექნიკის ლიმიტი ($)</span>
+            <input class="field-inp" id="home-property" type="text" inputmode="decimal" placeholder="მაგ: 50000$">
+            <span class="field-label">რემონის/ავეჯის/ტექნიკის ლიმიტი ($)</span>
+            <input class="field-inp" id="home-contents" type="text" inputmode="decimal" placeholder="მაგ: 15000$">
+            <span class="field-label">მეამე პირის ლიმიტი ($)</span>
+            <input class="field-inp" id="home-third" type="text" inputmode="decimal" placeholder="მაგ: 10000$">
+          </div>
+          ${smsEditField('home', { id: 'home-preview', rows: 14, long: true, label: 'ბინა სრული შეთავაზება ტექსტი' })}
+          <div class="send-row" data-chat-tpl="home">
+            <button type="button" data-send="home-sms">${channelLabel('sms', 'SMS')}</button>
+            ${chatDropdownHtml(false)}
+          </div>
+        </div>`);
+      }
       if (!isSmsHidden('noanswer')) {
         parts.push(`
         <div class="sms-card" data-id="noanswer">
@@ -3240,6 +3352,9 @@ ${link}
       const prevTariff = $('offer-tariff')?.value || '';
       const prevCar = $('offer-car')?.value || '';
       const prevElectric = !!$('offer-electric')?.checked;
+      const prevHomeProperty = $('home-property')?.value || '';
+      const prevHomeContents = $('home-contents')?.value || '';
+      const prevHomeThird = $('home-third')?.value || '';
       $('sms-list').innerHTML = parts.join('');
       fillSmsField('intro', document.querySelector('textarea.sms-edit[data-tpl="intro"]'), introMsg(langPick.intro || 'ka'));
       fillSmsField('noanswer', document.querySelector('textarea.sms-edit[data-tpl="noanswer"]'), NO_ANSWER_MSG);
@@ -3247,7 +3362,11 @@ ${link}
       if ($('offer-tariff')) $('offer-tariff').value = prevTariff;
       if ($('offer-car')) $('offer-car').value = prevCar;
       if ($('offer-electric')) $('offer-electric').checked = prevElectric;
+      if ($('home-property')) $('home-property').value = prevHomeProperty;
+      if ($('home-contents')) $('home-contents').value = prevHomeContents;
+      if ($('home-third')) $('home-third').value = prevHomeThird;
       updateAldagiPreview();
+      updateHomePreview();
       updateDocsPreview();
       fillSmsField('photos', document.querySelector('textarea.sms-edit[data-tpl="photos"]'), buildPhotosInstrMsg());
       loadCustomSms().forEach(c => {
@@ -3259,6 +3378,7 @@ ${link}
       });
       updateSmsCardTargets();
       initOfferFields();
+      initHomeFields();
     }
 
     function updateDocsPreview() {
