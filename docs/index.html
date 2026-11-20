@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '240';
+    window.__CC_VER = '241';
     (function () {
       function go(v) {
         try {
@@ -1437,7 +1437,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v163</div>
+      <div class="ver">v164</div>
     </header>
 
     <div class="tabs">
@@ -1704,6 +1704,105 @@
 
 შეტყობინება დააფიქრეთ როგორც კი აღმოაჩენთ ზარალს.`;
 
+
+    const ALDAGI_HEAD_EN = `Risks:
+Road traffic accident
+Fire | Explosion
+Vandalism | Theft | Robbery | Hold-up
+Natural disasters
+Falling objects
+Damage in undetermined circumstances
+Windshield damage
+
+Additional risks: pothole impact, external damage (covers everything not caused by human force)
+Damage during towing/transport.`;
+
+    const ALDAGI_REPLACEMENT_EN = `+ Replacement car can also be included (if your car is damaged by another vehicle, our company provides a replacement while yours is being repaired)`;
+
+    const ALDAGI_NEGLIGENCE_EN = `+ Gross negligence cover can also be added — if you run a red light, drive in a bus lane, or enter the opposite lane, the damage is still covered`;
+
+    const ALDAGI_BENEFITS_INTRO_EN = `Benefits:
+Roadside assistance (fuel delivery, tire change, jump start, towing help) and tow truck service free in 7 major cities of Georgia: Tbilisi, Telavi, Gori, Kutaisi, Batumi, Poti and Zugdidi`;
+
+    const ALDAGI_GIFT_FUEL_EN = '1. 20 tetri discount on fuel';
+    const ALDAGI_GIFT_EV_EN = '1. 20% discount on charging at EV Power';
+
+    const ALDAGI_GIFTS_REST_EN = `2. 25% discount at "Amboli"
+3. 20% discount at "Delphi Motors" on auto detailing
+4. 10% discount on property insurance`;
+
+    const ALDAGI_DISCLAIMER_EN = `Exclusions:
+
+Damage resulting from alcohol, psychotropic or narcotic intoxication is not covered, and if there is gross negligence the policy does not pay: bus lane, crossing a double solid line, speeding, or running a red light. Also, in case of an insured event do not move the vehicle and call Aldagi hotline 032 2 444 999 and 112.
+
+On cancellation, 20% of the remaining months is payable; if the claim amount is more than 70% of the annual premium, the remaining premium must be paid in full.`;
+
+    const ALDAGI_DETAILS_EN = 'Details: https://aldagi.ge/individual/auto-insurance';
+
+    const HOME_OFFER_BODY_EN = `INSURED RISKS:
+
+Fire | Explosion | Failure of water/plumbing pipes | Theft, robbery, hold-up | Natural disasters
+
+COVERED:
+
+    * Renovation
+    * Furniture
+    * Appliances
+    * Structure
+
+Third-party liability is also covered — e.g. if you damage a neighbor (such as water leakage) due to your fault, we will also cover their loss.
+
+LIMITS:
+
+Property / renovation / furniture / appliances limit: {{property}}
+
+Renovation / furniture / appliances limit: {{contents}}
+
+Third-party limit: {{third}}
+
+NOT COVERED:
+
+Damage existing before insurance,
+Losses caused by gross negligence, for example: (intentional damage to furniture/appliances/renovation), etc.
+
+DEDUCTIBLE (YOUR SHARE):
+
+Fire, explosion, lightning, falling aircraft parts -  0%
+
+Natural disasters - 1%
+
+Earthquake - 3%
+
+Theft, robbery, hold-up 0%
+
+Flooding - first event - 0%,
+each following event - 50%
+
+IN CASE OF AN INSURED EVENT:
+
+Call the hotline: 0 32 2 444 999
+
+Notify 112
+
+If the situation is not related to fire, explosion, earthquake or similar emergencies, first consult Aldagi hotline on whether calling 112 is necessary.
+
+Report as soon as you discover the damage.`;
+
+    const TARIFF_MSG_EN = `Hello, Aleksandre Korchashvili writing from Aldagi Insurance.
+
+These details are needed to calculate the tariff:
+
+1) Car make and model
+2) Year of manufacture
+3) Average market value of the car
+4) Owner's age
+5) Youngest driver's age on your car
+6) How long you have owned the car
+7) Engine volume
+8) How long you have had driving experience`;
+
+    const NO_ANSWER_MSG_EN = `Hello, I called you about car insurance from Aldagi Insurance. If you are interested, please contact me on this number.`;
+
     const HOME_CONTENTS_ALL = [5000, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000];
     const HOME_THIRD_LIMITS = ['5000$', '10000$', '20000$'];
     const homePick = { contents: '', third: '' };
@@ -1725,15 +1824,15 @@
     function homeContentsSelectHtml() {
       const opts = homeContentsOptions();
       if (!opts.length) {
-        return `<select class="field-inp" id="home-contents" disabled aria-label="რემონტის/ავეჯის/ტექნიკის ლიმიტი">
-              <option value="">ჯერ ჩაწერე ქონების ლიმიტი</option>
+        return `<select class="field-inp" id="home-contents" disabled aria-label="${uiT('needProperty')}">
+              <option value="">${uiT('needProperty')}</option>
             </select>`;
       }
-      const options = [`<option value="">აირჩიე ლიმიტი</option>`]
+      const options = [`<option value="">${uiT('pickLimit')}</option>`]
         .concat(opts.map(v =>
           `<option value="${v}"${v === homePick.contents ? ' selected' : ''}>${v}</option>`
         ));
-      return `<select class="field-inp" id="home-contents" aria-label="რემონტის/ავეჯის/ტექნიკის ლიმიტი">
+      return `<select class="field-inp" id="home-contents" aria-label="${uiT('pickLimit')}">
               ${options.join('')}
             </select>`;
     }
@@ -1763,7 +1862,8 @@
     }
 
     function buildHomeMsg() {
-      return HOME_OFFER_BODY
+      const body = isEn() ? HOME_OFFER_BODY_EN : HOME_OFFER_BODY;
+      return body
         .replace('{{property}}', formatHomeLimit($('home-property')?.value))
         .replace('{{contents}}', formatHomeLimit(homePick.contents))
         .replace('{{third}}', formatHomeLimit(homePick.third));
@@ -1814,6 +1914,18 @@
 
 
     function buildAldagiBenefits(isElectric) {
+      if (isEn()) {
+        const gift1 = isElectric ? ALDAGI_GIFT_EV_EN : ALDAGI_GIFT_FUEL_EN;
+        return `${ALDAGI_BENEFITS_INTRO_EN}
+
+Gifts:
+${gift1}
+${ALDAGI_GIFTS_REST_EN}
+
+${ALDAGI_DISCLAIMER_EN}
+
+${ALDAGI_DETAILS_EN}`;
+      }
       const gift1 = isElectric ? ALDAGI_GIFT_EV : ALDAGI_GIFT_FUEL;
       return `${ALDAGI_BENEFITS_INTRO}
 
@@ -1833,7 +1945,7 @@ ${ALDAGI_DETAILS}`;
     };
     const offerPick = { third: '10000$', health: '20000$', franchise: '' };
 
-    const TARIFF_MSG = `გამარჯობა, ალექსანდრე ქორჩაშვილი გწერთ სადაზღვეო კომპანია ალდაგიდან.
+    const TARIFF_MSG_KA = `გამარჯობა, ალექსანდრე ქორჩაშვილი გწერთ სადაზღვეო კომპანია ალდაგიდან.
 
 ეს მონაცემებია საჭირო ტარიფის დასათვლელად:
 
@@ -1846,11 +1958,14 @@ ${ALDAGI_DETAILS}`;
 7) ძრავის მოცულობა
 8) რამდენი ხანია რაც მართვის გამოცდილება გაქვთ`;
 
-    const NO_ANSWER_MSG = `გამარჯობა, ავტომობილის დაზღვევასთან დაკავშირებით გირეკავდით, სადაზღვეო კომპანია ალდაგიდან თუ დაინტერესდებით ამ ნომერზე დამიკავშირდით.`;
+    const NO_ANSWER_MSG_KA = `გამარჯობა, ავტომობილის დაზღვევასთან დაკავშირებით გირეკავდით, სადაზღვეო კომპანია ალდაგიდან თუ დაინტერესდებით ამ ნომერზე დამიკავშირდით.`;
+
+    function tariffMsg() { return isEn() ? TARIFF_MSG_EN : TARIFF_MSG_KA; }
+    function noAnswerMsg() { return isEn() ? NO_ANSWER_MSG_EN : NO_ANSWER_MSG_KA; }
 
     const SMS_EDITS_KEY = 'cc_sms_edits';
     const SMS_TPL_VER_KEY = 'cc_sms_tpl_ver';
-    const SMS_TPL_VER = '23';
+    const SMS_TPL_VER = '24';
     function loadSmsEdits() {
       try { return JSON.parse(localStorage.getItem(SMS_EDITS_KEY) || '{}') || {}; }
       catch { return {}; }
@@ -2160,7 +2275,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '240';
+      const v = window.__CC_VER || '241';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -2168,6 +2283,15 @@ ${ALDAGI_DETAILS}`;
     }
     function buildDocsLinkMsg(num) {
       const link = docsVerifyUrl(num);
+      if (isEn()) {
+        return `Hello, Aleksandre Korchashvili writing from Aldagi Insurance.
+
+Please use this link to upload documents (ID, driving license, vehicle registration — both sides):
+
+${link}
+
+Thank you.`;
+      }
       return `გამარჯობა, ალექსანდრე ქორჩაშვილი გწერთ სადაზღვეო კომპანია ალდაგიდან.
 
 დოკუმენტების (პირადობა, მართვის მოწმობა, ტექპასპორტი — ორივე მხარე) ასატვირთად გთხოვთ გადახვიდეთ ლინკზე:
@@ -2178,6 +2302,11 @@ ${link}
     }
 
     function buildPhotosInstrMsg() {
+      if (isEn()) {
+        return `Sending you the car photo instructions.
+
+The main requirement is that the car is washed. It must be photographed from all sides and all angles, plus the windshield from the rear side window, the odometer and the VIN code.`;
+      }
       return `გიგზავნით ავტომობილის დასურათების ინსტრუქციას.
 
 მთავარი პირობაა, ავტომობილი იყოს გარეცხილ მდგომარეობაში. დასურათებული უნდა იყოს ყველა გვერდიდან და ყველა კუთხიდან, ასევე საქარე მინა უკანა სიდენიიდან, გარბენი და VIN კოდი.`;
@@ -2207,7 +2336,16 @@ ${link}
         copy: 'კოპირება',
         smsHint: 'შაბლონები შეგიძლია დაამატო ან წაშალო',
         addTpl: '+ შაბლონის დამატება',
-        phonePh: 'ტელეფონის ნომერი'
+        phonePh: 'ტელეფონის ნომერი',
+        pickLimit: 'აირჩიე ლიმიტი',
+        needProperty: 'ჯერ ჩაწერე ქონების ლიმიტი',
+        titleAldagi: 'ᲡᲠᲣᲚᲘ ᲨᲔᲗᲐᲕᲐᲖᲔᲑᲐ',
+        titleHome: 'ᲑᲘᲜᲐ ᲡᲠᲣᲚᲘ ᲨᲔᲗᲐᲕᲐᲖᲔᲑᲐ',
+        titleNoanswer: 'ᲐᲠ ᲞᲐᲡᲣᲮᲝᲑᲡ',
+        titleTariff: 'ᲢᲐᲠᲘᲤᲘᲡ ᲓᲐᲐᲜᲒᲐᲠᲘᲨᲔᲑᲐ',
+        titlePhotos: 'ᲓᲐᲡᲣᲠᲐᲗᲔᲑᲘᲡ ᲘᲜᲡᲢᲠᲣᲥᲪᲘᲐ',
+        titleIntro: 'ᲞᲐᲢᲐᲠᲐ SMS',
+        titleDocs: 'ᲓᲝᲙᲣᲛᲔᲜᲢᲔᲑᲘᲡ ᲚᲘᲜᲙᲘ'
       },
       en: {
         edit: 'Edit',
@@ -2217,15 +2355,28 @@ ${link}
         copy: 'Copy',
         smsHint: 'You can add or delete templates',
         addTpl: '+ Add template',
-        phonePh: 'Phone number'
+        phonePh: 'Phone number',
+        pickLimit: 'Choose limit',
+        needProperty: 'Enter property limit first',
+        titleAldagi: 'FULL OFFER',
+        titleHome: 'HOME FULL OFFER',
+        titleNoanswer: 'NO ANSWER',
+        titleTariff: 'TARIFF DETAILS',
+        titlePhotos: 'PHOTO INSTRUCTIONS',
+        titleIntro: 'SHORT SMS',
+        titleDocs: 'DOCUMENTS LINK'
       }
     };
+    function isEn() { return uiLang === 'en'; }
     function uiT(key) {
       return (UI_STR[uiLang] && UI_STR[uiLang][key]) || UI_STR.ka[key] || key;
     }
     function setUiLang(lang) {
       uiLang = lang === 'en' ? 'en' : 'ka';
       try { localStorage.setItem(UI_LANG_KEY, uiLang); } catch {}
+      langPick.intro = isEn() ? 'en' : 'ka';
+      ['aldagi', 'home', 'noanswer', 'tariff', 'photos', 'docs', 'intro'].forEach(removeSmsEdit);
+      renderSmsList();
       applyUiLang();
     }
     function applyUiLang() {
@@ -3151,17 +3302,17 @@ ${link}
         b.innerHTML = small ? `${label}<small>${small}</small>` : label;
         box.insertBefore(b, cancel);
       };
-      if (!isSmsHidden('aldagi')) addBtn('aldagi', 'ᲡᲠᲣᲚᲘ ᲨᲔᲗᲐᲕᲐᲖᲔᲑᲐ');
-      if (!isSmsHidden('home')) addBtn('home', 'ᲑᲘᲜᲐ ᲡᲠᲣᲚᲘ ᲨᲔᲗᲐᲕᲐᲖᲔᲑᲐ');
-      if (!isSmsHidden('noanswer')) addBtn('noanswer', 'ᲐᲠ ᲞᲐᲡᲣᲮᲝᲑᲡ');
-      if (!isSmsHidden('tariff')) addBtn('tariff', 'ᲢᲐᲠᲘᲤᲘᲡ ᲓᲐᲐᲜᲒᲐᲠᲘᲨᲔᲑᲐ');
-      if (!isSmsHidden('photos')) addBtn('photos', 'ᲓᲐᲡᲣᲠᲐᲗᲔᲑᲘᲡ ᲘᲜᲡᲢᲠᲣᲥᲪᲘᲐ');
+      if (!isSmsHidden('aldagi')) addBtn('aldagi', uiT('titleAldagi'));
+      if (!isSmsHidden('home')) addBtn('home', uiT('titleHome'));
+      if (!isSmsHidden('noanswer')) addBtn('noanswer', uiT('titleNoanswer'));
+      if (!isSmsHidden('tariff')) addBtn('tariff', uiT('titleTariff'));
+      if (!isSmsHidden('photos')) addBtn('photos', uiT('titlePhotos'));
       if (!isSmsHidden('intro')) {
         addBtn('intro-ka', 'ᲞᲐᲢᲐᲠᲐ SMS', 'ᲥᲐᲠᲗᲣᲚᲘ');
         addBtn('intro-en', 'ᲞᲐᲢᲐᲠᲐ SMS', 'ᲘᲜᲒᲚᲘᲡᲣᲠᲘ');
         addBtn('intro-both', 'ᲞᲐᲢᲐᲠᲐ SMS', 'ᲝᲠᲘᲕᲔ');
       }
-      if (!isSmsHidden('docs')) addBtn('docs', 'ᲓᲝᲙᲣᲛᲔᲜᲢᲔᲑᲘᲡ ᲚᲘᲜᲙᲘ');
+      if (!isSmsHidden('docs')) addBtn('docs', uiT('titleDocs'));
       loadCustomSms().forEach(c => addBtn(c.id, escapeHtml(c.title)));
     }
 
@@ -3188,12 +3339,12 @@ ${link}
       if (tpl === 'intro-ka') { msg = getSmsEdit('intro') ?? introMsg('ka'); title = 'ᲞᲐᲢᲐᲠᲐ SMS (ᲥᲐᲠᲗᲣᲚᲘ)'; }
       else if (tpl === 'intro-en') { msg = getSmsEdit('intro') ?? introMsg('en'); title = 'ᲞᲐᲢᲐᲠᲐ SMS (ᲘᲜᲒᲚᲘᲡᲣᲠᲘ)'; }
       else if (tpl === 'intro-both') { msg = getSmsEdit('intro') ?? introMsg('both'); title = 'ᲞᲐᲢᲐᲠᲐ SMS (ᲝᲠᲘᲕᲔ)'; }
-      else if (tpl === 'noanswer') { msg = getSmsEdit('noanswer') ?? NO_ANSWER_MSG; title = 'ᲐᲠ ᲞᲐᲡᲣᲮᲝᲑᲡ'; }
-      else if (tpl === 'tariff') { msg = getSmsEdit('tariff') ?? TARIFF_MSG; title = 'ᲢᲐᲠᲘᲤᲘᲡ ᲓᲐᲐᲜᲒᲐᲠᲘᲨᲔᲑᲐ'; }
-      else if (tpl === 'aldagi') { msg = getSmsEdit('aldagi') ?? buildAldagiMsg(); title = 'ᲡᲠᲣᲚᲘ ᲨᲔᲗᲐᲕᲐᲖᲔᲑᲐ'; }
-      else if (tpl === 'home') { msg = getSmsEdit('home') ?? buildHomeMsg(); title = 'ᲑᲘᲜᲐ ᲡᲠᲣᲚᲘ ᲨᲔᲗᲐᲕᲐᲖᲔᲑᲐ'; }
-      else if (tpl === 'docs') { msg = getSmsEdit('docs') ?? buildDocsLinkMsg(num); title = 'ᲓᲝᲙᲣᲛᲔᲜᲢᲔᲑᲘᲡ ᲚᲘᲜᲙᲘ'; }
-      else if (tpl === 'photos') { msg = getSmsEdit('photos') ?? buildPhotosInstrMsg(); title = 'ᲓᲐᲡᲣᲠᲐᲗᲔᲑᲘᲡ ᲘᲜᲡᲢᲠᲣᲥᲪᲘᲐ'; }
+      else if (tpl === 'noanswer') { msg = getSmsEdit('noanswer') ?? noAnswerMsg(); title = uiT('titleNoanswer'); }
+      else if (tpl === 'tariff') { msg = getSmsEdit('tariff') ?? tariffMsg(); title = uiT('titleTariff'); }
+      else if (tpl === 'aldagi') { msg = getSmsEdit('aldagi') ?? buildAldagiMsg(); title = uiT('titleAldagi'); }
+      else if (tpl === 'home') { msg = getSmsEdit('home') ?? buildHomeMsg(); title = uiT('titleHome'); }
+      else if (tpl === 'docs') { msg = getSmsEdit('docs') ?? buildDocsLinkMsg(num); title = uiT('titleDocs'); }
+      else if (tpl === 'photos') { msg = getSmsEdit('photos') ?? buildPhotosInstrMsg(); title = uiT('titlePhotos'); }
       else if (isCustomSmsId(tpl)) {
         const c = getCustomSms(tpl);
         msg = getSmsEdit(tpl) ?? '';
@@ -3260,8 +3411,8 @@ ${link}
 
     function defaultMsgForTpl(tpl, num) {
       if (tpl === 'intro') return introMsg(langPick.intro);
-      if (tpl === 'noanswer') return NO_ANSWER_MSG;
-      if (tpl === 'tariff') return TARIFF_MSG;
+      if (tpl === 'noanswer') return noAnswerMsg();
+      if (tpl === 'tariff') return tariffMsg();
       if (tpl === 'aldagi') return buildAldagiMsg();
       if (tpl === 'home') return buildHomeMsg();
       if (tpl === 'docs') return buildDocsLinkMsg(num || getPhone());
@@ -3419,7 +3570,7 @@ ${link}
         <div class="sms-card" data-id="aldagi">
           <div class="sms-card-head has-del">
             ${smsDelBtn('aldagi')}
-            <h3>ᲡᲠᲣᲚᲘ ᲨᲔᲗᲐᲕᲐᲖᲔᲑᲐ</h3>
+            <h3>${uiT('titleAldagi')}</h3>
             <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
           </div>
           <div class="offer-fields">
@@ -3466,7 +3617,7 @@ ${link}
         <div class="sms-card" data-id="home">
           <div class="sms-card-head has-del">
             ${smsDelBtn('home')}
-            <h3>ᲑᲘᲜᲐ ᲡᲠᲣᲚᲘ ᲨᲔᲗᲐᲕᲐᲖᲔᲑᲐ</h3>
+            <h3>${uiT('titleHome')}</h3>
             <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
           </div>
           <div class="offer-fields">
@@ -3493,7 +3644,7 @@ ${link}
         <div class="sms-card" data-id="noanswer">
           <div class="sms-card-head has-del">
             ${smsDelBtn('noanswer')}
-            <h3>ᲐᲠ ᲞᲐᲡᲣᲮᲝᲑᲡ</h3>
+            <h3>${uiT('titleNoanswer')}</h3>
             <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
           </div>
           ${smsEditField('noanswer', { rows: 4, label: 'არ პასუხობს ტექსტი' })}
@@ -3508,7 +3659,7 @@ ${link}
         <div class="sms-card" data-id="tariff">
           <div class="sms-card-head has-del">
             ${smsDelBtn('tariff')}
-            <h3>ᲢᲐᲠᲘᲤᲘᲡ ᲓᲐᲐᲜᲒᲐᲠᲘᲨᲔᲑᲐ</h3>
+            <h3>${uiT('titleTariff')}</h3>
             <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
           </div>
           ${smsEditField('tariff', { rows: 8, label: 'ტარიფის ტექსტი' })}
@@ -3523,7 +3674,7 @@ ${link}
         <div class="sms-card" data-id="photos">
           <div class="sms-card-head has-del">
             ${smsDelBtn('photos')}
-            <h3>ᲓᲐᲡᲣᲠᲐᲗᲔᲑᲘᲡ ᲘᲜᲡᲢᲠᲣᲥᲪᲘᲐ</h3>
+            <h3>${uiT('titlePhotos')}</h3>
             <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
           </div>
           ${smsEditField('photos', { id: 'photos-preview', rows: 7, label: 'დასურათების ინსტრუქცია ტექსტი' })}
@@ -3558,7 +3709,7 @@ ${link}
         <div class="sms-card" data-id="docs">
           <div class="sms-card-head has-del">
             ${smsDelBtn('docs')}
-            <h3>ᲓᲝᲙᲣᲛᲔᲜᲢᲔᲑᲘᲡ ᲚᲘᲜᲙᲘ</h3>
+            <h3>${uiT('titleDocs')}</h3>
             <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
           </div>
           <p class="sms-hint" style="margin:0 0 8px">პირადობა · მართვის მოწმობა · ტექპასპორტი</p>
@@ -3596,8 +3747,8 @@ ${link}
       const prevHomeProperty = $('home-property')?.value || '';
       $('sms-list').innerHTML = parts.join('');
       fillSmsField('intro', document.querySelector('textarea.sms-edit[data-tpl="intro"]'), introMsg(langPick.intro || 'ka'));
-      fillSmsField('noanswer', document.querySelector('textarea.sms-edit[data-tpl="noanswer"]'), NO_ANSWER_MSG);
-      fillSmsField('tariff', document.querySelector('textarea.sms-edit[data-tpl="tariff"]'), TARIFF_MSG);
+      fillSmsField('noanswer', document.querySelector('textarea.sms-edit[data-tpl="noanswer"]'), noAnswerMsg());
+      fillSmsField('tariff', document.querySelector('textarea.sms-edit[data-tpl="tariff"]'), tariffMsg());
       if ($('offer-tariff')) $('offer-tariff').value = prevTariff;
       if ($('offer-car')) $('offer-car').value = prevCar;
       if ($('offer-electric')) $('offer-electric').checked = prevElectric;
@@ -3642,8 +3793,8 @@ ${link}
     function buildAldagiExtras(carRaw) {
       const car = parseUsdAmount(carRaw);
       const lines = [];
-      if (car >= 10000) lines.push(ALDAGI_REPLACEMENT);
-      if (car >= 20000) lines.push(ALDAGI_NEGLIGENCE);
+      if (car >= 10000) lines.push(isEn() ? ALDAGI_REPLACEMENT_EN : ALDAGI_REPLACEMENT);
+      if (car >= 20000) lines.push(isEn() ? ALDAGI_NEGLIGENCE_EN : ALDAGI_NEGLIGENCE);
       return lines.length ? lines.join('\n\n') + '\n\n' : '';
     }
 
@@ -3827,14 +3978,6 @@ ${extras}${buildAldagiBenefits(isElectric)}`;
         return;
       }
 
-      const uiLangBtn = e.target.closest('#sms-lang-toggle [data-ui-lang]');
-      if (uiLangBtn) {
-        e.preventDefault();
-        e.stopPropagation();
-        setUiLang(uiLangBtn.dataset.uiLang);
-        return;
-      }
-
       const copyBtn = e.target.closest('.sms-copy-btn');
       if (copyBtn) {
         e.preventDefault();
@@ -3909,6 +4052,12 @@ ${extras}${buildAldagiBenefits(isElectric)}`;
 
     renderSmsList();
     applyUiLang();
+    $('sms-lang-toggle')?.addEventListener('click', e => {
+      const btn = e.target.closest('[data-ui-lang]');
+      if (!btn) return;
+      e.preventDefault();
+      setUiLang(btn.dataset.uiLang);
+    });
     $('sms-add-tpl').onclick = () => {
       const id = addCustomSmsTpl();
       renderSmsList();
