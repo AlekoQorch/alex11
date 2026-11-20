@@ -133,10 +133,19 @@ enum AldagiMessages {
         return v.contains("$") ? v : v + "$"
     }
 
+    static let homeContentsAll = [5000, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000]
+    static let homeThirdLimits = ["5000$", "10000$", "20000$"]
+
     private static func formatHomeLimit(_ val: String) -> String {
         let v = val.trimmingCharacters(in: .whitespaces)
         if v.isEmpty { return "" }
         return v.contains("$") ? v : v + "$"
+    }
+
+    static func homeContentsOptions(property: String) -> [String] {
+        let digits = property.replacingOccurrences(of: "[^0-9.]", with: "", options: .regularExpression)
+        guard let cap = Double(digits), cap > 0 else { return [] }
+        return homeContentsAll.filter { Double($0) <= cap }.map { "\($0)$" }
     }
 
     static func homeFullOffer(property: String, contents: String, third: String) -> String {
@@ -158,9 +167,9 @@ enum AldagiMessages {
 
         ქონების, რემონტის/ავეჯის/ტექნიკის ლიმიტი: \(formatHomeLimit(property))
 
-        რემონის/ავეჯის/ტექნიკის ლიმიტი: \(formatHomeLimit(contents))
+        რემონტის/ავეჯის/ტექნიკის ლიმიტი: \(formatHomeLimit(contents))
 
-        მეამე პირის ლიმიტი: \(formatHomeLimit(third))
+        მესამე პირის ლიმიტი: \(formatHomeLimit(third))
 
         ᲐᲠ ᲐᲜᲐᲖᲦᲐᲣᲠᲓᲔᲑᲐ:
 

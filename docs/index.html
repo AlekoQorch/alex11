@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '237';
+    window.__CC_VER = '238';
     (function () {
       function go(v) {
         try {
@@ -1353,7 +1353,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v160</div>
+      <div class="ver">v161</div>
     </header>
 
     <div class="tabs">
@@ -1582,9 +1582,9 @@
 
 ქონების, რემონტის/ავეჯის/ტექნიკის ლიმიტი: {{property}}
 
-რემონის/ავეჯის/ტექნიკის ლიმიტი: {{contents}}
+რემონტის/ავეჯის/ტექნიკის ლიმიტი: {{contents}}
 
-მეამე პირის ლიმიტი: {{third}}
+მესამე პირის ლიმიტი: {{third}}
 
 ᲐᲠ ᲐᲜᲐᲖᲦᲐᲣᲠᲓᲔᲑᲐ:
 
@@ -1614,17 +1614,53 @@
 
 შეტყობინება დააფიქრეთ როგორც კი აღმოაჩენთ ზარალს.`;
 
+    const HOME_CONTENTS_ALL = [5000, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000];
+    const HOME_THIRD_LIMITS = ['5000$', '10000$', '20000$'];
+    const homePick = { contents: '', third: '' };
+
     function formatHomeLimit(val) {
       const v = String(val || '').trim();
       if (!v) return '';
       return v.includes('$') ? v : v + '$';
     }
 
+    function homeContentsOptions() {
+      const cap = parseUsdAmount($('home-property')?.value || '');
+      if (!cap) return [];
+      return HOME_CONTENTS_ALL
+        .filter(n => n <= cap)
+        .map(n => n + '$');
+    }
+
+    function homeContentsPickHtml() {
+      const opts = homeContentsOptions();
+      if (!opts.length) {
+        return '<span class="sms-hint">ჯერ ჩაწერე ქონების ლიმიტი</span>';
+      }
+      return opts.map(v =>
+        `<button type="button" data-home-k="contents" data-val="${v}" class="${v === homePick.contents ? 'on' : ''}">${v}</button>`
+      ).join('');
+    }
+
+    function homeThirdPickHtml() {
+      return HOME_THIRD_LIMITS.map(v =>
+        `<button type="button" data-home-k="third" data-val="${v}" class="${v === homePick.third ? 'on' : ''}">${v}</button>`
+      ).join('');
+    }
+
+    function refreshHomeContentsPick() {
+      const box = $('home-contents-pick');
+      if (!box) return;
+      const opts = homeContentsOptions();
+      if (homePick.contents && !opts.includes(homePick.contents)) homePick.contents = '';
+      box.innerHTML = homeContentsPickHtml();
+    }
+
     function buildHomeMsg() {
       return HOME_OFFER_BODY
         .replace('{{property}}', formatHomeLimit($('home-property')?.value))
-        .replace('{{contents}}', formatHomeLimit($('home-contents')?.value))
-        .replace('{{third}}', formatHomeLimit($('home-third')?.value));
+        .replace('{{contents}}', formatHomeLimit(homePick.contents))
+        .replace('{{third}}', formatHomeLimit(homePick.third));
     }
 
     function updateHomePreview(opts = {}) {
@@ -1641,10 +1677,31 @@
     }
 
     function initHomeFields() {
-      const refresh = () => updateHomePreview({ fromOffer: true });
-      ['home-property', 'home-contents', 'home-third'].forEach(id => {
-        const el = $(id);
-        if (el) el.oninput = refresh;
+      const prop = $('home-property');
+      if (prop) {
+        prop.oninput = () => {
+          refreshHomeContentsPick();
+          updateHomePreview({ fromOffer: true });
+        };
+      }
+      const card = document.querySelector('.sms-card[data-id="home"]');
+      if (!card || card.dataset.homeBound === '1') return;
+      card.dataset.homeBound = '1';
+      card.addEventListener('click', e => {
+        const b = e.target.closest('[data-home-k]');
+        if (!b || !card.contains(b)) return;
+        e.preventDefault();
+        const k = b.dataset.homeK;
+        const val = b.dataset.val;
+        if (!k) return;
+        if (homePick[k] === val) {
+          homePick[k] = '';
+          b.parentElement.querySelectorAll('button').forEach(x => x.classList.remove('on'));
+        } else {
+          homePick[k] = val;
+          b.parentElement.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+        }
+        updateHomePreview({ fromOffer: true });
       });
     }
 
@@ -1686,7 +1743,7 @@ ${ALDAGI_DETAILS}`;
 
     const SMS_EDITS_KEY = 'cc_sms_edits';
     const SMS_TPL_VER_KEY = 'cc_sms_tpl_ver';
-    const SMS_TPL_VER = '20';
+    const SMS_TPL_VER = '21';
     function loadSmsEdits() {
       try { return JSON.parse(localStorage.getItem(SMS_EDITS_KEY) || '{}') || {}; }
       catch { return {}; }
@@ -1996,7 +2053,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '237';
+      const v = window.__CC_VER || '238';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -3234,11 +3291,15 @@ ${link}
           </div>
           <div class="offer-fields">
             <span class="field-label">ქონების, რემონტის/ავეჯის/ტექნიკის ლიმიტი ($)</span>
-            <input class="field-inp" id="home-property" type="text" inputmode="decimal" placeholder="მაგ: 50000$">
-            <span class="field-label">რემონის/ავეჯის/ტექნიკის ლიმიტი ($)</span>
-            <input class="field-inp" id="home-contents" type="text" inputmode="decimal" placeholder="მაგ: 15000$">
-            <span class="field-label">მეამე პირის ლიმიტი ($)</span>
-            <input class="field-inp" id="home-third" type="text" inputmode="decimal" placeholder="მაგ: 10000$">
+            <input class="field-inp" id="home-property" type="text" inputmode="decimal" placeholder="მაგ: 40000$">
+            <span class="field-label">რემონტის/ავეჯის/ტექნიკის ლიმიტი</span>
+            <div class="lim-pick" id="home-contents-pick">
+              ${homeContentsPickHtml()}
+            </div>
+            <span class="field-label">მესამე პირის ლიმიტი</span>
+            <div class="lim-pick" id="home-third-pick">
+              ${homeThirdPickHtml()}
+            </div>
           </div>
           ${smsEditField('home', { id: 'home-preview', rows: 14, long: true, label: 'ბინა სრული შეთავაზება ტექსტი' })}
           <div class="send-row" data-chat-tpl="home">
@@ -3353,8 +3414,6 @@ ${link}
       const prevCar = $('offer-car')?.value || '';
       const prevElectric = !!$('offer-electric')?.checked;
       const prevHomeProperty = $('home-property')?.value || '';
-      const prevHomeContents = $('home-contents')?.value || '';
-      const prevHomeThird = $('home-third')?.value || '';
       $('sms-list').innerHTML = parts.join('');
       fillSmsField('intro', document.querySelector('textarea.sms-edit[data-tpl="intro"]'), introMsg(langPick.intro || 'ka'));
       fillSmsField('noanswer', document.querySelector('textarea.sms-edit[data-tpl="noanswer"]'), NO_ANSWER_MSG);
@@ -3363,8 +3422,7 @@ ${link}
       if ($('offer-car')) $('offer-car').value = prevCar;
       if ($('offer-electric')) $('offer-electric').checked = prevElectric;
       if ($('home-property')) $('home-property').value = prevHomeProperty;
-      if ($('home-contents')) $('home-contents').value = prevHomeContents;
-      if ($('home-third')) $('home-third').value = prevHomeThird;
+      refreshHomeContentsPick();
       updateAldagiPreview();
       updateHomePreview();
       updateDocsPreview();
