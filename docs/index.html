@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '241';
+    window.__CC_VER = '242';
     (function () {
       function go(v) {
         try {
@@ -1437,7 +1437,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v164</div>
+      <div class="ver">v165</div>
     </header>
 
     <div class="tabs">
@@ -1464,10 +1464,10 @@
       <div class="page" id="p-sms">
         <input type="tel" id="sms-num" placeholder="ტელეფონის ნომერი" inputmode="tel">
         <div class="sms-lang-bar">
-          <p class="sms-hint" id="sms-page-hint">შაბლონები შეგიძლია დაამატო ან წაშალო</p>
-          <div class="sms-lang-toggle" id="sms-lang-toggle" role="group" aria-label="ენა">
-            <button type="button" data-ui-lang="ka" class="on">ქარ</button>
-            <button type="button" data-ui-lang="en">EN</button>
+          <p class="sms-hint" id="sms-page-hint">გასაგზავნი ტექსტის ენა</p>
+          <div class="sms-lang-toggle" id="sms-lang-toggle" role="group" aria-label="გასაგზავნი ტექსტის ენა">
+            <button type="button" data-msg-lang="ka" class="on">ქარ</button>
+            <button type="button" data-msg-lang="en">EN</button>
           </div>
         </div>
         <div id="sms-list"></div>
@@ -1965,7 +1965,7 @@ ${ALDAGI_DETAILS}`;
 
     const SMS_EDITS_KEY = 'cc_sms_edits';
     const SMS_TPL_VER_KEY = 'cc_sms_tpl_ver';
-    const SMS_TPL_VER = '24';
+    const SMS_TPL_VER = '25';
     function loadSmsEdits() {
       try { return JSON.parse(localStorage.getItem(SMS_EDITS_KEY) || '{}') || {}; }
       catch { return {}; }
@@ -2275,7 +2275,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '241';
+      const v = window.__CC_VER || '242';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -2325,81 +2325,60 @@ The main requirement is that the car is washed. It must be photographed from all
     }
 
     const langPick = { intro: 'ka' };
-    const UI_LANG_KEY = 'cc_ui_lang';
-    let uiLang = (localStorage.getItem(UI_LANG_KEY) === 'en') ? 'en' : 'ka';
+    const MSG_LANG_KEY = 'cc_msg_lang';
+    let msgLang = (localStorage.getItem(MSG_LANG_KEY) === 'en') ? 'en' : 'ka';
+    // migrate old ui-lang key once
+    try {
+      if (!localStorage.getItem(MSG_LANG_KEY) && localStorage.getItem('cc_ui_lang') === 'en') msgLang = 'en';
+    } catch {}
     const UI_STR = {
-      ka: {
-        edit: 'შეცვლა',
-        done: 'მზად',
-        saved: 'შენახულია',
-        copied: 'ტექსტი კოპირებულია',
-        copy: 'კოპირება',
-        smsHint: 'შაბლონები შეგიძლია დაამატო ან წაშალო',
-        addTpl: '+ შაბლონის დამატება',
-        phonePh: 'ტელეფონის ნომერი',
-        pickLimit: 'აირჩიე ლიმიტი',
-        needProperty: 'ჯერ ჩაწერე ქონების ლიმიტი',
-        titleAldagi: 'ᲡᲠᲣᲚᲘ ᲨᲔᲗᲐᲕᲐᲖᲔᲑᲐ',
-        titleHome: 'ᲑᲘᲜᲐ ᲡᲠᲣᲚᲘ ᲨᲔᲗᲐᲕᲐᲖᲔᲑᲐ',
-        titleNoanswer: 'ᲐᲠ ᲞᲐᲡᲣᲮᲝᲑᲡ',
-        titleTariff: 'ᲢᲐᲠᲘᲤᲘᲡ ᲓᲐᲐᲜᲒᲐᲠᲘᲨᲔᲑᲐ',
-        titlePhotos: 'ᲓᲐᲡᲣᲠᲐᲗᲔᲑᲘᲡ ᲘᲜᲡᲢᲠᲣᲥᲪᲘᲐ',
-        titleIntro: 'ᲞᲐᲢᲐᲠᲐ SMS',
-        titleDocs: 'ᲓᲝᲙᲣᲛᲔᲜᲢᲔᲑᲘᲡ ᲚᲘᲜᲙᲘ'
-      },
-      en: {
-        edit: 'Edit',
-        done: 'Done',
-        saved: 'Saved',
-        copied: 'Text copied',
-        copy: 'Copy',
-        smsHint: 'You can add or delete templates',
-        addTpl: '+ Add template',
-        phonePh: 'Phone number',
-        pickLimit: 'Choose limit',
-        needProperty: 'Enter property limit first',
-        titleAldagi: 'FULL OFFER',
-        titleHome: 'HOME FULL OFFER',
-        titleNoanswer: 'NO ANSWER',
-        titleTariff: 'TARIFF DETAILS',
-        titlePhotos: 'PHOTO INSTRUCTIONS',
-        titleIntro: 'SHORT SMS',
-        titleDocs: 'DOCUMENTS LINK'
-      }
+      edit: 'შეცვლა',
+      done: 'მზად',
+      saved: 'შენახულია',
+      copied: 'ტექსტი კოპირებულია',
+      copy: 'კოპირება',
+      pickLimit: 'აირჩიე ლიმიტი',
+      needProperty: 'ჯერ ჩაწერე ქონების ლიმიტი'
     };
-    function isEn() { return uiLang === 'en'; }
-    function uiT(key) {
-      return (UI_STR[uiLang] && UI_STR[uiLang][key]) || UI_STR.ka[key] || key;
+    function isEn() { return msgLang === 'en'; }
+    function uiT(key) { return UI_STR[key] || key; }
+    function syncMsgLangToggle() {
+      document.querySelectorAll('#sms-lang-toggle [data-msg-lang]').forEach(b => {
+        b.classList.toggle('on', b.dataset.msgLang === msgLang);
+      });
+      const hint = $('sms-page-hint');
+      if (hint) hint.textContent = 'გასაგზავნი ტექსტის ენა';
     }
-    function setUiLang(lang) {
-      uiLang = lang === 'en' ? 'en' : 'ka';
-      try { localStorage.setItem(UI_LANG_KEY, uiLang); } catch {}
+    function forceMsgLangBodies() {
+      const writers = {
+        aldagi: () => buildAldagiMsg(),
+        home: () => buildHomeMsg(),
+        noanswer: () => noAnswerMsg(),
+        tariff: () => tariffMsg(),
+        photos: () => buildPhotosInstrMsg(),
+        docs: () => buildDocsLinkMsg(getPhone()),
+        intro: () => introMsg(langPick.intro || (isEn() ? 'en' : 'ka'))
+      };
+      Object.keys(writers).forEach(tpl => {
+        const ta = document.querySelector(`textarea.sms-edit[data-tpl="${tpl}"]`);
+        if (!ta) return;
+        const msg = writers[tpl]();
+        ta.value = msg;
+        saveSmsEdit(tpl, msg);
+      });
+      document.querySelectorAll('#sms-list [data-id="intro"] [data-lang]').forEach(b => {
+        b.classList.toggle('on', b.dataset.lang === langPick.intro);
+      });
+    }
+    function setMsgLang(lang) {
+      msgLang = lang === 'en' ? 'en' : 'ka';
+      try { localStorage.setItem(MSG_LANG_KEY, msgLang); } catch {}
       langPick.intro = isEn() ? 'en' : 'ka';
       ['aldagi', 'home', 'noanswer', 'tariff', 'photos', 'docs', 'intro'].forEach(removeSmsEdit);
       renderSmsList();
-      applyUiLang();
-    }
-    function applyUiLang() {
-      document.querySelectorAll('#sms-lang-toggle [data-ui-lang]').forEach(b => {
-        b.classList.toggle('on', b.dataset.uiLang === uiLang);
-      });
-      const hint = $('sms-page-hint');
-      if (hint) hint.textContent = uiT('smsHint');
-      const add = $('sms-add-tpl');
-      if (add) add.textContent = uiT('addTpl');
-      const phone = $('sms-num');
-      if (phone) phone.placeholder = uiT('phonePh');
-      document.querySelectorAll('.sms-copy-btn').forEach(b => {
-        b.setAttribute('aria-label', uiT('copy'));
-        b.title = uiT('copy');
-      });
-      document.querySelectorAll('.sms-edit-btn').forEach(b => {
-        if (b.classList.contains('on')) b.textContent = uiT('done');
-        else if (b.classList.contains('saved')) b.textContent = uiT('saved');
-        else b.textContent = uiT('edit');
-      });
-      const toast = $('sms-saved-toast');
-      if (toast && !toast.classList.contains('show')) toast.textContent = uiT('saved');
+      forceMsgLangBodies();
+      syncMsgLangToggle();
+      showAppToast(isEn() ? 'გასაგზავნი ტექსტი: English' : 'გასაგზავნი ტექსტი: ქართული', 1800);
     }
     const S = { q: [], i: 0, run: false, wait: false, last: '', called: {}, smsManual: false };
     const pendingSend = { num: '', msg: '', type: 'sms' };
@@ -3302,17 +3281,17 @@ The main requirement is that the car is washed. It must be photographed from all
         b.innerHTML = small ? `${label}<small>${small}</small>` : label;
         box.insertBefore(b, cancel);
       };
-      if (!isSmsHidden('aldagi')) addBtn('aldagi', uiT('titleAldagi'));
-      if (!isSmsHidden('home')) addBtn('home', uiT('titleHome'));
-      if (!isSmsHidden('noanswer')) addBtn('noanswer', uiT('titleNoanswer'));
-      if (!isSmsHidden('tariff')) addBtn('tariff', uiT('titleTariff'));
-      if (!isSmsHidden('photos')) addBtn('photos', uiT('titlePhotos'));
+      if (!isSmsHidden('aldagi')) addBtn('aldagi', 'ᲡᲠᲣᲚᲘ ᲨᲔᲗᲐᲕᲐᲖᲔᲑᲐ');
+      if (!isSmsHidden('home')) addBtn('home', 'ᲑᲘᲜᲐ ᲡᲠᲣᲚᲘ ᲨᲔᲗᲐᲕᲐᲖᲔᲑᲐ');
+      if (!isSmsHidden('noanswer')) addBtn('noanswer', 'ᲐᲠ ᲞᲐᲡᲣᲮᲝᲑᲡ');
+      if (!isSmsHidden('tariff')) addBtn('tariff', 'ᲢᲐᲠᲘᲤᲘᲡ ᲓᲐᲐᲜᲒᲐᲠᲘᲨᲔᲑᲐ');
+      if (!isSmsHidden('photos')) addBtn('photos', 'ᲓᲐᲡᲣᲠᲐᲗᲔᲑᲘᲡ ᲘᲜᲡᲢᲠᲣᲥᲪᲘᲐ');
       if (!isSmsHidden('intro')) {
         addBtn('intro-ka', 'ᲞᲐᲢᲐᲠᲐ SMS', 'ᲥᲐᲠᲗᲣᲚᲘ');
         addBtn('intro-en', 'ᲞᲐᲢᲐᲠᲐ SMS', 'ᲘᲜᲒᲚᲘᲡᲣᲠᲘ');
         addBtn('intro-both', 'ᲞᲐᲢᲐᲠᲐ SMS', 'ᲝᲠᲘᲕᲔ');
       }
-      if (!isSmsHidden('docs')) addBtn('docs', uiT('titleDocs'));
+      if (!isSmsHidden('docs')) addBtn('docs', 'ᲓᲝᲙᲣᲛᲔᲜᲢᲔᲑᲘᲡ ᲚᲘᲜᲙᲘ');
       loadCustomSms().forEach(c => addBtn(c.id, escapeHtml(c.title)));
     }
 
@@ -3339,12 +3318,12 @@ The main requirement is that the car is washed. It must be photographed from all
       if (tpl === 'intro-ka') { msg = getSmsEdit('intro') ?? introMsg('ka'); title = 'ᲞᲐᲢᲐᲠᲐ SMS (ᲥᲐᲠᲗᲣᲚᲘ)'; }
       else if (tpl === 'intro-en') { msg = getSmsEdit('intro') ?? introMsg('en'); title = 'ᲞᲐᲢᲐᲠᲐ SMS (ᲘᲜᲒᲚᲘᲡᲣᲠᲘ)'; }
       else if (tpl === 'intro-both') { msg = getSmsEdit('intro') ?? introMsg('both'); title = 'ᲞᲐᲢᲐᲠᲐ SMS (ᲝᲠᲘᲕᲔ)'; }
-      else if (tpl === 'noanswer') { msg = getSmsEdit('noanswer') ?? noAnswerMsg(); title = uiT('titleNoanswer'); }
-      else if (tpl === 'tariff') { msg = getSmsEdit('tariff') ?? tariffMsg(); title = uiT('titleTariff'); }
-      else if (tpl === 'aldagi') { msg = getSmsEdit('aldagi') ?? buildAldagiMsg(); title = uiT('titleAldagi'); }
-      else if (tpl === 'home') { msg = getSmsEdit('home') ?? buildHomeMsg(); title = uiT('titleHome'); }
-      else if (tpl === 'docs') { msg = getSmsEdit('docs') ?? buildDocsLinkMsg(num); title = uiT('titleDocs'); }
-      else if (tpl === 'photos') { msg = getSmsEdit('photos') ?? buildPhotosInstrMsg(); title = uiT('titlePhotos'); }
+      else if (tpl === 'noanswer') { msg = getSmsEdit('noanswer') ?? noAnswerMsg(); title = 'ᲐᲠ ᲞᲐᲡᲣᲮᲝᲑᲡ'; }
+      else if (tpl === 'tariff') { msg = getSmsEdit('tariff') ?? tariffMsg(); title = 'ᲢᲐᲠᲘᲤᲘᲡ ᲓᲐᲐᲜᲒᲐᲠᲘᲨᲔᲑᲐ'; }
+      else if (tpl === 'aldagi') { msg = getSmsEdit('aldagi') ?? buildAldagiMsg(); title = 'ᲡᲠᲣᲚᲘ ᲨᲔᲗᲐᲕᲐᲖᲔᲑᲐ'; }
+      else if (tpl === 'home') { msg = getSmsEdit('home') ?? buildHomeMsg(); title = 'ᲑᲘᲜᲐ ᲡᲠᲣᲚᲘ ᲨᲔᲗᲐᲕᲐᲖᲔᲑᲐ'; }
+      else if (tpl === 'docs') { msg = getSmsEdit('docs') ?? buildDocsLinkMsg(num); title = 'ᲓᲝᲙᲣᲛᲔᲜᲢᲔᲑᲘᲡ ᲚᲘᲜᲙᲘ'; }
+      else if (tpl === 'photos') { msg = getSmsEdit('photos') ?? buildPhotosInstrMsg(); title = 'ᲓᲐᲡᲣᲠᲐᲗᲔᲑᲘᲡ ᲘᲜᲡᲢᲠᲣᲥᲪᲘᲐ'; }
       else if (isCustomSmsId(tpl)) {
         const c = getCustomSms(tpl);
         msg = getSmsEdit(tpl) ?? '';
@@ -3570,7 +3549,7 @@ The main requirement is that the car is washed. It must be photographed from all
         <div class="sms-card" data-id="aldagi">
           <div class="sms-card-head has-del">
             ${smsDelBtn('aldagi')}
-            <h3>${uiT('titleAldagi')}</h3>
+            <h3>ᲡᲠᲣᲚᲘ ᲨᲔᲗᲐᲕᲐᲖᲔᲑᲐ</h3>
             <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
           </div>
           <div class="offer-fields">
@@ -3617,7 +3596,7 @@ The main requirement is that the car is washed. It must be photographed from all
         <div class="sms-card" data-id="home">
           <div class="sms-card-head has-del">
             ${smsDelBtn('home')}
-            <h3>${uiT('titleHome')}</h3>
+            <h3>ᲑᲘᲜᲐ ᲡᲠᲣᲚᲘ ᲨᲔᲗᲐᲕᲐᲖᲔᲑᲐ</h3>
             <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
           </div>
           <div class="offer-fields">
@@ -3644,7 +3623,7 @@ The main requirement is that the car is washed. It must be photographed from all
         <div class="sms-card" data-id="noanswer">
           <div class="sms-card-head has-del">
             ${smsDelBtn('noanswer')}
-            <h3>${uiT('titleNoanswer')}</h3>
+            <h3>ᲐᲠ ᲞᲐᲡᲣᲮᲝᲑᲡ</h3>
             <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
           </div>
           ${smsEditField('noanswer', { rows: 4, label: 'არ პასუხობს ტექსტი' })}
@@ -3659,7 +3638,7 @@ The main requirement is that the car is washed. It must be photographed from all
         <div class="sms-card" data-id="tariff">
           <div class="sms-card-head has-del">
             ${smsDelBtn('tariff')}
-            <h3>${uiT('titleTariff')}</h3>
+            <h3>ᲢᲐᲠᲘᲤᲘᲡ ᲓᲐᲐᲜᲒᲐᲠᲘᲨᲔᲑᲐ</h3>
             <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
           </div>
           ${smsEditField('tariff', { rows: 8, label: 'ტარიფის ტექსტი' })}
@@ -3674,7 +3653,7 @@ The main requirement is that the car is washed. It must be photographed from all
         <div class="sms-card" data-id="photos">
           <div class="sms-card-head has-del">
             ${smsDelBtn('photos')}
-            <h3>${uiT('titlePhotos')}</h3>
+            <h3>ᲓᲐᲡᲣᲠᲐᲗᲔᲑᲘᲡ ᲘᲜᲡᲢᲠᲣᲥᲪᲘᲐ</h3>
             <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
           </div>
           ${smsEditField('photos', { id: 'photos-preview', rows: 7, label: 'დასურათების ინსტრუქცია ტექსტი' })}
@@ -3709,7 +3688,7 @@ The main requirement is that the car is washed. It must be photographed from all
         <div class="sms-card" data-id="docs">
           <div class="sms-card-head has-del">
             ${smsDelBtn('docs')}
-            <h3>${uiT('titleDocs')}</h3>
+            <h3>ᲓᲝᲙᲣᲛᲔᲜᲢᲔᲑᲘᲡ ᲚᲘᲜᲙᲘ</h3>
             <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
           </div>
           <p class="sms-hint" style="margin:0 0 8px">პირადობა · მართვის მოწმობა · ტექპასპორტი</p>
@@ -3768,7 +3747,7 @@ The main requirement is that the car is washed. It must be photographed from all
       updateSmsCardTargets();
       initOfferFields();
       initHomeFields();
-      applyUiLang();
+      syncMsgLangToggle();
     }
 
     function updateDocsPreview() {
@@ -4051,12 +4030,12 @@ ${extras}${buildAldagiBenefits(isElectric)}`;
     });
 
     renderSmsList();
-    applyUiLang();
+    syncMsgLangToggle();
     $('sms-lang-toggle')?.addEventListener('click', e => {
-      const btn = e.target.closest('[data-ui-lang]');
+      const btn = e.target.closest('[data-msg-lang]');
       if (!btn) return;
       e.preventDefault();
-      setUiLang(btn.dataset.uiLang);
+      setMsgLang(btn.dataset.msgLang);
     });
     $('sms-add-tpl').onclick = () => {
       const id = addCustomSmsTpl();
