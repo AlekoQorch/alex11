@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '255';
+    window.__CC_VER = '256';
     (function () {
       function go(v) {
         try {
@@ -1452,7 +1452,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v178</div>
+      <div class="ver">v179</div>
     </header>
 
     <div class="tabs">
@@ -1992,7 +1992,7 @@ ${ALDAGI_DETAILS}`;
 
     const SMS_EDITS_KEY = 'cc_sms_edits';
     const SMS_TPL_VER_KEY = 'cc_sms_tpl_ver';
-    const SMS_TPL_VER = '32';
+    const SMS_TPL_VER = '33';
     function loadSmsEdits() {
       try { return JSON.parse(localStorage.getItem(SMS_EDITS_KEY) || '{}') || {}; }
       catch { return {}; }
@@ -2346,7 +2346,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '255';
+      const v = window.__CC_VER || '256';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -3972,7 +3972,7 @@ The main requirement is that the car is in a washed condition. It must be photog
         const evFranchise = isElectric ? '\n\nDeductible 20% on electric parts.' : '';
         return `${ALDAGI_HEAD_EN}
 ${franchiseSection}
-TARIFF / LIMITS
+TARIFF / LIMITS:
 
 Tariff: ${tariff}
 Vehicle: ${car}
@@ -3985,7 +3985,7 @@ ${extrasBlock}${buildAldagiBenefits(isElectric)}`;
       const evFranchise = isElectric ? '\n\nფრანშიზა 20% ელექტრო ნაწილებზე.' : '';
       return `${ALDAGI_HEAD}
 ${franchiseSection}
-ᲢᲐᲠᲘᲤᲘ/ᲚᲘᲛᲘᲢᲔᲑᲘ
+ᲢᲐᲠᲘᲤᲘ/ᲚᲘᲛᲘᲢᲔᲑᲘ:
 
 ტარიფი: ${tariff}
 ავტომობილი: ${car}
