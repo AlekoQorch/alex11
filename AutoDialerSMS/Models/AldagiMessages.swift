@@ -107,7 +107,7 @@ enum AldagiMessages {
         }
         return """
         \(head)\(franchiseSection)
-        ᲢᲐᲠᲘᲤᲘ/ᲚᲘᲛᲘᲢᲔᲑᲘ
+        ᲢᲐᲠᲘᲤᲘ/ᲚᲘᲛᲘᲢᲔᲑᲘ:
 
         ტარიფი: \(formatUsd(tariff))
         ავტომობილი: \(formatUsd(car))
