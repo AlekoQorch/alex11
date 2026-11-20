@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '247';
+    window.__CC_VER = '248';
     (function () {
       function go(v) {
         try {
@@ -1436,7 +1436,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v170</div>
+      <div class="ver">v171</div>
     </header>
 
     <div class="tabs">
@@ -1461,13 +1461,13 @@
       </div>
 
       <div class="page" id="p-sms">
+        <input type="tel" id="sms-num" placeholder="ტელეფონის ნომერი" inputmode="tel">
         <div class="sms-lang-bar">
           <div class="sms-lang-toggle" id="sms-lang-toggle" role="group" aria-label="გასაგზავნი ტექსტის ენა">
             <button type="button" data-msg-lang="ka">ქარ</button>
             <button type="button" data-msg-lang="en">EN</button>
           </div>
         </div>
-        <input type="tel" id="sms-num" placeholder="ტელეფონის ნომერი" inputmode="tel">
         <p class="sms-hint">შაბლონები შეგიძლია დაამატო ან წაშალო</p>
         <div id="sms-list"></div>
         <button type="button" id="sms-add-tpl" class="sms-add-btn">+ შაბლონის დამატება</button>
@@ -2272,7 +2272,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '247';
+      const v = window.__CC_VER || '248';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
