@@ -141,10 +141,33 @@ struct SmsTabView: View {
             Text("ᲑᲘᲜᲐ ᲡᲠᲣᲚᲘ ᲨᲔᲗᲐᲕᲐᲖᲔᲑᲐ").font(.headline)
             TextField("ქონების, რემონტის/ავეჯის/ტექნიკის ლიმიტი ($)", text: $homeProperty)
                 .keyboardType(.decimalPad)
-            TextField("რემონის/ავეჯის/ტექნიკის ლიმიტი ($)", text: $homeContents)
-                .keyboardType(.decimalPad)
-            TextField("მეამე პირის ლიმიტი ($)", text: $homeThird)
-                .keyboardType(.decimalPad)
+                .onChange(of: homeProperty) { _, _ in
+                    let opts = AldagiMessages.homeContentsOptions(property: homeProperty)
+                    if !homeContents.isEmpty, !opts.contains(homeContents) {
+                        homeContents = ""
+                    }
+                }
+            if AldagiMessages.homeContentsOptions(property: homeProperty).isEmpty {
+                Text("რემონტის/ავეჯის/ტექნიკის ლიმიტი")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text("ჯერ ჩაწერე ქონების ლიმიტი")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            } else {
+                limitPicker(
+                    "რემონტის/ავეჯის/ტექნიკის ლიმიტი",
+                    options: AldagiMessages.homeContentsOptions(property: homeProperty),
+                    selection: $homeContents,
+                    allowsDeselect: true
+                )
+            }
+            limitPicker(
+                "მესამე პირის ლიმიტი",
+                options: AldagiMessages.homeThirdLimits,
+                selection: $homeThird,
+                allowsDeselect: true
+            )
             Text(homeOfferPreview).font(.caption).foregroundStyle(.secondary)
             channelButtons(for: homeOfferPreview)
         }
