@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '251';
+    window.__CC_VER = '252';
     (function () {
       function go(v) {
         try {
@@ -1436,7 +1436,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v174</div>
+      <div class="ver">v175</div>
     </header>
 
     <div class="tabs">
@@ -1703,38 +1703,69 @@
 შეტყობინება დააფიქრეთ როგორც კი აღმოაჩენთ ზარალს.`;
 
 
-    const ALDAGI_HEAD_EN = `INSURED RISKS:
+    const ALDAGI_HEAD_EN = `INSURED RISKS
 
-Road traffic accident |
-Fire | Explosion
-Vandalism | Theft | Robbery | Hold-up | Natural disasters |
-Falling objects | Damage in undetermined circumstances |
-Windshield damage
+* Road Traffic Accident
+* Fire | Explosion
+* Vandalism | Theft | Robbery | Hold-up
+* Natural Disasters
+* Falling Objects
+* Damage Under Unknown Circumstances
+* Windshield Damage
 
-Additional risks: pothole impact, external damage (covers everything not caused by human force)
-Damage during transport as cargo.`;
+Additional Risks:
+
+* Pothole Impact
+* External Damage (covers damage caused by external factors other than deliberate human actions)
+* Damage During Transportation as Cargo`;
 
     const ALDAGI_REPLACEMENT_EN = `+ We can also include a replacement car service (if your car is damaged by another vehicle, our company will provide a replacement car while yours is being repaired)`;
 
-    const ALDAGI_NEGLIGENCE_EN = `+ If we also include gross negligence — if you run a red light or go in a bus lane or enter the opposite lane, in that case the damage is still covered`;
+    const ALDAGI_NEGLIGENCE_EN = `+ If we also include Gross Negligence Coverage — if you run a red light or go in a bus lane or enter the opposite lane, in that case the damage is still covered`;
 
-    const ALDAGI_BENEFITS_INTRO_EN = `BENEFITS:
-Roadside assistance (fuel delivery, tire change, tire inflation, jump-start help) and tow truck service free in 7 major cities of Georgia: Tbilisi, Telavi, Gori, Kutaisi, Batumi, Poti and Zugdidi`;
+    const ALDAGI_BENEFITS_INTRO_EN = `BENEFITS
 
-    const ALDAGI_GIFT_FUEL_EN = '1. 20 tetri discount on fuel';
-    const ALDAGI_GIFT_EV_EN = '1. 20% discount on charging at EV Power';
+24/7 Roadside Assistance, including:
 
-    const ALDAGI_GIFTS_REST_EN = `2. 25% discount at "Amboli"
-3. 20% discount at "Delphi Motors" on auto detailing
-4. 10% discount on property insurance`;
+* Fuel Delivery
+* Tire Change
+* Tire Inflation
+* Battery Jump-Start Assistance
+* Towing Service
 
-    const ALDAGI_DISCLAIMER_EN = `EXCLUSIONS:
+Available free of charge in 7 major cities of Georgia: Tbilisi, Telavi, Gori, Kutaisi, Batumi, Poti, and Zugdidi.`;
 
-Damage resulting from alcohol, psychotropic or narcotic intoxication is not covered, and if the policy is without gross negligence cover it does not cover cases: in a bus lane, when crossing a double solid line, as a result of speeding, or as a result of running a red light. Also, during an insured event you must not move the vehicle and you must call Aldagi hotline 032 2 444 999 and 112.
+    const ALDAGI_GIFT_FUEL_EN = '1. 20 Tetri Discount per Liter of Fuel';
+    const ALDAGI_GIFT_EV_EN = '1. 20% Discount on Charging at EV Power';
 
-In case of cancellation, 20% of the remaining months will be payable, and if the claim value is more than 70% of the annual premium, in this case pay the remaining premium in full.`;
+    const ALDAGI_GIFTS_REST_EN = `2. 25% Discount at Amboli
+3. 20% Discount on Auto Detailing Services at Delphi Motors
+4. 10% Discount on Property Insurance`;
 
-    const ALDAGI_DETAILS_EN = 'Details: https://aldagi.ge/individual/auto-insurance';
+    const ALDAGI_DISCLAIMER_EN = `EXCLUSIONS AND IMPORTANT CONDITIONS
+
+Damage resulting from driving under the influence of alcohol, psychotropic substances, or narcotic drugs is not covered.
+
+If Gross Negligence Coverage is not included in the policy, the following incidents are also excluded:
+
+* Driving in a bus lane
+* Crossing a double solid line
+* Speeding
+* Running a red light
+
+In the event of an insured incident:
+
+* Do not move the vehicle.
+* Contact the Aldagi hotline: 032 2 444 999.
+* Call the emergency services number: 112.
+
+CANCELLATION CONDITIONS
+
+In case of policy cancellation, 20% of the remaining premium for the unused months will be payable.
+
+If the amount of an insurance claim exceeds 70% of the annual premium, the remaining premium must be paid in full.`;
+
+    const ALDAGI_DETAILS_EN = 'More Details: https://aldagi.ge/individual/auto-insurance';
 
     const HOME_OFFER_BODY_EN = `INSURED RISKS:
 
@@ -1915,7 +1946,7 @@ These details are needed to calculate the tariff:
         const gift1 = isElectric ? ALDAGI_GIFT_EV_EN : ALDAGI_GIFT_FUEL_EN;
         return `${ALDAGI_BENEFITS_INTRO_EN}
 
-GIFTS:
+GIFTS
 
 ${gift1}
 ${ALDAGI_GIFTS_REST_EN}
@@ -1964,7 +1995,7 @@ ${ALDAGI_DETAILS}`;
 
     const SMS_EDITS_KEY = 'cc_sms_edits';
     const SMS_TPL_VER_KEY = 'cc_sms_tpl_ver';
-    const SMS_TPL_VER = '30';
+    const SMS_TPL_VER = '31';
     function loadSmsEdits() {
       try { return JSON.parse(localStorage.getItem(SMS_EDITS_KEY) || '{}') || {}; }
       catch { return {}; }
@@ -2272,7 +2303,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '251';
+      const v = window.__CC_VER || '252';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -3769,6 +3800,14 @@ The main requirement is that the car is in a washed condition. It must be photog
       return v + '$';
     }
 
+    function formatUsdEn(val) {
+      const raw = String(val ?? '').trim();
+      if (!raw || raw === '—') return '—';
+      const n = parseFloat(String(raw).replace(/[^\d.]/g, ''));
+      if (!Number.isFinite(n)) return raw;
+      return '$' + Math.round(n).toLocaleString('en-US');
+    }
+
     function parseUsdAmount(val) {
       const n = parseFloat(String(val || '').replace(/[^\d.]/g, ''));
       return Number.isFinite(n) ? n : 0;
@@ -3793,38 +3832,40 @@ The main requirement is that the car is in a washed condition. It must be photog
       if (!offerPick.franchise) return '';
       const amt = franchiseUsdFromCar(carRaw, offerPick.franchise);
       if (isEn('aldagi')) {
-        return `Deductible (your share) ${amt}
-(the company covers the rest). Deductible does not apply to third party or to cases caused by someone else's fault`;
+        return `Deductible (your share): ${amt}
+(the company covers the rest). Deductible does not apply to third-party liability or to cases caused by someone else's fault.`;
       }
       return `ფრანშიზა(თანამონაწილეობა თქვენი მხრიდან) ${amt}
 (დანარჩენს კომპანია დაფარავს). ფრანშიზა არ ვრცელდება მესამე პირზე და სხვისი ბრალეულობის დროს დამდგარ შემთხვევაზე`;
     }
 
     function buildAldagiMsg() {
-      const tariff = formatUsd($('offer-tariff')?.value || '');
       const carRaw = $('offer-car')?.value || '';
-      const car = formatUsd(carRaw);
       const extras = buildAldagiExtras(carRaw);
       const isElectric = !!$('offer-electric')?.checked;
-      const evFranchise = isElectric
-        ? (isEn('aldagi') ? '\n\nDeductible 20% on electric parts.' : '\n\nფრანშიზა 20% ელექტრო ნაწილებზე.')
-        : '';
       const franchiseBlock = buildFranchiseBlock(carRaw);
       const franchiseSection = franchiseBlock ? `\n${franchiseBlock}\n` : '';
-      const head = isEn('aldagi') ? ALDAGI_HEAD_EN : ALDAGI_HEAD;
       const extrasBlock = extras ? `\n${extras}` : '';
       if (isEn('aldagi')) {
-        return `${head}
+        const tariff = formatUsdEn($('offer-tariff')?.value || '');
+        const car = formatUsdEn(carRaw);
+        const third = formatUsdEn(offerPick.third);
+        const health = formatUsdEn(offerPick.health);
+        const evFranchise = isElectric ? '\n\nDeductible 20% on electric parts.' : '';
+        return `${ALDAGI_HEAD_EN}
 ${franchiseSection}
-TARIFF/LIMITS
+TARIFF / COVERAGE LIMITS
 
 Tariff: ${tariff}
-Vehicle: ${car}
-Third party: ${offerPick.third}
-Driver and passenger health: ${offerPick.health}${evFranchise}
+Insured Vehicle: ${car}
+Third-Party Liability: ${third}
+Driver and Passenger Personal Accident Coverage: ${health}${evFranchise}
 ${extrasBlock}${buildAldagiBenefits(isElectric)}`;
       }
-      return `${head}
+      const tariff = formatUsd($('offer-tariff')?.value || '');
+      const car = formatUsd(carRaw);
+      const evFranchise = isElectric ? '\n\nფრანშიზა 20% ელექტრო ნაწილებზე.' : '';
+      return `${ALDAGI_HEAD}
 ${franchiseSection}
 ᲢᲐᲠᲘᲤᲘ/ᲚᲘᲛᲘᲢᲔᲑᲘ
 
