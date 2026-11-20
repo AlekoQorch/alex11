@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '252';
+    window.__CC_VER = '253';
     (function () {
       function go(v) {
         try {
@@ -1436,7 +1436,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v175</div>
+      <div class="ver">v176</div>
     </header>
 
     <div class="tabs">
@@ -1703,69 +1703,42 @@
 შეტყობინება დააფიქრეთ როგორც კი აღმოაჩენთ ზარალს.`;
 
 
-    const ALDAGI_HEAD_EN = `INSURED RISKS
+    const ALDAGI_HEAD_EN = `INSURED RISKS:
 
-* Road Traffic Accident
-* Fire | Explosion
-* Vandalism | Theft | Robbery | Hold-up
-* Natural Disasters
-* Falling Objects
-* Damage Under Unknown Circumstances
-* Windshield Damage
+Road Traffic Accident |
+Fire | Explosion
+Vandalism | Theft | Robbery | Hold-up | Natural Disasters |
+Falling Objects | Damage Under Unknown Circumstances |
+Windshield Damage
 
-Additional Risks:
-
-* Pothole Impact
-* External Damage (covers damage caused by external factors other than deliberate human actions)
-* Damage During Transportation as Cargo`;
+Additional Risks: Pothole Impact, External Damage (covers everything not caused by human force), Damage During Transportation as Cargo.`;
 
     const ALDAGI_REPLACEMENT_EN = `+ We can also include a replacement car service (if your car is damaged by another vehicle, our company will provide a replacement car while yours is being repaired)`;
 
     const ALDAGI_NEGLIGENCE_EN = `+ If we also include Gross Negligence Coverage — if you run a red light or go in a bus lane or enter the opposite lane, in that case the damage is still covered`;
 
-    const ALDAGI_BENEFITS_INTRO_EN = `BENEFITS
+    const ALDAGI_BENEFITS_INTRO_EN = `BENEFITS:
 
-24/7 Roadside Assistance, including:
+Free roadside assistance (fuel delivery, tire change, tire inflation, jump-start assistance) and towing service in 7 major cities of Georgia: Tbilisi, Telavi, Gori, Kutaisi, Batumi, Poti and Zugdidi.`;
 
-* Fuel Delivery
-* Tire Change
-* Tire Inflation
-* Battery Jump-Start Assistance
-* Towing Service
-
-Available free of charge in 7 major cities of Georgia: Tbilisi, Telavi, Gori, Kutaisi, Batumi, Poti, and Zugdidi.`;
-
-    const ALDAGI_GIFT_FUEL_EN = '1. 20 Tetri Discount per Liter of Fuel';
+    const ALDAGI_GIFT_FUEL_EN = '1. 20 Tetri Discount on Fuel';
     const ALDAGI_GIFT_EV_EN = '1. 20% Discount on Charging at EV Power';
 
-    const ALDAGI_GIFTS_REST_EN = `2. 25% Discount at Amboli
-3. 20% Discount on Auto Detailing Services at Delphi Motors
+    const ALDAGI_GIFTS_REST_EN = `2. 25% Discount at “Amboli”
+3. 20% Discount on Auto Detailing Services at “Delphi Motors”
 4. 10% Discount on Property Insurance`;
 
-    const ALDAGI_DISCLAIMER_EN = `EXCLUSIONS AND IMPORTANT CONDITIONS
+    const ALDAGI_DISCLAIMER_EN = `EXCLUSIONS:
 
-Damage resulting from driving under the influence of alcohol, psychotropic substances, or narcotic drugs is not covered.
+Damage resulting from alcohol, psychotropic or narcotic intoxication is not covered.
 
-If Gross Negligence Coverage is not included in the policy, the following incidents are also excluded:
+If the policy does not include Gross Negligence Coverage, damage resulting from the following situations is also not covered: driving in a bus lane, crossing a double solid line, speeding, or running a red light.
 
-* Driving in a bus lane
-* Crossing a double solid line
-* Speeding
-* Running a red light
+In the event of an insured incident, the vehicle must not be moved. You must call the Aldagi hotline at 032 2 444 999 and 112.
 
-In the event of an insured incident:
+In case of cancellation, 20% of the remaining months will be payable. However, if the claim amount exceeds 70% of the annual premium, the remaining premium must be paid in full.`;
 
-* Do not move the vehicle.
-* Contact the Aldagi hotline: 032 2 444 999.
-* Call the emergency services number: 112.
-
-CANCELLATION CONDITIONS
-
-In case of policy cancellation, 20% of the remaining premium for the unused months will be payable.
-
-If the amount of an insurance claim exceeds 70% of the annual premium, the remaining premium must be paid in full.`;
-
-    const ALDAGI_DETAILS_EN = 'More Details: https://aldagi.ge/individual/auto-insurance';
+    const ALDAGI_DETAILS_EN = 'Details: https://aldagi.ge/individual/auto-insurance';
 
     const HOME_OFFER_BODY_EN = `INSURED RISKS:
 
@@ -1946,7 +1919,7 @@ These details are needed to calculate the tariff:
         const gift1 = isElectric ? ALDAGI_GIFT_EV_EN : ALDAGI_GIFT_FUEL_EN;
         return `${ALDAGI_BENEFITS_INTRO_EN}
 
-GIFTS
+GIFTS:
 
 ${gift1}
 ${ALDAGI_GIFTS_REST_EN}
@@ -1995,7 +1968,7 @@ ${ALDAGI_DETAILS}`;
 
     const SMS_EDITS_KEY = 'cc_sms_edits';
     const SMS_TPL_VER_KEY = 'cc_sms_tpl_ver';
-    const SMS_TPL_VER = '31';
+    const SMS_TPL_VER = '32';
     function loadSmsEdits() {
       try { return JSON.parse(localStorage.getItem(SMS_EDITS_KEY) || '{}') || {}; }
       catch { return {}; }
@@ -2303,7 +2276,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '252';
+      const v = window.__CC_VER || '253';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -3854,12 +3827,12 @@ The main requirement is that the car is in a washed condition. It must be photog
         const evFranchise = isElectric ? '\n\nDeductible 20% on electric parts.' : '';
         return `${ALDAGI_HEAD_EN}
 ${franchiseSection}
-TARIFF / COVERAGE LIMITS
+TARIFF / LIMITS
 
 Tariff: ${tariff}
-Insured Vehicle: ${car}
-Third-Party Liability: ${third}
-Driver and Passenger Personal Accident Coverage: ${health}${evFranchise}
+Vehicle: ${car}
+Third Party: ${third}
+Driver and Passenger Health: ${health}${evFranchise}
 ${extrasBlock}${buildAldagiBenefits(isElectric)}`;
       }
       const tariff = formatUsd($('offer-tariff')?.value || '');
