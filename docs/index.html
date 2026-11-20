@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '238';
+    window.__CC_VER = '239';
     (function () {
       function go(v) {
         try {
@@ -1034,11 +1034,32 @@
       letter-spacing: 0.01em;
     }
     .field-label:first-child { margin-top: 0; }
-    .offer-fields input.field-inp {
+    .offer-fields input.field-inp,
+    .offer-fields select.field-inp {
       width: 100%;
       margin-bottom: 0;
       padding: 10px 12px;
       font-size: 15px;
+    }
+    .offer-fields select.field-inp {
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%239aa3b5' d='M1.1 1.2 6 6.1l4.9-4.9 1.1 1.1L6 8.3.0 2.3z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      background-size: 12px 8px;
+      padding-right: 34px;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background-color: var(--bg);
+    }
+    .offer-fields select.field-inp:disabled {
+      opacity: 0.65;
+      color: var(--dim);
+    }
+    .offer-fields .field-label:has(+ select.field-inp) {
+      margin-top: 12px;
     }
     .lim-pick {
       display: flex;
@@ -1353,7 +1374,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v161</div>
+      <div class="ver">v162</div>
     </header>
 
     <div class="tabs">
@@ -1632,14 +1653,20 @@
         .map(n => n + '$');
     }
 
-    function homeContentsPickHtml() {
+    function homeContentsSelectHtml() {
       const opts = homeContentsOptions();
       if (!opts.length) {
-        return '<span class="sms-hint">ჯერ ჩაწერე ქონების ლიმიტი</span>';
+        return `<select class="field-inp" id="home-contents" disabled aria-label="რემონტის/ავეჯის/ტექნიკის ლიმიტი">
+              <option value="">ჯერ ჩაწერე ქონების ლიმიტი</option>
+            </select>`;
       }
-      return opts.map(v =>
-        `<button type="button" data-home-k="contents" data-val="${v}" class="${v === homePick.contents ? 'on' : ''}">${v}</button>`
-      ).join('');
+      const options = [`<option value="">აირჩიე ლიმიტი</option>`]
+        .concat(opts.map(v =>
+          `<option value="${v}"${v === homePick.contents ? ' selected' : ''}>${v}</option>`
+        ));
+      return `<select class="field-inp" id="home-contents" aria-label="რემონტის/ავეჯის/ტექნიკის ლიმიტი">
+              ${options.join('')}
+            </select>`;
     }
 
     function homeThirdPickHtml() {
@@ -1649,11 +1676,21 @@
     }
 
     function refreshHomeContentsPick() {
-      const box = $('home-contents-pick');
-      if (!box) return;
+      const wrap = $('home-contents-wrap');
+      if (!wrap) return;
       const opts = homeContentsOptions();
       if (homePick.contents && !opts.includes(homePick.contents)) homePick.contents = '';
-      box.innerHTML = homeContentsPickHtml();
+      wrap.innerHTML = homeContentsSelectHtml();
+      bindHomeContentsSelect();
+    }
+
+    function bindHomeContentsSelect() {
+      const sel = $('home-contents');
+      if (!sel) return;
+      sel.onchange = () => {
+        homePick.contents = sel.value || '';
+        updateHomePreview({ fromOffer: true });
+      };
     }
 
     function buildHomeMsg() {
@@ -1684,6 +1721,7 @@
           updateHomePreview({ fromOffer: true });
         };
       }
+      bindHomeContentsSelect();
       const card = document.querySelector('.sms-card[data-id="home"]');
       if (!card || card.dataset.homeBound === '1') return;
       card.dataset.homeBound = '1';
@@ -1743,7 +1781,7 @@ ${ALDAGI_DETAILS}`;
 
     const SMS_EDITS_KEY = 'cc_sms_edits';
     const SMS_TPL_VER_KEY = 'cc_sms_tpl_ver';
-    const SMS_TPL_VER = '21';
+    const SMS_TPL_VER = '22';
     function loadSmsEdits() {
       try { return JSON.parse(localStorage.getItem(SMS_EDITS_KEY) || '{}') || {}; }
       catch { return {}; }
@@ -2053,7 +2091,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '238';
+      const v = window.__CC_VER || '239';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -3293,8 +3331,8 @@ ${link}
             <span class="field-label">ქონების, რემონტის/ავეჯის/ტექნიკის ლიმიტი ($)</span>
             <input class="field-inp" id="home-property" type="text" inputmode="decimal" placeholder="მაგ: 40000$">
             <span class="field-label">რემონტის/ავეჯის/ტექნიკის ლიმიტი</span>
-            <div class="lim-pick" id="home-contents-pick">
-              ${homeContentsPickHtml()}
+            <div id="home-contents-wrap">
+              ${homeContentsSelectHtml()}
             </div>
             <span class="field-label">მესამე პირის ლიმიტი</span>
             <div class="lim-pick" id="home-third-pick">
