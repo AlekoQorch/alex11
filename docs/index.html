@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '260';
+    window.__CC_VER = '261';
     (function () {
       function go(v) {
         try {
@@ -1792,7 +1792,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v183</div>
+      <div class="ver">v184</div>
     </header>
 
     <div class="tabs">
@@ -1895,12 +1895,7 @@
         <input id="tpl-ed-title" type="text" placeholder="შაბლონის სახელი" maxlength="80" autocomplete="off">
       </section>
       <section class="tpl-ed-step">
-        <div class="tpl-ed-step-h"><span class="tpl-ed-num">2</span> SMS ტექსტი</div>
-        <p class="tpl-ed-hint">აქ დაწერე გასაგზავნი ტექსტი. ლიმიტის ჩასასმელად ქვემოთ დაამატე ველი და დააჭირე „ჩასმა“ — გამოჩნდება {{ველი}}.</p>
-        <textarea id="tpl-ed-text" placeholder="მაგ: გამარჯობა… ტარიფი: {{tarifi}}"></textarea>
-      </section>
-      <section class="tpl-ed-step">
-        <div class="tpl-ed-step-h"><span class="tpl-ed-num">3</span> ლიმიტები</div>
+        <div class="tpl-ed-step-h"><span class="tpl-ed-num">2</span> ლიმიტები</div>
         <p class="tpl-ed-hint">აირჩიე განლაგება — დაემატება ჩარჩოები. თანხები ჩაწერე პირდაპირ ჩარჩოში.</p>
         <div class="tpl-ed-presets" id="tpl-ed-presets">
           <button type="button" class="tpl-ed-preset" data-add-layout="row">
@@ -1925,6 +1920,11 @@
           </button>
         </div>
         <div class="tpl-ed-fields" id="tpl-ed-fields"></div>
+      </section>
+      <section class="tpl-ed-step">
+        <div class="tpl-ed-step-h"><span class="tpl-ed-num">3</span> SMS ტექსტი</div>
+        <p class="tpl-ed-hint">აქ დაწერე გასაგზავნი ტექსტი. ლიმიტის ჩასასმელად დააჭირე „ტექსტში ჩასმა“ — გამოჩნდება {{ველი}}.</p>
+        <textarea id="tpl-ed-text" placeholder="მაგ: გამარჯობა… ტარიფი: {{tarifi}}"></textarea>
       </section>
     </div>
     <div class="tpl-ed-foot">
@@ -2909,7 +2909,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '260';
+      const v = window.__CC_VER || '261';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
