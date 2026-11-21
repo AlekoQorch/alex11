@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '264';
+    window.__CC_VER = '265';
     (function () {
       function wipeAndGo(v) {
         try {
@@ -1901,7 +1901,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v187</div>
+      <div class="ver">v188</div>
     </header>
 
     <div class="tabs">
@@ -2783,14 +2783,19 @@ ${ALDAGI_DETAILS}`;
       });
       updateCustomSmsFields(tplId, fields);
     }
-    function ensureTokenInTplText(fieldId) {
+    function ensureTokenInTplText(fieldId, label) {
       const ta = $('tpl-ed-text');
       if (!ta) return;
       const re = new RegExp('\\{\\{\\s*' + fieldId + '\\s*\\}\\}');
       if (re.test(ta.value)) return;
       const token = '{{' + fieldId + '}}';
       const cur = ta.value || '';
-      ta.value = cur.trim() ? (cur.replace(/\s*$/, '') + '\n' + token) : token;
+      if (cur.trim()) {
+        ta.value = cur.replace(/\s*$/, '') + '\n' + token;
+        return;
+      }
+      const name = String(label || 'ლიმიტი').trim() || 'ლიმიტი';
+      ta.value = name + ': ' + token;
     }
     function removeFieldToken(fieldId) {
       const ta = $('tpl-ed-text');
@@ -2817,10 +2822,10 @@ ${ALDAGI_DETAILS}`;
       const fields = normalizeCustomFields(c.fields);
       let id, field;
       if (layout === 'money') {
-        id = slugifyFieldId('თანხა', fields.map(f => f.id));
+        id = slugifyFieldId('tanxa', fields.map(f => f.id));
         field = { id, label: 'თანხა', type: 'money' };
       } else {
-        id = slugifyFieldId('ლიმიტი', fields.map(f => f.id));
+        id = slugifyFieldId('limiti', fields.map(f => f.id));
         field = {
           id,
           label: 'ლიმიტი',
@@ -2831,7 +2836,7 @@ ${ALDAGI_DETAILS}`;
       }
       fields.push(field);
       updateCustomSmsFields(tplId, fields);
-      ensureTokenInTplText(id);
+      ensureTokenInTplText(id, field.label);
       renderTplEditorFields();
     }
     function addLimitPreset(layout) { addLimitGroup(layout); }
@@ -2897,7 +2902,10 @@ ${ALDAGI_DETAILS}`;
       tplEditorState.isNew = !!isNew;
       tplEditorState.open = true;
       if ($('tpl-ed-heading')) $('tpl-ed-heading').textContent = isNew ? 'ახალი შაბლონი' : 'შაბლონის რედაქტირება';
-      if ($('tpl-ed-title')) $('tpl-ed-title').value = c.title || '';
+      if ($('tpl-ed-title')) {
+        const title = c.title || '';
+        $('tpl-ed-title').value = (isNew && (!title || title === 'ახალი შაბლონი')) ? '' : title;
+      }
       if ($('tpl-ed-text')) $('tpl-ed-text').value = getSmsEdit(tplId, 'ka') ?? '';
       renderTplEditorFields();
       const ed = $('tpl-editor');
@@ -3049,7 +3057,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '264';
+      const v = window.__CC_VER || '265';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
