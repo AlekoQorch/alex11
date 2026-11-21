@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '259';
+    window.__CC_VER = '260';
     (function () {
       function go(v) {
         try {
@@ -927,6 +927,148 @@
       color: var(--dim);
       padding: 12px;
     }
+    .tpl-ed-presets {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin: 0 0 12px;
+    }
+    .tpl-ed-preset {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 12px 10px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+    .tpl-ed-preset:active { opacity: 0.88; }
+    .tpl-ed-preset strong {
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .tpl-ed-preset span {
+      font-size: 11px;
+      color: var(--dim);
+      line-height: 1.35;
+    }
+    .tpl-ed-preset-visual {
+      display: flex;
+      gap: 4px;
+      min-height: 28px;
+      align-items: stretch;
+    }
+    .tpl-ed-preset-visual.col { flex-direction: column; }
+    .tpl-ed-preset-visual i {
+      flex: 1;
+      border: 1px solid rgba(77, 159, 255, 0.45);
+      border-radius: 6px;
+      background: rgba(77, 159, 255, 0.12);
+      font-style: normal;
+      font-size: 10px;
+      color: #9cc9ff;
+      display: grid;
+      place-items: center;
+      padding: 4px 2px;
+    }
+    .tpl-ed-preset-visual.dropdown {
+      align-items: center;
+    }
+    .tpl-ed-preset-visual.dropdown i {
+      flex: 1;
+      text-align: left;
+      padding-left: 8px;
+      justify-content: start;
+      place-items: center start;
+    }
+    .tpl-ed-preset.money .tpl-ed-preset-visual i {
+      border-style: dashed;
+    }
+    .tpl-ed-field-label {
+      width: 100%;
+      box-sizing: border-box;
+      margin: 0 0 8px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface);
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+    }
+    .tpl-ed-opts {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin: 0 0 8px;
+    }
+    .tpl-ed-opts.col {
+      flex-direction: column;
+      flex-wrap: nowrap;
+    }
+    .tpl-ed-opt {
+      flex: 1 1 64px;
+      min-width: 64px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface);
+    }
+    .tpl-ed-opts.col .tpl-ed-opt { flex: 0 0 auto; width: 100%; }
+    .tpl-ed-opt input {
+      flex: 1;
+      min-width: 0;
+      border: 0;
+      background: transparent;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      padding: 8px 8px;
+      outline: none;
+    }
+    .tpl-ed-opt button {
+      flex: 0 0 auto;
+      width: 28px;
+      height: 28px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--dim);
+      font-size: 16px;
+      line-height: 1;
+      font-family: inherit;
+    }
+    .tpl-ed-opt-add {
+      flex: 0 0 auto;
+      min-width: 44px;
+      padding: 8px 10px;
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      background: transparent;
+      color: var(--dim);
+      font-size: 13px;
+      font-weight: 700;
+      font-family: inherit;
+    }
+    .tpl-ed-opts.col .tpl-ed-opt-add { width: 100%; }
+    .tpl-ed-money-preview {
+      margin: 0 0 8px;
+      padding: 12px;
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      color: var(--dim);
+      font-size: 13px;
+      background: rgba(255,255,255,0.02);
+    }
     .tpl-ed-empty {
       margin: 0;
       padding: 12px;
@@ -1650,7 +1792,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v182</div>
+      <div class="ver">v183</div>
     </header>
 
     <div class="tabs">
@@ -1758,10 +1900,31 @@
         <textarea id="tpl-ed-text" placeholder="მაგ: გამარჯობა… ტარიფი: {{tarifi}}"></textarea>
       </section>
       <section class="tpl-ed-step">
-        <div class="tpl-ed-step-h"><span class="tpl-ed-num">3</span> ველები და ლიმიტები</div>
-        <p class="tpl-ed-hint">თანხა, არჩევადი ლიმიტი ან %. განლაგება: სიგანეზე, სიგრძეზე ან ჩამოსაშლელი.</p>
+        <div class="tpl-ed-step-h"><span class="tpl-ed-num">3</span> ლიმიტები</div>
+        <p class="tpl-ed-hint">აირჩიე განლაგება — დაემატება ჩარჩოები. თანხები ჩაწერე პირდაპირ ჩარჩოში.</p>
+        <div class="tpl-ed-presets" id="tpl-ed-presets">
+          <button type="button" class="tpl-ed-preset" data-add-layout="row">
+            <div class="tpl-ed-preset-visual" aria-hidden="true"><i>5k</i><i>10k</i><i>25k</i></div>
+            <strong>მარცხნიდან მარჯვნივ</strong>
+            <span>ღილაკები ერთ რიგში</span>
+          </button>
+          <button type="button" class="tpl-ed-preset" data-add-layout="col">
+            <div class="tpl-ed-preset-visual col" aria-hidden="true"><i>5 000$</i><i>10 000$</i><i>25 000$</i></div>
+            <strong>ზევიდან ქვევით</strong>
+            <span>ღილაკები ერთმანეთის ქვეშ</span>
+          </button>
+          <button type="button" class="tpl-ed-preset" data-add-layout="dropdown">
+            <div class="tpl-ed-preset-visual dropdown" aria-hidden="true"><i>აირჩიე ლიმიტი ▾</i></div>
+            <strong>ჩამოსაშლელი</strong>
+            <span>ერთი სია, ნაკლები ადგილი</span>
+          </button>
+          <button type="button" class="tpl-ed-preset money" data-add-layout="money">
+            <div class="tpl-ed-preset-visual" aria-hidden="true"><i>თანხა $</i></div>
+            <strong>თავისუფალი თანხა</strong>
+            <span>ხელით ჩაწერადი ველი</span>
+          </button>
+        </div>
         <div class="tpl-ed-fields" id="tpl-ed-fields"></div>
-        <button type="button" class="tpl-ed-add-field" id="tpl-ed-add-field">+ ველის / ლიმიტის დამატება</button>
       </section>
     </div>
     <div class="tpl-ed-foot">
@@ -2500,33 +2663,88 @@ ${ALDAGI_DETAILS}`;
     }
 
     const tplEditorState = { id: '', isNew: false, open: false };
+    function insertTokenIntoTplText(fieldId) {
+      const ta = $('tpl-ed-text');
+      if (!ta) return;
+      const token = '{{' + fieldId + '}}';
+      const start = ta.selectionStart ?? ta.value.length;
+      const end = ta.selectionEnd ?? ta.value.length;
+      ta.value = ta.value.slice(0, start) + token + ta.value.slice(end);
+      try { ta.setSelectionRange(start + token.length, start + token.length); } catch (_) {}
+      ta.focus();
+    }
+    function patchCustomField(tplId, fieldId, patch) {
+      const c = getCustomSms(tplId);
+      if (!c) return;
+      const fields = normalizeCustomFields(c.fields).map(f => {
+        if (f.id !== fieldId) return f;
+        return { ...f, ...patch };
+      });
+      updateCustomSmsFields(tplId, fields);
+    }
+    function addLimitPreset(layout) {
+      const tplId = tplEditorState.id;
+      const c = getCustomSms(tplId);
+      if (!c) return;
+      const fields = normalizeCustomFields(c.fields);
+      if (layout === 'money') {
+        const id = slugifyFieldId('თანხა', fields.map(f => f.id));
+        fields.push({ id, label: 'თანხა', type: 'money' });
+        updateCustomSmsFields(tplId, fields);
+        renderTplEditorFields();
+        insertTokenIntoTplText(id);
+        showAppToast('თანხის ველი დამატებულია', 1400);
+        return;
+      }
+      const labels = { row: 'ლიმიტი', col: 'ლიმიტი', dropdown: 'ლიმიტი' };
+      const id = slugifyFieldId(labels[layout] || 'ლიმიტი', fields.map(f => f.id));
+      fields.push({
+        id,
+        label: 'ლიმიტი',
+        type: 'choice',
+        layout: layout === 'col' || layout === 'dropdown' ? layout : 'row',
+        options: ['5000$', '10000$', '25000$', '50000$']
+      });
+      updateCustomSmsFields(tplId, fields);
+      renderTplEditorFields();
+      insertTokenIntoTplText(id);
+      showAppToast('ლიმიტი დამატებულია — თანხები ჩარჩოში შეცვალე', 2000);
+    }
     function renderTplEditorFields() {
       const box = $('tpl-ed-fields');
       if (!box) return;
       const c = getCustomSms(tplEditorState.id);
       const fields = normalizeCustomFields(c?.fields);
       if (!fields.length) {
-        box.innerHTML = `<p class="tpl-ed-empty">ჯერ ველი არაა. დაამატე ლიმიტი ან თანხა — მერე ტექსტში ჩასვი.</p>`;
+        box.innerHTML = `<p class="tpl-ed-empty">ზემოთ აირჩიე განლაგება — ლიმიტი აქ გამოჩნდება.</p>`;
         return;
       }
       box.innerHTML = fields.map(f => {
-        const lay = (f.type === 'choice' || f.type === 'percent_of')
-          ? (' · ' + fieldLayoutLabel(f.layout))
-          : '';
-        const opts = (f.type === 'choice' || f.type === 'percent_of')
-          ? `<div class="tpl-ed-field-sub">${escapeHtml((f.options || []).join(' · '))}</div>`
-          : '';
+        const lay = f.layout === 'col' || f.layout === 'dropdown' ? f.layout : 'row';
+        let body = '';
+        if (f.type === 'choice' || f.type === 'percent_of') {
+          const opts = Array.isArray(f.options) ? f.options.slice() : [];
+          while (opts.length < 1) opts.push('');
+          const optCls = lay === 'col' ? 'tpl-ed-opts col' : 'tpl-ed-opts';
+          body = `<div class="${optCls}" data-ed-opts="${escapeHtml(f.id)}">`;
+          opts.forEach((opt, i) => {
+            body += `<div class="tpl-ed-opt">
+              <input type="text" inputmode="decimal" data-ed-opt="${escapeHtml(f.id)}" data-ed-opt-i="${i}" value="${escapeHtml(opt)}" placeholder="მაგ: 10000$">
+              <button type="button" data-ed-opt-del="${escapeHtml(f.id)}" data-ed-opt-i="${i}" aria-label="წაშლა">×</button>
+            </div>`;
+          });
+          body += `<button type="button" class="tpl-ed-opt-add" data-ed-opt-add="${escapeHtml(f.id)}">+</button></div>`;
+          body += `<div class="tpl-ed-field-sub">${fieldLayoutLabel(lay)} · {{${escapeHtml(f.id)}}}</div>`;
+        } else {
+          body = `<div class="tpl-ed-money-preview">გაგზავნისას გამოჩნდება თანხის ჩასაწერი ველი</div>
+            <div class="tpl-ed-field-sub">{{${escapeHtml(f.id)}}}</div>`;
+        }
         return `<div class="tpl-ed-field" data-ed-field="${escapeHtml(f.id)}">
-          <div class="tpl-ed-field-top">
-            <div class="tpl-ed-field-meta">
-              <p class="tpl-ed-field-title">${escapeHtml(f.label || f.id)}</p>
-              <div class="tpl-ed-field-sub">${fieldTypeLabel(f.type)}${lay} · {{${escapeHtml(f.id)}}}</div>
-              ${opts}
-            </div>
-            <div class="tpl-ed-field-actions">
-              <button type="button" data-ed-insert="${escapeHtml(f.id)}">ჩასმა</button>
-              <button type="button" data-ed-del="${escapeHtml(f.id)}">წაშლა</button>
-            </div>
+          <input class="tpl-ed-field-label" type="text" data-ed-label="${escapeHtml(f.id)}" value="${escapeHtml(f.label || '')}" placeholder="სახელი (მაგ: მესამე პირი)">
+          ${body}
+          <div class="tpl-ed-field-actions">
+            <button type="button" data-ed-insert="${escapeHtml(f.id)}">ტექსტში ჩასმა</button>
+            <button type="button" data-ed-del="${escapeHtml(f.id)}">წაშლა</button>
           </div>
         </div>`;
       }).join('');
@@ -2579,6 +2797,13 @@ ${ALDAGI_DETAILS}`;
       if (!c) return;
       const title = ($('tpl-ed-title')?.value || '').trim() || 'ახალი შაბლონი';
       const text = $('tpl-ed-text')?.value ?? '';
+      // clean empty option chips
+      const fields = normalizeCustomFields(c.fields).map(f => {
+        if (f.type !== 'choice' && f.type !== 'percent_of') return f;
+        const options = (f.options || []).map(o => String(o || '').trim()).filter(Boolean);
+        return { ...f, options: options.length ? options : ['5000$', '10000$'] };
+      });
+      updateCustomSmsFields(id, fields);
       renameCustomSmsTpl(id, title);
       saveSmsEdit(id, text, 'ka');
       tplEditorState.isNew = false;
@@ -2684,7 +2909,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '259';
+      const v = window.__CC_VER || '260';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -4591,22 +4816,17 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
     $('tpl-ed-cancel')?.addEventListener('click', () => closeTplEditor({ discard: true }));
     $('tpl-ed-save')?.addEventListener('click', saveTplEditor);
     $('tpl-ed-save-top')?.addEventListener('click', saveTplEditor);
-    $('tpl-ed-add-field')?.addEventListener('click', () => {
-      if (!tplEditorState.id) return;
-      openFieldModal(tplEditorState.id);
+    $('tpl-ed-presets')?.addEventListener('click', e => {
+      const btn = e.target.closest('[data-add-layout]');
+      if (!btn || !tplEditorState.id) return;
+      e.preventDefault();
+      addLimitPreset(btn.dataset.addLayout);
     });
     $('tpl-ed-fields')?.addEventListener('click', e => {
       const ins = e.target.closest('[data-ed-insert]');
       if (ins) {
         e.preventDefault();
-        const token = '{{' + ins.dataset.edInsert + '}}';
-        const ta = $('tpl-ed-text');
-        if (!ta) return;
-        const start = ta.selectionStart ?? ta.value.length;
-        const end = ta.selectionEnd ?? ta.value.length;
-        ta.value = ta.value.slice(0, start) + token + ta.value.slice(end);
-        try { ta.setSelectionRange(start + token.length, start + token.length); } catch (_) {}
-        ta.focus();
+        insertTokenIntoTplText(ins.dataset.edInsert);
         return;
       }
       const del = e.target.closest('[data-ed-del]');
@@ -4623,11 +4843,64 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
         const all = loadFieldVals();
         all[tplId] = vals;
         saveFieldVals(all);
-        // strip token from editor text
         const ta = $('tpl-ed-text');
         if (ta) ta.value = ta.value.replace(new RegExp('\\{\{\\s*' + fieldId + '\\s*\\}\\}', 'g'), '');
         renderTplEditorFields();
         return;
+      }
+      const addOpt = e.target.closest('[data-ed-opt-add]');
+      if (addOpt) {
+        e.preventDefault();
+        const fieldId = addOpt.dataset.edOptAdd;
+        const c = getCustomSms(tplEditorState.id);
+        const field = normalizeCustomFields(c?.fields).find(f => f.id === fieldId);
+        if (!field) return;
+        const options = (field.options || []).slice();
+        if (options.length >= 24) return;
+        options.push('');
+        patchCustomField(tplEditorState.id, fieldId, { options });
+        renderTplEditorFields();
+        const inputs = document.querySelectorAll(`[data-ed-opt="${fieldId}"]`);
+        const last = inputs[inputs.length - 1];
+        if (last) last.focus();
+        return;
+      }
+      const delOpt = e.target.closest('[data-ed-opt-del]');
+      if (delOpt) {
+        e.preventDefault();
+        const fieldId = delOpt.dataset.edOptDel;
+        const idx = +delOpt.dataset.edOptI;
+        const c = getCustomSms(tplEditorState.id);
+        const field = normalizeCustomFields(c?.fields).find(f => f.id === fieldId);
+        if (!field) return;
+        const options = (field.options || []).slice();
+        if (options.length <= 1) {
+          options[0] = '';
+        } else {
+          options.splice(idx, 1);
+        }
+        patchCustomField(tplEditorState.id, fieldId, { options });
+        renderTplEditorFields();
+        return;
+      }
+    });
+    $('tpl-ed-fields')?.addEventListener('input', e => {
+      const label = e.target.closest('[data-ed-label]');
+      if (label) {
+        patchCustomField(tplEditorState.id, label.dataset.edLabel, { label: label.value });
+        return;
+      }
+      const opt = e.target.closest('[data-ed-opt]');
+      if (opt) {
+        const fieldId = opt.dataset.edOpt;
+        const idx = +opt.dataset.edOptI;
+        const c = getCustomSms(tplEditorState.id);
+        const field = normalizeCustomFields(c?.fields).find(f => f.id === fieldId);
+        if (!field) return;
+        const options = (field.options || []).slice();
+        while (options.length <= idx) options.push('');
+        options[idx] = opt.value;
+        patchCustomField(tplEditorState.id, fieldId, { options });
       }
     });
     $('field-type')?.addEventListener('change', syncFieldModalType);
