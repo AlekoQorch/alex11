@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '258';
+    window.__CC_VER = '259';
     (function () {
       function go(v) {
         try {
@@ -773,8 +773,206 @@
     }
     #field-modal .box textarea { min-height: 88px; resize: vertical; }
     #field-modal .box .go { margin-top: 14px; }
+    #field-modal { z-index: 10020; }
 
-
+    #tpl-editor {
+      position: fixed;
+      inset: 0;
+      z-index: 10010;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      color: var(--text);
+    }
+    #tpl-editor.hide { display: none !important; }
+    .tpl-ed-head {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px calc(12px);
+      padding-top: calc(12px + env(safe-area-inset-top, 0px));
+      border-bottom: 1px solid var(--line);
+      background: var(--surface);
+    }
+    .tpl-ed-head h2 {
+      flex: 1;
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-align: center;
+    }
+    .tpl-ed-x, .tpl-ed-save-top {
+      flex: 0 0 auto;
+      min-width: 64px;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+    }
+    .tpl-ed-save-top {
+      border-color: rgba(52, 199, 89, 0.55);
+      background: rgba(52, 199, 89, 0.16);
+      color: #fff;
+    }
+    .tpl-ed-body {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 14px 14px 24px;
+      padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+    }
+    .tpl-ed-step {
+      margin: 0 0 18px;
+      padding: 14px 14px 12px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--surface);
+    }
+    .tpl-ed-step-h {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 8px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .tpl-ed-num {
+      display: inline-grid;
+      place-items: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 7px;
+      background: rgba(77, 159, 255, 0.2);
+      color: #9cc9ff;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .tpl-ed-hint {
+      margin: 0 0 10px;
+      font-size: 12px;
+      line-height: 1.45;
+      color: var(--dim);
+    }
+    .tpl-ed-step input[type="text"],
+    .tpl-ed-step textarea,
+    .tpl-ed-step select {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 15px;
+      font-family: inherit;
+    }
+    .tpl-ed-step textarea {
+      min-height: 180px;
+      resize: vertical;
+      line-height: 1.45;
+    }
+    .tpl-ed-fields {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 0 0 10px;
+    }
+    .tpl-ed-field {
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--bg);
+    }
+    .tpl-ed-field-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .tpl-ed-field-meta { flex: 1; min-width: 0; }
+    .tpl-ed-field-title {
+      font-size: 14px;
+      font-weight: 700;
+      margin: 0 0 2px;
+    }
+    .tpl-ed-field-sub {
+      font-size: 11px;
+      color: var(--dim);
+      word-break: break-all;
+    }
+    .tpl-ed-field-actions {
+      display: flex;
+      gap: 6px;
+    }
+    .tpl-ed-field-actions button,
+    .tpl-ed-add-field {
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: var(--surface);
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 600;
+      font-family: inherit;
+    }
+    .tpl-ed-add-field {
+      width: 100%;
+      border-style: dashed;
+      color: var(--dim);
+      padding: 12px;
+    }
+    .tpl-ed-empty {
+      margin: 0;
+      padding: 12px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.03);
+      color: var(--dim);
+      font-size: 13px;
+      line-height: 1.4;
+      text-align: center;
+    }
+    .tpl-ed-foot {
+      flex: 0 0 auto;
+      display: flex;
+      gap: 8px;
+      padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px));
+      border-top: 1px solid var(--line);
+      background: var(--surface);
+    }
+    .tpl-ed-foot button {
+      flex: 1;
+      padding: 14px 12px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: inherit;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+    }
+    .tpl-ed-foot .tpl-ed-save {
+      border-color: transparent;
+      background: var(--green);
+      color: #000;
+    }
+    .sms-card .tpl-edit-open {
+      width: 100%;
+      margin: 0 0 10px;
+      padding: 11px 12px;
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      background: transparent;
+      color: var(--dim);
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+    }
 
     .lang-pick {
       display: flex;
@@ -1452,7 +1650,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v181</div>
+      <div class="ver">v182</div>
     </header>
 
     <div class="tabs">
@@ -1541,6 +1739,36 @@
     </div>
   </div>
 
+
+  <div id="tpl-editor" class="hide" aria-hidden="true">
+    <div class="tpl-ed-head">
+      <button type="button" class="tpl-ed-x" id="tpl-ed-close" aria-label="დახურვა">გაუქმება</button>
+      <h2 id="tpl-ed-heading">შაბლონი</h2>
+      <button type="button" class="tpl-ed-save-top" id="tpl-ed-save-top">შენახვა</button>
+    </div>
+    <div class="tpl-ed-body">
+      <section class="tpl-ed-step">
+        <div class="tpl-ed-step-h"><span class="tpl-ed-num">1</span> სახელი</div>
+        <p class="tpl-ed-hint">როგორ გამოჩნდება სიაში (მაგ: სპეციალური შეთავაზება)</p>
+        <input id="tpl-ed-title" type="text" placeholder="შაბლონის სახელი" maxlength="80" autocomplete="off">
+      </section>
+      <section class="tpl-ed-step">
+        <div class="tpl-ed-step-h"><span class="tpl-ed-num">2</span> SMS ტექსტი</div>
+        <p class="tpl-ed-hint">აქ დაწერე გასაგზავნი ტექსტი. ლიმიტის ჩასასმელად ქვემოთ დაამატე ველი და დააჭირე „ჩასმა“ — გამოჩნდება {{ველი}}.</p>
+        <textarea id="tpl-ed-text" placeholder="მაგ: გამარჯობა… ტარიფი: {{tarifi}}"></textarea>
+      </section>
+      <section class="tpl-ed-step">
+        <div class="tpl-ed-step-h"><span class="tpl-ed-num">3</span> ველები და ლიმიტები</div>
+        <p class="tpl-ed-hint">თანხა, არჩევადი ლიმიტი ან %. განლაგება: სიგანეზე, სიგრძეზე ან ჩამოსაშლელი.</p>
+        <div class="tpl-ed-fields" id="tpl-ed-fields"></div>
+        <button type="button" class="tpl-ed-add-field" id="tpl-ed-add-field">+ ველის / ლიმიტის დამატება</button>
+      </section>
+    </div>
+    <div class="tpl-ed-foot">
+      <button type="button" id="tpl-ed-cancel">გაუქმება</button>
+      <button type="button" class="tpl-ed-save" id="tpl-ed-save">შენახვა</button>
+    </div>
+  </div>
 
   <div class="overlay hide" id="field-modal">
     <div class="box">
@@ -2214,17 +2442,27 @@ ${ALDAGI_DETAILS}`;
       if (ta.hasAttribute('readonly')) ta.value = applyTemplateFields(raw, tplId);
       else ta.value = raw;
     }
+    function fieldTypeLabel(type) {
+      if (type === 'money') return 'თანხა';
+      if (type === 'choice') return 'ლიმიტი';
+      if (type === 'percent_of') return '%';
+      return 'ტექსტი';
+    }
+    function fieldLayoutLabel(layout) {
+      if (layout === 'col') return 'სიგრძეზე';
+      if (layout === 'dropdown') return 'ჩამოსაშლელი';
+      return 'სიგანეზე';
+    }
     function renderCustomFieldsHtml(c) {
       const fields = normalizeCustomFields(c.fields);
       const vals = getFieldVals(c.id);
-      const moneyFields = fields.filter(f => f.type === 'money' || f.type === 'text');
+      if (!fields.length) {
+        return `<div class="tpl-fields" data-tpl-fields="${c.id}"></div>`;
+      }
       let html = `<div class="tpl-fields" data-tpl-fields="${c.id}">`;
-      html += `<div class="tpl-fields-toolbar">
-        <button type="button" data-add-field="${c.id}">+ ველი / ლიმიტი</button>
-      </div>`;
       fields.forEach(f => {
         html += `<div class="tpl-field-row" data-field-id="${f.id}">`;
-        html += `<span class="field-label">${escapeHtml(f.label || f.id)} <span style="opacity:.55">{{${escapeHtml(f.id)}}}</span></span>`;
+        html += `<span class="field-label">${escapeHtml(f.label || f.id)}</span>`;
         if (f.type === 'choice' || f.type === 'percent_of') {
           const opts = Array.isArray(f.options) ? f.options : [];
           const layout = f.layout === 'col' || f.layout === 'dropdown' ? f.layout : 'row';
@@ -2255,14 +2493,97 @@ ${ALDAGI_DETAILS}`;
           const mode = f.type === 'money' ? 'decimal' : 'text';
           html += `<input class="field-inp" data-custom-inp="${c.id}" data-field="${f.id}" type="text" inputmode="${mode}" value="${escapeHtml(v)}" placeholder="${escapeHtml(f.label || '')}">`;
         }
-        html += `<div class="field-tools">
-          <button type="button" data-insert-token="${c.id}" data-token="${f.id}">ჩასმა {{${escapeHtml(f.id)}}}</button>
-          <button type="button" data-del-field="${c.id}" data-field="${f.id}">წაშლა</button>
-        </div>`;
         html += `</div>`;
       });
       html += `</div>`;
       return html;
+    }
+
+    const tplEditorState = { id: '', isNew: false, open: false };
+    function renderTplEditorFields() {
+      const box = $('tpl-ed-fields');
+      if (!box) return;
+      const c = getCustomSms(tplEditorState.id);
+      const fields = normalizeCustomFields(c?.fields);
+      if (!fields.length) {
+        box.innerHTML = `<p class="tpl-ed-empty">ჯერ ველი არაა. დაამატე ლიმიტი ან თანხა — მერე ტექსტში ჩასვი.</p>`;
+        return;
+      }
+      box.innerHTML = fields.map(f => {
+        const lay = (f.type === 'choice' || f.type === 'percent_of')
+          ? (' · ' + fieldLayoutLabel(f.layout))
+          : '';
+        const opts = (f.type === 'choice' || f.type === 'percent_of')
+          ? `<div class="tpl-ed-field-sub">${escapeHtml((f.options || []).join(' · '))}</div>`
+          : '';
+        return `<div class="tpl-ed-field" data-ed-field="${escapeHtml(f.id)}">
+          <div class="tpl-ed-field-top">
+            <div class="tpl-ed-field-meta">
+              <p class="tpl-ed-field-title">${escapeHtml(f.label || f.id)}</p>
+              <div class="tpl-ed-field-sub">${fieldTypeLabel(f.type)}${lay} · {{${escapeHtml(f.id)}}}</div>
+              ${opts}
+            </div>
+            <div class="tpl-ed-field-actions">
+              <button type="button" data-ed-insert="${escapeHtml(f.id)}">ჩასმა</button>
+              <button type="button" data-ed-del="${escapeHtml(f.id)}">წაშლა</button>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+    function openTplEditor(tplId, isNew) {
+      const c = getCustomSms(tplId);
+      if (!c) return;
+      lockAllSmsEditing();
+      tplEditorState.id = tplId;
+      tplEditorState.isNew = !!isNew;
+      tplEditorState.open = true;
+      if ($('tpl-ed-heading')) $('tpl-ed-heading').textContent = isNew ? 'ახალი შაბლონი' : 'შაბლონის რედაქტირება';
+      if ($('tpl-ed-title')) $('tpl-ed-title').value = c.title || '';
+      if ($('tpl-ed-text')) $('tpl-ed-text').value = getSmsEdit(tplId, 'ka') ?? '';
+      renderTplEditorFields();
+      const ed = $('tpl-editor');
+      if (ed) {
+        ed.classList.remove('hide');
+        ed.setAttribute('aria-hidden', 'false');
+      }
+      document.body.style.overflow = 'hidden';
+      setTimeout(() => $('tpl-ed-title')?.focus(), 50);
+    }
+    function closeTplEditor({ discard } = {}) {
+      const id = tplEditorState.id;
+      const wasNew = tplEditorState.isNew;
+      tplEditorState.open = false;
+      tplEditorState.id = '';
+      tplEditorState.isNew = false;
+      const ed = $('tpl-editor');
+      if (ed) {
+        ed.classList.add('hide');
+        ed.setAttribute('aria-hidden', 'true');
+      }
+      if (!$('field-modal') || $('field-modal').classList.contains('hide')) {
+        document.body.style.overflow = '';
+      }
+      if (discard && wasNew && id) {
+        deleteSmsTpl(id);
+      }
+      renderSmsList();
+      if (id && !discard) {
+        const card = document.querySelector(`.sms-card[data-id="${id}"]`);
+        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+    function saveTplEditor() {
+      const id = tplEditorState.id;
+      const c = getCustomSms(id);
+      if (!c) return;
+      const title = ($('tpl-ed-title')?.value || '').trim() || 'ახალი შაბლონი';
+      const text = $('tpl-ed-text')?.value ?? '';
+      renameCustomSmsTpl(id, title);
+      saveSmsEdit(id, text, 'ka');
+      tplEditorState.isNew = false;
+      closeTplEditor({ discard: false });
+      showAppToast('შაბლონი შენახულია', 1600);
     }
     function syncFieldModalType() {
       const type = $('field-type')?.value || 'text';
@@ -2304,7 +2625,7 @@ ${ALDAGI_DETAILS}`;
     }
     function closeFieldModal() {
       $('field-modal')?.classList.add('hide');
-      document.body.style.overflow = '';
+      if (!tplEditorState.open) document.body.style.overflow = '';
       pendingFieldTpl.id = '';
     }
     function saveFieldFromModal() {
@@ -2339,15 +2660,31 @@ ${ALDAGI_DETAILS}`;
       fields.push(field);
       updateCustomSmsFields(tplId, fields);
       closeFieldModal();
-      renderSmsList();
-      showAppToast('ველი დამატებულია — ჩასმა {{' + id + '}}', 2600);
+      if (tplEditorState.open && tplEditorState.id === tplId) {
+        renderTplEditorFields();
+        const ta = $('tpl-ed-text');
+        if (ta) {
+          const token = '{{' + id + '}}';
+          if (!ta.value.includes(token)) {
+            const start = ta.selectionStart ?? ta.value.length;
+            const end = ta.selectionEnd ?? ta.value.length;
+            ta.value = ta.value.slice(0, start) + token + ta.value.slice(end);
+            try { ta.setSelectionRange(start + token.length, start + token.length); } catch (_) {}
+          }
+          ta.focus();
+        }
+        showAppToast('ველი დამატებულია', 1600);
+      } else {
+        renderSmsList();
+        showAppToast('ველი დამატებულია — ჩასმა {{' + id + '}}', 2600);
+      }
     }
 
 
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '258';
+      const v = window.__CC_VER || '259';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -3863,9 +4200,10 @@ The main requirement is that the car is in a washed condition. It must be photog
         <div class="sms-card" data-id="${c.id}" data-custom="1">
           <div class="sms-card-head has-del">
             ${smsDelBtn(c.id)}
-            <input class="sms-card-title-inp" data-custom-title="${c.id}" value="${escapeHtml(c.title)}" aria-label="შაბლონის სახელი">
+            <h3>${escapeHtml(c.title || 'ახალი შაბლონი')}</h3>
             <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
           </div>
+          <button type="button" class="tpl-edit-open" data-open-tpl-ed="${c.id}">შაბლონის რედაქტირება</button>
           ${renderCustomFieldsHtml(c)}
           ${smsEditField(c.id, { rows: 8, label: (c.title || 'შაბლონი') + ' ტექსტი' })}
           <div class="send-row" data-chat-tpl="${c.id}">
@@ -4092,10 +4430,10 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
         return;
       }
 
-      const addFieldBtn = e.target.closest('[data-add-field]');
-      if (addFieldBtn) {
+      const openEdBtn = e.target.closest('[data-open-tpl-ed]');
+      if (openEdBtn) {
         e.preventDefault();
-        openFieldModal(addFieldBtn.dataset.addField);
+        openTplEditor(openEdBtn.dataset.openTplEd, false);
         return;
       }
 
@@ -4247,16 +4585,51 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
     $('sms-add-tpl').onclick = () => {
       lockAllSmsEditing();
       const id = addCustomSmsTpl();
-      renderSmsList();
-      const card = document.querySelector(`.sms-card[data-id="${id}"]`);
-      if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      const title = document.querySelector(`[data-custom-title="${id}"]`);
-      if (title) {
-        title.focus();
-        title.select();
-      }
-      showAppToast('შაბლონი დამატებულია', 1600);
+      openTplEditor(id, true);
     };
+    $('tpl-ed-close')?.addEventListener('click', () => closeTplEditor({ discard: true }));
+    $('tpl-ed-cancel')?.addEventListener('click', () => closeTplEditor({ discard: true }));
+    $('tpl-ed-save')?.addEventListener('click', saveTplEditor);
+    $('tpl-ed-save-top')?.addEventListener('click', saveTplEditor);
+    $('tpl-ed-add-field')?.addEventListener('click', () => {
+      if (!tplEditorState.id) return;
+      openFieldModal(tplEditorState.id);
+    });
+    $('tpl-ed-fields')?.addEventListener('click', e => {
+      const ins = e.target.closest('[data-ed-insert]');
+      if (ins) {
+        e.preventDefault();
+        const token = '{{' + ins.dataset.edInsert + '}}';
+        const ta = $('tpl-ed-text');
+        if (!ta) return;
+        const start = ta.selectionStart ?? ta.value.length;
+        const end = ta.selectionEnd ?? ta.value.length;
+        ta.value = ta.value.slice(0, start) + token + ta.value.slice(end);
+        try { ta.setSelectionRange(start + token.length, start + token.length); } catch (_) {}
+        ta.focus();
+        return;
+      }
+      const del = e.target.closest('[data-ed-del]');
+      if (del) {
+        e.preventDefault();
+        const fieldId = del.dataset.edDel;
+        const tplId = tplEditorState.id;
+        const c = getCustomSms(tplId);
+        if (!c) return;
+        if (!confirm('წავშალოთ ეს ველი?')) return;
+        updateCustomSmsFields(tplId, normalizeCustomFields(c.fields).filter(f => f.id !== fieldId));
+        const vals = getFieldVals(tplId);
+        delete vals[fieldId];
+        const all = loadFieldVals();
+        all[tplId] = vals;
+        saveFieldVals(all);
+        // strip token from editor text
+        const ta = $('tpl-ed-text');
+        if (ta) ta.value = ta.value.replace(new RegExp('\\{\{\\s*' + fieldId + '\\s*\\}\\}', 'g'), '');
+        renderTplEditorFields();
+        return;
+      }
+    });
     $('field-type')?.addEventListener('change', syncFieldModalType);
     $('field-save')?.addEventListener('click', saveFieldFromModal);
     $('field-cancel')?.addEventListener('click', closeFieldModal);
