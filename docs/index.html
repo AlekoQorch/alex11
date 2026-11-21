@@ -20,20 +20,40 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
-    /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '262';
+    /* ავტო-განახლება: version.json + SW cache wipe */
+    window.__CC_VER = '263';
     (function () {
-      function go(v) {
+      function wipeAndGo(v) {
         try {
           var once = 'cc_tried_' + v;
           if (sessionStorage.getItem(once)) return;
           sessionStorage.setItem(once, '1');
           localStorage.setItem('cc_app_ver', v);
         } catch (e) {}
-        var u = new URL(location.href);
-        u.searchParams.set('v', v);
-        u.searchParams.set('_', String(Date.now()));
-        location.replace(u.pathname + u.search + u.hash);
+        var finish = function () {
+          var u = new URL(location.href);
+          u.searchParams.set('v', v);
+          u.searchParams.set('_', String(Date.now()));
+          location.replace(u.pathname + u.search + u.hash);
+        };
+        var p = Promise.resolve();
+        try {
+          if (window.caches && caches.keys) {
+            p = caches.keys().then(function (keys) {
+              return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+            });
+          }
+        } catch (e) {}
+        try {
+          if (navigator.serviceWorker) {
+            p = p.then(function () {
+              return navigator.serviceWorker.getRegistrations();
+            }).then(function (regs) {
+              return Promise.all((regs || []).map(function (r) { return r.update(); }));
+            });
+          }
+        } catch (e) {}
+        Promise.resolve(p).then(finish, finish);
       }
       function check() {
         fetch('version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -41,7 +61,7 @@
           .then(function (d) {
             if (!d || !d.v) return;
             if (d.v !== window.__CC_VER) {
-              go(d.v);
+              wipeAndGo(d.v);
               return;
             }
             try { localStorage.setItem('cc_app_ver', d.v); } catch (e) {}
@@ -1845,7 +1865,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v185</div>
+      <div class="ver">v186</div>
     </header>
 
     <div class="tabs">
@@ -2975,7 +2995,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '262';
+      const v = window.__CC_VER || '263';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
