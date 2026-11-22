@@ -20,47 +20,53 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
-    /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '263';
+    /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
+    window.__CC_VER = '264';
     (function () {
-      function wipeAndGo(v) {
-        try {
-          var once = 'cc_tried_' + v;
-          if (sessionStorage.getItem(once)) return;
-          sessionStorage.setItem(once, '1');
-          localStorage.setItem('cc_app_ver', v);
-        } catch (e) {}
-        var finish = function () {
-          var u = new URL(location.href);
-          u.searchParams.set('v', v);
-          u.searchParams.set('_', String(Date.now()));
-          location.replace(u.pathname + u.search + u.hash);
-        };
-        var pms = Promise.resolve();
+      function bustCaches() {
+        var jobs = [];
         try {
           if (window.caches && caches.keys) {
-            pms = caches.keys().then(function (keys) {
+            jobs.push(caches.keys().then(function (keys) {
               return Promise.all(keys.map(function (k) { return caches.delete(k); }));
-            });
+            }));
           }
         } catch (e) {}
         try {
           if (navigator.serviceWorker) {
-            pms = pms.then(function () { return navigator.serviceWorker.getRegistrations(); })
-              .then(function (regs) {
-                return Promise.all((regs || []).map(function (r) { return r.update(); }));
-              });
+            jobs.push(navigator.serviceWorker.getRegistrations().then(function (regs) {
+              return Promise.all((regs || []).map(function (r) { return r.unregister(); }));
+            }));
           }
         } catch (e) {}
-        Promise.resolve(pms).then(finish, finish);
+        return Promise.all(jobs).catch(function () {});
+      }
+      function hardReload(v) {
+        var u = new URL(location.href);
+        u.searchParams.set('v', v);
+        u.searchParams.set('_', String(Date.now()));
+        u.searchParams.delete('force');
+        location.replace(u.pathname + u.search + u.hash);
+      }
+      function forceUpdate(v) {
+        try { localStorage.setItem('cc_app_ver', v); } catch (e) {}
+        var guardKey = 'cc_force_' + v;
+        var last = 0;
+        try { last = +localStorage.getItem(guardKey) || 0; } catch (e) {}
+        // თავიდან აცილებს უსასრულო რეფრეშს, მაგრამ 8 წამში ისევ ცდის
+        if (last && (Date.now() - last) < 8000) return;
+        try { localStorage.setItem(guardKey, String(Date.now())); } catch (e) {}
+        bustCaches().then(function () { hardReload(v); }, function () { hardReload(v); });
       }
       function check() {
+        var force = false;
+        try { force = new URL(location.href).searchParams.get('force') === '1'; } catch (e) {}
         fetch('version.json?_=' + Date.now(), { cache: 'no-store' })
           .then(function (r) { return r.json(); })
           .then(function (d) {
             if (!d || !d.v) return;
-            if (d.v !== window.__CC_VER) {
-              wipeAndGo(d.v);
+            if (force || d.v !== window.__CC_VER) {
+              forceUpdate(d.v);
               return;
             }
             try { localStorage.setItem('cc_app_ver', d.v); } catch (e) {}
@@ -78,7 +84,21 @@
       document.addEventListener('visibilitychange', function () {
         if (document.visibilityState === 'visible') check();
       });
+      document.addEventListener('click', function (e) {
+        var ver = e.target && e.target.closest && e.target.closest('.ver');
+        if (!ver) return;
+        e.preventDefault();
+        try { localStorage.removeItem('cc_force_' + window.__CC_VER); } catch (err) {}
+        bustCaches().then(function () {
+          var u = new URL(location.href);
+          u.searchParams.set('v', window.__CC_VER);
+          u.searchParams.set('force', '1');
+          u.searchParams.set('_', String(Date.now()));
+          location.replace(u.pathname + u.search + u.hash);
+        });
+      }, true);
     })();
+
   </script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -1887,7 +1907,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v186</div>
+      <div class="ver" title="განახლება">v187</div>
     </header>
 
     <div class="tabs">
@@ -3017,7 +3037,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '263';
+      const v = window.__CC_VER || '264';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
