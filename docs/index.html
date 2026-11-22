@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
-    window.__CC_VER = '270';
+    window.__CC_VER = '271';
     (function () {
       function bustCaches() {
         var jobs = [];
@@ -914,56 +914,6 @@
       resize: vertical;
       line-height: 1.45;
     }
-    .tpl-ed-fields {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin: 0 0 10px;
-    }
-    .tpl-ed-field {
-      padding: 10px 12px;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      background: var(--bg);
-    }
-    .tpl-ed-field-top {
-      display: flex;
-      align-items: flex-start;
-      gap: 8px;
-      margin-bottom: 8px;
-    }
-    .tpl-ed-field-meta { flex: 1; min-width: 0; }
-    .tpl-ed-field-title {
-      font-size: 14px;
-      font-weight: 700;
-      margin: 0 0 2px;
-    }
-    .tpl-ed-field-sub {
-      font-size: 11px;
-      color: var(--dim);
-      word-break: break-all;
-    }
-    .tpl-ed-field-actions {
-      display: flex;
-      gap: 6px;
-    }
-    .tpl-ed-field-actions button,
-    .tpl-ed-add-field {
-      padding: 8px 10px;
-      border: 1px solid var(--border);
-      border-radius: 9px;
-      background: var(--surface);
-      color: var(--text);
-      font-size: 12px;
-      font-weight: 600;
-      font-family: inherit;
-    }
-    .tpl-ed-add-field {
-      width: 100%;
-      border-style: dashed;
-      color: var(--dim);
-      padding: 12px;
-    }
     .tpl-ed-body {
       background: #0b0b0d;
     }
@@ -985,67 +935,81 @@
     .tpl-ed-card .tpl-ed-step:last-child {
       margin-bottom: 0;
     }
-    .tpl-ed-limits {
+    .tpl-ed-fields {
       display: flex;
       flex-direction: column;
       gap: 10px;
+      margin: 0 0 10px;
     }
-    .tpl-ed-layout {
+    .tpl-ed-field {
+      padding: 12px;
       border: 1px solid var(--border);
       border-radius: 14px;
       background: var(--bg);
-      overflow: hidden;
     }
-    .tpl-ed-layout.on {
-      border-color: rgba(77, 159, 255, 0.55);
-      box-shadow: inset 0 0 0 1px rgba(77, 159, 255, 0.18);
-    }
-    .tpl-ed-layout-head {
-      width: 100%;
+    .tpl-ed-field-top {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 12px;
-      border: 0;
-      background: transparent;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .tpl-ed-field-top input[type="text"] {
+      flex: 1;
+      min-width: 0;
+      margin: 0;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface);
       color: var(--text);
-      font-family: inherit;
-      text-align: left;
-    }
-    .tpl-ed-check {
-      flex: 0 0 auto;
-      width: 22px;
-      height: 22px;
-      border-radius: 7px;
-      border: 1.5px solid var(--border);
-      display: grid;
-      place-items: center;
-      color: transparent;
-      font-size: 13px;
-      font-weight: 800;
-      background: transparent;
-    }
-    .tpl-ed-layout.on .tpl-ed-check {
-      border-color: rgba(77, 159, 255, 0.8);
-      background: rgba(77, 159, 255, 0.22);
-      color: #fff;
-    }
-    .tpl-ed-layout-copy { flex: 1; min-width: 0; }
-    .tpl-ed-layout-copy strong {
-      display: block;
       font-size: 14px;
-      font-weight: 700;
-      margin-bottom: 2px;
+      font-weight: 600;
+      font-family: inherit;
     }
-    .tpl-ed-layout-copy span {
-      display: block;
-      font-size: 11px;
+    .tpl-ed-field-del {
+      flex: 0 0 auto;
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: transparent;
       color: var(--dim);
-      line-height: 1.35;
+      font-size: 18px;
+      line-height: 1;
+      font-family: inherit;
+      cursor: pointer;
     }
-    .tpl-ed-layout-body {
-      padding: 4px 12px 12px;
-      border-top: 1px solid var(--line);
+    .tpl-ed-field-kind {
+      width: 100%;
+      margin: 0 0 10px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface);
+      color: var(--text);
+      font-size: 13px;
+      font-family: inherit;
+    }
+    .tpl-ed-add-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 6px;
+    }
+    .tpl-ed-add-row button {
+      padding: 11px 6px;
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      background: transparent;
+      color: var(--dim);
+      font-size: 12px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .tpl-ed-add-row button:active {
+      border-color: rgba(77, 159, 255, 0.55);
+      color: #fff;
+      background: rgba(77, 159, 255, 0.1);
     }
     .tpl-ed-opts {
       display: flex;
@@ -1061,19 +1025,17 @@
       flex-direction: column;
       flex-wrap: nowrap;
     }
-    /* იგივე ვიზუალი/ზომა, რაც .lim-pick button — მაქს. 5 რიგში */
+    /* იგივე ვიზუალი, რაც .lim-pick — ივსება სიგანეზე, მაქს. 5 რიგში */
     .tpl-ed-opts.row .tpl-ed-opt,
     .tpl-ed-opts.row .tpl-ed-opt-add {
-      flex: 0 0 calc((100% - 24px) / 5);
-      width: calc((100% - 24px) / 5);
-      max-width: calc((100% - 24px) / 5);
-      min-width: 0;
+      flex: 1 1 0;
+      min-width: calc((100% - 24px) / 5);
       box-sizing: border-box;
       margin: 0;
       padding: 8px 4px;
       border: 1px solid var(--border);
       border-radius: 8px;
-      background: var(--bg);
+      background: var(--surface);
       color: var(--dim);
       font-size: 13px;
       font-family: inherit;
@@ -1115,24 +1077,18 @@
       font-weight: 600;
       cursor: pointer;
     }
-    .tpl-ed-opts.row .tpl-ed-opt-add:hover {
-      border-color: rgba(77, 159, 255, 0.55);
-      color: #fff;
-      background: rgba(77, 159, 255, 0.12);
-    }
     .tpl-ed-opts.col .tpl-ed-opt,
     .tpl-ed-opts.dropdown .tpl-ed-opt,
     .tpl-ed-opts.col .tpl-ed-opt-add,
     .tpl-ed-opts.dropdown .tpl-ed-opt-add {
       flex: 0 0 auto;
       width: 100%;
-      max-width: none;
       box-sizing: border-box;
       margin: 0;
       padding: 10px 12px;
       border: 1px solid var(--border);
       border-radius: 8px;
-      background: var(--bg);
+      background: var(--surface);
       color: var(--dim);
       font-size: 14px;
       font-family: inherit;
@@ -1171,14 +1127,8 @@
       font-weight: 600;
       cursor: pointer;
     }
-    .tpl-ed-opts.col .tpl-ed-opt-add:hover,
-    .tpl-ed-opts.dropdown .tpl-ed-opt-add:hover {
-      border-color: rgba(77, 159, 255, 0.55);
-      color: #fff;
-      background: rgba(77, 159, 255, 0.12);
-    }
     .tpl-ed-money-preview {
-      margin: 10px 0 0;
+      margin: 0;
       padding: 12px;
       min-height: 44px;
       box-sizing: border-box;
@@ -1189,9 +1139,6 @@
       display: flex;
       align-items: center;
       background: rgba(255,255,255,0.02);
-    }
-    .tpl-ed-card .field-label {
-      margin-top: 0;
     }
     .tpl-ed-card #tpl-ed-title {
       text-align: center;
@@ -1204,12 +1151,13 @@
     }
     .tpl-ed-empty {
       margin: 0;
-      padding: 12px;
-      border-radius: 10px;
-      background: rgba(255,255,255,0.03);
+      padding: 14px 12px;
+      border-radius: 12px;
+      border: 1px dashed var(--border);
+      background: rgba(255,255,255,0.02);
       color: var(--dim);
       font-size: 13px;
-      line-height: 1.4;
+      line-height: 1.45;
       text-align: center;
     }
     .tpl-ed-foot {
@@ -2029,9 +1977,14 @@
           <input id="tpl-ed-title" type="text" placeholder="შაბლონის სახელი" maxlength="80" autocomplete="off">
         </section>
         <section class="tpl-ed-step">
-          <div class="tpl-ed-step-h"><span class="tpl-ed-num">2</span> ლიმიტები</div>
-          <p class="tpl-ed-hint">აირჩიე განლაგება და ჩაწერე თანხები.</p>
-          <div class="tpl-ed-limits" id="tpl-ed-limits"></div>
+          <div class="tpl-ed-step-h"><span class="tpl-ed-num">2</span> ველები</div>
+          <p class="tpl-ed-hint">დაამატე რამდენიც გინდა — ორი ჩამოსაშლელიც შეიძლება. სახელი, ვარიანტები და ტიპი რედაქტირებადია.</p>
+          <div class="tpl-ed-fields" id="tpl-ed-limits"></div>
+          <div class="tpl-ed-add-row" id="tpl-ed-add-row">
+            <button type="button" data-add-field="row">+ ღილაკები</button>
+            <button type="button" data-add-field="dropdown">+ ჩამოსაშლელი</button>
+            <button type="button" data-add-field="money">+ თანხა</button>
+          </div>
         </section>
         <section class="tpl-ed-step">
           <div class="tpl-ed-step-h"><span class="tpl-ed-num">3</span> SMS ტექსტი</div>
@@ -2335,6 +2288,7 @@ These details are needed to calculate the tariff:
 
     const HOME_CONTENTS_ALL = [5000, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000];
     const HOME_THIRD_LIMITS = ['5000$', '10000$', '20000$'];
+    const TPL_DEFAULT_LIMITS = HOME_THIRD_LIMITS.slice();
     const homePick = { contents: '', third: '' };
 
     function formatHomeLimit(val) {
@@ -2795,105 +2749,111 @@ ${ALDAGI_DETAILS}`;
       });
       updateCustomSmsFields(tplId, fields);
     }
-    const TPL_LAYOUTS = [
-      { key: 'row', title: 'მარცხნიდან მარჯვნივ', hint: 'ღილაკები ერთ რიგში' },
-      { key: 'col', title: 'ზევიდან ქვევით', hint: 'ღილაკები ერთმანეთის ქვეშ' },
-      { key: 'dropdown', title: 'ჩამოსაშლელი', hint: 'ერთი სია' },
-      { key: 'money', title: 'თავისუფალი თანხა', hint: 'ხელით ჩაწერადი ველი' }
+    const TPL_FIELD_KINDS = [
+      { key: 'row', title: 'ღილაკები რიგში' },
+      { key: 'col', title: 'ღილაკები ქვემოთ' },
+      { key: 'dropdown', title: 'ჩამოსაშლელი' },
+      { key: 'money', title: 'თავისუფალი თანხა' }
     ];
-    function findLayoutField(fields, key) {
-      if (key === 'money') return fields.find(f => f.type === 'money') || null;
-      return fields.find(f => f.type === 'choice' && ((f.layout || 'row') === key)) || null;
+    function fieldKindKey(field) {
+      if (!field) return 'row';
+      if (field.type === 'money') return 'money';
+      if (field.layout === 'col' || field.layout === 'dropdown') return field.layout;
+      return 'row';
     }
-    function enableLayout(layout) {
+    function removeTplField(fieldId) {
+      const tplId = tplEditorState.id;
+      const c = getCustomSms(tplId);
+      if (!c || !fieldId) return;
+      updateCustomSmsFields(tplId, normalizeCustomFields(c.fields).filter(f => f.id !== fieldId));
+      const vals = getFieldVals(tplId);
+      delete vals[fieldId];
+      const all = loadFieldVals();
+      all[tplId] = vals;
+      saveFieldVals(all);
+      const ta = $('tpl-ed-text');
+      if (ta) ta.value = ta.value.replace(new RegExp('\\{\{\\s*' + fieldId + '\\s*\\}\\}', 'g'), '');
+      renderTplEditorFields();
+    }
+    function addTplField(kind) {
       const tplId = tplEditorState.id;
       const c = getCustomSms(tplId);
       if (!c) return;
       const fields = normalizeCustomFields(c.fields);
-      if (findLayoutField(fields, layout)) {
-        renderTplEditorFields();
-        return;
-      }
       let id;
-      if (layout === 'money') {
+      if (kind === 'money') {
         id = slugifyFieldId('თანხა', fields.map(f => f.id));
         fields.push({ id, label: 'თანხა', type: 'money' });
       } else {
-        id = slugifyFieldId('ლიმიტი', fields.map(f => f.id));
+        const layout = kind === 'col' || kind === 'dropdown' ? kind : 'row';
+        const label = layout === 'dropdown' ? 'ჩამოსაშლელი ლიმიტი' : 'ლიმიტი';
+        id = slugifyFieldId(label, fields.map(f => f.id));
         fields.push({
           id,
-          label: 'ლიმიტი',
+          label,
           type: 'choice',
-          layout: layout === 'col' || layout === 'dropdown' ? layout : 'row',
-          options: ['']
+          layout,
+          options: TPL_DEFAULT_LIMITS.slice()
         });
       }
       updateCustomSmsFields(tplId, fields);
       renderTplEditorFields();
       insertTokenIntoTplText(id);
       setTimeout(() => {
-        const inp = document.querySelector(`.tpl-ed-layout.on [data-ed-opt="${id}"]`);
-        if (inp) inp.focus();
+        const labelInp = document.querySelector(`[data-ed-label="${id}"]`);
+        if (labelInp) { labelInp.focus(); try { labelInp.select(); } catch (_) {} }
       }, 30);
     }
-    function disableLayout(layout) {
-      const tplId = tplEditorState.id;
-      const c = getCustomSms(tplId);
+    function setTplFieldKind(fieldId, kind) {
+      const c = getCustomSms(tplEditorState.id);
       if (!c) return;
-      const fields = normalizeCustomFields(c.fields);
-      const field = findLayoutField(fields, layout);
-      if (!field) {
-        renderTplEditorFields();
-        return;
-      }
-      updateCustomSmsFields(tplId, fields.filter(f => f.id !== field.id));
-      const vals = getFieldVals(tplId);
-      delete vals[field.id];
-      const all = loadFieldVals();
-      all[tplId] = vals;
-      saveFieldVals(all);
-      const ta = $('tpl-ed-text');
-      if (ta) ta.value = ta.value.replace(new RegExp('\\{\{\\s*' + field.id + '\\s*\\}\\}', 'g'), '');
+      const fields = normalizeCustomFields(c.fields).map(f => {
+        if (f.id !== fieldId) return f;
+        if (kind === 'money') return { id: f.id, label: f.label || 'თანხა', type: 'money' };
+        const layout = kind === 'col' || kind === 'dropdown' ? kind : 'row';
+        const options = (f.type === 'choice' && Array.isArray(f.options) && f.options.length)
+          ? f.options
+          : TPL_DEFAULT_LIMITS.slice();
+        return { id: f.id, label: f.label || 'ლიმიტი', type: 'choice', layout, options };
+      });
+      updateCustomSmsFields(tplEditorState.id, fields);
       renderTplEditorFields();
     }
-    function addLimitPreset(layout) { enableLayout(layout); }
     function renderTplEditorFields() {
       const box = $('tpl-ed-limits');
       if (!box) return;
       const c = getCustomSms(tplEditorState.id);
       const fields = normalizeCustomFields(c?.fields);
-      box.innerHTML = TPL_LAYOUTS.map(lay => {
-        const field = findLayoutField(fields, lay.key);
-        const on = !!field;
+      if (!fields.length) {
+        box.innerHTML = `<p class="tpl-ed-empty">ჯერ ველი არაა — ქვემოთ დაამატე ღილაკები, ჩამოსაშლელი ან თანხა.</p>`;
+        return;
+      }
+      box.innerHTML = fields.map(field => {
+        const kind = fieldKindKey(field);
+        const kindOpts = TPL_FIELD_KINDS.map(k =>
+          `<option value="${k.key}"${k.key === kind ? ' selected' : ''}>${k.title}</option>`
+        ).join('');
         let body = '';
-        if (on && field) {
-          if (field.type === 'money') {
-            body = `<div class="tpl-ed-layout-body">
-              <div class="tpl-ed-money-preview">გაგზავნისას: თანხის ჩასაწერი ველი</div>
+        if (field.type === 'money') {
+          body = `<div class="tpl-ed-money-preview">გაგზავნისას: თანხის ჩასაწერი ველი</div>`;
+        } else {
+          const opts = Array.isArray(field.options) ? field.options.slice() : [];
+          if (!opts.length) opts.push(...TPL_DEFAULT_LIMITS);
+          const lay = field.layout === 'col' || field.layout === 'dropdown' ? field.layout : 'row';
+          body = `<div class="tpl-ed-opts ${lay}" data-ed-opts="${escapeHtml(field.id)}">`;
+          opts.forEach((opt, i) => {
+            body += `<div class="tpl-ed-opt">
+              <input type="text" inputmode="decimal" data-ed-opt="${escapeHtml(field.id)}" data-ed-opt-i="${i}" value="${escapeHtml(opt)}" placeholder="5000$">
             </div>`;
-          } else {
-            const opts = Array.isArray(field.options) ? field.options.slice() : [];
-            if (!opts.length) opts.push('');
-            const lay = field.layout === 'col' || field.layout === 'dropdown' ? field.layout : 'row';
-            const cls = 'tpl-ed-opts ' + lay;
-            let optsHtml = `<div class="${cls}" data-ed-opts="${escapeHtml(field.id)}">`;
-            opts.forEach((opt, i) => {
-              optsHtml += `<div class="tpl-ed-opt">
-                <input type="text" inputmode="decimal" data-ed-opt="${escapeHtml(field.id)}" data-ed-opt-i="${i}" value="${escapeHtml(opt)}" placeholder="5000$">
-              </div>`;
-            });
-            optsHtml += `<button type="button" class="tpl-ed-opt-add" data-ed-opt-add="${escapeHtml(field.id)}" aria-label="+">+</button></div>`;
-            body = `<div class="tpl-ed-layout-body">${optsHtml}</div>`;
-          }
+          });
+          body += `<button type="button" class="tpl-ed-opt-add" data-ed-opt-add="${escapeHtml(field.id)}" aria-label="+">+</button></div>`;
         }
-        return `<div class="tpl-ed-layout${on ? ' on' : ''}" data-layout-key="${lay.key}">
-          <button type="button" class="tpl-ed-layout-head" data-toggle-layout="${lay.key}" aria-pressed="${on ? 'true' : 'false'}">
-            <span class="tpl-ed-check" aria-hidden="true">✓</span>
-            <span class="tpl-ed-layout-copy">
-              <strong>${lay.title}</strong>
-              <span>${lay.hint}</span>
-            </span>
-          </button>
+        return `<div class="tpl-ed-field" data-field-card="${escapeHtml(field.id)}">
+          <div class="tpl-ed-field-top">
+            <input type="text" data-ed-label="${escapeHtml(field.id)}" value="${escapeHtml(field.label || '')}" placeholder="ველის სახელი" maxlength="40">
+            <button type="button" class="tpl-ed-field-del" data-ed-del="${escapeHtml(field.id)}" aria-label="წაშლა">×</button>
+          </div>
+          <select class="tpl-ed-field-kind" data-ed-kind="${escapeHtml(field.id)}" aria-label="ველის ტიპი">${kindOpts}</select>
           ${body}
         </div>`;
       }).join('');
@@ -2950,7 +2910,7 @@ ${ALDAGI_DETAILS}`;
       const fields = normalizeCustomFields(c.fields).map(f => {
         if (f.type !== 'choice' && f.type !== 'percent_of') return f;
         const options = (f.options || []).map(o => String(o || '').trim()).filter(Boolean);
-        return { ...f, options: options.length ? options : ['5000$', '10000$'] };
+        return { ...f, options: options.length ? options : TPL_DEFAULT_LIMITS.slice() };
       });
       updateCustomSmsFields(id, fields);
       renameCustomSmsTpl(id, title);
@@ -3058,7 +3018,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '270';
+      const v = window.__CC_VER || '271';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -4965,43 +4925,19 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
     $('tpl-ed-cancel')?.addEventListener('click', () => closeTplEditor({ discard: true }));
     $('tpl-ed-save')?.addEventListener('click', saveTplEditor);
     $('tpl-ed-save-top')?.addEventListener('click', saveTplEditor);
-    $('tpl-ed-limits')?.addEventListener('click', e => {
-      const toggle = e.target.closest('[data-toggle-layout]');
-      if (toggle) {
+    function onTplEdClick(e) {
+      const addField = e.target.closest('[data-add-field]');
+      if (addField) {
         e.preventDefault();
         if (!tplEditorState.id) return;
-        const key = toggle.dataset.toggleLayout;
-        const c = getCustomSms(tplEditorState.id);
-        const fields = normalizeCustomFields(c?.fields);
-        const on = !!findLayoutField(fields, key);
-        if (on) disableLayout(key);
-        else enableLayout(key);
-        return;
-      }
-
-      const ins = e.target.closest('[data-ed-insert]');
-      if (ins) {
-        e.preventDefault();
-        insertTokenIntoTplText(ins.dataset.edInsert);
+        addTplField(addField.dataset.addField || 'row');
         return;
       }
       const del = e.target.closest('[data-ed-del]');
       if (del) {
         e.preventDefault();
-        const fieldId = del.dataset.edDel;
-        const tplId = tplEditorState.id;
-        const c = getCustomSms(tplId);
-        if (!c) return;
         if (!confirm('წავშალოთ ეს ველი?')) return;
-        updateCustomSmsFields(tplId, normalizeCustomFields(c.fields).filter(f => f.id !== fieldId));
-        const vals = getFieldVals(tplId);
-        delete vals[fieldId];
-        const all = loadFieldVals();
-        all[tplId] = vals;
-        saveFieldVals(all);
-        const ta = $('tpl-ed-text');
-        if (ta) ta.value = ta.value.replace(new RegExp('\\{\{\\s*' + fieldId + '\\s*\\}\\}', 'g'), '');
-        renderTplEditorFields();
+        removeTplField(del.dataset.edDel);
         return;
       }
       const addOpt = e.target.closest('[data-ed-opt-add]');
@@ -5021,26 +4957,8 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
         if (last) last.focus();
         return;
       }
-      const delOpt = e.target.closest('[data-ed-opt-del]');
-      if (delOpt) {
-        e.preventDefault();
-        const fieldId = delOpt.dataset.edOptDel;
-        const idx = +delOpt.dataset.edOptI;
-        const c = getCustomSms(tplEditorState.id);
-        const field = normalizeCustomFields(c?.fields).find(f => f.id === fieldId);
-        if (!field) return;
-        const options = (field.options || []).slice();
-        if (options.length <= 1) {
-          options[0] = '';
-        } else {
-          options.splice(idx, 1);
-        }
-        patchCustomField(tplEditorState.id, fieldId, { options });
-        renderTplEditorFields();
-        return;
-      }
-    });
-    $('tpl-ed-limits')?.addEventListener('input', e => {
+    }
+    function onTplEdInput(e) {
       const label = e.target.closest('[data-ed-label]');
       if (label) {
         patchCustomField(tplEditorState.id, label.dataset.edLabel, { label: label.value });
@@ -5058,7 +4976,17 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
         options[idx] = opt.value;
         patchCustomField(tplEditorState.id, fieldId, { options });
       }
-    });
+    }
+    function onTplEdChange(e) {
+      const kind = e.target.closest('[data-ed-kind]');
+      if (kind) {
+        setTplFieldKind(kind.dataset.edKind, kind.value);
+      }
+    }
+    $('tpl-ed-limits')?.addEventListener('click', onTplEdClick);
+    $('tpl-ed-add-row')?.addEventListener('click', onTplEdClick);
+    $('tpl-ed-limits')?.addEventListener('input', onTplEdInput);
+    $('tpl-ed-limits')?.addEventListener('change', onTplEdChange);
     $('field-type')?.addEventListener('change', syncFieldModalType);
     $('field-save')?.addEventListener('click', saveFieldFromModal);
     $('field-cancel')?.addEventListener('click', closeFieldModal);
