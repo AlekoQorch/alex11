@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
-    window.__CC_VER = '266';
+    window.__CC_VER = '267';
     (function () {
       function bustCaches() {
         var jobs = [];
@@ -1044,56 +1044,57 @@
       line-height: 1.35;
     }
     .tpl-ed-layout-body {
-      padding: 0 12px 12px;
+      padding: 8px 12px 12px;
       border-top: 1px solid var(--line);
     }
+    .tpl-ed-layout-body .tpl-ed-opts.row {
+      margin-top: 2px;
+    }
     .tpl-ed-field-label {
+      display: block;
       width: 100%;
       box-sizing: border-box;
-      margin: 10px 0 8px;
-      padding: 11px 12px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      background: var(--surface);
-      color: var(--text);
-      font-size: 14px;
-      font-weight: 600;
+      margin: 10px 0 6px;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      color: var(--dim);
+      font-size: 12px;
+      font-weight: 500;
       font-family: inherit;
+      letter-spacing: 0.01em;
     }
     .tpl-ed-opts {
       display: flex;
       gap: 6px;
       flex-wrap: wrap;
+      width: 100%;
       margin: 0;
       align-content: flex-start;
     }
-    .tpl-ed-opts.col,
-    .tpl-ed-opts.dropdown {
-      flex-direction: column;
-      flex-wrap: nowrap;
-    }
-    .tpl-ed-opt,
-    .tpl-ed-opt-add {
-      box-sizing: border-box;
-      min-height: 40px;
-      border-radius: 8px;
-      font-family: inherit;
-    }
+    /* ჩვეულებრივი შაბლონის lim-pick-ის იდენტური რიგი */
     .tpl-ed-opts.row {
       flex-wrap: wrap;
-      gap: 6px;
-      padding-bottom: 4px;
+      padding-bottom: 12px;
+      margin-bottom: 2px;
       border-bottom: 1px solid var(--line);
-      margin-bottom: 8px;
     }
     .tpl-ed-opts.row .tpl-ed-opt,
     .tpl-ed-opts.row .tpl-ed-opt-add {
-      flex: 0 0 calc((100% - 24px) / 5);
-      width: calc((100% - 24px) / 5);
+      flex: 1 1 calc((100% - 24px) / 5);
       max-width: calc((100% - 24px) / 5);
       min-width: 0;
-      min-height: 36px;
+      box-sizing: border-box;
+      min-height: 0;
+      padding: 8px 4px;
+      border: 1px solid var(--border);
       border-radius: 8px;
+      background: var(--bg);
+      color: var(--dim);
+      font-size: 13px;
+      font-family: inherit;
+      text-align: center;
     }
     .tpl-ed-opts.row .tpl-ed-opt {
       position: relative;
@@ -1101,45 +1102,50 @@
       align-items: center;
       justify-content: center;
       gap: 0;
-      padding: 0;
-      border: 1px solid var(--border);
-      background: var(--bg);
     }
     .tpl-ed-opts.row .tpl-ed-opt input {
       width: 100%;
-      padding: 8px 2px;
-      font-size: 13px;
+      border: 0;
+      background: transparent;
       color: var(--dim);
+      font-size: 13px;
+      font-weight: 400;
+      font-family: inherit;
+      padding: 0;
+      outline: none;
       text-align: center;
     }
     .tpl-ed-opts.row .tpl-ed-opt input:focus {
       color: #fff;
     }
     .tpl-ed-opts.row .tpl-ed-opt button {
-      position: absolute;
-      top: -6px;
-      right: -6px;
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      background: #2a2a2e;
-      border: 1px solid var(--border);
-      font-size: 11px;
-      line-height: 1;
-      opacity: 0;
-      pointer-events: none;
-    }
-    .tpl-ed-opts.row .tpl-ed-opt:focus-within button,
-    .tpl-ed-opts.row .tpl-ed-opt:hover button {
-      opacity: 1;
-      pointer-events: auto;
+      display: none;
     }
     .tpl-ed-opts.row .tpl-ed-opt-add {
-      border: 1px dashed var(--border);
-      background: transparent;
-      color: var(--dim);
-      font-size: 18px;
-      font-weight: 700;
+      border-style: dashed;
+      font-size: 16px;
+      font-weight: 600;
+      line-height: 1.2;
+      cursor: pointer;
+    }
+    .tpl-ed-opts.row .tpl-ed-opt-add:active {
+      border-color: rgba(77, 159, 255, 0.55);
+      color: #fff;
+      background: rgba(77, 159, 255, 0.12);
+    }
+    .tpl-ed-opts.col,
+    .tpl-ed-opts.dropdown {
+      flex-direction: column;
+      flex-wrap: nowrap;
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+    .tpl-ed-opt,
+    .tpl-ed-opt-add {
+      box-sizing: border-box;
+      min-height: 40px;
+      border-radius: 8px;
+      font-family: inherit;
     }
     .tpl-ed-opt {
       display: flex;
@@ -1199,7 +1205,7 @@
     .tpl-ed-opts.col .tpl-ed-opt-add,
     .tpl-ed-opts.dropdown .tpl-ed-opt-add {
       min-height: 44px;
-      font-size: 14px;
+      font-size: 18px;
     }
     .tpl-ed-money-preview {
       margin: 10px 0 0;
@@ -1949,7 +1955,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver" title="განახლება">v189</div>
+      <div class="ver" title="განახლება">v190</div>
     </header>
 
     <div class="tabs">
@@ -2054,7 +2060,7 @@
         </section>
         <section class="tpl-ed-step">
           <div class="tpl-ed-step-h"><span class="tpl-ed-num">2</span> ლიმიტები</div>
-          <p class="tpl-ed-hint">მარცხნიდან მარჯვნივ: ღილაკების რიგი — მეორე ადგილზე + (დაამატე); 5-ზე მეტი ქვემოთ ჩამოდის.</p>
+          <p class="tpl-ed-hint">აირჩიე განლაგება — ღილაკები ისე გამოჩნდება, როგორც შაბლონში.</p>
           <div class="tpl-ed-limits" id="tpl-ed-limits"></div>
         </section>
         <section class="tpl-ed-step">
@@ -3094,7 +3100,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '266';
+      const v = window.__CC_VER || '267';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
