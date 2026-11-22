@@ -13,7 +13,6 @@ struct SmsTabView: View {
     @State private var offerThird = "10000$"
     @State private var offerHealth = "20000$"
     @State private var offerFranchise = ""
-    @State private var franchiseOptions = AldagiMessages.franchisePercents
     @State private var offerIsElectric = false
     @State private var homeProperty = ""
     @State private var homeContents = ""
@@ -92,7 +91,7 @@ struct SmsTabView: View {
             Text("ᲡᲠᲣᲚᲘ ᲨᲔᲗᲐᲕᲐᲖᲔᲑᲐ").font(.headline)
             TextField("ტარიფი ($)", text: $offerTariff).keyboardType(.decimalPad)
             TextField("ავტომობილი ($)", text: $offerCar).keyboardType(.decimalPad)
-            franchiseLimitPicker
+            limitPicker("ფრანშიზა (%)", options: AldagiMessages.franchisePercents, selection: $offerFranchise, allowsDeselect: true)
             limitPicker("მესამე პირი", options: AldagiMessages.thirdLimits, selection: $offerThird)
             limitPicker("ჯანმრთელობა", options: AldagiMessages.healthLimits, selection: $offerHealth)
             Toggle("ავტომობილი ელექტროა", isOn: $offerIsElectric)
@@ -192,56 +191,6 @@ struct SmsTabView: View {
             contents: homeContents,
             third: homeThird
         )
-    }
-
-    private var franchiseLimitPicker: some View {
-        let sorted = franchiseOptions.sorted {
-            (Int($0.filter(\.isNumber)) ?? 0) < (Int($1.filter(\.isNumber)) ?? 0)
-        }
-        let cols = Array(repeating: GridItem(.flexible(), spacing: 6), count: 5)
-        return VStack(alignment: .leading, spacing: 4) {
-            Text("ფრანშიზა (%)").font(.caption).foregroundStyle(.secondary)
-            LazyVGrid(columns: cols, spacing: 6) {
-                if !sorted.contains("2%") {
-                    if let first = sorted.first {
-                        franchiseOptButton(first)
-                    }
-                    Button("+") {
-                        if let next = AldagiMessages.nextFranchisePercent(existing: franchiseOptions) {
-                            franchiseOptions.append(next)
-                        }
-                    }
-                    .buttonStyle(.bordered)
-                    .tint(.gray)
-                    ForEach(Array(sorted.dropFirst()), id: \.self) { opt in
-                        franchiseOptButton(opt)
-                    }
-                } else {
-                    ForEach(sorted, id: \.self) { opt in
-                        franchiseOptButton(opt)
-                    }
-                    Button("+") {
-                        if let next = AldagiMessages.nextFranchisePercent(existing: franchiseOptions) {
-                            franchiseOptions.append(next)
-                        }
-                    }
-                    .buttonStyle(.bordered)
-                    .tint(.gray)
-                }
-            }
-        }
-    }
-
-    private func franchiseOptButton(_ opt: String) -> some View {
-        Button(opt) {
-            if offerFranchise == opt {
-                offerFranchise = ""
-            } else {
-                offerFranchise = opt
-            }
-        }
-        .buttonStyle(.bordered)
-        .tint(offerFranchise == opt ? .blue : .gray)
     }
 
     private func limitPicker(_ label: String, options: [String], selection: Binding<String>, allowsDeselect: Bool = false) -> some View {

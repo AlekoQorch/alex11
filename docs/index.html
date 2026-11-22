@@ -20,47 +20,52 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
-    /* ავტო-განახლება: version.json-ს ამოწმებს, ახალი რომ არის — თავიდან ტვირთავს */
-    window.__CC_VER = '263';
+    /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
+    window.__CC_VER = '265';
     (function () {
-      function wipeAndGo(v) {
-        try {
-          var once = 'cc_tried_' + v;
-          if (sessionStorage.getItem(once)) return;
-          sessionStorage.setItem(once, '1');
-          localStorage.setItem('cc_app_ver', v);
-        } catch (e) {}
-        var finish = function () {
-          var u = new URL(location.href);
-          u.searchParams.set('v', v);
-          u.searchParams.set('_', String(Date.now()));
-          location.replace(u.pathname + u.search + u.hash);
-        };
-        var pms = Promise.resolve();
+      function bustCaches() {
+        var jobs = [];
         try {
           if (window.caches && caches.keys) {
-            pms = caches.keys().then(function (keys) {
+            jobs.push(caches.keys().then(function (keys) {
               return Promise.all(keys.map(function (k) { return caches.delete(k); }));
-            });
+            }));
           }
         } catch (e) {}
         try {
           if (navigator.serviceWorker) {
-            pms = pms.then(function () { return navigator.serviceWorker.getRegistrations(); })
-              .then(function (regs) {
-                return Promise.all((regs || []).map(function (r) { return r.update(); }));
-              });
+            jobs.push(navigator.serviceWorker.getRegistrations().then(function (regs) {
+              return Promise.all((regs || []).map(function (r) { return r.unregister(); }));
+            }));
           }
         } catch (e) {}
-        Promise.resolve(pms).then(finish, finish);
+        return Promise.all(jobs).catch(function () {});
+      }
+      function hardReload(v) {
+        var u = new URL(location.href);
+        u.searchParams.set('v', v);
+        u.searchParams.set('_', String(Date.now()));
+        u.searchParams.delete('force');
+        location.replace(u.pathname + u.search + u.hash);
+      }
+      function forceUpdate(v) {
+        try { localStorage.setItem('cc_app_ver', v); } catch (e) {}
+        var guardKey = 'cc_force_' + v;
+        var last = 0;
+        try { last = +localStorage.getItem(guardKey) || 0; } catch (e) {}
+        if (last && (Date.now() - last) < 8000) return;
+        try { localStorage.setItem(guardKey, String(Date.now())); } catch (e) {}
+        bustCaches().then(function () { hardReload(v); }, function () { hardReload(v); });
       }
       function check() {
+        var force = false;
+        try { force = new URL(location.href).searchParams.get('force') === '1'; } catch (e) {}
         fetch('version.json?_=' + Date.now(), { cache: 'no-store' })
           .then(function (r) { return r.json(); })
           .then(function (d) {
             if (!d || !d.v) return;
-            if (d.v !== window.__CC_VER) {
-              wipeAndGo(d.v);
+            if (force || d.v !== window.__CC_VER) {
+              forceUpdate(d.v);
               return;
             }
             try { localStorage.setItem('cc_app_ver', d.v); } catch (e) {}
@@ -78,6 +83,19 @@
       document.addEventListener('visibilitychange', function () {
         if (document.visibilityState === 'visible') check();
       });
+      document.addEventListener('click', function (e) {
+        var ver = e.target && e.target.closest && e.target.closest('.ver');
+        if (!ver) return;
+        e.preventDefault();
+        try { localStorage.removeItem('cc_force_' + window.__CC_VER); } catch (err) {}
+        bustCaches().then(function () {
+          var u = new URL(location.href);
+          u.searchParams.set('v', window.__CC_VER);
+          u.searchParams.set('force', '1');
+          u.searchParams.set('_', String(Date.now()));
+          location.replace(u.pathname + u.search + u.hash);
+        });
+      }, true);
     })();
   </script>
   <style>
@@ -1044,9 +1062,10 @@
     }
     .tpl-ed-opts {
       display: flex;
-      gap: 8px;
+      gap: 6px;
       flex-wrap: wrap;
       margin: 0;
+      align-content: flex-start;
     }
     .tpl-ed-opts.col,
     .tpl-ed-opts.dropdown {
@@ -1056,16 +1075,21 @@
     .tpl-ed-opt,
     .tpl-ed-opt-add {
       box-sizing: border-box;
-      min-height: 44px;
-      border-radius: 10px;
+      min-height: 40px;
+      border-radius: 8px;
       font-family: inherit;
     }
+    .tpl-ed-opts.row .tpl-ed-opt,
+    .tpl-ed-opts.row .tpl-ed-opt-add {
+      flex: 0 0 calc((100% - 24px) / 5);
+      width: calc((100% - 24px) / 5);
+      max-width: calc((100% - 24px) / 5);
+      min-width: 0;
+    }
     .tpl-ed-opt {
-      flex: 1 1 0;
-      min-width: 72px;
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 2px;
       padding: 2px 2px 2px 4px;
       border: 1px solid var(--border);
       background: var(--surface);
@@ -1076,6 +1100,7 @@
     .tpl-ed-opts.dropdown .tpl-ed-opt-add {
       flex: 0 0 auto;
       width: 100%;
+      max-width: none;
     }
     .tpl-ed-opt input {
       flex: 1;
@@ -1083,38 +1108,43 @@
       border: 0;
       background: transparent;
       color: var(--text);
-      font-size: 15px;
+      font-size: 13px;
       font-weight: 600;
       font-family: inherit;
-      padding: 10px 8px;
+      padding: 8px 4px;
       outline: none;
       text-align: center;
     }
     .tpl-ed-opts.col .tpl-ed-opt input,
     .tpl-ed-opts.dropdown .tpl-ed-opt input {
       text-align: left;
+      font-size: 15px;
+      padding: 10px 8px;
     }
     .tpl-ed-opt button {
       flex: 0 0 auto;
-      width: 32px;
-      height: 32px;
+      width: 26px;
+      height: 26px;
       border: 0;
-      border-radius: 8px;
+      border-radius: 7px;
       background: transparent;
       color: var(--dim);
-      font-size: 18px;
+      font-size: 16px;
       line-height: 1;
       font-family: inherit;
     }
     .tpl-ed-opt-add {
-      flex: 1 1 0;
-      min-width: 72px;
-      padding: 0 12px;
+      padding: 0;
       border: 1px dashed var(--border);
       background: transparent;
       color: var(--dim);
-      font-size: 14px;
+      font-size: 18px;
       font-weight: 700;
+    }
+    .tpl-ed-opts.col .tpl-ed-opt-add,
+    .tpl-ed-opts.dropdown .tpl-ed-opt-add {
+      min-height: 44px;
+      font-size: 14px;
     }
     .tpl-ed-money-preview {
       margin: 10px 0 0;
@@ -1581,29 +1611,6 @@
       color: #fff;
       background: rgba(77, 159, 255, 0.18);
     }
-    #offer-franchise {
-      flex-wrap: wrap;
-      align-content: flex-start;
-    }
-    #offer-franchise button {
-      flex: 0 0 calc((100% - 24px) / 5);
-      width: calc((100% - 24px) / 5);
-      max-width: calc((100% - 24px) / 5);
-      min-width: 0;
-      box-sizing: border-box;
-    }
-    #offer-franchise .lim-pick-add {
-      border-style: dashed;
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--dim);
-      background: transparent;
-    }
-    #offer-franchise .lim-pick-add:active {
-      border-color: rgba(77, 159, 255, 0.55);
-      color: #fff;
-      background: rgba(77, 159, 255, 0.12);
-    }
     .offer-check {
       display: flex;
       align-items: center;
@@ -1887,7 +1894,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver">v186</div>
+      <div class="ver" title="განახლება">v188</div>
     </header>
 
     <div class="tabs">
@@ -1992,7 +1999,7 @@
         </section>
         <section class="tpl-ed-step">
           <div class="tpl-ed-step-h"><span class="tpl-ed-num">2</span> ლიმიტები</div>
-          <p class="tpl-ed-hint">მონიშნე განლაგება. ქვემოთ გამოჩნდება 1 ჩარჩო და იგივე ზომის „დამატება“.</p>
+          <p class="tpl-ed-hint">მონიშნე განლაგება. ჩარჩოებში ჩაწერე თანხები; + ამატებს ახალს (რიგში 5-ზე მეტი ჩამოდის).</p>
           <div class="tpl-ed-limits" id="tpl-ed-limits"></div>
         </section>
         <section class="tpl-ed-step">
@@ -2435,7 +2442,7 @@ ${ALDAGI_DETAILS}`;
     const OFFER_LIMITS = {
       third: ['5000$', '10000$', '25000$', '50000$'],
       health: ['20000$', '40000$', '100000$'],
-      franchise: ['1%', '3%', '4%', '5%']
+      franchise: ['1%', '2%', '3%', '4%', '5%']
     };
     const offerPick = { third: '10000$', health: '20000$', franchise: '' };
 
@@ -2841,7 +2848,7 @@ ${ALDAGI_DETAILS}`;
                 <button type="button" data-ed-opt-del="${escapeHtml(field.id)}" data-ed-opt-i="${i}" aria-label="წაშლა">×</button>
               </div>`;
             });
-            optsHtml += `<button type="button" class="tpl-ed-opt-add" data-ed-opt-add="${escapeHtml(field.id)}">დამატება</button></div>`;
+            optsHtml += `<button type="button" class="tpl-ed-opt-add" data-ed-opt-add="${escapeHtml(field.id)}" aria-label="დამატება">+</button></div>`;
             body = `<div class="tpl-ed-layout-body">${optsHtml}</div>`;
           }
         }
@@ -3017,7 +3024,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '263';
+      const v = window.__CC_VER || '265';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -4384,7 +4391,7 @@ The main requirement is that the car is in a washed condition. It must be photog
             <input class="field-inp" id="offer-car" type="text" inputmode="decimal" placeholder="მაგ: 10000$">
             <span class="field-label">ფრანშიზა (%)</span>
             <div class="lim-pick" id="offer-franchise">
-              ${franchiseButtonsHtml()}
+              ${OFFER_LIMITS.franchise.map(v => `<button type="button" data-k="franchise" data-val="${v}" class="${v === offerPick.franchise ? 'on' : ''}">${v}</button>`).join('')}
             </div>
             <span class="field-label">მესამე პირი</span>
             <div class="lim-pick" id="offer-third">
@@ -4679,42 +4686,6 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
       fillSmsField('aldagi', el, buildAldagiMsg());
     }
 
-    function nextFranchiseOption() {
-      const have = new Set(
-        OFFER_LIMITS.franchise.map(v => parseInt(String(v), 10)).filter(n => !Number.isNaN(n))
-      );
-      for (let i = 1; i <= 99; i++) {
-        if (!have.has(i)) return i + '%';
-      }
-      return '';
-    }
-    function franchiseButtonsHtml() {
-      const opts = OFFER_LIMITS.franchise
-        .slice()
-        .sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
-      const mk = (v) => {
-        const on = v === offerPick.franchise ? ' on' : '';
-        return `<button type="button" data-k="franchise" data-val="${v}" class="${on.trim()}">${v}</button>`;
-      };
-      const plus = `<button type="button" class="lim-pick-add" data-franchise-add="1" aria-label="დამატება">+</button>`;
-      const parts = [];
-      if (!opts.includes('2%')) {
-        if (opts.length) parts.push(mk(opts[0]));
-        parts.push(plus);
-        opts.slice(1).forEach(v => parts.push(mk(v)));
-      } else {
-        opts.forEach(v => parts.push(mk(v)));
-        parts.push(plus);
-      }
-      return parts.join('');
-    }
-    function refreshFranchisePick() {
-      const box = $('offer-franchise');
-      if (!box) return;
-      box.innerHTML = franchiseButtonsHtml();
-      bindOfferLimButtons();
-    }
-
     function initOfferFields() {
       const refreshFromOffer = () => updateAldagiPreview({ fromOffer: true });
       const tariff = $('offer-tariff');
@@ -4726,32 +4697,17 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
         electric.checked = !!electric.checked;
         electric.onchange = refreshFromOffer;
       }
-      bindOfferLimButtons();
-    }
-    function bindOfferLimButtons() {
-      const refreshFromOffer = () => updateAldagiPreview({ fromOffer: true });
       document.querySelectorAll('.offer-fields .lim-pick button').forEach(b => {
         b.onclick = () => {
-          if (b.hasAttribute('data-franchise-add')) {
-            const next = nextFranchiseOption();
-            if (!next) return;
-            OFFER_LIMITS.franchise.push(next);
-            if (!OFFER_LIMITS.franchise.includes(offerPick.franchise) && offerPick.franchise) {
-              /* keep selection if still present */
-            }
-            refreshFranchisePick();
-            refreshFromOffer();
-            return;
-          }
           const k = b.dataset.k;
           const val = b.dataset.val;
           if (!k) return;
           if (k === 'franchise' && offerPick.franchise === val) {
             offerPick.franchise = '';
-            b.parentElement.querySelectorAll('button[data-k]').forEach(x => x.classList.remove('on'));
+            b.parentElement.querySelectorAll('button').forEach(x => x.classList.remove('on'));
           } else {
             offerPick[k] = val;
-            b.parentElement.querySelectorAll('button[data-k]').forEach(x => x.classList.toggle('on', x === b));
+            b.parentElement.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
           }
           refreshFromOffer();
         };
