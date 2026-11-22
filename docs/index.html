@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
-    window.__CC_VER = '267';
+    window.__CC_VER = '268';
     (function () {
       function bustCaches() {
         var jobs = [];
@@ -1955,7 +1955,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver" title="განახლება">v190</div>
+      <div class="ver" title="განახლება">v191</div>
     </header>
 
     <div class="tabs">
@@ -2856,7 +2856,7 @@ ${ALDAGI_DETAILS}`;
           type: 'choice',
           layout: layout === 'col' || layout === 'dropdown' ? layout : 'row',
           options: layout === 'row'
-            ? ['5000$', '10000$', '25000$', '50000$']
+            ? ['']
             : ['5000$']
         });
       }
@@ -2907,7 +2907,7 @@ ${ALDAGI_DETAILS}`;
             let optsHtml = `<input class="tpl-ed-field-label" type="text" data-ed-label="${escapeHtml(field.id)}" value="${escapeHtml(field.label || '')}" placeholder="სახელი (მაგ: მესამე პირი)">`;
             optsHtml += `<div class="${cls}" data-ed-opts="${escapeHtml(field.id)}">`;
             const chip = (opt, i) => `<div class="tpl-ed-opt">
-                <input type="text" inputmode="decimal" data-ed-opt="${escapeHtml(field.id)}" data-ed-opt-i="${i}" value="${escapeHtml(opt)}" placeholder="10000$">
+                <input type="text" inputmode="decimal" data-ed-opt="${escapeHtml(field.id)}" data-ed-opt-i="${i}" value="${escapeHtml(opt)}" placeholder="მაგ: 5000$">
                 <button type="button" data-ed-opt-del="${escapeHtml(field.id)}" data-ed-opt-i="${i}" aria-label="წაშლა">×</button>
               </div>`;
             const plus = `<button type="button" class="tpl-ed-opt-add" data-ed-opt-add="${escapeHtml(field.id)}" aria-label="დამატება">+</button>`;
@@ -3100,7 +3100,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '267';
+      const v = window.__CC_VER || '268';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
