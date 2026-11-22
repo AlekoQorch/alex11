@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
-    window.__CC_VER = '265';
+    window.__CC_VER = '266';
     (function () {
       function bustCaches() {
         var jobs = [];
@@ -1079,12 +1079,67 @@
       border-radius: 8px;
       font-family: inherit;
     }
+    .tpl-ed-opts.row {
+      flex-wrap: wrap;
+      gap: 6px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 8px;
+    }
     .tpl-ed-opts.row .tpl-ed-opt,
     .tpl-ed-opts.row .tpl-ed-opt-add {
       flex: 0 0 calc((100% - 24px) / 5);
       width: calc((100% - 24px) / 5);
       max-width: calc((100% - 24px) / 5);
       min-width: 0;
+      min-height: 36px;
+      border-radius: 8px;
+    }
+    .tpl-ed-opts.row .tpl-ed-opt {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      padding: 0;
+      border: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .tpl-ed-opts.row .tpl-ed-opt input {
+      width: 100%;
+      padding: 8px 2px;
+      font-size: 13px;
+      color: var(--dim);
+      text-align: center;
+    }
+    .tpl-ed-opts.row .tpl-ed-opt input:focus {
+      color: #fff;
+    }
+    .tpl-ed-opts.row .tpl-ed-opt button {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #2a2a2e;
+      border: 1px solid var(--border);
+      font-size: 11px;
+      line-height: 1;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .tpl-ed-opts.row .tpl-ed-opt:focus-within button,
+    .tpl-ed-opts.row .tpl-ed-opt:hover button {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .tpl-ed-opts.row .tpl-ed-opt-add {
+      border: 1px dashed var(--border);
+      background: transparent;
+      color: var(--dim);
+      font-size: 18px;
+      font-weight: 700;
     }
     .tpl-ed-opt {
       display: flex;
@@ -1894,7 +1949,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver" title="განახლება">v188</div>
+      <div class="ver" title="განახლება">v189</div>
     </header>
 
     <div class="tabs">
@@ -1999,7 +2054,7 @@
         </section>
         <section class="tpl-ed-step">
           <div class="tpl-ed-step-h"><span class="tpl-ed-num">2</span> ლიმიტები</div>
-          <p class="tpl-ed-hint">მონიშნე განლაგება. ჩარჩოებში ჩაწერე თანხები; + ამატებს ახალს (რიგში 5-ზე მეტი ჩამოდის).</p>
+          <p class="tpl-ed-hint">მარცხნიდან მარჯვნივ: ღილაკების რიგი — მეორე ადგილზე + (დაამატე); 5-ზე მეტი ქვემოთ ჩამოდის.</p>
           <div class="tpl-ed-limits" id="tpl-ed-limits"></div>
         </section>
         <section class="tpl-ed-step">
@@ -2794,7 +2849,9 @@ ${ALDAGI_DETAILS}`;
           label: 'ლიმიტი',
           type: 'choice',
           layout: layout === 'col' || layout === 'dropdown' ? layout : 'row',
-          options: ['5000$']
+          options: layout === 'row'
+            ? ['5000$', '10000$', '25000$', '50000$']
+            : ['5000$']
         });
       }
       updateCustomSmsFields(tplId, fields);
@@ -2839,16 +2896,29 @@ ${ALDAGI_DETAILS}`;
           } else {
             const opts = Array.isArray(field.options) ? field.options.slice() : [];
             while (opts.length < 1) opts.push('5000$');
-            const cls = 'tpl-ed-opts ' + (field.layout === 'col' || field.layout === 'dropdown' ? field.layout : 'row');
+            const lay = field.layout === 'col' || field.layout === 'dropdown' ? field.layout : 'row';
+            const cls = 'tpl-ed-opts ' + lay;
             let optsHtml = `<input class="tpl-ed-field-label" type="text" data-ed-label="${escapeHtml(field.id)}" value="${escapeHtml(field.label || '')}" placeholder="სახელი (მაგ: მესამე პირი)">`;
             optsHtml += `<div class="${cls}" data-ed-opts="${escapeHtml(field.id)}">`;
-            opts.forEach((opt, i) => {
-              optsHtml += `<div class="tpl-ed-opt">
+            const chip = (opt, i) => `<div class="tpl-ed-opt">
                 <input type="text" inputmode="decimal" data-ed-opt="${escapeHtml(field.id)}" data-ed-opt-i="${i}" value="${escapeHtml(opt)}" placeholder="10000$">
                 <button type="button" data-ed-opt-del="${escapeHtml(field.id)}" data-ed-opt-i="${i}" aria-label="წაშლა">×</button>
               </div>`;
-            });
-            optsHtml += `<button type="button" class="tpl-ed-opt-add" data-ed-opt-add="${escapeHtml(field.id)}" aria-label="დამატება">+</button></div>`;
+            const plus = `<button type="button" class="tpl-ed-opt-add" data-ed-opt-add="${escapeHtml(field.id)}" aria-label="დამატება">+</button>`;
+            if (lay === 'row') {
+              // როგორც ფრანშიზის რიგი: პირველი, მერე +, მერე დანარჩენი (ან ბოლოში + თუ უკვე მეტია)
+              if (opts.length <= 4) {
+                optsHtml += chip(opts[0], 0) + plus;
+                opts.slice(1).forEach((opt, i) => { optsHtml += chip(opt, i + 1); });
+              } else {
+                opts.forEach((opt, i) => { optsHtml += chip(opt, i); });
+                optsHtml += plus;
+              }
+            } else {
+              opts.forEach((opt, i) => { optsHtml += chip(opt, i); });
+              optsHtml += plus;
+            }
+            optsHtml += `</div>`;
             body = `<div class="tpl-ed-layout-body">${optsHtml}</div>`;
           }
         }
@@ -3024,7 +3094,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '265';
+      const v = window.__CC_VER || '266';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -4979,12 +5049,16 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
         if (!field) return;
         const options = (field.options || []).slice();
         if (options.length >= 24) return;
-        options.push('');
+        const isRow = (field.layout || 'row') === 'row';
+        // რიგში: + მეორე ადგილზეა — ახალი ვარიანტი იქ ჩაჯდება
+        if (isRow && options.length <= 4) options.splice(1, 0, '');
+        else options.push('');
         patchCustomField(tplEditorState.id, fieldId, { options });
         renderTplEditorFields();
         const inputs = document.querySelectorAll(`[data-ed-opt="${fieldId}"]`);
-        const last = inputs[inputs.length - 1];
-        if (last) last.focus();
+        const focusIdx = isRow && options.length <= 5 ? 1 : inputs.length - 1;
+        const el = inputs[focusIdx] || inputs[inputs.length - 1];
+        if (el) el.focus();
         return;
       }
       const delOpt = e.target.closest('[data-ed-opt-del]');
