@@ -73,16 +73,7 @@ enum AldagiMessages {
 
     static let thirdLimits = ["5000$", "10000$", "25000$", "50000$"]
     static let healthLimits = ["20000$", "40000$", "100000$"]
-    /// Default without 2% — UI shows "+" in its place; tapping + fills missing percents.
-    static let franchisePercents = ["1%", "3%", "4%", "5%"]
-
-    static func nextFranchisePercent(existing: [String]) -> String? {
-        let have = Set(existing.compactMap { Int($0.filter(\.isNumber)) })
-        for i in 1...99 where !have.contains(i) {
-            return "\(i)%"
-        }
-        return nil
-    }
+    static let franchisePercents = ["1%", "2%", "3%", "4%", "5%"]
 
     static func intro(lang: IntroLang) -> String {
         switch lang {

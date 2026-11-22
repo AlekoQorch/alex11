@@ -1,5 +1,5 @@
 /* Cold Caller — network-first; wipe caches on activate */
-const CACHE = 'cold-caller-v263';
+const CACHE = 'cold-caller-v265';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -27,10 +27,8 @@ function isFreshNeeded(url) {
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
-
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
-
   if (req.mode === 'navigate' || isFreshNeeded(url)) {
     event.respondWith(
       fetch(req, { cache: 'no-store' })
@@ -39,7 +37,6 @@ self.addEventListener('fetch', (event) => {
     );
     return;
   }
-
   event.respondWith(
     fetch(req)
       .then((res) => {
