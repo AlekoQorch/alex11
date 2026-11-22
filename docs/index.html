@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
-    window.__CC_VER = '270';
+    window.__CC_VER = '271';
     (function () {
       function bustCaches() {
         var jobs = [];
@@ -1061,13 +1061,11 @@
       flex-direction: column;
       flex-wrap: nowrap;
     }
-    /* იგივე ვიზუალი/ზომა, რაც .lim-pick button — მაქს. 5 რიგში */
+    /* იგივე ვიზუალი, რაც .lim-pick — ივსება სიგანეზე, მაქს. 5 რიგში */
     .tpl-ed-opts.row .tpl-ed-opt,
     .tpl-ed-opts.row .tpl-ed-opt-add {
-      flex: 0 0 calc((100% - 24px) / 5);
-      width: calc((100% - 24px) / 5);
-      max-width: calc((100% - 24px) / 5);
-      min-width: 0;
+      flex: 1 1 0;
+      min-width: calc((100% - 24px) / 5);
       box-sizing: border-box;
       margin: 0;
       padding: 8px 4px;
@@ -2335,6 +2333,8 @@ These details are needed to calculate the tariff:
 
     const HOME_CONTENTS_ALL = [5000, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000];
     const HOME_THIRD_LIMITS = ['5000$', '10000$', '20000$'];
+    /* შაბლონის დამატება — იგივე ლიმიტის ვარიანტები, რაც ჩვეულებრივ შაბლონში */
+    const TPL_DEFAULT_LIMITS = HOME_THIRD_LIMITS.slice();
     const homePick = { contents: '', third: '' };
 
     function formatHomeLimit(val) {
@@ -2825,7 +2825,7 @@ ${ALDAGI_DETAILS}`;
           label: 'ლიმიტი',
           type: 'choice',
           layout: layout === 'col' || layout === 'dropdown' ? layout : 'row',
-          options: ['']
+          options: TPL_DEFAULT_LIMITS.slice()
         });
       }
       updateCustomSmsFields(tplId, fields);
@@ -2833,7 +2833,7 @@ ${ALDAGI_DETAILS}`;
       insertTokenIntoTplText(id);
       setTimeout(() => {
         const inp = document.querySelector(`.tpl-ed-layout.on [data-ed-opt="${id}"]`);
-        if (inp) inp.focus();
+        if (inp) { inp.focus(); try { inp.select(); } catch (_) {} }
       }, 30);
     }
     function disableLayout(layout) {
@@ -2873,7 +2873,7 @@ ${ALDAGI_DETAILS}`;
             </div>`;
           } else {
             const opts = Array.isArray(field.options) ? field.options.slice() : [];
-            if (!opts.length) opts.push('');
+            if (!opts.length) opts.push(...TPL_DEFAULT_LIMITS);
             const lay = field.layout === 'col' || field.layout === 'dropdown' ? field.layout : 'row';
             const cls = 'tpl-ed-opts ' + lay;
             let optsHtml = `<div class="${cls}" data-ed-opts="${escapeHtml(field.id)}">`;
@@ -2950,7 +2950,7 @@ ${ALDAGI_DETAILS}`;
       const fields = normalizeCustomFields(c.fields).map(f => {
         if (f.type !== 'choice' && f.type !== 'percent_of') return f;
         const options = (f.options || []).map(o => String(o || '').trim()).filter(Boolean);
-        return { ...f, options: options.length ? options : ['5000$', '10000$'] };
+        return { ...f, options: options.length ? options : TPL_DEFAULT_LIMITS.slice() };
       });
       updateCustomSmsFields(id, fields);
       renameCustomSmsTpl(id, title);
@@ -3058,7 +3058,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '270';
+      const v = window.__CC_VER || '271';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
