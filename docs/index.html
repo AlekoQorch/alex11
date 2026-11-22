@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
-    window.__CC_VER = '269';
+    window.__CC_VER = '270';
     (function () {
       function bustCaches() {
         var jobs = [];
@@ -1044,23 +1044,8 @@
       line-height: 1.35;
     }
     .tpl-ed-layout-body {
-      padding: 10px 12px 12px;
+      padding: 4px 12px 12px;
       border-top: 1px solid var(--line);
-    }
-    .tpl-ed-field-label {
-      display: block;
-      width: 100%;
-      box-sizing: border-box;
-      margin: 0 0 8px;
-      padding: 0;
-      border: 0;
-      background: transparent;
-      color: var(--dim);
-      font-size: 12px;
-      font-weight: 500;
-      font-family: inherit;
-      letter-spacing: 0.01em;
-      outline: none;
     }
     .tpl-ed-opts {
       display: flex;
@@ -1068,16 +1053,13 @@
       flex-wrap: wrap;
       width: 100%;
       margin: 0;
-      padding: 0 0 10px;
-      border-bottom: 1px solid var(--line);
+      padding: 0;
       align-content: flex-start;
     }
     .tpl-ed-opts.col,
     .tpl-ed-opts.dropdown {
       flex-direction: column;
       flex-wrap: nowrap;
-      border-bottom: 0;
-      padding-bottom: 0;
     }
     /* იგივე ვიზუალი/ზომა, რაც .lim-pick button — მაქს. 5 რიგში */
     .tpl-ed-opts.row .tpl-ed-opt,
@@ -1087,9 +1069,8 @@
       max-width: calc((100% - 24px) / 5);
       min-width: 0;
       box-sizing: border-box;
-      height: 36px;
       margin: 0;
-      padding: 0 4px;
+      padding: 8px 4px;
       border: 1px solid var(--border);
       border-radius: 8px;
       background: var(--bg);
@@ -1097,7 +1078,9 @@
       font-size: 13px;
       font-family: inherit;
       font-weight: 400;
-      line-height: 1;
+      line-height: 1.2;
+      text-align: center;
+      transition: border-color .12s ease, background .12s ease, color .12s ease;
     }
     .tpl-ed-opts.row .tpl-ed-opt {
       display: flex;
@@ -1107,7 +1090,6 @@
     .tpl-ed-opts.row .tpl-ed-opt input {
       width: 100%;
       min-width: 0;
-      height: 100%;
       border: 0;
       background: transparent;
       color: var(--dim);
@@ -1120,6 +1102,10 @@
     }
     .tpl-ed-opts.row .tpl-ed-opt input:focus { color: #fff; }
     .tpl-ed-opts.row .tpl-ed-opt input::placeholder { color: #5c5c64; }
+    .tpl-ed-opts.row .tpl-ed-opt:focus-within {
+      border-color: rgba(77, 159, 255, 0.65);
+      background: rgba(77, 159, 255, 0.12);
+    }
     .tpl-ed-opts.row .tpl-ed-opt-add {
       display: inline-flex;
       align-items: center;
@@ -1129,6 +1115,11 @@
       font-weight: 600;
       cursor: pointer;
     }
+    .tpl-ed-opts.row .tpl-ed-opt-add:hover {
+      border-color: rgba(77, 159, 255, 0.55);
+      color: #fff;
+      background: rgba(77, 159, 255, 0.12);
+    }
     .tpl-ed-opts.col .tpl-ed-opt,
     .tpl-ed-opts.dropdown .tpl-ed-opt,
     .tpl-ed-opts.col .tpl-ed-opt-add,
@@ -1136,16 +1127,16 @@
       flex: 0 0 auto;
       width: 100%;
       max-width: none;
-      height: 42px;
       box-sizing: border-box;
       margin: 0;
-      padding: 0 12px;
+      padding: 10px 12px;
       border: 1px solid var(--border);
       border-radius: 8px;
       background: var(--bg);
       color: var(--dim);
       font-size: 14px;
       font-family: inherit;
+      transition: border-color .12s ease, background .12s ease, color .12s ease;
     }
     .tpl-ed-opts.col .tpl-ed-opt,
     .tpl-ed-opts.dropdown .tpl-ed-opt {
@@ -1165,6 +1156,11 @@
     }
     .tpl-ed-opts.col .tpl-ed-opt input:focus,
     .tpl-ed-opts.dropdown .tpl-ed-opt input:focus { color: #fff; }
+    .tpl-ed-opts.col .tpl-ed-opt:focus-within,
+    .tpl-ed-opts.dropdown .tpl-ed-opt:focus-within {
+      border-color: rgba(77, 159, 255, 0.65);
+      background: rgba(77, 159, 255, 0.12);
+    }
     .tpl-ed-opts.col .tpl-ed-opt-add,
     .tpl-ed-opts.dropdown .tpl-ed-opt-add {
       display: inline-flex;
@@ -1174,6 +1170,12 @@
       font-size: 16px;
       font-weight: 600;
       cursor: pointer;
+    }
+    .tpl-ed-opts.col .tpl-ed-opt-add:hover,
+    .tpl-ed-opts.dropdown .tpl-ed-opt-add:hover {
+      border-color: rgba(77, 159, 255, 0.55);
+      color: #fff;
+      background: rgba(77, 159, 255, 0.12);
     }
     .tpl-ed-money-preview {
       margin: 10px 0 0;
@@ -2874,8 +2876,7 @@ ${ALDAGI_DETAILS}`;
             if (!opts.length) opts.push('');
             const lay = field.layout === 'col' || field.layout === 'dropdown' ? field.layout : 'row';
             const cls = 'tpl-ed-opts ' + lay;
-            let optsHtml = `<input class="tpl-ed-field-label" type="text" data-ed-label="${escapeHtml(field.id)}" value="${escapeHtml(field.label || 'ლიმიტი')}" placeholder="ლიმიტი" maxlength="40">`;
-            optsHtml += `<div class="${cls}" data-ed-opts="${escapeHtml(field.id)}">`;
+            let optsHtml = `<div class="${cls}" data-ed-opts="${escapeHtml(field.id)}">`;
             opts.forEach((opt, i) => {
               optsHtml += `<div class="tpl-ed-opt">
                 <input type="text" inputmode="decimal" data-ed-opt="${escapeHtml(field.id)}" data-ed-opt-i="${i}" value="${escapeHtml(opt)}" placeholder="5000$">
@@ -3057,7 +3058,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '269';
+      const v = window.__CC_VER || '270';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
