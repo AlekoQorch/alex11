@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
-    window.__CC_VER = '276';
+    window.__CC_VER = '277';
     (function () {
       function bustCaches() {
         var jobs = [];
@@ -1870,9 +1870,8 @@
           <input type="tel" class="sms-to is-empty" disabled placeholder="ნომერი არაა" tabindex="-1" aria-hidden="true">
         </div>
         <div class="tpl-fields offer-fields" id="tpl-ed-limits"></div>
-        <button type="button" class="tpl-ed-add-main" id="tpl-ed-add-main">+ ველის დამატება</button>
         <div class="sms-edit-wrap">
-          <textarea id="tpl-ed-text" class="sms-text sms-edit" rows="10" placeholder="SMS ტექსტი…" aria-label="SMS ტექსტი"></textarea>
+          <textarea id="tpl-ed-text" class="sms-text sms-edit" rows="14" placeholder="SMS ტექსტი…" aria-label="SMS ტექსტი"></textarea>
         </div>
         <div class="send-row tpl-ed-send-fake" aria-hidden="true">
           <button type="button" disabled></button>
@@ -1887,16 +1886,6 @@
     <div class="tpl-ed-foot">
       <button type="button" id="tpl-ed-cancel">გაუქმება</button>
       <button type="button" class="tpl-ed-save" id="tpl-ed-save">შენახვა</button>
-    </div>
-    <div id="tpl-field-pick" class="tpl-field-pick hide" aria-hidden="true">
-      <div class="tpl-field-pick-box">
-        <div class="tpl-field-pick-title">რას დაამატებ — ის გამოჩნდება ბარათზე</div>
-        <button type="button" data-add-field="row"><strong>ღილაკები</strong><span>როგორც მესამე პირის ლიმიტი — 5000$ 10000$ 20000$</span></button>
-        <button type="button" data-add-field="dropdown"><strong>ჩამოსაშლელი</strong><span>როგორც რემონტის/ავეჯის სია</span></button>
-        <button type="button" data-add-field="money"><strong>თანხა</strong><span>როგორც ქონების ლიმიტის ველი</span></button>
-        <button type="button" data-add-field="text"><strong>ტექსტი</strong><span>ჩვეულებრივი ჩასაწერი ველი</span></button>
-        <button type="button" class="tpl-field-pick-cancel" id="tpl-field-pick-cancel">გაუქმება</button>
-      </div>
     </div>
   </div>
 
@@ -2751,10 +2740,7 @@ ${ALDAGI_DETAILS}`;
       if (!box) return;
       const fields = normalizeCustomFields(getTplDraft().fields);
       getTplDraft().fields = fields;
-      if (!fields.length) {
-        box.innerHTML = `<p class="tpl-ed-empty">დააჭირე „+ ველის დამატებას“ — დაემატება ზუსტად ისე, როგორც SMS ბარათზე.</p>`;
-        return;
-      }
+      // უბრალოდ იგივე სახე, რაც SMS ბარათზე — დამატება/წაშლა არა
       box.innerHTML = fields.map(field => {
         const label = escapeHtml(field.label || '');
         let body = '';
@@ -2767,7 +2753,6 @@ ${ALDAGI_DETAILS}`;
           if (!opts.length) opts.push(...TPL_DEFAULT_LIMITS);
           const layout = field.layout === 'col' || field.layout === 'dropdown' ? field.layout : 'row';
           if (layout === 'dropdown') {
-            // იგივე სახე, რაც ბინის შეთავაზებაში — ჯერ ქონების ლიმიტი
             const needProp = field.id === 'contents';
             body = `<select class="field-inp" disabled tabindex="-1" aria-label="${label}">`;
             body += `<option value="">${needProp ? escapeHtml(uiT('needProperty')) : 'აირჩიე ლიმიტი'}</option>`;
@@ -2775,25 +2760,17 @@ ${ALDAGI_DETAILS}`;
               opts.forEach(opt => { body += `<option value="${escapeHtml(opt)}">${escapeHtml(opt)}</option>`; });
             }
             body += `</select>`;
-            body += `<button type="button" class="tpl-ed-add-main" style="margin:6px 0 0" data-ed-toggle-opts="${escapeHtml(field.id)}">ვარიანტების შეცვლა</button>`;
-            body += `<div class="tpl-ed-dd-opts hide" data-ed-opts="${escapeHtml(field.id)}">`;
-            opts.forEach((opt, i) => {
-              body += `<input class="field-inp" type="text" inputmode="decimal" data-ed-opt="${escapeHtml(field.id)}" data-ed-opt-i="${i}" value="${escapeHtml(opt)}" placeholder="5000$">`;
-            });
-            body += `<button type="button" class="tpl-ed-add-main" style="margin:0" data-ed-opt-add="${escapeHtml(field.id)}">+ ვარიანტი</button></div>`;
           } else {
             const layCls = layout === 'col' ? ' lim-pick-col' : '';
-            // lim-pick იდენტური — ღილაკები როგორც SMS ბარათზე (+ მხოლოდ ვარიანტის დასამატებლად)
-            body = `<div class="lim-pick${layCls}" data-ed-opts="${escapeHtml(field.id)}">`;
-            opts.forEach((opt, i) => {
-              body += `<button type="button" class="tpl-ed-lim-btn"><input type="text" inputmode="decimal" data-ed-opt="${escapeHtml(field.id)}" data-ed-opt-i="${i}" value="${escapeHtml(opt)}" placeholder="5000$"></button>`;
+            body = `<div class="lim-pick${layCls}">`;
+            opts.forEach(opt => {
+              body += `<button type="button" tabindex="-1">${escapeHtml(opt)}</button>`;
             });
-            body += `<button type="button" class="tpl-ed-lim-add" data-ed-opt-add="${escapeHtml(field.id)}" aria-label="+">+</button></div>`;
+            body += `</div>`;
           }
         }
-        return `<div class="tpl-field-row" data-field-card="${escapeHtml(field.id)}">
-          <input class="field-label tpl-ed-label-inp" type="text" data-ed-label="${escapeHtml(field.id)}" value="${label}" placeholder="ველის სახელი" maxlength="60">
-          <button type="button" class="tpl-ed-field-del" data-ed-del="${escapeHtml(field.id)}" aria-label="წაშლა">×</button>
+        return `<div class="tpl-field-row">
+          <span class="field-label">${label}</span>
           ${body}
         </div>`;
       }).join('');
@@ -2984,7 +2961,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '276';
+      const v = window.__CC_VER || '277';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -4892,18 +4869,6 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
     $('tpl-ed-cancel')?.addEventListener('click', () => closeTplEditor({ discard: true }));
     $('tpl-ed-save')?.addEventListener('click', saveTplEditor);
     $('tpl-ed-save-top')?.addEventListener('click', saveTplEditor);
-    $('tpl-ed-add-main')?.addEventListener('click', e => {
-      e.preventDefault();
-      if (!tplEditorState.open) return;
-      openFieldPick();
-    });
-    $('tpl-field-pick-cancel')?.addEventListener('click', e => {
-      e.preventDefault();
-      closeFieldPick();
-    });
-    $('tpl-field-pick')?.addEventListener('click', e => {
-      if (e.target === $('tpl-field-pick')) closeFieldPick();
-    });
     $('tpl-ed-title')?.addEventListener('input', () => {
       if (!tplEditorState.open) return;
       getTplDraft().title = $('tpl-ed-title').value;
@@ -4972,7 +4937,6 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
       }
     }
     $('tpl-ed-limits')?.addEventListener('click', onTplEdClick);
-    $('tpl-field-pick')?.addEventListener('click', onTplEdClick);
     $('tpl-ed-limits')?.addEventListener('input', onTplEdInput);
     $('field-type')?.addEventListener('change', syncFieldModalType);
     $('field-save')?.addEventListener('click', saveFieldFromModal);
