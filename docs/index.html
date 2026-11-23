@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
-    window.__CC_VER = '275';
+    window.__CC_VER = '276';
     (function () {
       function bustCaches() {
         var jobs = [];
@@ -2662,32 +2662,6 @@ ${ALDAGI_DETAILS}`;
     function emptyTplDraft() {
       return homeTplCloneDraft();
     }
-    function addHomeCloneTemplate() {
-      const draft = homeTplCloneDraft();
-      const id = 'c_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-      const list = loadCustomSms();
-      list.push({
-        id,
-        title: draft.title,
-        fields: normalizeCustomFields(draft.fields).map(f => ({
-          ...f,
-          options: Array.isArray(f.options) ? f.options.slice() : f.options
-        }))
-      });
-      saveCustomSms(list);
-      const all = loadSmsEdits();
-      all[id] = draft.text;
-      all[id + '__en'] = '';
-      try { localStorage.setItem(SMS_EDITS_KEY, JSON.stringify(all)); } catch {}
-      scheduleCustomEnTranslate(id, true);
-      renderSmsList();
-      showAppToast('შაბლონი დაემატა', 1600);
-      setTimeout(() => {
-        const card = document.querySelector(`.sms-card[data-id="${id}"]`);
-        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 60);
-      return id;
-    }
     function getTplDraft() {
       if (!tplEditorState.draft) tplEditorState.draft = emptyTplDraft();
       return tplEditorState.draft;
@@ -2793,9 +2767,13 @@ ${ALDAGI_DETAILS}`;
           if (!opts.length) opts.push(...TPL_DEFAULT_LIMITS);
           const layout = field.layout === 'col' || field.layout === 'dropdown' ? field.layout : 'row';
           if (layout === 'dropdown') {
+            // იგივე სახე, რაც ბინის შეთავაზებაში — ჯერ ქონების ლიმიტი
+            const needProp = field.id === 'contents';
             body = `<select class="field-inp" disabled tabindex="-1" aria-label="${label}">`;
-            body += `<option value="">აირჩიე ლიმიტი</option>`;
-            opts.forEach(opt => { body += `<option value="${escapeHtml(opt)}">${escapeHtml(opt)}</option>`; });
+            body += `<option value="">${needProp ? escapeHtml(uiT('needProperty')) : 'აირჩიე ლიმიტი'}</option>`;
+            if (!needProp) {
+              opts.forEach(opt => { body += `<option value="${escapeHtml(opt)}">${escapeHtml(opt)}</option>`; });
+            }
             body += `</select>`;
             body += `<button type="button" class="tpl-ed-add-main" style="margin:6px 0 0" data-ed-toggle-opts="${escapeHtml(field.id)}">ვარიანტების შეცვლა</button>`;
             body += `<div class="tpl-ed-dd-opts hide" data-ed-opts="${escapeHtml(field.id)}">`;
@@ -2805,6 +2783,7 @@ ${ALDAGI_DETAILS}`;
             body += `<button type="button" class="tpl-ed-add-main" style="margin:0" data-ed-opt-add="${escapeHtml(field.id)}">+ ვარიანტი</button></div>`;
           } else {
             const layCls = layout === 'col' ? ' lim-pick-col' : '';
+            // lim-pick იდენტური — ღილაკები როგორც SMS ბარათზე (+ მხოლოდ ვარიანტის დასამატებლად)
             body = `<div class="lim-pick${layCls}" data-ed-opts="${escapeHtml(field.id)}">`;
             opts.forEach((opt, i) => {
               body += `<button type="button" class="tpl-ed-lim-btn"><input type="text" inputmode="decimal" data-ed-opt="${escapeHtml(field.id)}" data-ed-opt-i="${i}" value="${escapeHtml(opt)}" placeholder="5000$"></button>`;
@@ -2836,9 +2815,12 @@ ${ALDAGI_DETAILS}`;
           fields: normalizeCustomFields(c.fields).map(f => ({ ...f, options: Array.isArray(f.options) ? f.options.slice() : f.options }))
         };
       }
-      if ($('tpl-ed-heading')) $('tpl-ed-heading').textContent = isNew ? 'ახალი შაბლონი' : 'შაბლონის რედაქტირება';
+      if ($('tpl-ed-heading')) $('tpl-ed-heading').textContent = isNew ? 'შაბლონის დამატება' : 'შაბლონის რედაქტირება';
       if ($('tpl-ed-title')) $('tpl-ed-title').value = getTplDraft().title || '';
-      if ($('tpl-ed-text')) $('tpl-ed-text').value = getTplDraft().text || '';
+      if ($('tpl-ed-text')) {
+        $('tpl-ed-text').value = getTplDraft().text || '';
+        if (isNew) $('tpl-ed-text').rows = 14;
+      }
       paintTplEdSendFake();
       renderTplEditorFields();
       const ed = $('tpl-editor');
@@ -2847,7 +2829,7 @@ ${ALDAGI_DETAILS}`;
         ed.setAttribute('aria-hidden', 'false');
       }
       document.body.style.overflow = 'hidden';
-      setTimeout(() => $('tpl-ed-title')?.focus(), 50);
+      // ახალი შაბლონი უკვე შევსებულია ბინის შეთავაზებით — ფოკუსი არ გადავიტანოთ სათაურზე
     }
     function closeTplEditor({ discard } = {}) {
       const id = tplEditorState.id;
@@ -3002,7 +2984,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '275';
+      const v = window.__CC_VER || '276';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -4903,8 +4885,8 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
     renderSmsList();
     $('sms-add-tpl').onclick = () => {
       lockAllSmsEditing();
-      // უბრალოდ იმავე შაბლონს ამატებს, რაც „ბინა სრული შეთავაზებაა“
-      addHomeCloneTemplate();
+      // რედაქტორში იხსნება ზუსტად „ბინა სრული შეთავაზება“ (შენახვამდე სიაში არ ემატება)
+      openTplEditor('', true);
     };
     $('tpl-ed-close')?.addEventListener('click', () => closeTplEditor({ discard: true }));
     $('tpl-ed-cancel')?.addEventListener('click', () => closeTplEditor({ discard: true }));
