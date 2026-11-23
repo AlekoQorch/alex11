@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
-    window.__CC_VER = '274';
+    window.__CC_VER = '275';
     (function () {
       function bustCaches() {
         var jobs = [];
@@ -2622,7 +2622,8 @@ ${ALDAGI_DETAILS}`;
         } else {
           const v = vals[f.id] || '';
           const mode = f.type === 'money' ? 'decimal' : 'text';
-          html += `<input class="field-inp" data-custom-inp="${c.id}" data-field="${f.id}" type="text" inputmode="${mode}" value="${escapeHtml(v)}" placeholder="${escapeHtml(f.label || '')}">`;
+          const ph = f.type === 'money' ? 'მაგ: 40000$' : (f.label || '');
+          html += `<input class="field-inp" data-custom-inp="${c.id}" data-field="${f.id}" type="text" inputmode="${mode}" value="${escapeHtml(v)}" placeholder="${escapeHtml(ph)}">`;
         }
         html += `</div>`;
       });
@@ -2631,8 +2632,61 @@ ${ALDAGI_DETAILS}`;
     }
 
     const tplEditorState = { id: '', isNew: false, open: false, draft: null };
+    function homeTplCloneDraft() {
+      return {
+        title: 'ბინა სრული შეთავაზება',
+        text: HOME_OFFER_BODY,
+        fields: [
+          {
+            id: 'property',
+            label: 'ქონების, რემონტის/ავეჯის/ტექნიკის ლიმიტი ($)',
+            type: 'money'
+          },
+          {
+            id: 'contents',
+            label: 'რემონტის/ავეჯის/ტექნიკის ლიმიტი',
+            type: 'choice',
+            layout: 'dropdown',
+            options: HOME_CONTENTS_ALL.map(n => n + '$')
+          },
+          {
+            id: 'third',
+            label: 'მესამე პირის ლიმიტი',
+            type: 'choice',
+            layout: 'row',
+            options: HOME_THIRD_LIMITS.slice()
+          }
+        ]
+      };
+    }
     function emptyTplDraft() {
-      return { title: 'ახალი შაბლონი', text: '', fields: [] };
+      return homeTplCloneDraft();
+    }
+    function addHomeCloneTemplate() {
+      const draft = homeTplCloneDraft();
+      const id = 'c_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      const list = loadCustomSms();
+      list.push({
+        id,
+        title: draft.title,
+        fields: normalizeCustomFields(draft.fields).map(f => ({
+          ...f,
+          options: Array.isArray(f.options) ? f.options.slice() : f.options
+        }))
+      });
+      saveCustomSms(list);
+      const all = loadSmsEdits();
+      all[id] = draft.text;
+      all[id + '__en'] = '';
+      try { localStorage.setItem(SMS_EDITS_KEY, JSON.stringify(all)); } catch {}
+      scheduleCustomEnTranslate(id, true);
+      renderSmsList();
+      showAppToast('შაბლონი დაემატა', 1600);
+      setTimeout(() => {
+        const card = document.querySelector(`.sms-card[data-id="${id}"]`);
+        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 60);
+      return id;
     }
     function getTplDraft() {
       if (!tplEditorState.draft) tplEditorState.draft = emptyTplDraft();
@@ -2948,7 +3002,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '274';
+      const v = window.__CC_VER || '275';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -4849,7 +4903,8 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
     renderSmsList();
     $('sms-add-tpl').onclick = () => {
       lockAllSmsEditing();
-      openTplEditor('', true);
+      // უბრალოდ იმავე შაბლონს ამატებს, რაც „ბინა სრული შეთავაზებაა“
+      addHomeCloneTemplate();
     };
     $('tpl-ed-close')?.addEventListener('click', () => closeTplEditor({ discard: true }));
     $('tpl-ed-cancel')?.addEventListener('click', () => closeTplEditor({ discard: true }));
