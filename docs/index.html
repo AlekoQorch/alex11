@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
-    window.__CC_VER = '271';
+    window.__CC_VER = '273';
     (function () {
       function bustCaches() {
         var jobs = [];
@@ -863,153 +863,102 @@
       -webkit-overflow-scrolling: touch;
       padding: 14px 14px 24px;
       padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
-    }
-    .tpl-ed-step {
-      margin: 0 0 18px;
-      padding: 14px 14px 12px;
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      background: var(--surface);
-    }
-    .tpl-ed-step-h {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin: 0 0 8px;
-      font-size: 14px;
-      font-weight: 700;
-    }
-    .tpl-ed-num {
-      display: inline-grid;
-      place-items: center;
-      width: 22px;
-      height: 22px;
-      border-radius: 7px;
-      background: rgba(77, 159, 255, 0.2);
-      color: #9cc9ff;
-      font-size: 12px;
-      font-weight: 800;
-    }
-    .tpl-ed-hint {
-      margin: 0 0 10px;
-      font-size: 12px;
-      line-height: 1.45;
-      color: var(--dim);
-    }
-    .tpl-ed-step input[type="text"],
-    .tpl-ed-step textarea,
-    .tpl-ed-step select {
-      width: 100%;
-      box-sizing: border-box;
-      padding: 12px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      background: var(--bg);
-      color: var(--text);
-      font-size: 15px;
-      font-family: inherit;
-    }
-    .tpl-ed-step textarea {
-      min-height: 180px;
-      resize: vertical;
-      line-height: 1.45;
-    }
-    .tpl-ed-body {
       background: #0b0b0d;
     }
-    .tpl-ed-card {
-      margin: 0;
-      padding: 16px 14px 18px;
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      background: var(--surface);
-      box-shadow: 0 10px 28px rgba(0,0,0,0.32);
-      min-height: calc(100vh - 160px);
-    }
-    .tpl-ed-card .tpl-ed-step {
-      border: 0;
-      padding: 0;
-      margin: 0 0 18px;
-      background: transparent;
-    }
-    .tpl-ed-card .tpl-ed-step:last-child {
-      margin-bottom: 0;
-    }
-    .tpl-ed-fields {
-      display: flex;
+    .tpl-ed-sms-card { margin: 0; }
+    .tpl-ed-sms-card .sms-card-head {
       flex-direction: column;
-      gap: 10px;
-      margin: 0 0 10px;
+      align-items: stretch;
+      gap: 6px;
+      text-align: center;
     }
-    .tpl-ed-field {
-      padding: 12px;
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      background: var(--bg);
+    .tpl-ed-sms-card #tpl-ed-title {
+      width: 100%;
+      box-sizing: border-box;
+      margin: 0;
+      padding: 4px 8px;
+      border: 0;
+      background: transparent;
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 800;
+      font-family: inherit;
+      letter-spacing: 0.04em;
+      text-align: center;
+      text-transform: uppercase;
     }
+    .tpl-ed-phone-fake {
+      display: block;
+      color: var(--dim);
+      font-size: 12px;
+      text-align: center;
+    }
+    .tpl-ed-guide {
+      margin: 0 0 12px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: rgba(77, 159, 255, 0.1);
+      color: #b8d7ff;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .tpl-ed-offer { margin-bottom: 8px; }
+    .tpl-ed-field { margin: 0 0 12px; padding-bottom: 4px; }
     .tpl-ed-field-top {
       display: flex;
       align-items: center;
       gap: 8px;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
     .tpl-ed-field-top input[type="text"] {
       flex: 1;
       min-width: 0;
       margin: 0;
-      padding: 10px 12px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      background: var(--surface);
-      color: var(--text);
-      font-size: 14px;
-      font-weight: 600;
-      font-family: inherit;
-    }
-    .tpl-ed-field-del {
-      flex: 0 0 auto;
-      width: 36px;
-      height: 36px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      background: transparent;
-      color: var(--dim);
-      font-size: 18px;
-      line-height: 1;
-      font-family: inherit;
-      cursor: pointer;
-    }
-    .tpl-ed-field-kind {
-      width: 100%;
-      margin: 0 0 10px;
-      padding: 10px 12px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      background: var(--surface);
-      color: var(--text);
-      font-size: 13px;
-      font-family: inherit;
-    }
-    .tpl-ed-add-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 6px;
-    }
-    .tpl-ed-add-row button {
-      padding: 11px 6px;
-      border: 1px dashed var(--border);
-      border-radius: 10px;
+      padding: 0;
+      border: 0;
       background: transparent;
       color: var(--dim);
       font-size: 12px;
       font-weight: 600;
       font-family: inherit;
+    }
+    .tpl-ed-field-del {
+      flex: 0 0 auto;
+      width: 28px;
+      height: 28px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: transparent;
+      color: var(--dim);
+      font-size: 16px;
+      line-height: 1;
+      font-family: inherit;
       cursor: pointer;
     }
-    .tpl-ed-add-row button:active {
-      border-color: rgba(77, 159, 255, 0.55);
+    .tpl-ed-seg {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 4px;
+      margin: 0 0 8px;
+      padding: 3px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg);
+    }
+    .tpl-ed-seg button {
+      padding: 8px 4px;
+      border: 0;
+      border-radius: 7px;
+      background: transparent;
+      color: var(--dim);
+      font-size: 11px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .tpl-ed-seg button.on {
+      background: rgba(77, 159, 255, 0.22);
       color: #fff;
-      background: rgba(77, 159, 255, 0.1);
     }
     .tpl-ed-opts {
       display: flex;
@@ -1017,15 +966,16 @@
       flex-wrap: wrap;
       width: 100%;
       margin: 0;
-      padding: 0;
+      padding: 0 0 10px;
+      border-bottom: 1px solid var(--line);
       align-content: flex-start;
     }
-    .tpl-ed-opts.col,
     .tpl-ed-opts.dropdown {
       flex-direction: column;
       flex-wrap: nowrap;
+      border-bottom: 0;
+      padding-bottom: 0;
     }
-    /* იგივე ვიზუალი, რაც .lim-pick — ივსება სიგანეზე, მაქს. 5 რიგში */
     .tpl-ed-opts.row .tpl-ed-opt,
     .tpl-ed-opts.row .tpl-ed-opt-add {
       flex: 1 1 0;
@@ -1035,14 +985,11 @@
       padding: 8px 4px;
       border: 1px solid var(--border);
       border-radius: 8px;
-      background: var(--surface);
+      background: var(--bg);
       color: var(--dim);
       font-size: 13px;
       font-family: inherit;
-      font-weight: 400;
-      line-height: 1.2;
       text-align: center;
-      transition: border-color .12s ease, background .12s ease, color .12s ease;
     }
     .tpl-ed-opts.row .tpl-ed-opt {
       display: flex;
@@ -1056,14 +1003,12 @@
       background: transparent;
       color: var(--dim);
       font-size: 13px;
-      font-weight: 400;
       font-family: inherit;
       padding: 0;
       outline: none;
       text-align: center;
     }
     .tpl-ed-opts.row .tpl-ed-opt input:focus { color: #fff; }
-    .tpl-ed-opts.row .tpl-ed-opt input::placeholder { color: #5c5c64; }
     .tpl-ed-opts.row .tpl-ed-opt:focus-within {
       border-color: rgba(77, 159, 255, 0.65);
       background: rgba(77, 159, 255, 0.12);
@@ -1077,29 +1022,19 @@
       font-weight: 600;
       cursor: pointer;
     }
-    .tpl-ed-opts.col .tpl-ed-opt,
     .tpl-ed-opts.dropdown .tpl-ed-opt,
-    .tpl-ed-opts.col .tpl-ed-opt-add,
     .tpl-ed-opts.dropdown .tpl-ed-opt-add {
-      flex: 0 0 auto;
       width: 100%;
       box-sizing: border-box;
-      margin: 0;
       padding: 10px 12px;
       border: 1px solid var(--border);
       border-radius: 8px;
-      background: var(--surface);
+      background: var(--bg);
       color: var(--dim);
       font-size: 14px;
       font-family: inherit;
-      transition: border-color .12s ease, background .12s ease, color .12s ease;
     }
-    .tpl-ed-opts.col .tpl-ed-opt,
-    .tpl-ed-opts.dropdown .tpl-ed-opt {
-      display: flex;
-      align-items: center;
-    }
-    .tpl-ed-opts.col .tpl-ed-opt input,
+    .tpl-ed-opts.dropdown .tpl-ed-opt { display: flex; align-items: center; }
     .tpl-ed-opts.dropdown .tpl-ed-opt input {
       width: 100%;
       border: 0;
@@ -1108,16 +1043,8 @@
       font-size: 14px;
       font-family: inherit;
       outline: none;
-      text-align: left;
     }
-    .tpl-ed-opts.col .tpl-ed-opt input:focus,
     .tpl-ed-opts.dropdown .tpl-ed-opt input:focus { color: #fff; }
-    .tpl-ed-opts.col .tpl-ed-opt:focus-within,
-    .tpl-ed-opts.dropdown .tpl-ed-opt:focus-within {
-      border-color: rgba(77, 159, 255, 0.65);
-      background: rgba(77, 159, 255, 0.12);
-    }
-    .tpl-ed-opts.col .tpl-ed-opt-add,
     .tpl-ed-opts.dropdown .tpl-ed-opt-add {
       display: inline-flex;
       align-items: center;
@@ -1127,38 +1054,113 @@
       font-weight: 600;
       cursor: pointer;
     }
-    .tpl-ed-money-preview {
-      margin: 0;
-      padding: 12px;
-      min-height: 44px;
+    .tpl-ed-money-preview,
+    .tpl-ed-text-preview {
+      width: 100%;
       box-sizing: border-box;
-      border: 1px dashed var(--border);
+      margin: 0 0 10px;
+      padding: 11px 12px;
+      border: 1px solid var(--border);
       border-radius: 10px;
+      background: var(--bg);
       color: var(--dim);
       font-size: 14px;
-      display: flex;
-      align-items: center;
-      background: rgba(255,255,255,0.02);
     }
-    .tpl-ed-card #tpl-ed-title {
-      text-align: center;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-    }
-    .tpl-ed-card #tpl-ed-text {
-      min-height: 160px;
-      border-radius: 12px;
-    }
-    .tpl-ed-empty {
-      margin: 0;
-      padding: 14px 12px;
-      border-radius: 12px;
+    .tpl-ed-add-main {
+      width: 100%;
+      margin: 4px 0 12px;
+      padding: 13px 12px;
       border: 1px dashed var(--border);
-      background: rgba(255,255,255,0.02);
+      border-radius: 12px;
+      background: transparent;
+      color: var(--dim);
+      font-size: 14px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .tpl-ed-tokens {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 0 0 8px;
+    }
+    .tpl-ed-tokens:empty { display: none; }
+    .tpl-ed-token {
+      padding: 7px 10px;
+      border: 1px solid rgba(77, 159, 255, 0.4);
+      border-radius: 999px;
+      background: rgba(77, 159, 255, 0.12);
+      color: #cfe4ff;
+      font-size: 12px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .tpl-ed-sms-card #tpl-ed-text { min-height: 140px; margin-bottom: 10px; }
+    .tpl-ed-send-fake { opacity: 0.45; pointer-events: none; }
+    .tpl-ed-empty {
+      margin: 0 0 8px;
+      padding: 12px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.03);
       color: var(--dim);
       font-size: 13px;
-      line-height: 1.45;
+      line-height: 1.4;
       text-align: center;
+    }
+    .tpl-field-pick {
+      position: absolute;
+      inset: 0;
+      z-index: 5;
+      display: flex;
+      align-items: flex-end;
+      background: rgba(0,0,0,0.55);
+      padding: 14px;
+      padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    }
+    .tpl-field-pick.hide { display: none !important; }
+    .tpl-field-pick-box {
+      width: 100%;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--surface);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .tpl-field-pick-title {
+      font-size: 14px;
+      font-weight: 700;
+      margin: 0 0 4px;
+      text-align: center;
+    }
+    .tpl-field-pick-box > button[data-add-field] {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+    .tpl-field-pick-box > button[data-add-field] strong { font-size: 14px; }
+    .tpl-field-pick-box > button[data-add-field] span { font-size: 12px; color: var(--dim); }
+    .tpl-field-pick-cancel {
+      padding: 12px;
+      border: 0;
+      border-radius: 12px;
+      background: transparent;
+      color: var(--dim);
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
     }
     .tpl-ed-foot {
       flex: 0 0 auto;
@@ -1966,36 +1968,39 @@
   <div id="tpl-editor" class="hide" aria-hidden="true">
     <div class="tpl-ed-head">
       <button type="button" class="tpl-ed-x" id="tpl-ed-close" aria-label="დახურვა">გაუქმება</button>
-      <h2 id="tpl-ed-heading">შაბლონი</h2>
+      <h2 id="tpl-ed-heading">ახალი შაბლონი</h2>
       <button type="button" class="tpl-ed-save-top" id="tpl-ed-save-top">შენახვა</button>
     </div>
-        <div class="tpl-ed-body">
-      <div class="tpl-ed-card">
-        <section class="tpl-ed-step">
-          <div class="tpl-ed-step-h"><span class="tpl-ed-num">1</span> სახელი</div>
-          <p class="tpl-ed-hint">როგორც შაბლონის სათაური გამოჩნდება</p>
-          <input id="tpl-ed-title" type="text" placeholder="შაბლონის სახელი" maxlength="80" autocomplete="off">
-        </section>
-        <section class="tpl-ed-step">
-          <div class="tpl-ed-step-h"><span class="tpl-ed-num">2</span> ველები</div>
-          <p class="tpl-ed-hint">დაამატე რამდენიც გინდა — ორი ჩამოსაშლელიც შეიძლება. სახელი, ვარიანტები და ტიპი რედაქტირებადია.</p>
-          <div class="tpl-ed-fields" id="tpl-ed-limits"></div>
-          <div class="tpl-ed-add-row" id="tpl-ed-add-row">
-            <button type="button" data-add-field="row">+ ღილაკები</button>
-            <button type="button" data-add-field="dropdown">+ ჩამოსაშლელი</button>
-            <button type="button" data-add-field="money">+ თანხა</button>
-          </div>
-        </section>
-        <section class="tpl-ed-step">
-          <div class="tpl-ed-step-h"><span class="tpl-ed-num">3</span> SMS ტექსტი</div>
-          <p class="tpl-ed-hint">მონიშნული ლიმიტი ავტომატურად ჩაისმება {{ველი}}-ით. საჭიროებისამებრ შეცვალე ტექსტი.</p>
-          <textarea id="tpl-ed-text" placeholder="მაგ: გამარჯობა… ლიმიტი: {{limiti}}"></textarea>
-        </section>
+    <div class="tpl-ed-body">
+      <div class="sms-card tpl-ed-sms-card">
+        <div class="sms-card-head">
+          <input id="tpl-ed-title" type="text" placeholder="შაბლონის სახელი" maxlength="80" autocomplete="off" aria-label="შაბლონის სახელი">
+          <span class="tpl-ed-phone-fake">ნომერი არაა</span>
+        </div>
+        <p class="tpl-ed-guide">იგივე სახე, რაც SMS ბარათს. დაამატე ველები, დაწერე ტექსტი — შენახვამდე არაფერი ჩაიწერება.</p>
+        <div class="offer-fields tpl-ed-offer" id="tpl-ed-limits"></div>
+        <button type="button" class="tpl-ed-add-main" id="tpl-ed-add-main">+ ველის დამატება</button>
+        <div class="tpl-ed-tokens" id="tpl-ed-tokens"></div>
+        <textarea id="tpl-ed-text" class="sms-edit" rows="10" placeholder="SMS ტექსტი…"></textarea>
+        <div class="send-row tpl-ed-send-fake" aria-hidden="true">
+          <button type="button" disabled>SMS</button>
+          <button type="button" disabled>WhatsApp</button>
+        </div>
       </div>
     </div>
     <div class="tpl-ed-foot">
       <button type="button" id="tpl-ed-cancel">გაუქმება</button>
       <button type="button" class="tpl-ed-save" id="tpl-ed-save">შენახვა</button>
+    </div>
+    <div id="tpl-field-pick" class="tpl-field-pick hide" aria-hidden="true">
+      <div class="tpl-field-pick-box">
+        <div class="tpl-field-pick-title">რა ველი დავამატოთ?</div>
+        <button type="button" data-add-field="row"><strong>ღილაკები</strong><span>5000$ · 10000$ · 20000$</span></button>
+        <button type="button" data-add-field="dropdown"><strong>სია</strong><span>ჩამოსაშლელი არჩევანი</span></button>
+        <button type="button" data-add-field="money"><strong>თანხა</strong><span>თავისუფლად ჩაწერადი</span></button>
+        <button type="button" data-add-field="text"><strong>ტექსტი</strong><span>ნებისმიერი ჩანაწერი</span></button>
+        <button type="button" class="tpl-field-pick-cancel" id="tpl-field-pick-cancel">გაუქმება</button>
+      </div>
     </div>
   </div>
 
@@ -2729,7 +2734,26 @@ ${ALDAGI_DETAILS}`;
       return html;
     }
 
-    const tplEditorState = { id: '', isNew: false, open: false };
+    const tplEditorState = { id: '', isNew: false, open: false, draft: null };
+    const TPL_SEG_KINDS = [
+      { key: 'row', title: 'ღილაკები' },
+      { key: 'dropdown', title: 'სია' },
+      { key: 'money', title: 'თანხა' }
+    ];
+    function emptyTplDraft() {
+      return { title: 'ახალი შაბლონი', text: '', fields: [] };
+    }
+    function getTplDraft() {
+      if (!tplEditorState.draft) tplEditorState.draft = emptyTplDraft();
+      return tplEditorState.draft;
+    }
+    function fieldKindKey(field) {
+      if (!field) return 'row';
+      if (field.type === 'money') return 'money';
+      if (field.type === 'text') return 'text';
+      if (field.layout === 'dropdown') return 'dropdown';
+      return 'row';
+    }
     function insertTokenIntoTplText(fieldId) {
       const ta = $('tpl-ed-text');
       if (!ta) return;
@@ -2737,109 +2761,121 @@ ${ALDAGI_DETAILS}`;
       const start = ta.selectionStart ?? ta.value.length;
       const end = ta.selectionEnd ?? ta.value.length;
       ta.value = ta.value.slice(0, start) + token + ta.value.slice(end);
+      getTplDraft().text = ta.value;
       try { ta.setSelectionRange(start + token.length, start + token.length); } catch (_) {}
       ta.focus();
     }
-    function patchCustomField(tplId, fieldId, patch) {
-      const c = getCustomSms(tplId);
-      if (!c) return;
-      const fields = normalizeCustomFields(c.fields).map(f => {
-        if (f.id !== fieldId) return f;
-        return { ...f, ...patch };
-      });
-      updateCustomSmsFields(tplId, fields);
+    function appendFieldLineToDraft(field) {
+      const draft = getTplDraft();
+      const token = '{{' + field.id + '}}';
+      if (draft.text.includes(token)) return;
+      const line = (field.label || 'ველი') + ': ' + token;
+      draft.text = draft.text ? (draft.text.replace(/\s*$/, '') + '\n\n' + line) : line;
+      if ($('tpl-ed-text')) $('tpl-ed-text').value = draft.text;
     }
-    const TPL_FIELD_KINDS = [
-      { key: 'row', title: 'ღილაკები რიგში' },
-      { key: 'col', title: 'ღილაკები ქვემოთ' },
-      { key: 'dropdown', title: 'ჩამოსაშლელი' },
-      { key: 'money', title: 'თავისუფალი თანხა' }
-    ];
-    function fieldKindKey(field) {
-      if (!field) return 'row';
-      if (field.type === 'money') return 'money';
-      if (field.layout === 'col' || field.layout === 'dropdown') return field.layout;
-      return 'row';
+    function openFieldPick() {
+      const pick = $('tpl-field-pick');
+      if (!pick) return;
+      pick.classList.remove('hide');
+      pick.setAttribute('aria-hidden', 'false');
+    }
+    function closeFieldPick() {
+      const pick = $('tpl-field-pick');
+      if (!pick) return;
+      pick.classList.add('hide');
+      pick.setAttribute('aria-hidden', 'true');
     }
     function removeTplField(fieldId) {
-      const tplId = tplEditorState.id;
-      const c = getCustomSms(tplId);
-      if (!c || !fieldId) return;
-      updateCustomSmsFields(tplId, normalizeCustomFields(c.fields).filter(f => f.id !== fieldId));
-      const vals = getFieldVals(tplId);
-      delete vals[fieldId];
-      const all = loadFieldVals();
-      all[tplId] = vals;
-      saveFieldVals(all);
-      const ta = $('tpl-ed-text');
-      if (ta) ta.value = ta.value.replace(new RegExp('\\{\{\\s*' + fieldId + '\\s*\\}\\}', 'g'), '');
+      const draft = getTplDraft();
+      draft.fields = draft.fields.filter(f => f.id !== fieldId);
+      const token = '{{' + fieldId + '}}';
+      draft.text = draft.text
+        .split('\n')
+        .filter(line => !line.includes(token))
+        .join('\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+      if ($('tpl-ed-text')) $('tpl-ed-text').value = draft.text;
       renderTplEditorFields();
     }
     function addTplField(kind) {
-      const tplId = tplEditorState.id;
-      const c = getCustomSms(tplId);
-      if (!c) return;
-      const fields = normalizeCustomFields(c.fields);
-      let id;
+      const draft = getTplDraft();
+      const used = draft.fields.map(f => f.id);
+      let field;
       if (kind === 'money') {
-        id = slugifyFieldId('თანხა', fields.map(f => f.id));
-        fields.push({ id, label: 'თანხა', type: 'money' });
+        const label = 'თანხა';
+        field = { id: slugifyFieldId(label, used), label, type: 'money' };
+      } else if (kind === 'text') {
+        const label = 'ტექსტი';
+        field = { id: slugifyFieldId(label, used), label, type: 'text' };
       } else {
-        const layout = kind === 'col' || kind === 'dropdown' ? kind : 'row';
+        const layout = kind === 'dropdown' ? 'dropdown' : 'row';
         const label = layout === 'dropdown' ? 'ჩამოსაშლელი ლიმიტი' : 'ლიმიტი';
-        id = slugifyFieldId(label, fields.map(f => f.id));
-        fields.push({
-          id,
+        field = {
+          id: slugifyFieldId(label, used),
           label,
           type: 'choice',
           layout,
           options: TPL_DEFAULT_LIMITS.slice()
-        });
+        };
       }
-      updateCustomSmsFields(tplId, fields);
+      draft.fields.push(field);
+      appendFieldLineToDraft(field);
+      closeFieldPick();
       renderTplEditorFields();
-      insertTokenIntoTplText(id);
       setTimeout(() => {
-        const labelInp = document.querySelector(`[data-ed-label="${id}"]`);
+        const labelInp = document.querySelector(`[data-ed-label="${field.id}"]`);
         if (labelInp) { labelInp.focus(); try { labelInp.select(); } catch (_) {} }
       }, 30);
+      return field;
     }
     function setTplFieldKind(fieldId, kind) {
-      const c = getCustomSms(tplEditorState.id);
-      if (!c) return;
-      const fields = normalizeCustomFields(c.fields).map(f => {
+      const draft = getTplDraft();
+      draft.fields = draft.fields.map(f => {
         if (f.id !== fieldId) return f;
         if (kind === 'money') return { id: f.id, label: f.label || 'თანხა', type: 'money' };
-        const layout = kind === 'col' || kind === 'dropdown' ? kind : 'row';
+        if (kind === 'text') return { id: f.id, label: f.label || 'ტექსტი', type: 'text' };
+        const layout = kind === 'dropdown' ? 'dropdown' : 'row';
         const options = (f.type === 'choice' && Array.isArray(f.options) && f.options.length)
           ? f.options
           : TPL_DEFAULT_LIMITS.slice();
         return { id: f.id, label: f.label || 'ლიმიტი', type: 'choice', layout, options };
       });
-      updateCustomSmsFields(tplEditorState.id, fields);
       renderTplEditorFields();
+    }
+    function renderTplTokenBar() {
+      const box = $('tpl-ed-tokens');
+      if (!box) return;
+      const fields = getTplDraft().fields || [];
+      if (!fields.length) { box.innerHTML = ''; return; }
+      box.innerHTML = fields.map(f =>
+        `<button type="button" class="tpl-ed-token" data-ed-insert="${escapeHtml(f.id)}">${escapeHtml(f.label || f.id)}</button>`
+      ).join('');
     }
     function renderTplEditorFields() {
       const box = $('tpl-ed-limits');
       if (!box) return;
-      const c = getCustomSms(tplEditorState.id);
-      const fields = normalizeCustomFields(c?.fields);
+      const fields = normalizeCustomFields(getTplDraft().fields);
+      getTplDraft().fields = fields;
+      renderTplTokenBar();
       if (!fields.length) {
-        box.innerHTML = `<p class="tpl-ed-empty">ჯერ ველი არაა — ქვემოთ დაამატე ღილაკები, ჩამოსაშლელი ან თანხა.</p>`;
+        box.innerHTML = `<p class="tpl-ed-empty">ჯერ ველი არაა — დააჭირე „+ ველის დამატებას“.</p>`;
         return;
       }
       box.innerHTML = fields.map(field => {
         const kind = fieldKindKey(field);
-        const kindOpts = TPL_FIELD_KINDS.map(k =>
-          `<option value="${k.key}"${k.key === kind ? ' selected' : ''}>${k.title}</option>`
+        const seg = TPL_SEG_KINDS.map(k =>
+          `<button type="button" data-ed-kind-set="${escapeHtml(field.id)}" data-kind="${k.key}" class="${k.key === kind ? 'on' : ''}">${k.title}</button>`
         ).join('');
         let body = '';
         if (field.type === 'money') {
-          body = `<div class="tpl-ed-money-preview">გაგზავნისას: თანხის ჩასაწერი ველი</div>`;
+          body = `<div class="tpl-ed-money-preview">მაგ: 40000$ — კლიენტი ჩაწერს თავად</div>`;
+        } else if (field.type === 'text') {
+          body = `<div class="tpl-ed-text-preview">ტექსტური ველი გაგზავნისას</div>`;
         } else {
           const opts = Array.isArray(field.options) ? field.options.slice() : [];
           if (!opts.length) opts.push(...TPL_DEFAULT_LIMITS);
-          const lay = field.layout === 'col' || field.layout === 'dropdown' ? field.layout : 'row';
+          const lay = field.layout === 'dropdown' ? 'dropdown' : 'row';
           body = `<div class="tpl-ed-opts ${lay}" data-ed-opts="${escapeHtml(field.id)}">`;
           opts.forEach((opt, i) => {
             body += `<div class="tpl-ed-opt">
@@ -2848,26 +2884,37 @@ ${ALDAGI_DETAILS}`;
           });
           body += `<button type="button" class="tpl-ed-opt-add" data-ed-opt-add="${escapeHtml(field.id)}" aria-label="+">+</button></div>`;
         }
+        const showSeg = field.type !== 'text';
         return `<div class="tpl-ed-field" data-field-card="${escapeHtml(field.id)}">
           <div class="tpl-ed-field-top">
-            <input type="text" data-ed-label="${escapeHtml(field.id)}" value="${escapeHtml(field.label || '')}" placeholder="ველის სახელი" maxlength="40">
+            <input type="text" data-ed-label="${escapeHtml(field.id)}" value="${escapeHtml(field.label || '')}" placeholder="ველის სახელი" maxlength="60">
             <button type="button" class="tpl-ed-field-del" data-ed-del="${escapeHtml(field.id)}" aria-label="წაშლა">×</button>
           </div>
-          <select class="tpl-ed-field-kind" data-ed-kind="${escapeHtml(field.id)}" aria-label="ველის ტიპი">${kindOpts}</select>
+          ${showSeg ? `<div class="tpl-ed-seg">${seg}</div>` : ''}
           ${body}
         </div>`;
       }).join('');
     }
     function openTplEditor(tplId, isNew) {
-      const c = getCustomSms(tplId);
-      if (!c) return;
       lockAllSmsEditing();
+      closeFieldPick();
       tplEditorState.id = tplId;
       tplEditorState.isNew = !!isNew;
       tplEditorState.open = true;
+      if (isNew) {
+        tplEditorState.draft = emptyTplDraft();
+      } else {
+        const c = getCustomSms(tplId);
+        if (!c) return;
+        tplEditorState.draft = {
+          title: c.title || 'ახალი შაბლონი',
+          text: getSmsEdit(tplId, 'ka') ?? '',
+          fields: normalizeCustomFields(c.fields).map(f => ({ ...f, options: Array.isArray(f.options) ? f.options.slice() : f.options }))
+        };
+      }
       if ($('tpl-ed-heading')) $('tpl-ed-heading').textContent = isNew ? 'ახალი შაბლონი' : 'შაბლონის რედაქტირება';
-      if ($('tpl-ed-title')) $('tpl-ed-title').value = c.title || '';
-      if ($('tpl-ed-text')) $('tpl-ed-text').value = getSmsEdit(tplId, 'ka') ?? '';
+      if ($('tpl-ed-title')) $('tpl-ed-title').value = getTplDraft().title || '';
+      if ($('tpl-ed-text')) $('tpl-ed-text').value = getTplDraft().text || '';
       renderTplEditorFields();
       const ed = $('tpl-editor');
       if (ed) {
@@ -2880,9 +2927,11 @@ ${ALDAGI_DETAILS}`;
     function closeTplEditor({ discard } = {}) {
       const id = tplEditorState.id;
       const wasNew = tplEditorState.isNew;
+      closeFieldPick();
       tplEditorState.open = false;
       tplEditorState.id = '';
       tplEditorState.isNew = false;
+      tplEditorState.draft = null;
       const ed = $('tpl-editor');
       if (ed) {
         ed.classList.add('hide');
@@ -2891,30 +2940,40 @@ ${ALDAGI_DETAILS}`;
       if (!$('field-modal') || $('field-modal').classList.contains('hide')) {
         document.body.style.overflow = '';
       }
-      if (discard && wasNew && id) {
-        deleteSmsTpl(id);
-      }
+      // new templates are only created on Save — discard just closes
       renderSmsList();
-      if (id && !discard) {
+      if (id && !discard && !wasNew) {
         const card = document.querySelector(`.sms-card[data-id="${id}"]`);
         if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
     }
     function saveTplEditor() {
-      const id = tplEditorState.id;
-      const c = getCustomSms(id);
-      if (!c) return;
-      const title = ($('tpl-ed-title')?.value || '').trim() || 'ახალი შაბლონი';
-      const text = $('tpl-ed-text')?.value ?? '';
-      // clean empty option chips
-      const fields = normalizeCustomFields(c.fields).map(f => {
+      const draft = getTplDraft();
+      const title = (($('tpl-ed-title')?.value || draft.title || '')).trim() || 'ახალი შაბლონი';
+      const text = $('tpl-ed-text')?.value ?? draft.text ?? '';
+      const fields = normalizeCustomFields(draft.fields).map(f => {
         if (f.type !== 'choice' && f.type !== 'percent_of') return f;
         const options = (f.options || []).map(o => String(o || '').trim()).filter(Boolean);
         return { ...f, options: options.length ? options : TPL_DEFAULT_LIMITS.slice() };
       });
-      updateCustomSmsFields(id, fields);
-      renameCustomSmsTpl(id, title);
-      saveSmsEdit(id, text, 'ka');
+      let id = tplEditorState.id;
+      if (tplEditorState.isNew) {
+        id = 'c_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+        const list = loadCustomSms();
+        list.push({ id, title, fields });
+        saveCustomSms(list);
+        const all = loadSmsEdits();
+        all[id] = text;
+        all[id + '__en'] = '';
+        try { localStorage.setItem(SMS_EDITS_KEY, JSON.stringify(all)); } catch {}
+        tplEditorState.id = id;
+      } else {
+        updateCustomSmsFields(id, fields);
+        renameCustomSmsTpl(id, title);
+        saveSmsEdit(id, text, 'ka');
+      }
+      // always refresh EN from latest KA (structure-preserving translate)
+      scheduleCustomEnTranslate(id, true);
       tplEditorState.isNew = false;
       closeTplEditor({ discard: false });
       showAppToast('შაბლონი შენახულია', 1600);
@@ -3018,7 +3077,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '271';
+      const v = window.__CC_VER || '273';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -3157,20 +3216,22 @@ The main requirement is that the car is in a washed condition. It must be photog
       out = out.replace(/\[\[T(\d+)\]\]/g, (_, i) => tokens[+i] || '');
       return out;
     }
-    function scheduleCustomEnTranslate(tplId) {
+    function scheduleCustomEnTranslate(tplId, immediate) {
       if (!isCustomSmsId(tplId)) return;
       clearTimeout(customEnTranslateTimers[tplId]);
-      customEnTranslateTimers[tplId] = setTimeout(async () => {
+      const run = async () => {
         const ka = getSmsEdit(tplId, 'ka');
         if (ka == null) return;
-        showAppToast('ინგლისური თარგმნა…', 1200);
+        if (msgLang() === 'en' || immediate) showAppToast('ინგლისური თარგმნა…', 1200);
         const en = await translateKaToEn(ka);
         const all = loadSmsEdits();
         all[tplId + '__en'] = en;
         try { localStorage.setItem(SMS_EDITS_KEY, JSON.stringify(all)); } catch {}
         if (msgLang() === 'en') refreshCustomPreview(tplId);
-        showAppToast('ინგლისური მზადაა', 1400);
-      }, 450);
+        if (msgLang() === 'en' || immediate) showAppToast('ინგლისური მზადაა', 1400);
+      };
+      if (immediate) run();
+      else customEnTranslateTimers[tplId] = setTimeout(run, 450);
     }
     function refreshCustomLangDisplay(tplId) {
       const ta = document.querySelector(`textarea.sms-edit[data-tpl="${tplId}"]`);
@@ -3186,9 +3247,8 @@ The main requirement is that the car is in a washed condition. It must be photog
         }
       }
       if (msgLang() === 'en') {
-        const en = getSmsEdit(tplId, 'en');
-        const ka = getSmsEdit(tplId, 'ka');
-        if ((!en || !String(en).trim()) && ka && String(ka).trim()) scheduleCustomEnTranslate(tplId);
+        // ყოველ KA→EN გადართვაზე თავიდან თარგმნე — ახალი სიტყვებიც რომ მოხვდეს
+        scheduleCustomEnTranslate(tplId, true);
       }
       refreshCustomPreview(tplId);
     }
@@ -3201,7 +3261,7 @@ The main requirement is that the car is in a washed condition. It must be photog
       lockAllSmsEditing();
       msgLangState = lang === 'en' ? 'en' : 'ka';
       refreshAllMsgLang();
-      showAppToast(lang === 'en' ? 'ტექსტი: English' : 'ტექსტი: ქართული', 1600);
+      showAppToast(lang === 'en' ? 'ტექსტი: English (ავტო-თარგმანი)' : 'ტექსტი: ქართული', 1600);
     }
 
     const S = { q: [], i: 0, run: false, wait: false, last: '', called: {}, smsManual: false };
@@ -4918,19 +4978,50 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
     renderSmsList();
     $('sms-add-tpl').onclick = () => {
       lockAllSmsEditing();
-      const id = addCustomSmsTpl();
-      openTplEditor(id, true);
+      openTplEditor('', true);
     };
     $('tpl-ed-close')?.addEventListener('click', () => closeTplEditor({ discard: true }));
     $('tpl-ed-cancel')?.addEventListener('click', () => closeTplEditor({ discard: true }));
     $('tpl-ed-save')?.addEventListener('click', saveTplEditor);
     $('tpl-ed-save-top')?.addEventListener('click', saveTplEditor);
+    $('tpl-ed-add-main')?.addEventListener('click', e => {
+      e.preventDefault();
+      if (!tplEditorState.open) return;
+      openFieldPick();
+    });
+    $('tpl-field-pick-cancel')?.addEventListener('click', e => {
+      e.preventDefault();
+      closeFieldPick();
+    });
+    $('tpl-field-pick')?.addEventListener('click', e => {
+      if (e.target === $('tpl-field-pick')) closeFieldPick();
+    });
+    $('tpl-ed-title')?.addEventListener('input', () => {
+      if (!tplEditorState.open) return;
+      getTplDraft().title = $('tpl-ed-title').value;
+    });
+    $('tpl-ed-text')?.addEventListener('input', () => {
+      if (!tplEditorState.open) return;
+      getTplDraft().text = $('tpl-ed-text').value;
+    });
     function onTplEdClick(e) {
       const addField = e.target.closest('[data-add-field]');
       if (addField) {
         e.preventDefault();
-        if (!tplEditorState.id) return;
+        if (!tplEditorState.open) return;
         addTplField(addField.dataset.addField || 'row');
+        return;
+      }
+      const kindBtn = e.target.closest('[data-ed-kind-set]');
+      if (kindBtn) {
+        e.preventDefault();
+        setTplFieldKind(kindBtn.dataset.edKindSet, kindBtn.dataset.kind || 'row');
+        return;
+      }
+      const ins = e.target.closest('[data-ed-insert]');
+      if (ins) {
+        e.preventDefault();
+        insertTokenIntoTplText(ins.dataset.edInsert);
         return;
       }
       const del = e.target.closest('[data-ed-del]');
@@ -4944,13 +5035,13 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
       if (addOpt) {
         e.preventDefault();
         const fieldId = addOpt.dataset.edOptAdd;
-        const c = getCustomSms(tplEditorState.id);
-        const field = normalizeCustomFields(c?.fields).find(f => f.id === fieldId);
+        const draft = getTplDraft();
+        const field = draft.fields.find(f => f.id === fieldId);
         if (!field) return;
         const options = (field.options || []).slice();
         if (options.length >= 24) return;
         options.push('');
-        patchCustomField(tplEditorState.id, fieldId, { options });
+        field.options = options;
         renderTplEditorFields();
         const inputs = document.querySelectorAll(`[data-ed-opt="${fieldId}"]`);
         const last = inputs[inputs.length - 1];
@@ -4961,32 +5052,27 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
     function onTplEdInput(e) {
       const label = e.target.closest('[data-ed-label]');
       if (label) {
-        patchCustomField(tplEditorState.id, label.dataset.edLabel, { label: label.value });
+        const field = getTplDraft().fields.find(f => f.id === label.dataset.edLabel);
+        if (field) field.label = label.value;
+        renderTplTokenBar();
         return;
       }
       const opt = e.target.closest('[data-ed-opt]');
       if (opt) {
         const fieldId = opt.dataset.edOpt;
         const idx = +opt.dataset.edOptI;
-        const c = getCustomSms(tplEditorState.id);
-        const field = normalizeCustomFields(c?.fields).find(f => f.id === fieldId);
+        const field = getTplDraft().fields.find(f => f.id === fieldId);
         if (!field) return;
         const options = (field.options || []).slice();
         while (options.length <= idx) options.push('');
         options[idx] = opt.value;
-        patchCustomField(tplEditorState.id, fieldId, { options });
-      }
-    }
-    function onTplEdChange(e) {
-      const kind = e.target.closest('[data-ed-kind]');
-      if (kind) {
-        setTplFieldKind(kind.dataset.edKind, kind.value);
+        field.options = options;
       }
     }
     $('tpl-ed-limits')?.addEventListener('click', onTplEdClick);
-    $('tpl-ed-add-row')?.addEventListener('click', onTplEdClick);
+    $('tpl-field-pick')?.addEventListener('click', onTplEdClick);
+    $('tpl-ed-tokens')?.addEventListener('click', onTplEdClick);
     $('tpl-ed-limits')?.addEventListener('input', onTplEdInput);
-    $('tpl-ed-limits')?.addEventListener('change', onTplEdChange);
     $('field-type')?.addEventListener('change', syncFieldModalType);
     $('field-save')?.addEventListener('click', saveFieldFromModal);
     $('field-cancel')?.addEventListener('click', closeFieldModal);
