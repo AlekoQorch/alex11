@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
-    window.__CC_VER = '284';
+    window.__CC_VER = '287';
     (function () {
       function bustCaches() {
         var jobs = [];
@@ -936,13 +936,100 @@
       color: var(--text);
       font-size: 14px;
       font-family: inherit;
-      line-height: 1.45;
+      line-height: 1.55;
       min-height: 180px;
       resize: vertical;
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-y: auto;
     }
     .tpl-ed-textarea:focus {
       outline: none;
       border-color: rgba(77, 159, 255, 0.55);
+    }
+    .tpl-ed-textarea[data-placeholder]:empty:before {
+      content: attr(data-placeholder);
+      color: var(--dim);
+      pointer-events: none;
+    }
+    .tpl-chip {
+      display: inline;
+      padding: 1px 7px;
+      margin: 0 1px;
+      border-radius: 6px;
+      background: rgba(255, 196, 72, 0.22);
+      border: 1px solid rgba(255, 196, 72, 0.55);
+      color: #ffe7a8;
+      font-weight: 700;
+      font-size: 13px;
+      line-height: 1.35;
+      white-space: nowrap;
+      vertical-align: baseline;
+      cursor: default;
+      user-select: none;
+    }
+    .tpl-chip.unnamed {
+      background: rgba(255, 120, 80, 0.2);
+      border-color: rgba(255, 140, 100, 0.6);
+      color: #ffc4ae;
+      font-style: italic;
+      font-weight: 600;
+    }
+    .tpl-ed-caret-hint {
+      margin: 8px 0 0;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: rgba(77, 159, 255, 0.08);
+      color: #9ec4ef;
+      font-size: 12px;
+      line-height: 1.35;
+      word-break: break-word;
+    }
+    .tpl-field-name {
+      position: absolute;
+      inset: 0;
+      z-index: 6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(0, 0, 0, 0.55);
+    }
+    .tpl-field-name.hide { display: none; }
+    .tpl-field-name-box {
+      width: min(100%, 340px);
+      padding: 18px 16px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+    }
+    .tpl-field-name-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: var(--text);
+    }
+    .tpl-field-name-box .tpl-ed-inp { margin: 0 0 12px; }
+    .tpl-field-name-actions {
+      display: flex;
+      gap: 8px;
+    }
+    .tpl-field-name-actions button {
+      flex: 1;
+      min-height: 44px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .tpl-field-name-actions .ok {
+      background: #2f6fed;
+      border-color: #2f6fed;
+      color: #fff;
     }
     .tpl-ed-tokens {
       display: flex;
@@ -2140,8 +2227,8 @@
     </div>
     <div class="tpl-ed-steps" id="tpl-ed-steps" role="tablist">
       <button type="button" class="tpl-ed-step on" data-tpl-step-btn="1">1. სახელი</button>
-      <button type="button" class="tpl-ed-step" data-tpl-step-btn="2">2. ველები</button>
-      <button type="button" class="tpl-ed-step" data-tpl-step-btn="3">3. ტექსტი</button>
+      <button type="button" class="tpl-ed-step" data-tpl-step-btn="2">2. ტექსტი</button>
+      <button type="button" class="tpl-ed-step" data-tpl-step-btn="3">3. ველები</button>
       <button type="button" class="tpl-ed-step" data-tpl-step-btn="4">4. გადახედვა</button>
     </div>
     <div class="tpl-ed-body">
@@ -2150,23 +2237,25 @@
         <input id="tpl-ed-title" class="tpl-ed-inp" type="text" placeholder="მაგ: შეთავაზება კლიენტისთვის" maxlength="80" autocomplete="off">
         <label class="tpl-ed-lbl" for="tpl-ed-desc">აღწერა (არასავალდებულო)</label>
         <input id="tpl-ed-desc" class="tpl-ed-inp" type="text" placeholder="რაში გამოიყენება ეს შაბლონი" maxlength="160" autocomplete="off">
-        <p class="tpl-ed-hint">შეარჩიე ნათელი სახელი — შემდეგ დაამატებ ველებს და ტექსტს.</p>
+        <p class="tpl-ed-hint">შეარჩიე ნათელი სახელი — შემდეგ დაწერე ტექსტი და მონიშნე სად ჩაისმება ველი.</p>
       </section>
       <section class="tpl-ed-panel hide" data-tpl-step="2">
+        <div class="tpl-ed-panel-title">ტექსტი</div>
+        <p class="tpl-ed-hint">დაწერე ტექსტი, კურსორი დააყენე სასურველ ადგილას და დააჭირე „ველის დამატებას“ — ველი იქ გამოჩნდება განსხვავებული ტექსტით და მაშინვე დაარქმევ სახელს.</p>
+        <div id="tpl-ed-text" class="tpl-ed-textarea" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="მაგ: გამარჯობა, თქვენი თანხაა " aria-label="შაბლონის ტექსტი"></div>
+        <p class="tpl-ed-caret-hint" id="tpl-ed-caret-hint">კურსორი ტექსტში დააყენე — შემდეგ დაამატე ველი</p>
+        <button type="button" class="tpl-ed-add-main" id="tpl-ed-insert-field" style="margin-top:8px">＋ ველის დამატება</button>
+        <div class="tpl-ed-tokens" id="tpl-ed-tokens"></div>
+      </section>
+      <section class="tpl-ed-panel hide" data-tpl-step="3">
         <div class="tpl-ed-panel-head">
           <div>
-            <div class="tpl-ed-panel-title">შენი ველები</div>
-            <p class="tpl-ed-hint" style="margin:4px 0 0">დაამატე რა ველებიც გჭირდება — ინდუსტრია არ არის შეზღუდული.</p>
+            <div class="tpl-ed-panel-title">ველების მორგება</div>
+            <p class="tpl-ed-hint" style="margin:4px 0 0">ტექსტში ჩასმული ველები აქ დაარედაქტირე (სახელი, ვარიანტები).</p>
           </div>
           <button type="button" class="tpl-ed-add-main" id="tpl-ed-add-main" style="margin:0;width:auto;padding:10px 14px">+ ველი</button>
         </div>
         <div id="tpl-ed-limits"></div>
-      </section>
-      <section class="tpl-ed-panel hide" data-tpl-step="3">
-        <div class="tpl-ed-panel-title">ტექსტი</div>
-        <p class="tpl-ed-hint">დაწერე ტექსტი და ჩასვი ცვლადი ღილაკით — მაგ. {{სახელი}}.</p>
-        <div class="tpl-ed-tokens" id="tpl-ed-tokens"></div>
-        <textarea id="tpl-ed-text" class="tpl-ed-textarea" rows="12" placeholder="დაწერე შეტყობინების ტექსტი…" aria-label="შაბლონის ტექსტი"></textarea>
       </section>
       <section class="tpl-ed-panel hide" data-tpl-step="4">
         <div class="tpl-ed-panel-title">გადახედვა</div>
@@ -2190,7 +2279,7 @@
     </div>
     <div id="tpl-field-pick" class="tpl-field-pick hide" aria-hidden="true">
       <div class="tpl-field-pick-box">
-        <div class="tpl-field-pick-title">რა ტიპის ველი?</div>
+        <div class="tpl-field-pick-title" id="tpl-field-pick-title">რა ტიპის ველი ჩავსვათ?</div>
         <button type="button" data-add-field="text"><strong>ტექსტი</strong><span>სახელი, ქალაქი, შენიშვნა…</span></button>
         <button type="button" data-add-field="textarea"><strong>გრძელი ტექსტი</strong><span>რამდენიმე სტრიქონი</span></button>
         <button type="button" data-add-field="number"><strong>რიცხვი</strong><span>რაოდენობა, ასაკი…</span></button>
@@ -2202,6 +2291,15 @@
         <button type="button" data-add-field="checkbox"><strong>მონიშვნა</strong><span>დიახ / არა</span></button>
         <button type="button" data-add-field="date"><strong>თარიღი</strong><span>დაწყება, ვადა…</span></button>
         <button type="button" class="tpl-field-pick-cancel" id="tpl-field-pick-cancel">გაუქმება</button>
+      </div>
+    </div>
+    <div id="tpl-field-name" class="tpl-field-name hide" aria-hidden="true">
+      <div class="tpl-field-name-box">
+        <div class="tpl-field-name-title">ველს სახელი დაარქვი</div>
+        <input id="tpl-field-name-inp" class="tpl-ed-inp" type="text" placeholder="მაგ: თანხა, სახელი, ქალაქი…" maxlength="80" autocomplete="off">
+        <div class="tpl-field-name-actions">
+          <button type="button" id="tpl-field-name-ok" class="ok">დადასტურება</button>
+        </div>
       </div>
     </div>
   </div>
@@ -3003,7 +3101,10 @@ ${ALDAGI_DETAILS}`;
       return html;
     }
 
-    const tplEditorState = { id: '', isNew: false, open: false, draft: null, step: 1 };
+    const tplEditorState = {
+      id: '', isNew: false, open: false, draft: null, step: 1,
+      insertAtCursor: false, savedRange: null, namingFieldId: ''
+    };
     const TPL_FIELD_TYPES = [
       { key: 'text', title: 'ტექსტი' },
       { key: 'textarea', title: 'გრძელი ტექსტი' },
@@ -3026,9 +3127,179 @@ ${ALDAGI_DETAILS}`;
       if (!tplEditorState.draft) tplEditorState.draft = emptyTplDraft();
       return tplEditorState.draft;
     }
-    function openFieldPick() {
+    function makeTplChipEl(fieldId, label, unnamed) {
+      const span = document.createElement('span');
+      span.className = 'tpl-chip' + (unnamed ? ' unnamed' : '');
+      span.contentEditable = 'false';
+      span.dataset.fieldId = fieldId;
+      span.textContent = label || 'სახელი…';
+      return span;
+    }
+    function serializeTplRichText(ed) {
+      const root = ed || $('tpl-ed-text');
+      if (!root) return '';
+      let out = '';
+      const walk = (node) => {
+        if (node.nodeType === 3) {
+          out += node.nodeValue || '';
+          return;
+        }
+        if (node.nodeType !== 1) return;
+        if (node.classList && node.classList.contains('tpl-chip')) {
+          out += '{{' + (node.dataset.fieldId || '') + '}}';
+          return;
+        }
+        if (node.tagName === 'BR') {
+          out += '\n';
+          return;
+        }
+        const isBlock = /^(DIV|P|LI)$/i.test(node.tagName);
+        if (isBlock && out && !out.endsWith('\n')) out += '\n';
+        Array.from(node.childNodes).forEach(walk);
+        if (isBlock && node !== root && !out.endsWith('\n')) out += '\n';
+      };
+      Array.from(root.childNodes).forEach(walk);
+      return out.replace(/\n{3,}/g, '\n\n').replace(/^\n+|\n+$/g, '');
+    }
+    function getTplRichDisplayText() {
+      const root = $('tpl-ed-text');
+      if (!root) return '';
+      let out = '';
+      const walk = (node) => {
+        if (node.nodeType === 3) { out += node.nodeValue || ''; return; }
+        if (node.nodeType !== 1) return;
+        if (node.classList && node.classList.contains('tpl-chip')) {
+          out += '【' + (node.textContent || '') + '】';
+          return;
+        }
+        if (node.tagName === 'BR') { out += '\n'; return; }
+        Array.from(node.childNodes).forEach(walk);
+      };
+      Array.from(root.childNodes).forEach(walk);
+      return out;
+    }
+    function loadTplRichText(text) {
+      const ed = $('tpl-ed-text');
+      if (!ed) return;
+      const fields = getTplDraft().fields || [];
+      const byId = Object.fromEntries(fields.map(f => [f.id, f]));
+      ed.innerHTML = '';
+      const raw = String(text || '');
+      if (!raw) return;
+      const re = /\{\{([a-zA-Z0-9_]+)\}\}/g;
+      let last = 0;
+      let m;
+      const frag = document.createDocumentFragment();
+      while ((m = re.exec(raw))) {
+        if (m.index > last) frag.appendChild(document.createTextNode(raw.slice(last, m.index)));
+        const id = m[1];
+        const field = byId[id];
+        const label = (field && field.label) ? field.label : (id || 'ველი');
+        const unnamed = !field || !(field.label || '').trim() || field.label === 'ახალი ველი';
+        frag.appendChild(makeTplChipEl(id, label, unnamed));
+        last = m.index + m[0].length;
+      }
+      if (last < raw.length) frag.appendChild(document.createTextNode(raw.slice(last)));
+      ed.appendChild(frag);
+    }
+    function syncDraftTextFromRich() {
+      getTplDraft().text = serializeTplRichText();
+    }
+    function rememberTplCaret() {
+      const ed = $('tpl-ed-text');
+      if (!ed) return;
+      const sel = window.getSelection();
+      if (!sel || !sel.rangeCount) return;
+      const range = sel.getRangeAt(0);
+      if (!ed.contains(range.commonAncestorContainer)) return;
+      tplEditorState.savedRange = range.cloneRange();
+      updateTplCaretHint();
+    }
+    function updateTplCaretHint() {
+      const hint = $('tpl-ed-caret-hint');
+      const ed = $('tpl-ed-text');
+      if (!hint || !ed) return;
+      const display = getTplRichDisplayText();
+      if (!display.trim()) {
+        hint.textContent = 'დაწერე ტექსტი, კურსორი დააყენე სასურველ ადგილას, შემდეგ დაამატე ველი';
+        return;
+      }
+      // მიმდინარე კურსორის გარშემო ტექსტი
+      let left = '';
+      let right = '';
+      try {
+        const range = tplEditorState.savedRange;
+        if (range && ed.contains(range.commonAncestorContainer)) {
+          const before = range.cloneRange();
+          before.selectNodeContents(ed);
+          before.setEnd(range.startContainer, range.startOffset);
+          const after = range.cloneRange();
+          after.selectNodeContents(ed);
+          after.setStart(range.endContainer, range.endOffset);
+          const tmpB = document.createElement('div');
+          tmpB.appendChild(before.cloneContents());
+          const tmpA = document.createElement('div');
+          tmpA.appendChild(after.cloneContents());
+          left = (tmpB.innerText || '').replace(/\n/g, '⏎').slice(-18);
+          right = (tmpA.innerText || '').replace(/\n/g, '⏎').slice(0, 18);
+        }
+      } catch (_) {}
+      hint.textContent = 'ველი ჩაჯდება აქ: …' + left + '▍' + right + '…';
+    }
+    function placeCaretAfterNode(node) {
+      const ed = $('tpl-ed-text');
+      if (!ed || !node) return;
+      const sel = window.getSelection();
+      const range = document.createRange();
+      range.setStartAfter(node);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
+      tplEditorState.savedRange = range.cloneRange();
+      ed.focus();
+    }
+    function insertChipAtCaret(field) {
+      const ed = $('tpl-ed-text');
+      if (!ed) return null;
+      const unnamed = !(field.label || '').trim() || field.label === 'ახალი ველი';
+      const chip = makeTplChipEl(field.id, field.label || 'სახელი…', unnamed);
+      ed.focus();
+      const sel = window.getSelection();
+      let range = null;
+      if (tplEditorState.savedRange && ed.contains(tplEditorState.savedRange.commonAncestorContainer)) {
+        range = tplEditorState.savedRange.cloneRange();
+      } else if (sel.rangeCount && ed.contains(sel.getRangeAt(0).commonAncestorContainer)) {
+        range = sel.getRangeAt(0);
+      }
+      if (range) {
+        range.deleteContents();
+        range.insertNode(chip);
+      } else {
+        ed.appendChild(chip);
+      }
+      // კურსორი ჩიპის შემდეგ
+      const space = document.createTextNode(' ');
+      if (chip.nextSibling) chip.parentNode.insertBefore(space, chip.nextSibling);
+      else chip.parentNode.appendChild(space);
+      placeCaretAfterNode(space);
+      syncDraftTextFromRich();
+      updateTplCaretHint();
+      return chip;
+    }
+    function openFieldPick(opts = {}) {
       const pick = $('tpl-field-pick');
       if (!pick) return;
+      tplEditorState.insertAtCursor = !!opts.insertAtCursor;
+      const ed = $('tpl-ed-text');
+      if (tplEditorState.insertAtCursor) {
+        if (ed && (document.activeElement === ed || ed.contains(document.activeElement))) rememberTplCaret();
+      }
+      const title = $('tpl-field-pick-title');
+      if (title) {
+        title.textContent = tplEditorState.insertAtCursor
+          ? 'ამ ადგილას რა ველი ჩავამატოთ?'
+          : 'რა ტიპის ველი დავამატოთ?';
+      }
       pick.classList.remove('hide');
       pick.setAttribute('aria-hidden', 'false');
     }
@@ -3037,49 +3308,93 @@ ${ALDAGI_DETAILS}`;
       if (!pick) return;
       pick.classList.add('hide');
       pick.setAttribute('aria-hidden', 'true');
+      tplEditorState.insertAtCursor = false;
+    }
+    function openTplFieldNamePrompt(fieldId) {
+      tplEditorState.namingFieldId = fieldId || '';
+      const box = $('tpl-field-name');
+      const inp = $('tpl-field-name-inp');
+      if (!box || !inp) return;
+      const field = getTplDraft().fields.find(f => f.id === fieldId);
+      inp.value = (field && field.label && field.label !== 'ახალი ველი') ? field.label : '';
+      box.classList.remove('hide');
+      box.setAttribute('aria-hidden', 'false');
+      setTimeout(() => { inp.focus(); try { inp.select(); } catch (_) {} }, 40);
+    }
+    function closeTplFieldNamePrompt() {
+      const box = $('tpl-field-name');
+      if (!box) return;
+      box.classList.add('hide');
+      box.setAttribute('aria-hidden', 'true');
+      tplEditorState.namingFieldId = '';
+    }
+    function confirmTplFieldName() {
+      const fieldId = tplEditorState.namingFieldId;
+      const inp = $('tpl-field-name-inp');
+      const name = (inp?.value || '').trim();
+      if (!name) {
+        showAppToast('ჯერ დაარქვი ველს სახელი', 1600);
+        inp?.focus();
+        return;
+      }
+      const field = getTplDraft().fields.find(f => f.id === fieldId);
+      if (field) field.label = name;
+      document.querySelectorAll(`#tpl-ed-text .tpl-chip[data-field-id="${CSS.escape(fieldId)}"]`).forEach(chip => {
+        chip.textContent = name;
+        chip.classList.remove('unnamed');
+      });
+      closeTplFieldNamePrompt();
+      renderTplEditorFields();
+      renderTplTokenBar();
+      syncDraftTextFromRich();
+      showAppToast('ველი დამატებულია: ' + name, 1400);
+      $('tpl-ed-text')?.focus();
     }
     function makeTplField(kind, used) {
       const defaults = {
-        text: { label: 'ტექსტური ველი', type: 'text' },
-        textarea: { label: 'გრძელი ტექსტი', type: 'textarea' },
-        number: { label: 'რიცხვი', type: 'number' },
-        currency: { label: 'თანხა', type: 'currency' },
-        percent: { label: 'პროცენტი', type: 'percent', options: ['0%', '5%', '10%', '20%'] },
-        dropdown: { label: 'არჩევანი', type: 'dropdown', options: ['ოფცია 1', 'ოფცია 2'] },
-        preset: { label: 'სწრაფი არჩევანი', type: 'preset', options: ['ოფცია 1', 'ოფცია 2', 'ოფცია 3'] },
-        toggle: { label: 'გადამრთველი', type: 'toggle', title: 'ჩართულია', hint: '' },
-        checkbox: { label: 'მონიშვნა', type: 'checkbox', title: 'დადასტურება' },
-        date: { label: 'თარიღი', type: 'date' }
+        text: { label: 'ახალი ველი', type: 'text' },
+        textarea: { label: 'ახალი ველი', type: 'textarea' },
+        number: { label: 'ახალი ველი', type: 'number' },
+        currency: { label: 'ახალი ველი', type: 'currency' },
+        percent: { label: 'ახალი ველი', type: 'percent', options: ['0%', '5%', '10%', '20%'] },
+        dropdown: { label: 'ახალი ველი', type: 'dropdown', options: ['ოფცია 1', 'ოფცია 2'] },
+        preset: { label: 'ახალი ველი', type: 'preset', options: ['ოფცია 1', 'ოფცია 2', 'ოფცია 3'] },
+        toggle: { label: 'ახალი ველი', type: 'toggle', title: 'ჩართულია', hint: '' },
+        checkbox: { label: 'ახალი ველი', type: 'checkbox', title: 'დადასტურება' },
+        date: { label: 'ახალი ველი', type: 'date' }
       };
       const base = defaults[kind] || defaults.text;
-      const id = slugifyFieldId(base.label, used);
+      const id = slugifyFieldId('field', used);
       return { id, ...base, options: Array.isArray(base.options) ? base.options.slice() : undefined };
     }
     function addTplField(kind) {
       const draft = getTplDraft();
       const used = draft.fields.map(f => f.id);
       const field = makeTplField(kind || 'text', used);
+      const shouldInsert = tplEditorState.insertAtCursor || tplEditorState.step === 2;
       draft.fields.push(field);
       closeFieldPick();
+      if (shouldInsert) {
+        insertChipAtCaret(field);
+        openTplFieldNamePrompt(field.id);
+      } else {
+        renderTplEditorFields();
+        renderTplTokenBar();
+        openTplFieldNamePrompt(field.id);
+      }
       renderTplEditorFields();
       renderTplTokenBar();
-      setTimeout(() => {
-        const labelInp = document.querySelector(`[data-ed-label="${field.id}"]`);
-        if (labelInp) { labelInp.focus(); try { labelInp.select(); } catch (_) {} }
-      }, 30);
       return field;
     }
     function removeTplField(fieldId) {
       const draft = getTplDraft();
       draft.fields = draft.fields.filter(f => f.id !== fieldId);
-      const token = '{{' + fieldId + '}}';
-      draft.text = String(draft.text || '')
-        .split('\n')
-        .filter(line => !line.includes(token))
-        .join('\n')
-        .replace(/\n{3,}/g, '\n\n')
-        .trim();
-      if ($('tpl-ed-text')) $('tpl-ed-text').value = draft.text;
+      document.querySelectorAll(`#tpl-ed-text .tpl-chip[data-field-id="${CSS.escape(fieldId)}"]`).forEach(el => el.remove());
+      syncDraftTextFromRich();
+      if (!serializeTplRichText().trim() && draft.text) {
+        draft.text = String(draft.text || '').split('{{' + fieldId + '}}').join('');
+        loadTplRichText(draft.text);
+      }
       renderTplEditorFields();
       renderTplTokenBar();
       refreshTplPreview();
@@ -3096,15 +3411,9 @@ ${ALDAGI_DETAILS}`;
       renderTplEditorFields();
     }
     function insertTokenIntoTplText(fieldId) {
-      const ta = $('tpl-ed-text');
-      if (!ta) return;
-      const token = '{{' + fieldId + '}}';
-      const start = ta.selectionStart ?? ta.value.length;
-      const end = ta.selectionEnd ?? ta.value.length;
-      ta.value = ta.value.slice(0, start) + token + ta.value.slice(end);
-      getTplDraft().text = ta.value;
-      try { ta.setSelectionRange(start + token.length, start + token.length); } catch (_) {}
-      ta.focus();
+      const field = getTplDraft().fields.find(f => f.id === fieldId) || { id: fieldId, label: fieldId };
+      rememberTplCaret();
+      insertChipAtCaret(field);
     }
     function renderTplTokenBar() {
       const box = $('tpl-ed-tokens');
@@ -3178,15 +3487,25 @@ ${ALDAGI_DETAILS}`;
       if (back) back.classList.toggle('hide', s <= 1);
       if (next) next.classList.toggle('hide', s >= 4);
       if (save) save.classList.toggle('hide', s < 4);
-      if (s === 2) renderTplEditorFields();
-      if (s === 3) renderTplTokenBar();
+      if (s === 2) {
+        loadTplRichText(getTplDraft().text || '');
+        renderTplTokenBar();
+        setTimeout(() => {
+          const ed = $('tpl-ed-text');
+          if (!ed) return;
+          ed.focus();
+          rememberTplCaret();
+          updateTplCaretHint();
+        }, 40);
+      }
+      if (s === 3) renderTplEditorFields();
       if (s === 4) refreshTplPreview();
     }
     function syncDraftFromEditorInputs() {
       const draft = getTplDraft();
       if ($('tpl-ed-title')) draft.title = $('tpl-ed-title').value;
       if ($('tpl-ed-desc')) draft.description = $('tpl-ed-desc').value;
-      if ($('tpl-ed-text')) draft.text = $('tpl-ed-text').value;
+      if ($('tpl-ed-text')) draft.text = serializeTplRichText();
     }
     function applyPreviewValsToText(tplId, body, vals, fields) {
       let out = String(body || '');
@@ -3250,13 +3569,7 @@ ${ALDAGI_DETAILS}`;
         $('tpl-ed-title').disabled = false;
       }
       if ($('tpl-ed-desc')) $('tpl-ed-desc').value = getTplDraft().description || '';
-      if ($('tpl-ed-text')) {
-        const ta = $('tpl-ed-text');
-        ta.value = getTplDraft().text || '';
-        ta.removeAttribute('readonly');
-        ta.readOnly = false;
-        ta.disabled = false;
-      }
+      loadTplRichText(getTplDraft().text || '');
       const ed = $('tpl-editor');
       if (ed) {
         ed.classList.remove('hide');
@@ -3270,6 +3583,7 @@ ${ALDAGI_DETAILS}`;
       const id = tplEditorState.id;
       const wasNew = tplEditorState.isNew;
       closeFieldPick();
+      closeTplFieldNamePrompt();
       clearFieldVals('__preview__');
       tplEditorState.open = false;
       tplEditorState.id = '';
@@ -3410,17 +3724,11 @@ ${ALDAGI_DETAILS}`;
       closeFieldModal();
       if (tplEditorState.open && tplEditorState.id === tplId) {
         renderTplEditorFields();
-        const ta = $('tpl-ed-text');
-        if (ta) {
-          const token = '{{' + id + '}}';
-          if (!ta.value.includes(token)) {
-            const start = ta.selectionStart ?? ta.value.length;
-            const end = ta.selectionEnd ?? ta.value.length;
-            ta.value = ta.value.slice(0, start) + token + ta.value.slice(end);
-            try { ta.setSelectionRange(start + token.length, start + token.length); } catch (_) {}
-          }
-          ta.focus();
+        const ed = $('tpl-ed-text');
+        if (ed && !serializeTplRichText().includes('{{' + id + '}}')) {
+          insertChipAtCaret(field);
         }
+        openTplFieldNamePrompt(id);
         showAppToast('ველი დამატებულია', 1600);
       } else {
         renderSmsList();
@@ -3432,7 +3740,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '284';
+      const v = window.__CC_VER || '287';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -5351,10 +5659,23 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
     $('tpl-ed-cancel')?.addEventListener('click', () => closeTplEditor({ discard: true }));
     $('tpl-ed-save')?.addEventListener('click', saveTplEditor);
     $('tpl-ed-save-top')?.addEventListener('click', saveTplEditor);
+    const insertFieldBtn = $('tpl-ed-insert-field');
+    insertFieldBtn?.addEventListener('mousedown', e => {
+      e.preventDefault(); // ტექსტიდან ფოკუსი არ მოხსნას — კურსორი შენარჩუნდეს
+      rememberTplCaret();
+    });
+    insertFieldBtn?.addEventListener('touchstart', () => {
+      rememberTplCaret();
+    }, { passive: true });
+    insertFieldBtn?.addEventListener('click', e => {
+      e.preventDefault();
+      if (!tplEditorState.open) return;
+      openFieldPick({ insertAtCursor: true });
+    });
     $('tpl-ed-add-main')?.addEventListener('click', e => {
       e.preventDefault();
       if (!tplEditorState.open) return;
-      openFieldPick();
+      openFieldPick({ insertAtCursor: false });
     });
     $('tpl-field-pick-cancel')?.addEventListener('click', e => {
       e.preventDefault();
@@ -5392,13 +5713,43 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
     });
     $('tpl-ed-text')?.addEventListener('input', () => {
       if (!tplEditorState.open) return;
-      getTplDraft().text = $('tpl-ed-text').value;
+      syncDraftTextFromRich();
+      rememberTplCaret();
+    });
+    ['keyup', 'click', 'mouseup', 'touchend', 'keyup'].forEach(evName => {
+      $('tpl-ed-text')?.addEventListener(evName, () => {
+        if (!tplEditorState.open) return;
+        rememberTplCaret();
+      });
+    });
+    document.addEventListener('selectionchange', () => {
+      if (!tplEditorState.open) return;
+      const ed = $('tpl-ed-text');
+      if (!ed) return;
+      if (document.activeElement === ed || ed.contains(document.activeElement)) rememberTplCaret();
     });
     $('tpl-ed-tokens')?.addEventListener('click', e => {
       const ins = e.target.closest('[data-ed-insert]');
       if (!ins) return;
       e.preventDefault();
+      rememberTplCaret();
       insertTokenIntoTplText(ins.dataset.edInsert);
+    });
+    $('tpl-field-name-ok')?.addEventListener('click', e => {
+      e.preventDefault();
+      confirmTplFieldName();
+    });
+    $('tpl-field-name-inp')?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        confirmTplFieldName();
+      }
+    });
+    $('tpl-field-name')?.addEventListener('click', e => {
+      if (e.target === $('tpl-field-name')) {
+        // სახელი სავალდებულოა — ფონზე დაწკაპუნებით არ დაიხუროს ცარიელად
+        $('tpl-field-name-inp')?.focus();
+      }
     });
     function onTplEdClick(e) {
       const addField = e.target.closest('[data-add-field]');
@@ -5448,7 +5799,13 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
       const label = e.target.closest('[data-ed-label]');
       if (label) {
         const field = getTplDraft().fields.find(f => f.id === label.dataset.edLabel);
-        if (field) field.label = label.value;
+        if (field) {
+          field.label = label.value;
+          document.querySelectorAll(`#tpl-ed-text .tpl-chip[data-field-id="${CSS.escape(field.id)}"]`).forEach(chip => {
+            chip.textContent = field.label || 'სახელი…';
+            chip.classList.toggle('unnamed', !(field.label || '').trim());
+          });
+        }
         renderTplTokenBar();
         return;
       }
