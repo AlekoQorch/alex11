@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
-    window.__CC_VER = '281';
+    window.__CC_VER = '282';
     (function () {
       function bustCaches() {
         var jobs = [];
@@ -1483,7 +1483,8 @@
     }
     .lim-pick {
       display: flex;
-      flex-wrap: nowrap;
+      flex-wrap: wrap;
+      align-items: stretch;
       gap: 6px;
       width: 100%;
       padding-bottom: 12px;
@@ -1494,9 +1495,10 @@
       margin-top: 12px;
     }
     .lim-pick button {
-      flex: 1 1 0;
-      min-width: 0;
-      padding: 8px 4px;
+      flex: 1 1 calc(33.333% - 4px);
+      min-width: 72px;
+      max-width: 100%;
+      padding: 8px 6px;
       border: 1px solid var(--border);
       border-radius: 8px;
       background: var(--bg);
@@ -1504,6 +1506,9 @@
       font-size: 13px;
       font-family: inherit;
       text-align: center;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
       transition: border-color .12s ease, background .12s ease, color .12s ease;
     }
     .lim-pick button.on {
@@ -2694,7 +2699,7 @@ ${ALDAGI_DETAILS}`;
     function homeTplCloneDraft() {
       return {
         title: 'ბინა სრული შეთავაზება',
-        text: HOME_OFFER_BODY,
+        text: '',
         fields: [
           {
             id: 'property',
@@ -2714,13 +2719,6 @@ ${ALDAGI_DETAILS}`;
             type: 'choice',
             layout: 'row',
             options: HOME_THIRD_LIMITS.slice()
-          },
-          {
-            id: 'electric',
-            label: 'ავტომობილის ტიპი',
-            type: 'electric',
-            title: 'ავტომობილი ელექტროა',
-            hint: 'დატენვაზე 20% · EV Power'
           }
         ]
       };
@@ -3061,7 +3059,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '281';
+      const v = window.__CC_VER || '282';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
