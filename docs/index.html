@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
-    window.__CC_VER = '280';
+    window.__CC_VER = '281';
     (function () {
       function bustCaches() {
         var jobs = [];
@@ -2848,9 +2848,16 @@ ${ALDAGI_DETAILS}`;
           if (!opts.length) opts.push(...TPL_DEFAULT_LIMITS);
           const layout = field.layout === 'col' || field.layout === 'dropdown' ? field.layout : 'row';
           if (layout === 'dropdown') {
-            body = `<div class="tpl-ed-dd-opts" data-ed-opts="${escapeHtml(field.id)}">`;
+            // ზედა select — როგორც SMS ბარათზე გამოჩნდება
+            body = `<select class="field-inp" disabled tabindex="-1" aria-label="${label}">`;
+            body += `<option value="">აირჩიე ლიმიტი</option>`;
+            opts.filter(Boolean).forEach(opt => {
+              body += `<option value="${escapeHtml(opt)}">${escapeHtml(opt)}</option>`;
+            });
+            body += `</select>`;
+            body += `<div class="tpl-ed-dd-opts" data-ed-opts="${escapeHtml(field.id)}">`;
             opts.forEach((opt, i) => {
-              body += `<input class="field-inp" type="text" inputmode="decimal" data-ed-opt="${escapeHtml(field.id)}" data-ed-opt-i="${i}" value="${escapeHtml(opt)}" placeholder="5000$">`;
+              body += `<input class="field-inp" type="text" inputmode="decimal" data-ed-opt="${escapeHtml(field.id)}" data-ed-opt-i="${i}" value="${escapeHtml(opt)}" placeholder="მაგ: 10000$">`;
             });
             body += `<button type="button" class="tpl-ed-add-main" style="margin:0" data-ed-opt-add="${escapeHtml(field.id)}">+ ვარიანტი</button></div>`;
           } else {
@@ -3054,7 +3061,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '280';
+      const v = window.__CC_VER || '281';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -5011,12 +5018,23 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
         if (!field) return;
         const options = (field.options || []).slice();
         if (options.length >= 24) return;
-        options.push('');
+        // შემდეგი ლიმიტი — ცარიელი არ დარჩეს, რომ გამოჩნდეს
+        const lastNum = options.reduce((acc, o) => {
+          const n = parseUsdAmount(o);
+          return n > acc ? n : acc;
+        }, 0);
+        const next = (lastNum ? lastNum + 5000 : 5000) + '$';
+        options.push(next);
         field.options = options;
         renderTplEditorFields();
-        const inputs = document.querySelectorAll(`[data-ed-opt="${fieldId}"]`);
-        const last = inputs[inputs.length - 1];
-        if (last) last.focus();
+        setTimeout(() => {
+          const inputs = document.querySelectorAll(`[data-ed-opt="${fieldId}"]`);
+          const last = inputs[inputs.length - 1];
+          if (!last) return;
+          last.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          last.focus();
+          try { last.select(); } catch (_) {}
+        }, 40);
         return;
       }
     }
@@ -5049,6 +5067,17 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
         while (options.length <= idx) options.push('');
         options[idx] = opt.value;
         field.options = options;
+        // select preview-ც განახლდეს, რომ დამატებული ჩანდეს
+        const card = opt.closest('.tpl-field-row');
+        const sel = card?.querySelector('select.field-inp');
+        if (sel && field.layout === 'dropdown') {
+          const cur = sel.value;
+          sel.innerHTML = `<option value="">აირჩიე ლიმიტი</option>` +
+            options.filter(o => String(o || '').trim()).map(o =>
+              `<option value="${escapeHtml(o)}">${escapeHtml(o)}</option>`
+            ).join('');
+          if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
+        }
       }
     }
     $('tpl-ed-limits')?.addEventListener('click', onTplEdClick);
