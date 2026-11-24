@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
-    window.__CC_VER = '284';
+    window.__CC_VER = '285';
     (function () {
       function bustCaches() {
         var jobs = [];
@@ -2140,8 +2140,8 @@
     </div>
     <div class="tpl-ed-steps" id="tpl-ed-steps" role="tablist">
       <button type="button" class="tpl-ed-step on" data-tpl-step-btn="1">1. სახელი</button>
-      <button type="button" class="tpl-ed-step" data-tpl-step-btn="2">2. ველები</button>
-      <button type="button" class="tpl-ed-step" data-tpl-step-btn="3">3. ტექსტი</button>
+      <button type="button" class="tpl-ed-step" data-tpl-step-btn="2">2. ტექსტი</button>
+      <button type="button" class="tpl-ed-step" data-tpl-step-btn="3">3. ველები</button>
       <button type="button" class="tpl-ed-step" data-tpl-step-btn="4">4. გადახედვა</button>
     </div>
     <div class="tpl-ed-body">
@@ -2150,23 +2150,24 @@
         <input id="tpl-ed-title" class="tpl-ed-inp" type="text" placeholder="მაგ: შეთავაზება კლიენტისთვის" maxlength="80" autocomplete="off">
         <label class="tpl-ed-lbl" for="tpl-ed-desc">აღწერა (არასავალდებულო)</label>
         <input id="tpl-ed-desc" class="tpl-ed-inp" type="text" placeholder="რაში გამოიყენება ეს შაბლონი" maxlength="160" autocomplete="off">
-        <p class="tpl-ed-hint">შეარჩიე ნათელი სახელი — შემდეგ დაამატებ ველებს და ტექსტს.</p>
+        <p class="tpl-ed-hint">შეარჩიე ნათელი სახელი — შემდეგ დაწერე ტექსტი და მონიშნე სად ჩაისმება ველი.</p>
       </section>
       <section class="tpl-ed-panel hide" data-tpl-step="2">
+        <div class="tpl-ed-panel-title">ტექსტი</div>
+        <p class="tpl-ed-hint">დაწერე ტექსტი. კურსორი დააყენე იმ ადგილას, სადაც ველი გინდა — დააჭირე „ველის ჩასმა აქ“.</p>
+        <textarea id="tpl-ed-text" class="tpl-ed-textarea" rows="12" placeholder="მაგ: გამარჯობა, თქვენი თანხაა … (აქ ჩასვი ველი)" aria-label="შაბლონის ტექსტი"></textarea>
+        <button type="button" class="tpl-ed-add-main" id="tpl-ed-insert-field" style="margin-top:10px">＋ ველის ჩასმა აქ</button>
+        <div class="tpl-ed-tokens" id="tpl-ed-tokens"></div>
+      </section>
+      <section class="tpl-ed-panel hide" data-tpl-step="3">
         <div class="tpl-ed-panel-head">
           <div>
-            <div class="tpl-ed-panel-title">შენი ველები</div>
-            <p class="tpl-ed-hint" style="margin:4px 0 0">დაამატე რა ველებიც გჭირდება — ინდუსტრია არ არის შეზღუდული.</p>
+            <div class="tpl-ed-panel-title">ველების მორგება</div>
+            <p class="tpl-ed-hint" style="margin:4px 0 0">ტექსტში ჩასმული ველები აქ დაარედაქტირე (სახელი, ვარიანტები).</p>
           </div>
           <button type="button" class="tpl-ed-add-main" id="tpl-ed-add-main" style="margin:0;width:auto;padding:10px 14px">+ ველი</button>
         </div>
         <div id="tpl-ed-limits"></div>
-      </section>
-      <section class="tpl-ed-panel hide" data-tpl-step="3">
-        <div class="tpl-ed-panel-title">ტექსტი</div>
-        <p class="tpl-ed-hint">დაწერე ტექსტი და ჩასვი ცვლადი ღილაკით — მაგ. {{სახელი}}.</p>
-        <div class="tpl-ed-tokens" id="tpl-ed-tokens"></div>
-        <textarea id="tpl-ed-text" class="tpl-ed-textarea" rows="12" placeholder="დაწერე შეტყობინების ტექსტი…" aria-label="შაბლონის ტექსტი"></textarea>
       </section>
       <section class="tpl-ed-panel hide" data-tpl-step="4">
         <div class="tpl-ed-panel-title">გადახედვა</div>
@@ -2190,7 +2191,7 @@
     </div>
     <div id="tpl-field-pick" class="tpl-field-pick hide" aria-hidden="true">
       <div class="tpl-field-pick-box">
-        <div class="tpl-field-pick-title">რა ტიპის ველი?</div>
+        <div class="tpl-field-pick-title" id="tpl-field-pick-title">რა ტიპის ველი ჩავსვათ?</div>
         <button type="button" data-add-field="text"><strong>ტექსტი</strong><span>სახელი, ქალაქი, შენიშვნა…</span></button>
         <button type="button" data-add-field="textarea"><strong>გრძელი ტექსტი</strong><span>რამდენიმე სტრიქონი</span></button>
         <button type="button" data-add-field="number"><strong>რიცხვი</strong><span>რაოდენობა, ასაკი…</span></button>
@@ -3003,7 +3004,7 @@ ${ALDAGI_DETAILS}`;
       return html;
     }
 
-    const tplEditorState = { id: '', isNew: false, open: false, draft: null, step: 1 };
+    const tplEditorState = { id: '', isNew: false, open: false, draft: null, step: 1, insertAtCursor: false, savedSel: null };
     const TPL_FIELD_TYPES = [
       { key: 'text', title: 'ტექსტი' },
       { key: 'textarea', title: 'გრძელი ტექსტი' },
@@ -3026,9 +3027,25 @@ ${ALDAGI_DETAILS}`;
       if (!tplEditorState.draft) tplEditorState.draft = emptyTplDraft();
       return tplEditorState.draft;
     }
-    function openFieldPick() {
+    function openFieldPick(opts = {}) {
       const pick = $('tpl-field-pick');
       if (!pick) return;
+      tplEditorState.insertAtCursor = !!opts.insertAtCursor;
+      const ta = $('tpl-ed-text');
+      if (tplEditorState.insertAtCursor && ta) {
+        tplEditorState.savedSel = {
+          start: ta.selectionStart ?? ta.value.length,
+          end: ta.selectionEnd ?? ta.value.length
+        };
+      } else {
+        tplEditorState.savedSel = null;
+      }
+      const title = $('tpl-field-pick-title');
+      if (title) {
+        title.textContent = tplEditorState.insertAtCursor
+          ? 'კურსორის ადგილას რა ველი ჩავსვათ?'
+          : 'რა ტიპის ველი დავამატოთ?';
+      }
       pick.classList.remove('hide');
       pick.setAttribute('aria-hidden', 'false');
     }
@@ -3037,6 +3054,7 @@ ${ALDAGI_DETAILS}`;
       if (!pick) return;
       pick.classList.add('hide');
       pick.setAttribute('aria-hidden', 'true');
+      tplEditorState.insertAtCursor = false;
     }
     function makeTplField(kind, used) {
       const defaults = {
@@ -3059,14 +3077,31 @@ ${ALDAGI_DETAILS}`;
       const draft = getTplDraft();
       const used = draft.fields.map(f => f.id);
       const field = makeTplField(kind || 'text', used);
+      const shouldInsert = tplEditorState.insertAtCursor || tplEditorState.step === 2;
       draft.fields.push(field);
       closeFieldPick();
+      if (shouldInsert) {
+        const ta = $('tpl-ed-text');
+        if (ta) {
+          const token = '{{' + field.id + '}}';
+          const sel = tplEditorState.savedSel;
+          const start = sel ? sel.start : (ta.selectionStart ?? ta.value.length);
+          const end = sel ? sel.end : (ta.selectionEnd ?? ta.value.length);
+          ta.value = ta.value.slice(0, start) + token + ta.value.slice(end);
+          draft.text = ta.value;
+          tplEditorState.savedSel = null;
+          try { ta.setSelectionRange(start + token.length, start + token.length); } catch (_) {}
+          ta.focus();
+        }
+      }
       renderTplEditorFields();
       renderTplTokenBar();
-      setTimeout(() => {
-        const labelInp = document.querySelector(`[data-ed-label="${field.id}"]`);
-        if (labelInp) { labelInp.focus(); try { labelInp.select(); } catch (_) {} }
-      }, 30);
+      if (!shouldInsert) {
+        setTimeout(() => {
+          const labelInp = document.querySelector(`[data-ed-label="${field.id}"]`);
+          if (labelInp) { labelInp.focus(); try { labelInp.select(); } catch (_) {} }
+        }, 30);
+      }
       return field;
     }
     function removeTplField(fieldId) {
@@ -3178,8 +3213,11 @@ ${ALDAGI_DETAILS}`;
       if (back) back.classList.toggle('hide', s <= 1);
       if (next) next.classList.toggle('hide', s >= 4);
       if (save) save.classList.toggle('hide', s < 4);
-      if (s === 2) renderTplEditorFields();
-      if (s === 3) renderTplTokenBar();
+      if (s === 2) {
+        renderTplTokenBar();
+        setTimeout(() => $('tpl-ed-text')?.focus(), 40);
+      }
+      if (s === 3) renderTplEditorFields();
       if (s === 4) refreshTplPreview();
     }
     function syncDraftFromEditorInputs() {
@@ -3432,7 +3470,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '284';
+      const v = window.__CC_VER || '285';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -5351,10 +5389,17 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
     $('tpl-ed-cancel')?.addEventListener('click', () => closeTplEditor({ discard: true }));
     $('tpl-ed-save')?.addEventListener('click', saveTplEditor);
     $('tpl-ed-save-top')?.addEventListener('click', saveTplEditor);
+    $('tpl-ed-insert-field')?.addEventListener('click', e => {
+      e.preventDefault();
+      if (!tplEditorState.open) return;
+      // ჯერ textarea-ზე ფოკუსი — კურსორის ადგილი შენახულია openFieldPick-ში
+      $('tpl-ed-text')?.focus();
+      openFieldPick({ insertAtCursor: true });
+    });
     $('tpl-ed-add-main')?.addEventListener('click', e => {
       e.preventDefault();
       if (!tplEditorState.open) return;
-      openFieldPick();
+      openFieldPick({ insertAtCursor: false });
     });
     $('tpl-field-pick-cancel')?.addEventListener('click', e => {
       e.preventDefault();
