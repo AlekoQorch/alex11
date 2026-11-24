@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
-    window.__CC_VER = '277';
+    window.__CC_VER = '278';
     (function () {
       function bustCaches() {
         var jobs = [];
@@ -2488,13 +2488,38 @@ ${ALDAGI_DETAILS}`;
       if (!Array.isArray(fields)) return [];
       return fields.filter(f => f && typeof f.id === 'string' && f.id).map(f => {
         const out = { ...f };
-        if (out.type === 'choice' || out.type === 'percent_of') {
+        if (out.type === 'electric') {
+          out.type = 'electric';
+          out.label = out.label || 'ავტომობილის ტიპი';
+        } else if (out.type === 'choice' || out.type === 'percent_of') {
           const lay = out.layout === 'col' || out.layout === 'dropdown' ? out.layout : 'row';
           out.layout = lay;
           if (!Array.isArray(out.options)) out.options = [];
         }
         return out;
       });
+    }
+    function electricCheckHtml({ id, tplId, checked, disabled }) {
+      const inputId = id || ('ev-' + Math.random().toString(36).slice(2, 8));
+      const dis = disabled ? ' disabled' : '';
+      const chk = checked ? ' checked' : '';
+      const data = tplId
+        ? ` data-custom-electric="${escapeHtml(tplId)}" data-field="electric"`
+        : '';
+      return `<span class="field-label">ავტომობილის ტიპი</span>
+            <label class="offer-check" for="${escapeHtml(inputId)}">
+              <span class="offer-check-ico" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M13 2 4.5 13.5h6L11 22l8.5-11.5h-6L13 2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <span class="offer-check-copy">
+                <span class="offer-check-title">ავტომობილი ელექტროა</span>
+                <span class="offer-check-hint">დატენვაზე 20% · EV Power</span>
+              </span>
+              <input type="checkbox" id="${escapeHtml(inputId)}"${data}${chk}${dis}>
+              <span class="offer-switch" aria-hidden="true"></span>
+            </label>`;
     }
     function updateCustomSmsFields(tplId, fields) {
       const list = loadCustomSms();
@@ -2582,8 +2607,14 @@ ${ALDAGI_DETAILS}`;
       let html = `<div class="tpl-fields" data-tpl-fields="${c.id}">`;
       fields.forEach(f => {
         html += `<div class="tpl-field-row" data-field-id="${f.id}">`;
-        html += `<span class="field-label">${escapeHtml(f.label || f.id)}</span>`;
-        if (f.type === 'choice' || f.type === 'percent_of') {
+        if (f.type === 'electric') {
+          html += electricCheckHtml({
+            id: 'ev-' + c.id + '-' + f.id,
+            tplId: c.id,
+            checked: vals[f.id] === '1' || vals[f.id] === 'on' || vals[f.id] === true
+          });
+        } else if (f.type === 'choice' || f.type === 'percent_of') {
+          html += `<span class="field-label">${escapeHtml(f.label || f.id)}</span>`;
           const opts = Array.isArray(f.options) ? f.options : [];
           const layout = f.layout === 'col' || f.layout === 'dropdown' ? f.layout : 'row';
           const cur = vals[f.id] || '';
@@ -2609,6 +2640,7 @@ ${ALDAGI_DETAILS}`;
             html += `<p class="sms-hint" style="margin:0 0 8px">${shown ? ('დათვლა: ' + escapeHtml(shown)) : 'აირჩიე %'}</p>`;
           }
         } else {
+          html += `<span class="field-label">${escapeHtml(f.label || f.id)}</span>`;
           const v = vals[f.id] || '';
           const mode = f.type === 'money' ? 'decimal' : 'text';
           const ph = f.type === 'money' ? 'მაგ: 40000$' : (f.label || '');
@@ -2644,6 +2676,11 @@ ${ALDAGI_DETAILS}`;
             type: 'choice',
             layout: 'row',
             options: HOME_THIRD_LIMITS.slice()
+          },
+          {
+            id: 'electric',
+            label: 'ავტომობილის ტიპი',
+            type: 'electric'
           }
         ]
       };
@@ -2742,6 +2779,9 @@ ${ALDAGI_DETAILS}`;
       getTplDraft().fields = fields;
       // უბრალოდ იგივე სახე, რაც SMS ბარათზე — დამატება/წაშლა არა
       box.innerHTML = fields.map(field => {
+        if (field.type === 'electric') {
+          return `<div class="tpl-field-row">${electricCheckHtml({ id: 'tpl-ed-electric', disabled: false })}</div>`;
+        }
         const label = escapeHtml(field.label || '');
         let body = '';
         if (field.type === 'money') {
@@ -2961,7 +3001,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '277';
+      const v = window.__CC_VER || '278';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -4690,6 +4730,16 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
     });
 
     $('sms-list').addEventListener('change', e => {
+      const ev = e.target.closest('input[data-custom-electric]');
+      if (ev) {
+        onCustomFieldValueChange(
+          ev.dataset.customElectric,
+          ev.dataset.field || 'electric',
+          ev.checked ? '1' : '',
+          ev.closest('.sms-card')
+        );
+        return;
+      }
       const sel = e.target.closest('select[data-custom-select]');
       if (!sel) return;
       onCustomFieldValueChange(sel.dataset.customSelect, sel.dataset.field, sel.value, sel.closest('.sms-card'));
