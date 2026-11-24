@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
-    window.__CC_VER = '279';
+    window.__CC_VER = '280';
     (function () {
       function bustCaches() {
         var jobs = [];
@@ -2706,7 +2706,7 @@ ${ALDAGI_DETAILS}`;
             label: 'რემონტის/ავეჯის/ტექნიკის ლიმიტი',
             type: 'choice',
             layout: 'dropdown',
-            options: HOME_CONTENTS_ALL.map(n => n + '$')
+            options: ['5000$']
           },
           {
             id: 'third',
@@ -3054,7 +3054,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '279';
+      const v = window.__CC_VER || '280';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
