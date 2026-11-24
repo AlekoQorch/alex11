@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
-    window.__CC_VER = '285';
+    window.__CC_VER = '286';
     (function () {
       function bustCaches() {
         var jobs = [];
@@ -943,6 +943,16 @@
     .tpl-ed-textarea:focus {
       outline: none;
       border-color: rgba(77, 159, 255, 0.55);
+    }
+    .tpl-ed-caret-hint {
+      margin: 8px 0 0;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: rgba(77, 159, 255, 0.08);
+      color: #9ec4ef;
+      font-size: 12px;
+      line-height: 1.35;
+      word-break: break-word;
     }
     .tpl-ed-tokens {
       display: flex;
@@ -2154,9 +2164,10 @@
       </section>
       <section class="tpl-ed-panel hide" data-tpl-step="2">
         <div class="tpl-ed-panel-title">ტექსტი</div>
-        <p class="tpl-ed-hint">დაწერე ტექსტი. კურსორი დააყენე იმ ადგილას, სადაც ველი გინდა — დააჭირე „ველის ჩასმა აქ“.</p>
-        <textarea id="tpl-ed-text" class="tpl-ed-textarea" rows="12" placeholder="მაგ: გამარჯობა, თქვენი თანხაა … (აქ ჩასვი ველი)" aria-label="შაბლონის ტექსტი"></textarea>
-        <button type="button" class="tpl-ed-add-main" id="tpl-ed-insert-field" style="margin-top:10px">＋ ველის ჩასმა აქ</button>
+        <p class="tpl-ed-hint">დაწერე ტექსტი, კურსორი დააყენე სასურველ ადგილას და დააჭირე „ველის დამატებას“ — ველი ზუსტად იქ ჩაჯდება.</p>
+        <textarea id="tpl-ed-text" class="tpl-ed-textarea" rows="12" placeholder="მაგ: გამარჯობა, თქვენი თანხაა " aria-label="შაბლონის ტექსტი"></textarea>
+        <p class="tpl-ed-caret-hint" id="tpl-ed-caret-hint">კურსორი ტექსტში დააყენე — შემდეგ დაამატე ველი</p>
+        <button type="button" class="tpl-ed-add-main" id="tpl-ed-insert-field" style="margin-top:8px">＋ ველის დამატება</button>
         <div class="tpl-ed-tokens" id="tpl-ed-tokens"></div>
       </section>
       <section class="tpl-ed-panel hide" data-tpl-step="3">
@@ -3004,7 +3015,7 @@ ${ALDAGI_DETAILS}`;
       return html;
     }
 
-    const tplEditorState = { id: '', isNew: false, open: false, draft: null, step: 1, insertAtCursor: false, savedSel: null };
+    const tplEditorState = { id: '', isNew: false, open: false, draft: null, step: 1, insertAtCursor: false, savedSel: null, lastCaret: { start: 0, end: 0 } };
     const TPL_FIELD_TYPES = [
       { key: 'text', title: 'ტექსტი' },
       { key: 'textarea', title: 'გრძელი ტექსტი' },
@@ -3027,23 +3038,50 @@ ${ALDAGI_DETAILS}`;
       if (!tplEditorState.draft) tplEditorState.draft = emptyTplDraft();
       return tplEditorState.draft;
     }
+    function rememberTplCaret() {
+      const ta = $('tpl-ed-text');
+      if (!ta) return;
+      // მხოლოდ როცა ტექსტის ველზეა ფოკუსი — blur-ისას selection იკარგება
+      if (document.activeElement === ta) {
+        tplEditorState.lastCaret = {
+          start: ta.selectionStart ?? ta.value.length,
+          end: ta.selectionEnd ?? ta.value.length
+        };
+      }
+      updateTplCaretHint();
+    }
+    function updateTplCaretHint() {
+      const hint = $('tpl-ed-caret-hint');
+      const ta = $('tpl-ed-text');
+      if (!hint || !ta) return;
+      const start = tplEditorState.lastCaret?.start ?? 0;
+      const end = tplEditorState.lastCaret?.end ?? start;
+      const val = ta.value || '';
+      const left = val.slice(Math.max(0, start - 18), start).replace(/\n/g, '⏎');
+      const right = val.slice(end, Math.min(val.length, end + 18)).replace(/\n/g, '⏎');
+      if (!val) {
+        hint.textContent = 'დაწერე ტექსტი, კურსორი დააყენე სასურველ ადგილას, შემდეგ დაამატე ველი';
+        return;
+      }
+      hint.textContent = 'ველი ჩაჯდება აქ: …' + left + '▍' + right + '…';
+    }
     function openFieldPick(opts = {}) {
       const pick = $('tpl-field-pick');
       if (!pick) return;
       tplEditorState.insertAtCursor = !!opts.insertAtCursor;
       const ta = $('tpl-ed-text');
-      if (tplEditorState.insertAtCursor && ta) {
-        tplEditorState.savedSel = {
-          start: ta.selectionStart ?? ta.value.length,
-          end: ta.selectionEnd ?? ta.value.length
-        };
+      if (tplEditorState.insertAtCursor) {
+        // ჯერ მიმდინარე caret, თუ ფოკუსი ტექსტზეა; თუ არა — ბოლოს დამახსოვრებული
+        if (ta && document.activeElement === ta) rememberTplCaret();
+        const caret = tplEditorState.lastCaret || { start: ta?.value.length || 0, end: ta?.value.length || 0 };
+        tplEditorState.savedSel = { start: caret.start, end: caret.end };
       } else {
         tplEditorState.savedSel = null;
       }
       const title = $('tpl-field-pick-title');
       if (title) {
         title.textContent = tplEditorState.insertAtCursor
-          ? 'კურსორის ადგილას რა ველი ჩავსვათ?'
+          ? 'ამ ადგილას რა ველი ჩავამატოთ?'
           : 'რა ტიპის ველი დავამატოთ?';
       }
       pick.classList.remove('hide');
@@ -3084,14 +3122,16 @@ ${ALDAGI_DETAILS}`;
         const ta = $('tpl-ed-text');
         if (ta) {
           const token = '{{' + field.id + '}}';
-          const sel = tplEditorState.savedSel;
-          const start = sel ? sel.start : (ta.selectionStart ?? ta.value.length);
-          const end = sel ? sel.end : (ta.selectionEnd ?? ta.value.length);
+          const sel = tplEditorState.savedSel || tplEditorState.lastCaret;
+          const start = Math.max(0, Math.min(ta.value.length, sel ? sel.start : ta.value.length));
+          const end = Math.max(start, Math.min(ta.value.length, sel ? sel.end : start));
           ta.value = ta.value.slice(0, start) + token + ta.value.slice(end);
           draft.text = ta.value;
+          const caret = start + token.length;
           tplEditorState.savedSel = null;
-          try { ta.setSelectionRange(start + token.length, start + token.length); } catch (_) {}
-          ta.focus();
+          tplEditorState.lastCaret = { start: caret, end: caret };
+          try { ta.focus(); ta.setSelectionRange(caret, caret); } catch (_) {}
+          updateTplCaretHint();
         }
       }
       renderTplEditorFields();
@@ -3215,7 +3255,15 @@ ${ALDAGI_DETAILS}`;
       if (save) save.classList.toggle('hide', s < 4);
       if (s === 2) {
         renderTplTokenBar();
-        setTimeout(() => $('tpl-ed-text')?.focus(), 40);
+        setTimeout(() => {
+          const ta = $('tpl-ed-text');
+          if (!ta) return;
+          ta.focus();
+          const len = ta.value.length;
+          const c = tplEditorState.lastCaret || { start: len, end: len };
+          try { ta.setSelectionRange(c.start, c.end); } catch (_) {}
+          rememberTplCaret();
+        }, 40);
       }
       if (s === 3) renderTplEditorFields();
       if (s === 4) refreshTplPreview();
@@ -3470,7 +3518,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '285';
+      const v = window.__CC_VER || '286';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -5389,11 +5437,17 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
     $('tpl-ed-cancel')?.addEventListener('click', () => closeTplEditor({ discard: true }));
     $('tpl-ed-save')?.addEventListener('click', saveTplEditor);
     $('tpl-ed-save-top')?.addEventListener('click', saveTplEditor);
-    $('tpl-ed-insert-field')?.addEventListener('click', e => {
+    const insertFieldBtn = $('tpl-ed-insert-field');
+    insertFieldBtn?.addEventListener('mousedown', e => {
+      e.preventDefault(); // ტექსტიდან ფოკუსი არ მოხსნას — კურსორი შენარჩუნდეს
+      rememberTplCaret();
+    });
+    insertFieldBtn?.addEventListener('touchstart', () => {
+      rememberTplCaret();
+    }, { passive: true });
+    insertFieldBtn?.addEventListener('click', e => {
       e.preventDefault();
       if (!tplEditorState.open) return;
-      // ჯერ textarea-ზე ფოკუსი — კურსორის ადგილი შენახულია openFieldPick-ში
-      $('tpl-ed-text')?.focus();
       openFieldPick({ insertAtCursor: true });
     });
     $('tpl-ed-add-main')?.addEventListener('click', e => {
@@ -5438,6 +5492,13 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
     $('tpl-ed-text')?.addEventListener('input', () => {
       if (!tplEditorState.open) return;
       getTplDraft().text = $('tpl-ed-text').value;
+      rememberTplCaret();
+    });
+    ['keyup', 'click', 'select', 'mouseup', 'touchend'].forEach(evName => {
+      $('tpl-ed-text')?.addEventListener(evName, () => {
+        if (!tplEditorState.open) return;
+        rememberTplCaret();
+      });
     });
     $('tpl-ed-tokens')?.addEventListener('click', e => {
       const ins = e.target.closest('[data-ed-insert]');
