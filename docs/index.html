@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
-    window.__CC_VER = '297';
+    window.__CC_VER = '299';
     (function () {
       function bustCaches() {
         var jobs = [];
@@ -2552,13 +2552,6 @@
             <span class="tpl-demo-inp">გიორგი</span>
           </div>
         </button>
-        <button type="button" data-add-field="textarea">
-          <div class="tpl-pick-head"><strong>გრძელი ტექსტი</strong><span>რამდენიმე სტრიქონი</span></div>
-          <div class="tpl-pick-demo" aria-hidden="true">
-            <span class="tpl-demo-label">შენიშვნა</span>
-            <span class="tpl-demo-inp tall">დეტალური აღწერა…</span>
-          </div>
-        </button>
         <button type="button" data-add-field="number">
           <div class="tpl-pick-head"><strong>რიცხვი</strong><span>რაოდენობა, ასაკი…</span></div>
           <div class="tpl-pick-demo" aria-hidden="true">
@@ -2576,17 +2569,6 @@
             </div>
           </div>
         </button>
-        <button type="button" data-add-field="percent">
-          <div class="tpl-pick-head"><strong>პროცენტი</strong><span>ფასდაკლება, წილი…</span></div>
-          <div class="tpl-pick-demo" aria-hidden="true">
-            <span class="tpl-demo-label">პროცენტი</span>
-            <div class="tpl-demo-chips">
-              <span class="tpl-demo-chip">0%</span>
-              <span class="tpl-demo-chip on">10%</span>
-              <span class="tpl-demo-chip">20%</span>
-            </div>
-          </div>
-        </button>
         <button type="button" data-add-field="dropdown">
           <div class="tpl-pick-head"><strong>ჩამოსაშლელი</strong><span>სია არჩევანით</span></div>
           <div class="tpl-pick-demo" aria-hidden="true">
@@ -2595,31 +2577,23 @@
           </div>
         </button>
         <button type="button" data-add-field="preset">
-          <div class="tpl-pick-head"><strong>ღილაკები</strong><span>სწრაფი არჩევანი</span></div>
+          <div class="tpl-pick-head"><strong>ღილაკები</strong><span>თანხა ან პროცენტი</span></div>
           <div class="tpl-pick-demo" aria-hidden="true">
-            <span class="tpl-demo-label">ლიმიტი</span>
+            <span class="tpl-demo-label">არჩევანი</span>
             <div class="tpl-demo-chips">
               <span class="tpl-demo-chip">5000$</span>
               <span class="tpl-demo-chip on">10000$</span>
-              <span class="tpl-demo-chip">20000$</span>
-            </div>
-          </div>
-        </button>
-        <button type="button" data-add-field="toggle">
-          <div class="tpl-pick-head"><strong>გადამრთველი</strong><span>ჩართვა / გამორთვა</span></div>
-          <div class="tpl-pick-demo" aria-hidden="true">
-            <div class="tpl-demo-switch-row">
-              <span class="tpl-demo-switch-copy">ელექტრო ავტო</span>
-              <span class="tpl-demo-switch on"></span>
+              <span class="tpl-demo-chip">10%</span>
+              <span class="tpl-demo-chip">20%</span>
             </div>
           </div>
         </button>
         <button type="button" data-add-field="checkbox">
-          <div class="tpl-pick-head"><strong>მონიშვნა</strong><span>დიახ / არა</span></div>
+          <div class="tpl-pick-head"><strong>მონიშვნა</strong><span>ტექსტის შეცვლა ჩართვაზე</span></div>
           <div class="tpl-pick-demo" aria-hidden="true">
             <div class="tpl-demo-switch-row">
-              <span class="tpl-demo-switch-copy">დადასტურება</span>
-              <span class="tpl-demo-switch"></span>
+              <span class="tpl-demo-switch-copy">ავტომობილი ელექტროა</span>
+              <span class="tpl-demo-switch on"></span>
             </div>
           </div>
         </button>
@@ -2652,6 +2626,22 @@
         <input id="tpl-field-name-inp" class="tpl-ed-inp" type="text" placeholder="მაგ: თანხა, სახელი, ქალაქი…" maxlength="80" autocomplete="off">
         <div class="tpl-field-name-actions">
           <button type="button" id="tpl-field-name-ok" class="ok">დადასტურება</button>
+        </div>
+      </div>
+    </div>
+    <div id="tpl-field-swap" class="tpl-field-name hide" aria-hidden="true">
+      <div class="tpl-field-name-box">
+        <div class="tpl-field-name-head">
+          <div class="tpl-field-name-title">რა ტექსტი შეიცვალოს?</div>
+          <button type="button" class="tpl-field-name-x" id="tpl-field-swap-x" aria-label="დახურვა">×</button>
+        </div>
+        <p class="tpl-ed-hint" style="margin:0 0 10px">სტანდარტული ტექსტი იგზავნება გამორთულზე. ჩართვისას მხოლოდ ეს ნაწილი იცვლება — როგორც „ავტომობილი ელექტროა“.</p>
+        <label class="field-label" for="tpl-field-swap-off" style="display:block;margin:0 0 6px">სტანდარტული ტექსტი</label>
+        <input id="tpl-field-swap-off" class="tpl-ed-inp" type="text" placeholder="მაგ: საწვავის ფასდაკლება 20%" maxlength="240" autocomplete="off">
+        <label class="field-label" for="tpl-field-swap-on" style="display:block;margin:0 0 6px">ჩართულზე</label>
+        <input id="tpl-field-swap-on" class="tpl-ed-inp" type="text" placeholder="მაგ: EV Power 20% დატენვაზე" maxlength="240" autocomplete="off">
+        <div class="tpl-field-name-actions">
+          <button type="button" id="tpl-field-swap-ok" class="ok">დადასტურება</button>
         </div>
       </div>
     </div>
@@ -3271,21 +3261,31 @@ ${ALDAGI_DETAILS}`;
         const out = { ...f };
         // ძველი ტიპების თავსებადობა + ახალი უნივერსალური ტიპები
         if (out.type === 'money') out.type = 'currency';
+        if (out.type === 'textarea') out.type = 'text';
         if (out.type === 'choice') {
           out.type = out.layout === 'dropdown' ? 'dropdown' : 'preset';
         }
-        if (out.type === 'percent_of') out.type = 'percent';
-        if (out.type === 'electric') {
-          out.type = 'toggle';
-          out.label = out.label || 'გადამრთველი';
-          out.title = out.title || 'ჩართულია';
-          out.hint = out.hint || '';
+        if (out.type === 'percent' || out.type === 'percent_of') {
+          out.type = 'preset';
+          if (!Array.isArray(out.options) || !out.options.length) {
+            out.options = ['0%', '5%', '10%', '20%'];
+          }
         }
-        if (out.type === 'dropdown' || out.type === 'preset' || out.type === 'percent') {
+        if (out.type === 'electric' || out.type === 'toggle') {
+          out.type = 'checkbox';
+          out.label = out.label || 'მონიშვნა';
+          out.title = out.title || out.label || 'ჩართულია';
+          out.hint = out.hint || '';
+          if (out.offText == null) out.offText = '';
+          if (out.onText == null) out.onText = out.title || '';
+        }
+        if (out.type === 'dropdown' || out.type === 'preset') {
           if (!Array.isArray(out.options)) out.options = [];
         }
-        if (out.type === 'toggle' || out.type === 'checkbox') {
-          out.title = out.title || out.label || 'ჩართულია';
+        if (out.type === 'checkbox') {
+          out.title = out.title || out.label || 'მონიშვნა';
+          if (out.offText == null) out.offText = '';
+          if (out.onText == null) out.onText = out.title || '';
         }
         return out;
       });
@@ -3314,6 +3314,24 @@ ${ALDAGI_DETAILS}`;
               <span class="offer-check-copy">
                 <span class="offer-check-title">${escapeHtml(tit)}</span>
                 ${hintHtml}
+              </span>
+              <input type="checkbox" id="${escapeHtml(inputId)}"${data}${chk}${dis}>
+              <span class="offer-switch" aria-hidden="true"></span>
+            </label>`;
+    }
+    // შაბლონის მონიშვნა — მხოლოდ ველის სახელი, EV ნაგულისხმევების გარეშე
+    function markCheckHtml({ id, tplId, checked, disabled, label, fieldId }) {
+      const inputId = id || ('mk-' + Math.random().toString(36).slice(2, 8));
+      const dis = disabled ? ' disabled' : '';
+      const chk = checked ? ' checked' : '';
+      const fid = fieldId || 'mark';
+      const data = tplId
+        ? ` data-custom-electric="${escapeHtml(tplId)}" data-field="${escapeHtml(fid)}"`
+        : '';
+      const name = String(label || '').trim() || 'მონიშვნა';
+      return `<label class="offer-check" for="${escapeHtml(inputId)}">
+              <span class="offer-check-copy">
+                <span class="offer-check-title">${escapeHtml(name)}</span>
               </span>
               <input type="checkbox" id="${escapeHtml(inputId)}"${data}${chk}${dis}>
               <span class="offer-switch" aria-hidden="true"></span>
@@ -3374,16 +3392,17 @@ ${ALDAGI_DETAILS}`;
     }
     function fieldDisplayValue(field, vals, fields) {
       const raw = vals[field.id];
+      if (field.type === 'toggle' || field.type === 'electric' || field.type === 'checkbox') {
+        const on = raw === '1' || raw === 'on' || raw === true;
+        if (on) return String(field.onText != null ? field.onText : (field.title || field.label || ''));
+        return String(field.offText != null ? field.offText : '');
+      }
       if (raw == null || String(raw).trim() === '') return '';
       if (field.type === 'percent_of') {
         const src = (fields || []).find(f => f.id === field.source);
         const srcVal = src ? (vals[src.id] || '') : '';
         if (!parseUsdAmount(srcVal)) return '';
         return franchiseUsdFromCar(srcVal, raw);
-      }
-      if (field.type === 'toggle' || field.type === 'electric' || field.type === 'checkbox') {
-        const on = raw === '1' || raw === 'on' || raw === true;
-        return on ? (field.title || field.label || 'კი') : '';
       }
       if (field.type === 'money' || field.type === 'currency') {
         return formatMoneyAmount(raw, getCurrencyUnit(vals, field));
@@ -3439,7 +3458,15 @@ ${ALDAGI_DETAILS}`;
       let html = `<div class="tpl-fields" data-tpl-fields="${c.id}">`;
       fields.forEach(f => {
         html += `<div class="tpl-field-row" data-field-id="${f.id}">`;
-        if (f.type === 'toggle' || f.type === 'electric') {
+        if (f.type === 'checkbox' || f.type === 'toggle') {
+          html += markCheckHtml({
+            id: 'mk-' + c.id + '-' + f.id,
+            tplId: c.id,
+            fieldId: f.id,
+            checked: vals[f.id] === '1' || vals[f.id] === 'on' || vals[f.id] === true,
+            label: f.label
+          });
+        } else if (f.type === 'electric') {
           html += electricCheckHtml({
             id: 'ev-' + c.id + '-' + f.id,
             tplId: c.id,
@@ -3449,17 +3476,10 @@ ${ALDAGI_DETAILS}`;
             title: f.title || f.label,
             hint: f.hint || ''
           });
-        } else if (f.type === 'checkbox') {
-          const checked = vals[f.id] === '1' || vals[f.id] === 'on' || vals[f.id] === true;
-          html += `<label class="offer-check" for="cb-${escapeHtml(c.id)}-${escapeHtml(f.id)}">
-            <span class="offer-check-copy"><span class="offer-check-title">${escapeHtml(f.title || f.label || f.id)}</span></span>
-            <input type="checkbox" id="cb-${escapeHtml(c.id)}-${escapeHtml(f.id)}" data-custom-electric="${escapeHtml(c.id)}" data-field="${escapeHtml(f.id)}"${checked ? ' checked' : ''}>
-            <span class="offer-switch" aria-hidden="true"></span>
-          </label>`;
         } else if (f.type === 'dropdown' || f.type === 'percent' || f.type === 'preset' || f.type === 'choice' || f.type === 'percent_of') {
           html += `<span class="field-label">${escapeHtml(f.label || f.id)}</span>`;
           const opts = Array.isArray(f.options) ? f.options : [];
-          const asDropdown = f.type === 'dropdown' || f.type === 'percent' || f.type === 'percent_of' || f.layout === 'dropdown';
+          const asDropdown = f.type === 'dropdown' || f.layout === 'dropdown';
           const cur = vals[f.id] || '';
           if (asDropdown) {
             html += `<select class="field-inp" data-custom-select="${c.id}" data-field="${f.id}" aria-label="${escapeHtml(f.label || f.id)}">`;
@@ -3477,9 +3497,6 @@ ${ALDAGI_DETAILS}`;
             });
             html += `</div>`;
           }
-        } else if (f.type === 'textarea') {
-          html += `<span class="field-label">${escapeHtml(f.label || f.id)}</span>`;
-          html += `<textarea class="field-inp" data-custom-inp="${c.id}" data-field="${f.id}" rows="3" placeholder="${escapeHtml(f.placeholder || f.label || '')}">${escapeHtml(vals[f.id] || '')}</textarea>`;
         } else if (f.type === 'currency' || f.type === 'money') {
           html += `<span class="field-label">${escapeHtml(f.label || f.id)}</span>`;
           const v = vals[f.id] || '';
@@ -3527,13 +3544,10 @@ ${ALDAGI_DETAILS}`;
     };
     const TPL_FIELD_TYPES = [
       { key: 'text', title: 'ტექსტი' },
-      { key: 'textarea', title: 'გრძელი ტექსტი' },
       { key: 'number', title: 'რიცხვი' },
       { key: 'currency', title: 'თანხა' },
-      { key: 'percent', title: 'პროცენტი' },
       { key: 'dropdown', title: 'ჩამოსაშლელი' },
       { key: 'preset', title: 'ღილაკები' },
-      { key: 'toggle', title: 'გადამრთველი' },
       { key: 'checkbox', title: 'მონიშვნა' },
       { key: 'date', title: 'თარიღი' },
       { key: 'daterange', title: 'პერიოდი' }
@@ -3707,6 +3721,23 @@ ${ALDAGI_DETAILS}`;
       // წინა ჩიპი ან სხვა ელემენტი — ერთი გამოტოვება
       node.parentNode.insertBefore(document.createTextNode(' '), node);
     }
+    function findTextRangeInEditor(ed, needle) {
+      const target = String(needle || '');
+      if (!ed || !target) return null;
+      const walker = document.createTreeWalker(ed, NodeFilter.SHOW_TEXT, null);
+      let node;
+      while ((node = walker.nextNode())) {
+        if (node.parentElement && node.parentElement.closest && node.parentElement.closest('.tpl-chip')) continue;
+        const val = node.nodeValue || '';
+        const idx = val.indexOf(target);
+        if (idx < 0) continue;
+        const range = document.createRange();
+        range.setStart(node, idx);
+        range.setEnd(node, idx + target.length);
+        return range;
+      }
+      return null;
+    }
     function insertChipAtCaret(field, rootEl) {
       const ed = rootEl || $('tpl-ed-text');
       if (!ed) return null;
@@ -3720,6 +3751,11 @@ ${ALDAGI_DETAILS}`;
       } else if (sel.rangeCount && ed.contains(sel.getRangeAt(0).commonAncestorContainer)) {
         range = sel.getRangeAt(0);
       }
+      // მონიშვნა: თუ შერჩეულია ცარიელი კურსორი და offText ტექსტშია — ჩაანაცვლე ის ნაწილი
+      if (field.type === 'checkbox' && field.offText && (!range || range.collapsed)) {
+        const swapRange = findTextRangeInEditor(ed, field.offText);
+        if (swapRange) range = swapRange;
+      }
       if (range) {
         range.deleteContents();
         range.insertNode(chip);
@@ -3727,11 +3763,16 @@ ${ALDAGI_DETAILS}`;
         ed.appendChild(chip);
       }
       // ავტომატურად ერთი გამოტოვება ჩიპის წინ (მაგ: "jgaga: " + ველი)
-      ensureSpaceBeforeNode(chip);
-      const space = document.createTextNode(' ');
-      if (chip.nextSibling) chip.parentNode.insertBefore(space, chip.nextSibling);
-      else chip.parentNode.appendChild(space);
-      placeCaretAfterNode(space, ed);
+      // მონიშვნის ჩანაცვლებაზე ზედმეტი გამოტოვება არ დავამატოთ
+      if (!(field.type === 'checkbox' && (field.offText || '').trim())) {
+        ensureSpaceBeforeNode(chip);
+        const space = document.createTextNode(' ');
+        if (chip.nextSibling) chip.parentNode.insertBefore(space, chip.nextSibling);
+        else chip.parentNode.appendChild(space);
+        placeCaretAfterNode(space, ed);
+      } else {
+        placeCaretAfterNode(chip, ed);
+      }
       if (ed.id === 'tpl-ed-text') {
         syncDraftTextFromRich();
         updateTplCaretHint();
@@ -3809,6 +3850,7 @@ ${ALDAGI_DETAILS}`;
     }
     function cancelTplFieldName() {
       // X / გაუქმება — ველი საერთოდ არ ემატება
+      hideTplFieldSwapUi();
       closeTplFieldNamePrompt();
       closeTplFieldPlace();
       $('tpl-ed-text')?.focus();
@@ -3837,9 +3879,16 @@ ${ALDAGI_DETAILS}`;
       const place = $('tpl-place-text');
       if (!box || !place) return;
       const draft = getTplDraft();
+      const pending = tplEditorState.pendingField;
       // ძირითადი ტექსტიდან სინქი
       if ($('tpl-ed-text')) draft.text = serializeTplRichText($('tpl-ed-text')) || draft.text;
       loadTplRichText(draft.text || '', place);
+      const hint = box.querySelector('.tpl-ed-hint');
+      if (hint) {
+        hint.textContent = pending && pending.type === 'checkbox'
+          ? 'მონიშნე ტექსტი, რომელიც შეიცვლება ჩართვაზე — ან კურსორი დააყენე ჩასასმელ ადგილას.'
+          : 'კურსორი დააყენე იმ ადგილას, სადაც ველი გინდა — შემდეგ დააჭირე ჩასმას.';
+      }
       box.classList.remove('hide');
       box.setAttribute('aria-hidden', 'false');
       setTimeout(() => {
@@ -3874,7 +3923,17 @@ ${ALDAGI_DETAILS}`;
         return;
       }
       rememberTplCaret(place);
-      commitPendingTplField(pending, { insertInto: place });
+      let field = pending;
+      if (pending.type === 'checkbox') {
+        const selText = getTplSelectionText(place);
+        if (selText) field = { ...pending, offText: selText };
+        if (!(field.offText || '').trim() || !(field.onText || '').trim()) {
+          showAppToast('მონიშვნისთვის სტანდარტული და ჩართულის ტექსტი სავალდებულოა', 2000);
+          return;
+        }
+        tplEditorState.pendingField = field;
+      }
+      commitPendingTplField(field, { insertInto: place });
       closeTplFieldPlace();
     }
     function confirmTplFieldName() {
@@ -3895,9 +3954,13 @@ ${ALDAGI_DETAILS}`;
         closeTplFieldNamePrompt();
         return;
       }
-      field = { ...field, label: name };
+      field = { ...field, label: name, title: field.type === 'checkbox' ? name : field.title };
       tplEditorState.pendingField = field;
       hideTplFieldNameUi();
+      if (field.type === 'checkbox') {
+        openTplFieldSwapPrompt();
+        return;
+      }
       if (shouldInsert) {
         commitPendingTplField(field, { insertInto: $('tpl-ed-text') });
         $('tpl-ed-text')?.focus();
@@ -3906,21 +3969,95 @@ ${ALDAGI_DETAILS}`;
       // ნაბიჯი 3 — ჯერ ტექსტიდან აირჩიოს სად ჩაჯდეს
       openTplFieldPlace();
     }
+    function openTplFieldSwapPrompt() {
+      const box = $('tpl-field-swap');
+      const offInp = $('tpl-field-swap-off');
+      const onInp = $('tpl-field-swap-on');
+      if (!box || !offInp || !onInp) return;
+      const field = tplEditorState.pendingField;
+      offInp.value = field && field.offText != null ? String(field.offText) : '';
+      onInp.value = field && field.onText != null ? String(field.onText) : '';
+      box.classList.remove('hide');
+      box.setAttribute('aria-hidden', 'false');
+      setTimeout(() => {
+        const focusEl = offInp.value.trim() ? onInp : offInp;
+        focusEl.focus();
+        try { focusEl.select(); } catch (_) {}
+      }, 40);
+    }
+    function hideTplFieldSwapUi() {
+      const box = $('tpl-field-swap');
+      if (!box) return;
+      box.classList.add('hide');
+      box.setAttribute('aria-hidden', 'true');
+    }
+    function cancelTplFieldSwap() {
+      hideTplFieldSwapUi();
+      clearTplPendingField();
+      closeTplFieldPlace();
+      showAppToast('ველი არ დაემატა', 1200);
+      $('tpl-ed-text')?.focus();
+    }
+    function confirmTplFieldSwap() {
+      const pending = tplEditorState.pendingField;
+      const shouldInsert = tplEditorState.pendingInsert;
+      const offInp = $('tpl-field-swap-off');
+      const onInp = $('tpl-field-swap-on');
+      if (!pending) {
+        hideTplFieldSwapUi();
+        return;
+      }
+      const offText = (offInp?.value || '').trim();
+      const onText = (onInp?.value || '').trim();
+      if (!offText || !onText) {
+        showAppToast('სტანდარტული და ჩართულის ტექსტი სავალდებულოა', 1800);
+        (!(offText) ? offInp : onInp)?.focus();
+        return;
+      }
+      if (offText === onText) {
+        showAppToast('ჩართულზე სხვა ტექსტი ჩაწერე', 1800);
+        onInp?.focus();
+        return;
+      }
+      const field = {
+        ...pending,
+        title: pending.label || 'მონიშვნა',
+        offText,
+        onText
+      };
+      tplEditorState.pendingField = field;
+      hideTplFieldSwapUi();
+      if (shouldInsert) {
+        commitPendingTplField(field, { insertInto: $('tpl-ed-text') });
+        $('tpl-ed-text')?.focus();
+        return;
+      }
+      openTplFieldPlace();
+    }
+    function getTplSelectionText(rootEl) {
+      const ed = rootEl || $('tpl-ed-text');
+      if (!ed) return '';
+      const sel = window.getSelection();
+      if (!sel || !sel.rangeCount || sel.isCollapsed) return '';
+      const range = sel.getRangeAt(0);
+      if (!ed.contains(range.commonAncestorContainer)) return '';
+      return String(sel.toString() || '').replace(/\u00a0/g, ' ').trim();
+    }
     function makeTplField(kind, used) {
       const defaults = {
         text: { label: 'ახალი ველი', type: 'text' },
-        textarea: { label: 'ახალი ველი', type: 'textarea' },
         number: { label: 'ახალი ველი', type: 'number' },
         currency: { label: 'ახალი ველი', type: 'currency', currencyUnit: '$' },
-        percent: { label: 'ახალი ველი', type: 'percent', options: ['0%', '5%', '10%', '20%'] },
         dropdown: { label: 'ახალი ველი', type: 'dropdown', options: ['ოფცია 1', 'ოფცია 2'] },
-        preset: { label: 'ახალი ველი', type: 'preset', options: ['ოფცია 1', 'ოფცია 2', 'ოფცია 3'] },
-        toggle: { label: 'ახალი ველი', type: 'toggle', title: 'ჩართულია', hint: '' },
-        checkbox: { label: 'ახალი ველი', type: 'checkbox', title: 'დადასტურება' },
+        preset: { label: 'ახალი ველი', type: 'preset', options: ['5000$', '10000$', '10%', '20%'] },
+        checkbox: { label: 'ახალი ველი', type: 'checkbox', title: '', hint: '', offText: '', onText: '' },
         date: { label: 'ახალი ველი', type: 'date' },
         daterange: { label: 'ახალი ველი', type: 'daterange', startLabel: 'დასაწყისი', endLabel: 'დასასრული' }
       };
-      const base = defaults[kind] || defaults.text;
+      const mapped = kind === 'textarea' ? 'text'
+        : (kind === 'percent' || kind === 'toggle') ? (kind === 'percent' ? 'preset' : 'checkbox')
+        : kind;
+      const base = defaults[mapped] || defaults.text;
       const id = slugifyFieldId('field', used);
       return { id, ...base, options: Array.isArray(base.options) ? base.options.slice() : undefined };
     }
@@ -3929,6 +4066,14 @@ ${ALDAGI_DETAILS}`;
       const used = draft.fields.map(f => f.id);
       const field = makeTplField(kind || 'text', used);
       const shouldInsert = tplEditorState.insertAtCursor || tplEditorState.step === 2;
+      if (field.type === 'checkbox') {
+        const ed = $('tpl-ed-text');
+        if (ed) {
+          rememberTplCaret(ed);
+          const selText = getTplSelectionText(ed);
+          if (selText) field.offText = selText;
+        }
+      }
       // ჯერ მხოლოდ pending — ველი draft-ში მხოლოდ სახელის დადასტურების შემდეგ შედის
       tplEditorState.pendingField = field;
       tplEditorState.pendingInsert = shouldInsert;
@@ -3994,18 +4139,17 @@ ${ALDAGI_DETAILS}`;
         if (needsOpts) {
           const opts = Array.isArray(field.options) ? field.options.slice() : [];
           if (!opts.length) opts.push('ოფცია 1');
+          const optPh = field.type === 'preset' ? 'მაგ: 5000$ ან 10%' : 'ოფცია';
           optsHtml = `<div class="tpl-ed-dd-opts" data-ed-opts="${escapeHtml(field.id)}">`;
           opts.forEach((opt, i) => {
-            optsHtml += `<input class="field-inp" type="text" data-ed-opt="${escapeHtml(field.id)}" data-ed-opt-i="${i}" value="${escapeHtml(opt)}" placeholder="ოფცია">`;
+            optsHtml += `<input class="field-inp" type="text" data-ed-opt="${escapeHtml(field.id)}" data-ed-opt-i="${i}" value="${escapeHtml(opt)}" placeholder="${optPh}">`;
           });
           optsHtml += `<button type="button" class="tpl-ed-add-main" style="margin:0" data-ed-opt-add="${escapeHtml(field.id)}">+ ვარიანტი</button></div>`;
         }
         let extra = '';
         if (field.type === 'toggle' || field.type === 'checkbox' || field.type === 'electric') {
-          extra = `<input class="tpl-ed-inp" type="text" data-ed-ev-title="${escapeHtml(field.id)}" value="${escapeHtml(field.title || '')}" placeholder="ღილაკის ტექსტი" style="margin-top:8px">`;
-          if (field.type === 'toggle' || field.type === 'electric') {
-            extra += `<input class="tpl-ed-inp" type="text" data-ed-ev-hint="${escapeHtml(field.id)}" value="${escapeHtml(field.hint || '')}" placeholder="მოკლე აღწერა (არასავალდებულო)" style="margin-top:8px">`;
-          }
+          extra = `<input class="tpl-ed-inp" type="text" data-ed-off-text="${escapeHtml(field.id)}" value="${escapeHtml(field.offText || '')}" placeholder="სტანდარტული ტექსტი" style="margin-top:8px">`;
+          extra += `<input class="tpl-ed-inp" type="text" data-ed-on-text="${escapeHtml(field.id)}" value="${escapeHtml(field.onText || '')}" placeholder="ჩართულზე" style="margin-top:8px">`;
         }
         return `<div class="tpl-ed-field-card" data-field-card="${escapeHtml(field.id)}">
           <div class="tpl-ed-field-card-top">
@@ -4129,6 +4273,7 @@ ${ALDAGI_DETAILS}`;
       const wasNew = tplEditorState.isNew;
       closeFieldPick();
       closeTplFieldNamePrompt();
+      hideTplFieldSwapUi();
       closeTplFieldPlace();
       clearFieldVals('__preview__');
       tplEditorState.open = false;
@@ -4286,7 +4431,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '297';
+      const v = window.__CC_VER || '299';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -6325,6 +6470,29 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
         cancelTplFieldName();
       }
     });
+    $('tpl-field-swap-ok')?.addEventListener('click', e => {
+      e.preventDefault();
+      confirmTplFieldSwap();
+    });
+    $('tpl-field-swap-x')?.addEventListener('click', e => {
+      e.preventDefault();
+      cancelTplFieldSwap();
+    });
+    ['tpl-field-swap-off', 'tpl-field-swap-on'].forEach(id => {
+      $(id)?.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          confirmTplFieldSwap();
+        }
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          cancelTplFieldSwap();
+        }
+      });
+    });
+    $('tpl-field-swap')?.addEventListener('click', e => {
+      if (e.target === $('tpl-field-swap')) cancelTplFieldSwap();
+    });
     $('tpl-field-place-ok')?.addEventListener('click', e => {
       e.preventDefault();
       confirmTplFieldPlace();
@@ -6398,6 +6566,7 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
         const field = getTplDraft().fields.find(f => f.id === label.dataset.edLabel);
         if (field) {
           field.label = label.value;
+          if (field.type === 'checkbox' || field.type === 'toggle') field.title = label.value;
           document.querySelectorAll(`#tpl-ed-text .tpl-chip[data-field-id="${CSS.escape(field.id)}"]`).forEach(chip => {
             chip.textContent = field.label || 'სახელი…';
             chip.classList.toggle('unnamed', !(field.label || '').trim());
@@ -6406,16 +6575,16 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
         renderTplTokenBar();
         return;
       }
-      const evTitle = e.target.closest('[data-ed-ev-title]');
-      if (evTitle) {
-        const field = getTplDraft().fields.find(f => f.id === evTitle.dataset.edEvTitle);
-        if (field) field.title = evTitle.value;
+      const offText = e.target.closest('[data-ed-off-text]');
+      if (offText) {
+        const field = getTplDraft().fields.find(f => f.id === offText.dataset.edOffText);
+        if (field) field.offText = offText.value;
         return;
       }
-      const evHint = e.target.closest('[data-ed-ev-hint]');
-      if (evHint) {
-        const field = getTplDraft().fields.find(f => f.id === evHint.dataset.edEvHint);
-        if (field) field.hint = evHint.value;
+      const onText = e.target.closest('[data-ed-on-text]');
+      if (onText) {
+        const field = getTplDraft().fields.find(f => f.id === onText.dataset.edOnText);
+        if (field) field.onText = onText.value;
         return;
       }
       const opt = e.target.closest('[data-ed-opt]');
