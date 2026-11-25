@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
-    window.__CC_VER = '296';
+    window.__CC_VER = '297';
     (function () {
       function bustCaches() {
         var jobs = [];
@@ -2089,6 +2089,28 @@
       color: #fff;
       background: rgba(77, 159, 255, 0.18);
     }
+    .tpl-date-range {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+      align-items: stretch;
+    }
+    .tpl-date-range-col {
+      flex: 1 1 0;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .tpl-date-range-col .field-label-mini {
+      font-size: 11px;
+      color: var(--dim);
+      font-weight: 600;
+    }
+    .tpl-date-range-col .field-inp {
+      width: 100%;
+      box-sizing: border-box;
+    }
     .offer-check {
       display: flex;
       align-items: center;
@@ -2602,10 +2624,20 @@
           </div>
         </button>
         <button type="button" data-add-field="date">
-          <div class="tpl-pick-head"><strong>თარიღი</strong><span>დაწყება, ვადა…</span></div>
+          <div class="tpl-pick-head"><strong>თარიღი</strong><span>ერთი თარიღი</span></div>
           <div class="tpl-pick-demo" aria-hidden="true">
             <span class="tpl-demo-label">თარიღი</span>
             <span class="tpl-demo-inp muted">2026-11-25</span>
+          </div>
+        </button>
+        <button type="button" data-add-field="daterange">
+          <div class="tpl-pick-head"><strong>პერიოდი</strong><span>დასაწყისი და დასასრული</span></div>
+          <div class="tpl-pick-demo" aria-hidden="true">
+            <span class="tpl-demo-label">პერიოდი</span>
+            <div class="tpl-demo-chips">
+              <span class="tpl-demo-chip">დასაწყისი</span>
+              <span class="tpl-demo-chip">დასასრული</span>
+            </div>
           </div>
         </button>
         <button type="button" class="tpl-field-pick-cancel" id="tpl-field-pick-cancel">გაუქმება</button>
@@ -3318,6 +3350,15 @@ ${ALDAGI_DETAILS}`;
     function currencyUnitKey(fieldId) {
       return String(fieldId || '') + '__unit';
     }
+    function dateRangeEndKey(fieldId) {
+      return String(fieldId || '') + '__end';
+    }
+    function formatDateRangeDisplay(start, end) {
+      const a = String(start || '').trim();
+      const b = String(end || '').trim();
+      if (a && b) return a + ' – ' + b;
+      return a || b || '';
+    }
     function getCurrencyUnit(vals, field) {
       const fromVal = vals && field ? vals[currencyUnitKey(field.id)] : '';
       const u = String(fromVal || field?.currencyUnit || '$').trim();
@@ -3346,6 +3387,9 @@ ${ALDAGI_DETAILS}`;
       }
       if (field.type === 'money' || field.type === 'currency') {
         return formatMoneyAmount(raw, getCurrencyUnit(vals, field));
+      }
+      if (field.type === 'daterange') {
+        return formatDateRangeDisplay(raw, vals[dateRangeEndKey(field.id)]);
       }
       return String(raw);
     }
@@ -3447,6 +3491,20 @@ ${ALDAGI_DETAILS}`;
               <button type="button" data-custom-unit="₾" class="${unit === '₾' ? 'on' : ''}">₾</button>
             </div>
           </div>`;
+        } else if (f.type === 'daterange') {
+          html += `<span class="field-label">${escapeHtml(f.label || f.id)}</span>`;
+          const start = vals[f.id] || '';
+          const end = vals[dateRangeEndKey(f.id)] || '';
+          html += `<div class="tpl-date-range">
+            <div class="tpl-date-range-col">
+              <span class="field-label-mini">${escapeHtml(f.startLabel || 'დასაწყისი')}</span>
+              <input class="field-inp" data-custom-inp="${c.id}" data-field="${f.id}" type="date" value="${escapeHtml(start)}" aria-label="${escapeHtml((f.label || '') + ' დასაწყისი')}">
+            </div>
+            <div class="tpl-date-range-col">
+              <span class="field-label-mini">${escapeHtml(f.endLabel || 'დასასრული')}</span>
+              <input class="field-inp" data-custom-inp="${c.id}" data-field="${escapeHtml(dateRangeEndKey(f.id))}" type="date" value="${escapeHtml(end)}" aria-label="${escapeHtml((f.label || '') + ' დასასრული')}">
+            </div>
+          </div>`;
         } else {
           html += `<span class="field-label">${escapeHtml(f.label || f.id)}</span>`;
           const v = vals[f.id] || '';
@@ -3477,7 +3535,8 @@ ${ALDAGI_DETAILS}`;
       { key: 'preset', title: 'ღილაკები' },
       { key: 'toggle', title: 'გადამრთველი' },
       { key: 'checkbox', title: 'მონიშვნა' },
-      { key: 'date', title: 'თარიღი' }
+      { key: 'date', title: 'თარიღი' },
+      { key: 'daterange', title: 'პერიოდი' }
     ];
     function tplFieldTypeTitle(type) {
       return (TPL_FIELD_TYPES.find(t => t.key === type) || {}).title || type || 'ველი';
@@ -3858,7 +3917,8 @@ ${ALDAGI_DETAILS}`;
         preset: { label: 'ახალი ველი', type: 'preset', options: ['ოფცია 1', 'ოფცია 2', 'ოფცია 3'] },
         toggle: { label: 'ახალი ველი', type: 'toggle', title: 'ჩართულია', hint: '' },
         checkbox: { label: 'ახალი ველი', type: 'checkbox', title: 'დადასტურება' },
-        date: { label: 'ახალი ველი', type: 'date' }
+        date: { label: 'ახალი ველი', type: 'date' },
+        daterange: { label: 'ახალი ველი', type: 'daterange', startLabel: 'დასაწყისი', endLabel: 'დასასრული' }
       };
       const base = defaults[kind] || defaults.text;
       const id = slugifyFieldId('field', used);
@@ -4226,7 +4286,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '296';
+      const v = window.__CC_VER || '297';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
