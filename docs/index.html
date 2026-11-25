@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
-    window.__CC_VER = '293';
+    window.__CC_VER = '294';
     (function () {
       function bustCaches() {
         var jobs = [];
@@ -2035,12 +2035,14 @@
       text-align: center;
       transition: border-color .12s ease, background .12s ease, color .12s ease;
     }
-    /* wrap მხოლოდ შაბლონის დამატების რედაქტორში */
-    .tpl-ed-sms-card .lim-pick {
+    /* wrap — შაბლონის გადახედვა და შენახული custom SMS ბარათი */
+    .tpl-ed-sms-card .lim-pick,
+    .sms-card[data-custom="1"] .lim-pick {
       flex-wrap: wrap;
       align-items: stretch;
     }
-    .tpl-ed-sms-card .lim-pick button {
+    .tpl-ed-sms-card .lim-pick button,
+    .sms-card[data-custom="1"] .lim-pick button {
       flex: 1 1 calc(33.333% - 4px);
       min-width: 72px;
       max-width: 100%;
@@ -4121,7 +4123,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '293';
+      const v = window.__CC_VER || '294';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -5643,7 +5645,6 @@ The main requirement is that the car is in a washed condition. It must be photog
             <h3>${escapeHtml(c.title || 'ახალი შაბლონი')}</h3>
             <input type="tel" class="sms-to is-empty" data-sms-to inputmode="tel" placeholder="ნომერი არაა" aria-label="ტელეფონის ნომერი" autocomplete="tel">
           </div>
-          <button type="button" class="tpl-edit-open" data-open-tpl-ed="${c.id}">შაბლონის რედაქტირება</button>
           ${renderCustomFieldsHtml(c)}
           ${smsEditField(c.id, { rows: 8, label: (c.title || 'შაბლონი') + ' ტექსტი' })}
           <div class="send-row" data-chat-tpl="${c.id}">
@@ -6268,16 +6269,18 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
       updateTplPreviewTextOnly();
     });
     $('tpl-ed-preview-fields')?.addEventListener('click', e => {
-      const optBtn = e.target.closest('[data-prev-pick] button[data-custom-opt]');
+      // data-custom-* → data-prev-* (refreshTplPreview), ამიტომ opt არის data-prev-opt
+      const optBtn = e.target.closest('[data-prev-pick] button[data-prev-opt]');
       if (!optBtn) return;
       e.preventDefault();
       const pick = optBtn.closest('[data-prev-pick]');
       const fieldId = pick?.dataset.field;
       if (!fieldId) return;
+      const val = optBtn.dataset.prevOpt;
       const cur = getFieldVals('__preview__')[fieldId];
-      const next = cur === optBtn.dataset.customOpt ? '' : optBtn.dataset.customOpt;
+      const next = cur === val ? '' : val;
       setFieldVal('__preview__', fieldId, next);
-      pick.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === optBtn && next));
+      pick.querySelectorAll('button').forEach(b => b.classList.toggle('on', !!(next && b.dataset.prevOpt === next)));
       updateTplPreviewTextOnly();
     });
     $('field-type')?.addEventListener('change', syncFieldModalType);
