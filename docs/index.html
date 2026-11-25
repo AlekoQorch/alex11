@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
-    window.__CC_VER = '295';
+    window.__CC_VER = '296';
     (function () {
       function bustCaches() {
         var jobs = [];
@@ -2056,6 +2056,39 @@
       color: #fff;
       background: rgba(77, 159, 255, 0.18);
     }
+    .tpl-cur-row {
+      display: flex;
+      align-items: stretch;
+      gap: 8px;
+      width: 100%;
+    }
+    .tpl-cur-row .field-inp {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .tpl-cur-units {
+      flex: 0 0 auto;
+      display: inline-flex;
+      gap: 4px;
+      align-items: stretch;
+    }
+    .tpl-cur-units button {
+      min-width: 40px;
+      padding: 0 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--dim);
+      font-size: 15px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .tpl-cur-units button.on {
+      border-color: rgba(77, 159, 255, 0.65);
+      color: #fff;
+      background: rgba(77, 159, 255, 0.18);
+    }
     .offer-check {
       display: flex;
       align-items: center;
@@ -2512,10 +2545,13 @@
           </div>
         </button>
         <button type="button" data-add-field="currency">
-          <div class="tpl-pick-head"><strong>თანხა</strong><span>ფასი, ლიმიტი…</span></div>
+          <div class="tpl-pick-head"><strong>თანხა</strong><span>დოლარი / ლარი (ძირითადი $)</span></div>
           <div class="tpl-pick-demo" aria-hidden="true">
-            <span class="tpl-demo-label">თანხა ($)</span>
-            <span class="tpl-demo-inp">1000</span>
+            <span class="tpl-demo-label">თანხა</span>
+            <div class="tpl-demo-chips">
+              <span class="tpl-demo-chip on">1000 $</span>
+              <span class="tpl-demo-chip">1000 ₾</span>
+            </div>
           </div>
         </button>
         <button type="button" data-add-field="percent">
@@ -3279,6 +3315,22 @@ ${ALDAGI_DETAILS}`;
         .filter(Boolean)
         .slice(0, 24);
     }
+    function currencyUnitKey(fieldId) {
+      return String(fieldId || '') + '__unit';
+    }
+    function getCurrencyUnit(vals, field) {
+      const fromVal = vals && field ? vals[currencyUnitKey(field.id)] : '';
+      const u = String(fromVal || field?.currencyUnit || '$').trim();
+      return u === '₾' || u === 'GEL' || u === 'lari' || u === 'ლ' ? '₾' : '$';
+    }
+    function formatMoneyAmount(val, unit) {
+      const u = unit === '₾' ? '₾' : '$';
+      const v = String(val ?? '').trim();
+      if (!v || v === '—') return '';
+      const bare = v.replace(/[$₾]/g, '').trim();
+      if (!bare) return '';
+      return bare + u;
+    }
     function fieldDisplayValue(field, vals, fields) {
       const raw = vals[field.id];
       if (raw == null || String(raw).trim() === '') return '';
@@ -3293,7 +3345,7 @@ ${ALDAGI_DETAILS}`;
         return on ? (field.title || field.label || 'კი') : '';
       }
       if (field.type === 'money' || field.type === 'currency') {
-        try { return formatUsd(raw); } catch (_) { return String(raw); }
+        return formatMoneyAmount(raw, getCurrencyUnit(vals, field));
       }
       return String(raw);
     }
@@ -3384,13 +3436,24 @@ ${ALDAGI_DETAILS}`;
         } else if (f.type === 'textarea') {
           html += `<span class="field-label">${escapeHtml(f.label || f.id)}</span>`;
           html += `<textarea class="field-inp" data-custom-inp="${c.id}" data-field="${f.id}" rows="3" placeholder="${escapeHtml(f.placeholder || f.label || '')}">${escapeHtml(vals[f.id] || '')}</textarea>`;
+        } else if (f.type === 'currency' || f.type === 'money') {
+          html += `<span class="field-label">${escapeHtml(f.label || f.id)}</span>`;
+          const v = vals[f.id] || '';
+          const unit = getCurrencyUnit(vals, f);
+          html += `<div class="tpl-cur-row">
+            <input class="field-inp" data-custom-inp="${c.id}" data-field="${f.id}" type="text" inputmode="decimal" value="${escapeHtml(v)}" placeholder="მაგ: 1000">
+            <div class="tpl-cur-units" data-custom-units="${c.id}" data-field="${f.id}" role="group" aria-label="ვალუტა">
+              <button type="button" data-custom-unit="$" class="${unit === '$' ? 'on' : ''}">$</button>
+              <button type="button" data-custom-unit="₾" class="${unit === '₾' ? 'on' : ''}">₾</button>
+            </div>
+          </div>`;
         } else {
           html += `<span class="field-label">${escapeHtml(f.label || f.id)}</span>`;
           const v = vals[f.id] || '';
-          const isNum = f.type === 'currency' || f.type === 'money' || f.type === 'number';
+          const isNum = f.type === 'number';
           const mode = isNum ? 'decimal' : 'text';
           const inputType = f.type === 'date' ? 'date' : 'text';
-          const ph = f.placeholder || (f.type === 'currency' || f.type === 'money' ? 'მაგ: 1000' : (f.label || ''));
+          const ph = f.placeholder || (f.label || '');
           html += `<input class="field-inp" data-custom-inp="${c.id}" data-field="${f.id}" type="${inputType}" inputmode="${mode}" value="${escapeHtml(v)}" placeholder="${escapeHtml(ph)}">`;
         }
         html += `</div>`;
@@ -3789,7 +3852,7 @@ ${ALDAGI_DETAILS}`;
         text: { label: 'ახალი ველი', type: 'text' },
         textarea: { label: 'ახალი ველი', type: 'textarea' },
         number: { label: 'ახალი ველი', type: 'number' },
-        currency: { label: 'ახალი ველი', type: 'currency' },
+        currency: { label: 'ახალი ველი', type: 'currency', currencyUnit: '$' },
         percent: { label: 'ახალი ველი', type: 'percent', options: ['0%', '5%', '10%', '20%'] },
         dropdown: { label: 'ახალი ველი', type: 'dropdown', options: ['ოფცია 1', 'ოფცია 2'] },
         preset: { label: 'ახალი ველი', type: 'preset', options: ['ოფცია 1', 'ოფცია 2', 'ოფცია 3'] },
@@ -4163,7 +4226,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '295';
+      const v = window.__CC_VER || '296';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -5966,6 +6029,20 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
         return;
       }
 
+      const unitBtn = e.target.closest('[data-custom-units] button[data-custom-unit]');
+      if (unitBtn) {
+        e.preventDefault();
+        const wrap = unitBtn.closest('[data-custom-units]');
+        const tplId = wrap?.dataset.customUnits;
+        const fieldId = wrap?.dataset.field;
+        const unit = unitBtn.dataset.customUnit === '₾' ? '₾' : '$';
+        if (!tplId || !fieldId) return;
+        setFieldVal(tplId, currencyUnitKey(fieldId), unit);
+        wrap.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.customUnit === unit));
+        refreshCustomPreview(tplId);
+        return;
+      }
+
       const optBtn = e.target.closest('[data-custom-pick] button[data-custom-opt]');
       if (optBtn) {
         e.preventDefault();
@@ -6316,6 +6393,18 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
       updateTplPreviewTextOnly();
     });
     $('tpl-ed-preview-fields')?.addEventListener('click', e => {
+      const unitBtn = e.target.closest('[data-prev-units] button[data-prev-unit]');
+      if (unitBtn) {
+        e.preventDefault();
+        const wrap = unitBtn.closest('[data-prev-units]');
+        const fieldId = wrap?.dataset.field;
+        const unit = unitBtn.dataset.prevUnit === '₾' ? '₾' : '$';
+        if (!fieldId) return;
+        setFieldVal('__preview__', currencyUnitKey(fieldId), unit);
+        wrap.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.prevUnit === unit));
+        updateTplPreviewTextOnly();
+        return;
+      }
       // data-custom-* → data-prev-* (refreshTplPreview), ამიტომ opt არის data-prev-opt
       const optBtn = e.target.closest('[data-prev-pick] button[data-prev-opt]');
       if (!optBtn) return;
