@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
-    window.__CC_VER = '291';
+    window.__CC_VER = '292';
     (function () {
       function bustCaches() {
         var jobs = [];
@@ -3322,7 +3322,8 @@ ${ALDAGI_DETAILS}`;
 
     const tplEditorState = {
       id: '', isNew: false, open: false, draft: null, step: 1,
-      insertAtCursor: false, savedRange: null, namingFieldId: ''
+      insertAtCursor: false, savedRange: null, namingFieldId: '',
+      pendingField: null, pendingInsert: false
     };
     const TPL_FIELD_TYPES = [
       { key: 'text', title: 'ტექსტი' },
@@ -3534,7 +3535,10 @@ ${ALDAGI_DETAILS}`;
       const box = $('tpl-field-name');
       const inp = $('tpl-field-name-inp');
       if (!box || !inp) return;
-      const field = getTplDraft().fields.find(f => f.id === fieldId);
+      const pending = tplEditorState.pendingField;
+      const field = (pending && pending.id === fieldId)
+        ? pending
+        : getTplDraft().fields.find(f => f.id === fieldId);
       inp.value = (field && field.label && field.label !== 'ახალი ველი') ? field.label : '';
       box.classList.remove('hide');
       box.setAttribute('aria-hidden', 'false');
@@ -3546,18 +3550,18 @@ ${ALDAGI_DETAILS}`;
       box.classList.add('hide');
       box.setAttribute('aria-hidden', 'true');
       tplEditorState.namingFieldId = '';
+      tplEditorState.pendingField = null;
+      tplEditorState.pendingInsert = false;
     }
     function cancelTplFieldName() {
-      const fieldId = tplEditorState.namingFieldId;
+      // X / გაუქმება — ველი საერთოდ არ ემატება
       closeTplFieldNamePrompt();
-      if (fieldId) {
-        // გაუქმება = ველის დამატების გაუქმება
-        removeTplField(fieldId);
-      }
       $('tpl-ed-text')?.focus();
     }
     function confirmTplFieldName() {
       const fieldId = tplEditorState.namingFieldId;
+      const pending = tplEditorState.pendingField;
+      const shouldInsert = tplEditorState.pendingInsert;
       const inp = $('tpl-field-name-inp');
       const name = (inp?.value || '').trim();
       if (!name) {
@@ -3565,13 +3569,26 @@ ${ALDAGI_DETAILS}`;
         inp?.focus();
         return;
       }
-      const field = getTplDraft().fields.find(f => f.id === fieldId);
-      if (field) field.label = name;
-      document.querySelectorAll(`#tpl-ed-text .tpl-chip[data-field-id="${CSS.escape(fieldId)}"]`).forEach(chip => {
-        chip.textContent = name;
-        chip.classList.remove('unnamed');
-      });
+      let field = pending && pending.id === fieldId
+        ? pending
+        : getTplDraft().fields.find(f => f.id === fieldId);
+      if (!field) {
+        closeTplFieldNamePrompt();
+        return;
+      }
+      field = { ...field, label: name };
+      const draft = getTplDraft();
+      const existing = draft.fields.findIndex(f => f.id === field.id);
+      if (existing >= 0) draft.fields[existing] = field;
+      else draft.fields.push(field);
       closeTplFieldNamePrompt();
+      if (shouldInsert) insertChipAtCaret(field);
+      else {
+        document.querySelectorAll(`#tpl-ed-text .tpl-chip[data-field-id="${CSS.escape(field.id)}"]`).forEach(chip => {
+          chip.textContent = name;
+          chip.classList.remove('unnamed');
+        });
+      }
       renderTplEditorFields();
       renderTplTokenBar();
       syncDraftTextFromRich();
@@ -3600,18 +3617,11 @@ ${ALDAGI_DETAILS}`;
       const used = draft.fields.map(f => f.id);
       const field = makeTplField(kind || 'text', used);
       const shouldInsert = tplEditorState.insertAtCursor || tplEditorState.step === 2;
-      draft.fields.push(field);
+      // ჯერ მხოლოდ pending — ველი draft-ში მხოლოდ სახელის დადასტურების შემდეგ შედის
+      tplEditorState.pendingField = field;
+      tplEditorState.pendingInsert = shouldInsert;
       closeFieldPick();
-      if (shouldInsert) {
-        insertChipAtCaret(field);
-        openTplFieldNamePrompt(field.id);
-      } else {
-        renderTplEditorFields();
-        renderTplTokenBar();
-        openTplFieldNamePrompt(field.id);
-      }
-      renderTplEditorFields();
-      renderTplTokenBar();
+      openTplFieldNamePrompt(field.id);
       return field;
     }
     function removeTplField(fieldId) {
@@ -3968,7 +3978,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '291';
+      const v = window.__CC_VER || '292';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
