@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
-    window.__CC_VER = '290';
+    window.__CC_VER = '291';
     (function () {
       function bustCaches() {
         var jobs = [];
@@ -1007,6 +1007,7 @@
     }
     .tpl-field-name.hide { display: none; }
     .tpl-field-name-box {
+      position: relative;
       width: min(100%, 340px);
       padding: 18px 16px 14px;
       border-radius: 14px;
@@ -1014,11 +1015,38 @@
       background: #1c1c1f;
       box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
     }
+    .tpl-field-name-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
     .tpl-field-name-title {
+      flex: 1;
       font-size: 16px;
       font-weight: 700;
-      margin-bottom: 10px;
+      margin: 0;
       color: var(--text);
+      line-height: 1.35;
+      padding-top: 2px;
+    }
+    .tpl-field-name-x {
+      flex: 0 0 auto;
+      width: 36px;
+      height: 36px;
+      margin: -6px -4px 0 0;
+      border: 0;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+      font-size: 22px;
+      line-height: 1;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .tpl-field-name-x:active {
+      background: rgba(255,255,255,0.12);
     }
     .tpl-field-name-box .tpl-ed-inp { margin: 0 0 12px; }
     .tpl-field-name-actions {
@@ -2483,7 +2511,10 @@
     </div>
     <div id="tpl-field-name" class="tpl-field-name hide" aria-hidden="true">
       <div class="tpl-field-name-box">
-        <div class="tpl-field-name-title">ველს სახელი დაარქვი</div>
+        <div class="tpl-field-name-head">
+          <div class="tpl-field-name-title">ველს სახელი დაარქვი</div>
+          <button type="button" class="tpl-field-name-x" id="tpl-field-name-x" aria-label="დახურვა">×</button>
+        </div>
         <input id="tpl-field-name-inp" class="tpl-ed-inp" type="text" placeholder="მაგ: თანხა, სახელი, ქალაქი…" maxlength="80" autocomplete="off">
         <div class="tpl-field-name-actions">
           <button type="button" id="tpl-field-name-ok" class="ok">დადასტურება</button>
@@ -3516,6 +3547,15 @@ ${ALDAGI_DETAILS}`;
       box.setAttribute('aria-hidden', 'true');
       tplEditorState.namingFieldId = '';
     }
+    function cancelTplFieldName() {
+      const fieldId = tplEditorState.namingFieldId;
+      closeTplFieldNamePrompt();
+      if (fieldId) {
+        // გაუქმება = ველის დამატების გაუქმება
+        removeTplField(fieldId);
+      }
+      $('tpl-ed-text')?.focus();
+    }
     function confirmTplFieldName() {
       const fieldId = tplEditorState.namingFieldId;
       const inp = $('tpl-field-name-inp');
@@ -3928,7 +3968,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '290';
+      const v = window.__CC_VER || '291';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -5927,16 +5967,24 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
       e.preventDefault();
       confirmTplFieldName();
     });
+    $('tpl-field-name-x')?.addEventListener('click', e => {
+      e.preventDefault();
+      cancelTplFieldName();
+    });
     $('tpl-field-name-inp')?.addEventListener('keydown', e => {
       if (e.key === 'Enter') {
         e.preventDefault();
         confirmTplFieldName();
       }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        cancelTplFieldName();
+      }
     });
     $('tpl-field-name')?.addEventListener('click', e => {
       if (e.target === $('tpl-field-name')) {
-        // სახელი სავალდებულოა — ფონზე დაწკაპუნებით არ დაიხუროს ცარიელად
-        $('tpl-field-name-inp')?.focus();
+        // ფონზე დაჭერა = დახურვა / გაუქმება
+        cancelTplFieldName();
       }
     });
     function onTplEdClick(e) {
