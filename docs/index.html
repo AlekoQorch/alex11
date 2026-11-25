@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
-    window.__CC_VER = '290';
+    window.__CC_VER = '293';
     (function () {
       function bustCaches() {
         var jobs = [];
@@ -1007,6 +1007,7 @@
     }
     .tpl-field-name.hide { display: none; }
     .tpl-field-name-box {
+      position: relative;
       width: min(100%, 340px);
       padding: 18px 16px 14px;
       border-radius: 14px;
@@ -1014,11 +1015,38 @@
       background: #1c1c1f;
       box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
     }
+    .tpl-field-name-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
     .tpl-field-name-title {
+      flex: 1;
       font-size: 16px;
       font-weight: 700;
-      margin-bottom: 10px;
+      margin: 0;
       color: var(--text);
+      line-height: 1.35;
+      padding-top: 2px;
+    }
+    .tpl-field-name-x {
+      flex: 0 0 auto;
+      width: 36px;
+      height: 36px;
+      margin: -6px -4px 0 0;
+      border: 0;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+      font-size: 22px;
+      line-height: 1;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .tpl-field-name-x:active {
+      background: rgba(255,255,255,0.12);
     }
     .tpl-field-name-box .tpl-ed-inp { margin: 0 0 12px; }
     .tpl-field-name-actions {
@@ -1037,6 +1065,70 @@
       cursor: pointer;
     }
     .tpl-field-name-actions .ok {
+      background: #2f6fed;
+      border-color: #2f6fed;
+      color: #fff;
+    }
+    .tpl-field-place {
+      position: absolute;
+      inset: 0;
+      z-index: 7;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 16px;
+      background: rgba(0, 0, 0, 0.72);
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
+    }
+    .tpl-field-place.hide { display: none; }
+    .tpl-field-place-box {
+      width: min(100%, 420px);
+      max-height: 85%;
+      overflow: auto;
+      padding: 16px 14px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: #1c1c1f;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+    }
+    .tpl-field-place-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .tpl-field-place-title {
+      flex: 1;
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1.35;
+      color: var(--text);
+      padding-top: 2px;
+    }
+    .tpl-field-place-box .tpl-ed-textarea {
+      min-height: 160px;
+      margin-top: 8px;
+    }
+    .tpl-field-place-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .tpl-field-place-actions button {
+      flex: 1;
+      min-height: 44px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .tpl-field-place-actions .ok {
       background: #2f6fed;
       border-color: #2f6fed;
       color: #fff;
@@ -2367,7 +2459,7 @@
         <div class="tpl-ed-panel-head">
           <div>
             <div class="tpl-ed-panel-title">ველების მორგება</div>
-            <p class="tpl-ed-hint" style="margin:4px 0 0">ტექსტში ჩასმული ველები აქ დაარედაქტირე (სახელი, ვარიანტები).</p>
+            <p class="tpl-ed-hint" style="margin:4px 0 0">აქ დაამატე/დაარედაქტირე ველები. ახალი ველის დამატებისას ტექსტიდან აირჩევ სად ჩაჯდეს.</p>
           </div>
           <button type="button" class="tpl-ed-add-main" id="tpl-ed-add-main" style="margin:0;width:auto;padding:10px 14px">+ ველი</button>
         </div>
@@ -2483,10 +2575,26 @@
     </div>
     <div id="tpl-field-name" class="tpl-field-name hide" aria-hidden="true">
       <div class="tpl-field-name-box">
-        <div class="tpl-field-name-title">ველს სახელი დაარქვი</div>
+        <div class="tpl-field-name-head">
+          <div class="tpl-field-name-title">ველს სახელი დაარქვი</div>
+          <button type="button" class="tpl-field-name-x" id="tpl-field-name-x" aria-label="დახურვა">×</button>
+        </div>
         <input id="tpl-field-name-inp" class="tpl-ed-inp" type="text" placeholder="მაგ: თანხა, სახელი, ქალაქი…" maxlength="80" autocomplete="off">
         <div class="tpl-field-name-actions">
           <button type="button" id="tpl-field-name-ok" class="ok">დადასტურება</button>
+        </div>
+      </div>
+    </div>
+    <div id="tpl-field-place" class="tpl-field-place hide" aria-hidden="true">
+      <div class="tpl-field-place-box">
+        <div class="tpl-field-place-head">
+          <div class="tpl-field-place-title">სად ჩავამატოთ ტექსტში?</div>
+          <button type="button" class="tpl-field-name-x" id="tpl-field-place-x" aria-label="დახურვა">×</button>
+        </div>
+        <p class="tpl-ed-hint" style="margin:0">კურსორი დააყენე იმ ადგილას, სადაც ველი გინდა — შემდეგ დააჭირე ჩასმას.</p>
+        <div id="tpl-place-text" class="tpl-ed-textarea" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="ტექსტი ჯერ ცარიელია" aria-label="ტექსტი ჩასმისთვის"></div>
+        <div class="tpl-field-place-actions">
+          <button type="button" id="tpl-field-place-ok" class="ok">ჩასმა ამ ადგილას</button>
         </div>
       </div>
     </div>
@@ -3291,7 +3399,8 @@ ${ALDAGI_DETAILS}`;
 
     const tplEditorState = {
       id: '', isNew: false, open: false, draft: null, step: 1,
-      insertAtCursor: false, savedRange: null, namingFieldId: ''
+      insertAtCursor: false, savedRange: null, namingFieldId: '',
+      pendingField: null, pendingInsert: false
     };
     const TPL_FIELD_TYPES = [
       { key: 'text', title: 'ტექსტი' },
@@ -3366,11 +3475,12 @@ ${ALDAGI_DETAILS}`;
       Array.from(root.childNodes).forEach(walk);
       return out;
     }
-    function loadTplRichText(text) {
-      const ed = $('tpl-ed-text');
+    function loadTplRichText(text, rootEl) {
+      const ed = rootEl || $('tpl-ed-text');
       if (!ed) return;
       const fields = getTplDraft().fields || [];
       const byId = Object.fromEntries(fields.map(f => [f.id, f]));
+      if (tplEditorState.pendingField) byId[tplEditorState.pendingField.id] = tplEditorState.pendingField;
       ed.innerHTML = '';
       const raw = String(text || '');
       if (!raw) return;
@@ -3393,15 +3503,15 @@ ${ALDAGI_DETAILS}`;
     function syncDraftTextFromRich() {
       getTplDraft().text = serializeTplRichText();
     }
-    function rememberTplCaret() {
-      const ed = $('tpl-ed-text');
+    function rememberTplCaret(rootEl) {
+      const ed = rootEl || $('tpl-ed-text');
       if (!ed) return;
       const sel = window.getSelection();
       if (!sel || !sel.rangeCount) return;
       const range = sel.getRangeAt(0);
       if (!ed.contains(range.commonAncestorContainer)) return;
       tplEditorState.savedRange = range.cloneRange();
-      updateTplCaretHint();
+      if (ed.id === 'tpl-ed-text') updateTplCaretHint();
     }
     function updateTplCaretHint() {
       const hint = $('tpl-ed-caret-hint');
@@ -3434,8 +3544,8 @@ ${ALDAGI_DETAILS}`;
       } catch (_) {}
       hint.textContent = 'ველი ჩაჯდება აქ: …' + left + '▍' + right + '…';
     }
-    function placeCaretAfterNode(node) {
-      const ed = $('tpl-ed-text');
+    function placeCaretAfterNode(node, rootEl) {
+      const ed = rootEl || $('tpl-ed-text');
       if (!ed || !node) return;
       const sel = window.getSelection();
       const range = document.createRange();
@@ -3446,8 +3556,8 @@ ${ALDAGI_DETAILS}`;
       tplEditorState.savedRange = range.cloneRange();
       ed.focus();
     }
-    function insertChipAtCaret(field) {
-      const ed = $('tpl-ed-text');
+    function insertChipAtCaret(field, rootEl) {
+      const ed = rootEl || $('tpl-ed-text');
       if (!ed) return null;
       const unnamed = !(field.label || '').trim() || field.label === 'ახალი ველი';
       const chip = makeTplChipEl(field.id, field.label || 'სახელი…', unnamed);
@@ -3465,13 +3575,14 @@ ${ALDAGI_DETAILS}`;
       } else {
         ed.appendChild(chip);
       }
-      // კურსორი ჩიპის შემდეგ
       const space = document.createTextNode(' ');
       if (chip.nextSibling) chip.parentNode.insertBefore(space, chip.nextSibling);
       else chip.parentNode.appendChild(space);
-      placeCaretAfterNode(space);
-      syncDraftTextFromRich();
-      updateTplCaretHint();
+      placeCaretAfterNode(space, ed);
+      if (ed.id === 'tpl-ed-text') {
+        syncDraftTextFromRich();
+        updateTplCaretHint();
+      }
       return chip;
     }
     function openFieldPick(opts = {}) {
@@ -3503,21 +3614,104 @@ ${ALDAGI_DETAILS}`;
       const box = $('tpl-field-name');
       const inp = $('tpl-field-name-inp');
       if (!box || !inp) return;
-      const field = getTplDraft().fields.find(f => f.id === fieldId);
+      const pending = tplEditorState.pendingField;
+      const field = (pending && pending.id === fieldId)
+        ? pending
+        : getTplDraft().fields.find(f => f.id === fieldId);
       inp.value = (field && field.label && field.label !== 'ახალი ველი') ? field.label : '';
       box.classList.remove('hide');
       box.setAttribute('aria-hidden', 'false');
       setTimeout(() => { inp.focus(); try { inp.select(); } catch (_) {} }, 40);
     }
-    function closeTplFieldNamePrompt() {
+    function hideTplFieldNameUi() {
       const box = $('tpl-field-name');
       if (!box) return;
       box.classList.add('hide');
       box.setAttribute('aria-hidden', 'true');
       tplEditorState.namingFieldId = '';
     }
+    function clearTplPendingField() {
+      tplEditorState.pendingField = null;
+      tplEditorState.pendingInsert = false;
+    }
+    function closeTplFieldNamePrompt() {
+      hideTplFieldNameUi();
+      clearTplPendingField();
+    }
+    function cancelTplFieldName() {
+      // X / გაუქმება — ველი საერთოდ არ ემატება
+      closeTplFieldNamePrompt();
+      closeTplFieldPlace();
+      $('tpl-ed-text')?.focus();
+    }
+    function commitPendingTplField(field, { insertInto } = {}) {
+      const draft = getTplDraft();
+      const existing = draft.fields.findIndex(f => f.id === field.id);
+      if (existing >= 0) draft.fields[existing] = field;
+      else draft.fields.push(field);
+      if (insertInto) {
+        insertChipAtCaret(field, insertInto);
+        if (insertInto.id === 'tpl-place-text') {
+          draft.text = serializeTplRichText(insertInto);
+          loadTplRichText(draft.text);
+        } else {
+          syncDraftTextFromRich();
+        }
+      }
+      clearTplPendingField();
+      renderTplEditorFields();
+      renderTplTokenBar();
+      showAppToast('ველი დამატებულია: ' + (field.label || field.id), 1400);
+    }
+    function openTplFieldPlace() {
+      const box = $('tpl-field-place');
+      const place = $('tpl-place-text');
+      if (!box || !place) return;
+      const draft = getTplDraft();
+      // ძირითადი ტექსტიდან სინქი
+      if ($('tpl-ed-text')) draft.text = serializeTplRichText($('tpl-ed-text')) || draft.text;
+      loadTplRichText(draft.text || '', place);
+      box.classList.remove('hide');
+      box.setAttribute('aria-hidden', 'false');
+      setTimeout(() => {
+        place.focus();
+        try {
+          const range = document.createRange();
+          range.selectNodeContents(place);
+          range.collapse(false);
+          const sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+          tplEditorState.savedRange = range.cloneRange();
+        } catch (_) {}
+      }, 40);
+    }
+    function closeTplFieldPlace() {
+      const box = $('tpl-field-place');
+      if (!box) return;
+      box.classList.add('hide');
+      box.setAttribute('aria-hidden', 'true');
+    }
+    function cancelTplFieldPlace() {
+      closeTplFieldPlace();
+      clearTplPendingField();
+      showAppToast('ველი არ დაემატა', 1200);
+    }
+    function confirmTplFieldPlace() {
+      const pending = tplEditorState.pendingField;
+      const place = $('tpl-place-text');
+      if (!pending || !place) {
+        closeTplFieldPlace();
+        return;
+      }
+      rememberTplCaret(place);
+      commitPendingTplField(pending, { insertInto: place });
+      closeTplFieldPlace();
+    }
     function confirmTplFieldName() {
       const fieldId = tplEditorState.namingFieldId;
+      const pending = tplEditorState.pendingField;
+      const shouldInsert = tplEditorState.pendingInsert;
       const inp = $('tpl-field-name-inp');
       const name = (inp?.value || '').trim();
       if (!name) {
@@ -3525,18 +3719,23 @@ ${ALDAGI_DETAILS}`;
         inp?.focus();
         return;
       }
-      const field = getTplDraft().fields.find(f => f.id === fieldId);
-      if (field) field.label = name;
-      document.querySelectorAll(`#tpl-ed-text .tpl-chip[data-field-id="${CSS.escape(fieldId)}"]`).forEach(chip => {
-        chip.textContent = name;
-        chip.classList.remove('unnamed');
-      });
-      closeTplFieldNamePrompt();
-      renderTplEditorFields();
-      renderTplTokenBar();
-      syncDraftTextFromRich();
-      showAppToast('ველი დამატებულია: ' + name, 1400);
-      $('tpl-ed-text')?.focus();
+      let field = pending && pending.id === fieldId
+        ? pending
+        : getTplDraft().fields.find(f => f.id === fieldId);
+      if (!field) {
+        closeTplFieldNamePrompt();
+        return;
+      }
+      field = { ...field, label: name };
+      tplEditorState.pendingField = field;
+      hideTplFieldNameUi();
+      if (shouldInsert) {
+        commitPendingTplField(field, { insertInto: $('tpl-ed-text') });
+        $('tpl-ed-text')?.focus();
+        return;
+      }
+      // ნაბიჯი 3 — ჯერ ტექსტიდან აირჩიოს სად ჩაჯდეს
+      openTplFieldPlace();
     }
     function makeTplField(kind, used) {
       const defaults = {
@@ -3560,18 +3759,11 @@ ${ALDAGI_DETAILS}`;
       const used = draft.fields.map(f => f.id);
       const field = makeTplField(kind || 'text', used);
       const shouldInsert = tplEditorState.insertAtCursor || tplEditorState.step === 2;
-      draft.fields.push(field);
+      // ჯერ მხოლოდ pending — ველი draft-ში მხოლოდ სახელის დადასტურების შემდეგ შედის
+      tplEditorState.pendingField = field;
+      tplEditorState.pendingInsert = shouldInsert;
       closeFieldPick();
-      if (shouldInsert) {
-        insertChipAtCaret(field);
-        openTplFieldNamePrompt(field.id);
-      } else {
-        renderTplEditorFields();
-        renderTplTokenBar();
-        openTplFieldNamePrompt(field.id);
-      }
-      renderTplEditorFields();
-      renderTplTokenBar();
+      openTplFieldNamePrompt(field.id);
       return field;
     }
     function removeTplField(fieldId) {
@@ -3772,6 +3964,7 @@ ${ALDAGI_DETAILS}`;
       const wasNew = tplEditorState.isNew;
       closeFieldPick();
       closeTplFieldNamePrompt();
+      closeTplFieldPlace();
       clearFieldVals('__preview__');
       tplEditorState.open = false;
       tplEditorState.id = '';
@@ -3928,7 +4121,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '290';
+      const v = window.__CC_VER || '293';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -5927,17 +6120,48 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
       e.preventDefault();
       confirmTplFieldName();
     });
+    $('tpl-field-name-x')?.addEventListener('click', e => {
+      e.preventDefault();
+      cancelTplFieldName();
+    });
     $('tpl-field-name-inp')?.addEventListener('keydown', e => {
       if (e.key === 'Enter') {
         e.preventDefault();
         confirmTplFieldName();
       }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        cancelTplFieldName();
+      }
     });
     $('tpl-field-name')?.addEventListener('click', e => {
       if (e.target === $('tpl-field-name')) {
-        // სახელი სავალდებულოა — ფონზე დაწკაპუნებით არ დაიხუროს ცარიელად
-        $('tpl-field-name-inp')?.focus();
+        // ფონზე დაჭერა = დახურვა / გაუქმება
+        cancelTplFieldName();
       }
+    });
+    $('tpl-field-place-ok')?.addEventListener('click', e => {
+      e.preventDefault();
+      confirmTplFieldPlace();
+    });
+    $('tpl-field-place-x')?.addEventListener('click', e => {
+      e.preventDefault();
+      cancelTplFieldPlace();
+    });
+    const placeText = $('tpl-place-text');
+    ['keyup', 'click', 'mouseup', 'touchend'].forEach(evName => {
+      placeText?.addEventListener(evName, () => {
+        if (!tplEditorState.open) return;
+        rememberTplCaret(placeText);
+      });
+    });
+    const placeOkBtn = $('tpl-field-place-ok');
+    placeOkBtn?.addEventListener('mousedown', e => {
+      e.preventDefault();
+      rememberTplCaret($('tpl-place-text'));
+    });
+    $('tpl-field-place')?.addEventListener('click', e => {
+      if (e.target === $('tpl-field-place')) cancelTplFieldPlace();
     });
     function onTplEdClick(e) {
       const addField = e.target.closest('[data-add-field]');
