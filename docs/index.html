@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
-    window.__CC_VER = '294';
+    window.__CC_VER = '295';
     (function () {
       function bustCaches() {
         var jobs = [];
@@ -3558,6 +3558,33 @@ ${ALDAGI_DETAILS}`;
       tplEditorState.savedRange = range.cloneRange();
       ed.focus();
     }
+    function placeCaretBeforeChip(chip, rootEl) {
+      const ed = rootEl || $('tpl-ed-text');
+      if (!ed || !chip) return;
+      const sel = window.getSelection();
+      const range = document.createRange();
+      range.setStartBefore(chip);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
+      tplEditorState.savedRange = range.cloneRange();
+      ed.focus();
+      if (ed.id === 'tpl-ed-text') updateTplCaretHint();
+    }
+    function ensureSpaceBeforeNode(node) {
+      if (!node || !node.parentNode) return;
+      const prev = node.previousSibling;
+      if (!prev) return; // ტექსტის დასაწყისში გამოტოვება არ სჭირდება
+      if (prev.nodeType === 3) {
+        const v = prev.nodeValue || '';
+        if (!v.length) return;
+        if (/\s$/.test(v)) return;
+        prev.nodeValue = v + ' ';
+        return;
+      }
+      // წინა ჩიპი ან სხვა ელემენტი — ერთი გამოტოვება
+      node.parentNode.insertBefore(document.createTextNode(' '), node);
+    }
     function insertChipAtCaret(field, rootEl) {
       const ed = rootEl || $('tpl-ed-text');
       if (!ed) return null;
@@ -3577,6 +3604,8 @@ ${ALDAGI_DETAILS}`;
       } else {
         ed.appendChild(chip);
       }
+      // ავტომატურად ერთი გამოტოვება ჩიპის წინ (მაგ: "jgaga: " + ველი)
+      ensureSpaceBeforeNode(chip);
       const space = document.createTextNode(' ');
       if (chip.nextSibling) chip.parentNode.insertBefore(space, chip.nextSibling);
       else chip.parentNode.appendChild(space);
@@ -3586,6 +3615,22 @@ ${ALDAGI_DETAILS}`;
         updateTplCaretHint();
       }
       return chip;
+    }
+    function bindTplChipCaret(ed) {
+      if (!ed || ed.dataset.chipCaretBound === '1') return;
+      ed.dataset.chipCaretBound = '1';
+      ed.addEventListener('mousedown', e => {
+        const chip = e.target.closest('.tpl-chip');
+        if (!chip || !ed.contains(chip)) return;
+        e.preventDefault();
+        placeCaretBeforeChip(chip, ed);
+      });
+      ed.addEventListener('click', e => {
+        const chip = e.target.closest('.tpl-chip');
+        if (!chip || !ed.contains(chip)) return;
+        e.preventDefault();
+        placeCaretBeforeChip(chip, ed);
+      });
     }
     function openFieldPick(opts = {}) {
       const pick = $('tpl-field-pick');
@@ -3892,13 +3937,8 @@ ${ALDAGI_DETAILS}`;
     function applyPreviewValsToText(tplId, body, vals, fields) {
       let out = String(body || '');
       (fields || []).forEach(f => {
-        const raw = vals[f.id];
-        let shown = '';
-        if (f.type === 'toggle' || f.type === 'electric' || f.type === 'checkbox') {
-          shown = (raw === '1' || raw === 'on' || raw === true) ? (f.title || 'კი') : '';
-        } else {
-          shown = raw == null ? '' : String(raw);
-        }
+        // იგივე ფორმატი, რაც SMS-ში (თანხაზე $ და სხვა)
+        const shown = fieldDisplayValue(f, vals || {}, fields);
         out = out.split('{{' + f.id + '}}').join(shown);
       });
       return out;
@@ -4123,7 +4163,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '294';
+      const v = window.__CC_VER || '295';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -6093,16 +6133,23 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
       if (!tplEditorState.open) return;
       getTplDraft().description = $('tpl-ed-desc').value;
     });
+    bindTplChipCaret($('tpl-ed-text'));
+    bindTplChipCaret($('tpl-place-text'));
     $('tpl-ed-text')?.addEventListener('input', () => {
       if (!tplEditorState.open) return;
       syncDraftTextFromRich();
       rememberTplCaret();
     });
-    ['keyup', 'click', 'mouseup', 'touchend', 'keyup'].forEach(evName => {
+    ['keyup', 'mouseup', 'touchend'].forEach(evName => {
       $('tpl-ed-text')?.addEventListener(evName, () => {
         if (!tplEditorState.open) return;
         rememberTplCaret();
       });
+    });
+    $('tpl-ed-text')?.addEventListener('click', e => {
+      if (!tplEditorState.open) return;
+      if (e.target.closest('.tpl-chip')) return; // ჩიპზე — კურსორი ბოქსის დასაწყისში (bindTplChipCaret)
+      rememberTplCaret();
     });
     document.addEventListener('selectionchange', () => {
       if (!tplEditorState.open) return;
