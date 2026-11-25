@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
-    window.__CC_VER = '289';
+    window.__CC_VER = '290';
     (function () {
       function bustCaches() {
         var jobs = [];
@@ -1001,7 +1001,9 @@
       align-items: center;
       justify-content: center;
       padding: 18px;
-      background: rgba(0, 0, 0, 0.55);
+      background: rgba(0, 0, 0, 0.72);
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
     }
     .tpl-field-name.hide { display: none; }
     .tpl-field-name-box {
@@ -1009,8 +1011,8 @@
       padding: 18px 16px 14px;
       border-radius: 14px;
       border: 1px solid var(--border);
-      background: var(--panel);
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+      background: #1c1c1f;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
     }
     .tpl-field-name-title {
       font-size: 16px;
@@ -3926,7 +3928,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '289';
+      const v = window.__CC_VER || '290';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
