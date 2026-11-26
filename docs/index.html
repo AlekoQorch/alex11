@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
-    window.__CC_VER = '300';
+    window.__CC_VER = '302';
     (function () {
       function bustCaches() {
         var jobs = [];
@@ -1078,19 +1078,73 @@
       margin: 0 0 10px;
       line-height: 1.45;
     }
-    .tpl-swap-select {
+    .tpl-swap-picker {
+      position: relative;
       min-height: 140px;
       margin: 0 0 12px;
-      -webkit-user-select: text;
-      user-select: text;
-      caret-color: transparent;
-      cursor: text;
+      padding: 14px 12px 22px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #141416;
+      -webkit-user-select: none;
+      user-select: none;
+      touch-action: none;
+      overflow: visible;
     }
-    .tpl-swap-select:focus {
-      outline: 1px solid rgba(77, 159, 255, 0.45);
+    .tpl-swap-picker:empty:before,
+    .tpl-swap-chars:empty:before {
+      content: attr(data-placeholder);
+      color: #666;
     }
-    .tpl-swap-select .tpl-chip {
-      pointer-events: none;
+    .tpl-swap-chars {
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.6;
+      font-size: 15px;
+      color: var(--text);
+      min-height: 88px;
+    }
+    .tpl-swap-ch {
+      display: inline;
+      border-radius: 2px;
+    }
+    .tpl-swap-ch.on {
+      background: rgba(232, 168, 56, 0.48);
+      color: #fff;
+    }
+    .tpl-swap-handle {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #e8a838;
+      z-index: 4;
+      pointer-events: auto;
+      touch-action: none;
+      box-shadow: 0 0 0 3px rgba(232, 168, 56, 0.3);
+      display: none;
+    }
+    .tpl-swap-picker.has-sel .tpl-swap-handle { display: block; }
+    .tpl-swap-handle::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      width: 2px;
+      height: 22px;
+      background: #e8a838;
+      transform: translateX(-50%);
+    }
+    .tpl-swap-handle.start {
+      transform: translate(-50%, -100%);
+    }
+    .tpl-swap-handle.start::after {
+      top: 100%;
+    }
+    .tpl-swap-handle.end {
+      transform: translate(-50%, 0);
+    }
+    .tpl-swap-handle.end::after {
+      bottom: 100%;
     }
     .tpl-field-swap-box .field-label {
       display: block;
@@ -2674,8 +2728,12 @@
           <button type="button" class="tpl-field-name-x" id="tpl-field-swap-x" aria-label="დახურვა">×</button>
         </div>
         <p class="tpl-ed-hint">ღილაკის გააქტიურების შემთხვევაში ტექსტიდან, რომელ მონაკვეთსაც მონიშნავთ შეიცვლება თქვენთვის სასურველი მონაკვეთით. დანარჩენი ტექსტი უცვლელი რჩება.</p>
-        <label class="field-label" for="tpl-swap-text">არსებული ტექსტი — მონიშნე შესაცვლელი ნაწილი</label>
-        <div id="tpl-swap-text" class="tpl-ed-textarea tpl-swap-select" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="ტექსტი ჯერ ცარიელია" aria-label="ტექსტი მონიშვნისთვის"></div>
+        <label class="field-label" for="tpl-swap-text">არსებული ტექსტი — გადაადგილე ყვითელი წერტილები ან დააჭირე ასოს</label>
+        <div id="tpl-swap-text" class="tpl-swap-picker" role="listbox" aria-label="ტექსტი მონიშვნისთვის" data-placeholder="ტექსტი ჯერ ცარიელია">
+          <div id="tpl-swap-chars" class="tpl-swap-chars" data-placeholder="ტექსტი ჯერ ცარიელია"></div>
+          <div class="tpl-swap-handle start" id="tpl-swap-h-start" aria-hidden="true"></div>
+          <div class="tpl-swap-handle end" id="tpl-swap-h-end" aria-hidden="true"></div>
+        </div>
         <label class="field-label" for="tpl-field-swap-off">მონიშნული მონაკვეთი (სტანდარტული)</label>
         <input id="tpl-field-swap-off" class="tpl-ed-inp" type="text" placeholder="ტექსტში მონიშნე მონაკვეთი…" maxlength="240" autocomplete="off" readonly>
         <label class="field-label" for="tpl-field-swap-on">ჩართულზე შეიცვლება</label>
@@ -4009,67 +4067,206 @@ ${ALDAGI_DETAILS}`;
       // ნაბიჯი 3 — ჯერ ტექსტიდან აირჩიოს სად ჩაჯდეს
       openTplFieldPlace();
     }
-    function syncTplSwapOffFromSelection() {
-      const swap = $('tpl-swap-text');
+    const tplSwapPicker = {
+      chars: [], // [{ ch }]
+      start: 0,
+      end: 0,
+      drag: null, // 'start' | 'end' | 'new'
+      bound: false
+    };
+    function tplSwapPlainText(raw) {
+      const fields = getTplDraft().fields || [];
+      const byId = Object.fromEntries(fields.map(f => [f.id, f]));
+      if (tplEditorState.pendingField) byId[tplEditorState.pendingField.id] = tplEditorState.pendingField;
+      return String(raw || '').replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, id) => {
+        const f = byId[id];
+        return (f && f.label) ? String(f.label) : '';
+      });
+    }
+    function tplSwapSelectedText() {
+      const a = Math.min(tplSwapPicker.start, tplSwapPicker.end);
+      const b = Math.max(tplSwapPicker.start, tplSwapPicker.end);
+      if (b <= a) return '';
+      return tplSwapPicker.chars.slice(a, b).map(c => c.ch).join('');
+    }
+    function syncTplSwapOffFromPicker() {
       const offInp = $('tpl-field-swap-off');
-      if (!swap || !offInp) return;
-      const box = $('tpl-field-swap');
-      if (!box || box.classList.contains('hide')) return;
-      const selText = getTplSelectionText(swap);
-      if (!selText) return;
+      if (!offInp) return;
+      const selText = tplSwapSelectedText();
       offInp.value = selText;
       if (tplEditorState.pendingField) tplEditorState.pendingField.offText = selText;
-      // შევინახოთ არჩევანი, რომ ჩასმისას სწორი ადგილი ჩანაცვლდეს მთავარ ტექსტში
-      rememberTplCaret(swap);
     }
-    function bindTplSwapSelectOnly(swap) {
-      if (!swap || swap.dataset.swapBound === '1') return;
-      swap.dataset.swapBound = '1';
-      const blockEdit = (e) => { e.preventDefault(); };
-      swap.addEventListener('beforeinput', blockEdit);
-      swap.addEventListener('paste', blockEdit);
-      swap.addEventListener('cut', blockEdit);
-      swap.addEventListener('drop', blockEdit);
-      swap.addEventListener('keydown', (e) => {
-        // ნავიგაცია/მონიშვნა დაშვებულია, ტექსტის შეცვლა — არა
-        const ok = e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown'
-          || e.key === 'Home' || e.key === 'End' || e.key === 'Shift' || e.key === 'Meta' || e.key === 'Control'
-          || e.key === 'Alt' || e.key === 'Tab' || e.key === 'Escape'
-          || ((e.metaKey || e.ctrlKey) && (e.key === 'a' || e.key === 'A' || e.key === 'c' || e.key === 'C'));
-        if (!ok && e.key.length === 1) e.preventDefault();
-        if (e.key === 'Backspace' || e.key === 'Delete' || e.key === 'Enter') e.preventDefault();
+    function renderTplSwapHighlight() {
+      const box = $('tpl-swap-chars');
+      if (!box) return;
+      const a = Math.min(tplSwapPicker.start, tplSwapPicker.end);
+      const b = Math.max(tplSwapPicker.start, tplSwapPicker.end);
+      const has = b > a;
+      box.querySelectorAll('.tpl-swap-ch').forEach(el => {
+        const i = +el.dataset.i;
+        el.classList.toggle('on', has && i >= a && i < b);
       });
-      ['mouseup', 'touchend', 'keyup'].forEach(ev => {
-        swap.addEventListener(ev, () => setTimeout(syncTplSwapOffFromSelection, 0));
+      const picker = $('tpl-swap-text');
+      picker?.classList.toggle('has-sel', has);
+      positionTplSwapHandles();
+      syncTplSwapOffFromPicker();
+    }
+    function positionTplSwapHandles() {
+      const picker = $('tpl-swap-text');
+      const hStart = $('tpl-swap-h-start');
+      const hEnd = $('tpl-swap-h-end');
+      const charsBox = $('tpl-swap-chars');
+      if (!picker || !hStart || !hEnd || !charsBox) return;
+      const a = Math.min(tplSwapPicker.start, tplSwapPicker.end);
+      const b = Math.max(tplSwapPicker.start, tplSwapPicker.end);
+      if (b <= a) return;
+      const startEl = charsBox.querySelector(`.tpl-swap-ch[data-i="${a}"]`);
+      const endEl = charsBox.querySelector(`.tpl-swap-ch[data-i="${b - 1}"]`);
+      if (!startEl || !endEl) return;
+      const prect = picker.getBoundingClientRect();
+      const s = startEl.getBoundingClientRect();
+      const e = endEl.getBoundingClientRect();
+      hStart.style.left = (s.left - prect.left) + 'px';
+      hStart.style.top = (s.top - prect.top) + 'px';
+      hEnd.style.left = (e.right - prect.left) + 'px';
+      hEnd.style.top = (e.bottom - prect.top) + 'px';
+    }
+    function setTplSwapRange(start, end) {
+      const n = tplSwapPicker.chars.length;
+      let a = Math.max(0, Math.min(n, start|0));
+      let b = Math.max(0, Math.min(n, end|0));
+      if (b < a) { const t = a; a = b; b = t; }
+      // მინიმუმ ერთი ასო, თუ ტექსტი არაა ცარიელი და drag იწყება
+      tplSwapPicker.start = a;
+      tplSwapPicker.end = b;
+      renderTplSwapHighlight();
+    }
+    function tplSwapIndexFromPoint(clientX, clientY) {
+      const charsBox = $('tpl-swap-chars');
+      if (!charsBox || !tplSwapPicker.chars.length) return 0;
+      const els = charsBox.querySelectorAll('.tpl-swap-ch');
+      let best = 0;
+      let bestDist = Infinity;
+      els.forEach(el => {
+        const r = el.getBoundingClientRect();
+        const cx = (r.left + r.right) / 2;
+        const cy = (r.top + r.bottom) / 2;
+        const d = (cx - clientX) * (cx - clientX) + (cy - clientY) * (cy - clientY);
+        if (d < bestDist) {
+          bestDist = d;
+          const i = +el.dataset.i;
+          // თუ წერტილი ასოს მარჯვნივაა — end ინდექსი i+1
+          best = clientX > cx ? i + 1 : i;
+        }
+      });
+      return Math.max(0, Math.min(tplSwapPicker.chars.length, best));
+    }
+    function buildTplSwapPicker(text) {
+      const plain = tplSwapPlainText(text);
+      const chars = Array.from(plain); // ასო-ასო (სუროგატების ჩათვლით)
+      tplSwapPicker.chars = chars.map(ch => ({ ch }));
+      tplSwapPicker.start = 0;
+      tplSwapPicker.end = 0;
+      tplSwapPicker.drag = null;
+      const box = $('tpl-swap-chars');
+      const picker = $('tpl-swap-text');
+      if (!box || !picker) return;
+      if (!chars.length) {
+        box.innerHTML = '';
+        picker.classList.remove('has-sel');
+        return;
+      }
+      box.innerHTML = chars.map((ch, i) => {
+        const safe = ch === ' ' ? '&nbsp;' : (ch === '\n' ? '\n' : escapeHtml(ch));
+        return `<span class="tpl-swap-ch" data-i="${i}">${safe}</span>`;
+      }).join('');
+      picker.classList.remove('has-sel');
+    }
+    function bindTplSwapPicker() {
+      const picker = $('tpl-swap-text');
+      if (!picker || tplSwapPicker.bound) return;
+      tplSwapPicker.bound = true;
+      const onDown = (e) => {
+        const box = $('tpl-field-swap');
+        if (!box || box.classList.contains('hide')) return;
+        if (!tplSwapPicker.chars.length) return;
+        const t = e.target;
+        if (t.closest && t.closest('#tpl-swap-h-start')) {
+          tplSwapPicker.drag = 'start';
+          tplSwapPicker._endBound = Math.max(tplSwapPicker.start, tplSwapPicker.end);
+          e.preventDefault();
+          return;
+        }
+        if (t.closest && t.closest('#tpl-swap-h-end')) {
+          tplSwapPicker.drag = 'end';
+          tplSwapPicker._startBound = Math.min(tplSwapPicker.start, tplSwapPicker.end);
+          e.preventDefault();
+          return;
+        }
+        if (!picker.contains(t)) return;
+        const pt = e.touches ? e.touches[0] : e;
+        const idx = tplSwapIndexFromPoint(pt.clientX, pt.clientY);
+        const n = tplSwapPicker.chars.length;
+        tplSwapPicker.drag = 'new';
+        tplSwapPicker._anchor = Math.max(0, Math.min(n - 1, idx));
+        setTplSwapRange(tplSwapPicker._anchor, tplSwapPicker._anchor + 1);
+        e.preventDefault();
+      };
+      const onMove = (e) => {
+        if (!tplSwapPicker.drag) return;
+        const pt = e.touches ? e.touches[0] : e;
+        if (!pt) return;
+        const idx = tplSwapIndexFromPoint(pt.clientX, pt.clientY);
+        if (tplSwapPicker.drag === 'start') {
+          const endBound = tplSwapPicker._endBound != null ? tplSwapPicker._endBound : Math.max(tplSwapPicker.start, tplSwapPicker.end);
+          setTplSwapRange(Math.min(idx, endBound - 1), endBound);
+        } else if (tplSwapPicker.drag === 'end') {
+          const startBound = tplSwapPicker._startBound != null ? tplSwapPicker._startBound : Math.min(tplSwapPicker.start, tplSwapPicker.end);
+          setTplSwapRange(startBound, Math.max(idx, startBound + 1));
+        } else {
+          const a = tplSwapPicker._anchor;
+          if (a == null) return;
+          if (idx <= a) setTplSwapRange(idx, a + 1);
+          else setTplSwapRange(a, idx);
+        }
+        e.preventDefault();
+      };
+      const onUp = () => {
+        tplSwapPicker.drag = null;
+        tplSwapPicker._anchor = null;
+        tplSwapPicker._startBound = null;
+        tplSwapPicker._endBound = null;
+      };
+      picker.addEventListener('mousedown', onDown);
+      picker.addEventListener('touchstart', onDown, { passive: false });
+      window.addEventListener('mousemove', onMove, { passive: false });
+      window.addEventListener('touchmove', onMove, { passive: false });
+      window.addEventListener('mouseup', onUp);
+      window.addEventListener('touchend', onUp);
+      window.addEventListener('resize', () => {
+        if ($('tpl-field-swap') && !$('tpl-field-swap').classList.contains('hide')) positionTplSwapHandles();
       });
     }
     function openTplFieldSwapPrompt() {
       const box = $('tpl-field-swap');
       const offInp = $('tpl-field-swap-off');
       const onInp = $('tpl-field-swap-on');
-      const swap = $('tpl-swap-text');
-      if (!box || !offInp || !onInp || !swap) return;
+      if (!box || !offInp || !onInp) return;
       const draft = getTplDraft();
       if ($('tpl-ed-text')) draft.text = serializeTplRichText($('tpl-ed-text')) || draft.text;
       const field = tplEditorState.pendingField;
-      loadTplRichText(draft.text || '', swap);
-      bindTplSwapSelectOnly(swap);
+      buildTplSwapPicker(draft.text || '');
+      bindTplSwapPicker();
       offInp.value = field && field.offText != null ? String(field.offText) : '';
       onInp.value = field && field.onText != null ? String(field.onText) : '';
       box.classList.remove('hide');
       box.setAttribute('aria-hidden', 'false');
       setTimeout(() => {
-        swap.focus();
-        // თუ უკვე არის მონიშნული ტექსტი — ვიპოვოთ და მოვნიშნოთ ტექსტში
         const needle = (offInp.value || '').trim();
-        if (needle) {
-          const range = findTextRangeInEditor(swap, needle);
-          if (range) {
-            const sel = window.getSelection();
-            sel.removeAllRanges();
-            sel.addRange(range);
-            tplEditorState.savedRange = range.cloneRange();
-          }
+        if (needle && tplSwapPicker.chars.length) {
+          const flat = tplSwapPicker.chars.map(c => c.ch).join('');
+          const at = flat.indexOf(needle);
+          if (at >= 0) setTplSwapRange(at, at + needle.length);
         }
         if ((offInp.value || '').trim()) {
           onInp.focus();
@@ -4082,6 +4279,8 @@ ${ALDAGI_DETAILS}`;
       if (!box) return;
       box.classList.add('hide');
       box.setAttribute('aria-hidden', 'true');
+      tplSwapPicker.drag = null;
+      tplSwapPicker._anchor = null;
     }
     function cancelTplFieldSwap() {
       hideTplFieldSwapUi();
@@ -4099,13 +4298,11 @@ ${ALDAGI_DETAILS}`;
         hideTplFieldSwapUi();
         return;
       }
-      // ბოლო მონიშვნაც გადავიღოთ (თუ კურსორი ჯერ კიდევ ტექსტზეა)
-      syncTplSwapOffFromSelection();
+      syncTplSwapOffFromPicker();
       const offText = (offInp?.value || '').trim();
       const onText = (onInp?.value || '').trim();
       if (!offText) {
         showAppToast('ჯერ ტექსტიდან მონიშნე შესაცვლელი მონაკვეთი', 2000);
-        $('tpl-swap-text')?.focus();
         return;
       }
       if (!onText) {
@@ -4127,13 +4324,10 @@ ${ALDAGI_DETAILS}`;
       tplEditorState.pendingField = field;
       hideTplFieldSwapUi();
       if (shouldInsert) {
-        // ჩანაცვლება მთავარ ტექსტში — offText-ის ადგილას
         const main = $('tpl-ed-text');
         if (main) {
           const range = findTextRangeInEditor(main, offText);
-          if (range) {
-            tplEditorState.savedRange = range.cloneRange();
-          }
+          if (range) tplEditorState.savedRange = range.cloneRange();
         }
         commitPendingTplField(field, { insertInto: main });
         main?.focus();
@@ -4538,7 +4732,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '300';
+      const v = window.__CC_VER || '302';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -6594,11 +6788,6 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
         e.preventDefault();
         cancelTplFieldSwap();
       }
-    });
-    document.addEventListener('selectionchange', () => {
-      const box = $('tpl-field-swap');
-      if (!box || box.classList.contains('hide')) return;
-      syncTplSwapOffFromSelection();
     });
     $('tpl-field-swap')?.addEventListener('click', e => {
       if (e.target === $('tpl-field-swap')) cancelTplFieldSwap();
