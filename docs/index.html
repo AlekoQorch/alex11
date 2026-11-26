@@ -5059,6 +5059,58 @@ The main requirement is that the car is in a washed condition. It must be photog
       run: false, wait: false, i: 0, q: [],
       sent: {}, tpl: '', channel: 'sms', watch: null
     };
+    const BULK_SESSION_KEY = 'cc_bulk_session';
+    function saveBulkSession() {
+      try {
+        const hasSent = B.sent && Object.keys(B.sent).length > 0;
+        if (!B.run && !hasSent) {
+          localStorage.removeItem(BULK_SESSION_KEY);
+          return;
+        }
+        localStorage.setItem(BULK_SESSION_KEY, JSON.stringify({
+          run: !!B.run,
+          wait: !!B.wait,
+          i: B.i,
+          q: B.q,
+          sent: B.sent || {},
+          tpl: B.tpl,
+          channel: B.channel,
+          watch: B.run ? B.watch : null,
+          updated: Date.now()
+        }));
+      } catch {}
+    }
+    function clearBulkSession() {
+      try { localStorage.removeItem(BULK_SESSION_KEY); } catch {}
+    }
+    function restoreBulkSession() {
+      let sess = null;
+      try { sess = JSON.parse(localStorage.getItem(BULK_SESSION_KEY) || 'null'); } catch { sess = null; }
+      if (!sess || !Array.isArray(sess.q)) {
+        clearBulkSession();
+        return false;
+      }
+      // ძველი სესია (6 სთ+) — აღარ
+      if (sess.updated && Date.now() - sess.updated > 6 * 60 * 60 * 1000) {
+        clearBulkSession();
+        return false;
+      }
+      B.i = typeof sess.i === 'number' ? sess.i : 0;
+      B.q = sess.q.map(String);
+      B.sent = sess.sent && typeof sess.sent === 'object' ? { ...sess.sent } : {};
+      B.tpl = sess.tpl || '';
+      B.channel = sess.channel === 'wa' ? 'wa' : 'sms';
+      if (sess.run) {
+        B.run = true;
+        B.wait = !!sess.wait;
+        B.watch = sess.watch && typeof sess.watch === 'object' ? { ...sess.watch } : null;
+        return 'active';
+      }
+      B.run = false;
+      B.wait = false;
+      B.watch = null;
+      return 'progress';
+    }
 
     const $ = id => document.getElementById(id);
     const st = $('status');
@@ -5643,6 +5695,7 @@ The main requirement is that the car is in a washed condition. It must be photog
     function noteDialLeftApp() {
       if (B.run && B.watch && !B.watch.leftAt) {
         B.watch.leftAt = Date.now();
+        saveBulkSession();
         return;
       }
       if (!dialWatch || dialWatch.leftAt) return;
@@ -6345,6 +6398,7 @@ The main requirement is that the car is in a washed condition. It must be photog
       B.sent = {};
       B.i = 0;
       B.q = [];
+      clearBulkSession();
       renderBulkNumRows(NUM_ROWS_START);
       getBulkNumInputs().forEach(inp => { inp.value = ''; });
       setBulkNumsDisabled(false);
@@ -6433,6 +6487,7 @@ The main requirement is that the car is in a washed condition. It must be photog
       B.run = true;
       B.wait = false;
       setBulkNumsDisabled(true);
+      saveBulkSession();
       updateBulkBar();
       renderBulkList();
       setStatus(`ავტო გაგზავნა · ${channelTitle(B.channel)}`, true);
@@ -6452,6 +6507,7 @@ The main requirement is that the car is in a washed condition. It must be photog
       }
       B.wait = true;
       B.watch = { i: B.i, startedAt: Date.now(), leftAt: 0 };
+      saveBulkSession();
       renderBulkList();
       setStatus(`${B.i + 1}/${B.q.length} · ${formatPhoneDisplay(num)}`, true);
       if (B.channel === 'wa') sendWaTo(num, msg);
@@ -6464,15 +6520,19 @@ The main requirement is that the car is in a washed condition. It must be photog
       const n = B.q[B.i];
       B.sent[normNum(n)] = true;
       B.i++;
+      saveBulkSession();
       renderBulkList();
       showAfterBulk(n);
     }
     function onBulkAppVisible() {
       if (!B.run || !B.watch) return;
+      // SMS/WA — არა Call/Cancel sheet: დაბრუნება = გაგზავნა (ან მაინც შემდეგზე გადასვლა)
       if (B.watch.leftAt) {
         const away = Date.now() - B.watch.leftAt;
         if (away < DIAL_MIN_AWAY_MS) {
+          // მოკლე flicker — დაველოდოთ ნამდვილ დაბრუნებას
           B.watch.leftAt = 0;
+          saveBulkSession();
           return;
         }
         B.i = B.watch.i;
@@ -6482,12 +6542,8 @@ The main requirement is that the car is in a washed condition. It must be photog
         return;
       }
       const elapsed = Date.now() - B.watch.startedAt;
-      if (elapsed < DIAL_CANCEL_MAX_MS) {
-        B.watch = null;
-        B.wait = false;
-        renderBulkList();
-        return;
-      }
+      // ძალიან სწრაფი focus (sheet/flicker) — იგნორი; dial-ის Cancel ლოგიკა აქ არაა
+      if (elapsed < DIAL_MIN_AWAY_MS) return;
       B.i = B.watch.i;
       B.watch = null;
       B.wait = true;
@@ -6521,6 +6577,7 @@ The main requirement is that the car is in a washed condition. It must be photog
       B.run = false;
       B.wait = false;
       B.watch = null;
+      clearBulkSession();
       setBulkNumsDisabled(false);
       updateBulkBar();
       renderBulkList();
@@ -6532,6 +6589,7 @@ The main requirement is that the car is in a washed condition. It must be photog
       B.run = false;
       B.wait = false;
       B.watch = null;
+      saveBulkSession();
       setBulkNumsDisabled(false);
       $('after-call-modal')?.classList.add('hide');
       updateBulkBar();
@@ -7669,6 +7727,7 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
       updateBulkPreview();
     }
     restoreSession();
+    const bulkRestore = restoreBulkSession();
     pruneCalledToList();
     markNumRows();
     updateStartBtn();
@@ -7686,7 +7745,27 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
     }
     let savedTab = 'dial';
     try { savedTab = localStorage.getItem('last_tab') || 'dial'; } catch {}
-    if (TAB_IDS.includes(savedTab) && savedTab !== 'dial') goTab(savedTab);
+    // აქტიური მასობრივი სესია — SMS ტაბზე დაბრუნება და გაგრძელება
+    if (bulkRestore === 'active') {
+      goTab('bulk');
+      setBulkNumsDisabled(true);
+      updateBulkBar();
+      renderBulkList();
+      setStatus(`ავტო გაგზავნა · ${channelTitle(B.channel)}`, true);
+      if (B.watch) {
+        // Messages/WA-დან დაბრუნება (გვერდი გადაიტვირთა)
+        onBulkAppVisible();
+      } else {
+        const prev = B.i > 0 ? B.q[B.i - 1] : B.q[Math.min(B.i, B.q.length - 1)];
+        showAfterBulk(prev || '');
+      }
+    } else {
+      if (TAB_IDS.includes(savedTab) && savedTab !== 'dial') goTab(savedTab);
+      else if (bulkRestore === 'progress') {
+        markBulkRows();
+        updateBulkBar();
+      }
+    }
   </script>
   <div id="sms-saved-toast" class="sms-saved-toast" role="status" aria-live="polite">Saved</div>
 </body>
