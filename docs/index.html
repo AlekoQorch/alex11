@@ -459,9 +459,7 @@
     .bulk-list .num-row-actions {
       display: flex;
     }
-    .bulk-list .num-inp {
-      pointer-events: none;
-    }
+    .bulk-list.running .num-inp { pointer-events: none; }
     .bulk-list .num-row.sent {
       background: rgba(37, 211, 102, 0.06);
     }
@@ -475,6 +473,23 @@
       padding-left: 7px;
     }
     .bulk-list.running .num-row { cursor: default; }
+    #bulk-preview {
+      width: 100%;
+      min-height: 120px;
+      margin: 0 0 14px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface);
+      color: var(--text);
+      font: inherit;
+      font-size: 14px;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      word-break: break-word;
+      resize: vertical;
+    }
+    #bulk-preview:focus { outline: none; }
     #p-bulk .tools { margin: 0 0 40px; padding: 8px 0 4px; }
     .sms-card {
       position: relative;
@@ -2614,16 +2629,22 @@
       </div>
 
       <div class="page" id="p-bulk">
-        <p class="sms-hint">ყველა კლიენტს გაუგზავნის არჩეულ შაბლონს SMS-ით ან WhatsApp-ით. ნომრები დარეკვის სიიდან მოდის.</p>
+        <p class="sms-hint">ყველა კლიენტს გაუგზავნის არჩეულ შაბლონს SMS-ით ან WhatsApp-ით.</p>
         <label class="field-label" for="bulk-tpl">შაბლონი</label>
         <select id="bulk-tpl" class="field-inp" aria-label="შაბლონი"></select>
         <div class="bulk-channel" id="bulk-channel" role="group" aria-label="არხი">
           <button type="button" data-bulk-ch="sms" class="on">SMS</button>
           <button type="button" data-bulk-ch="wa">WhatsApp</button>
         </div>
+        <label class="field-label" for="bulk-preview">გასაგზავნი ტექსტი</label>
+        <textarea id="bulk-preview" readonly rows="7" aria-label="გასაგზავნი ტექსტი"></textarea>
         <div class="num-list bulk-list" id="bulk-list"></div>
         <div class="tools">
           <span><b id="bulk-ncount">0</b> ნომერი · გაგზავნილი <b id="bulk-sent">0</b></span>
+          <div class="tool-btns">
+            <button class="red" id="bulk-clear" type="button">გასუფთავება</button>
+            <button id="bulk-paste" type="button">ჩასმა</button>
+          </div>
         </div>
       </div>
 
@@ -5063,7 +5084,8 @@ The main requirement is that the car is in a washed condition. It must be photog
         paintBulkChannelButtons();
         setBulkChannel(B.channel || 'sms');
         fillBulkTplSelect();
-        renderBulkList();
+        markBulkRows();
+        updateBulkPreview();
         updateBulkBar();
       }
       if (v === 'dial') updateStartBtn();
@@ -5205,7 +5227,6 @@ The main requirement is that the car is in a washed condition. It must be photog
       saveNums();
       saveSession();
       updateStartBtn();
-      if (currentTab() === 'bulk') renderBulkList();
     }
 
     let numSaveLock = 0;
@@ -6154,6 +6175,7 @@ The main requirement is that the car is in a washed condition. It must be photog
       ).join('') || '<option value="">შაბლონი არაა</option>';
       if (prev && [...sel.options].some(o => o.value === prev)) sel.value = prev;
       B.tpl = sel.value || '';
+      updateBulkPreview();
     }
     function bulkChannel() {
       return normalizeChannel(B.channel) === 'wa' ? 'wa' : 'sms';
@@ -6171,34 +6193,197 @@ The main requirement is that the car is in a washed condition. It must be photog
         b.classList.toggle('on', b.dataset.bulkCh === B.channel);
       });
     }
-    function renderBulkList() {
+
+    let bulkNumSaveLock = 0;
+    function getBulkNumInputs() {
+      return [...($('bulk-list')?.querySelectorAll('.num-inp') || [])];
+    }
+    function getBulkNumsRaw() {
+      return getBulkNumInputs().map(i => i.value.trim()).filter(Boolean);
+    }
+    function getBulkNumsText() {
+      return getBulkNumsRaw().join('\n');
+    }
+    function saveBulkNums() {
+      if (bulkNumSaveLock) return;
+      localStorage.setItem('bulk_nums', getBulkNumsText());
+    }
+    function onBulkNumsChange() {
+      saveBulkNums();
+      markBulkRows();
+      updateBulkPreview();
+      updateBulkBar();
+    }
+    function makeBulkNumRow(i, stamp) {
+      const row = document.createElement('div');
+      row.className = 'num-row';
+      const id = `bcn-${stamp}-${i}`;
+      row.innerHTML = `<span class="num-lbl">${i + 1}.</span><input class="num-inp" id="${id}" name="${id}" type="tel" inputmode="tel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="ნომერი"><span class="num-row-actions"><button type="button" class="row-sms" data-bulk-send="sms">${channelLabel('sms', 'SMS')}</button><button type="button" class="row-wa" data-bulk-send="wa">${channelLabel('wa', 'WA')}</button></span><span class="num-mark"></span>`;
+      return row;
+    }
+    function renderBulkNumRows(count, focusIdx) {
       const list = $('bulk-list');
       if (!list) return;
-      const nums = parse(getNumsText());
-      $('bulk-ncount') && ($('bulk-ncount').textContent = String(nums.length));
+      const cur = getBulkNumInputs().map(i => i.value);
+      const activeIdx = focusIdx ?? getBulkNumInputs().findIndex(i => i === document.activeElement);
+      const stamp = Date.now().toString(36);
+      list.innerHTML = '';
+      for (let i = 0; i < count; i++) {
+        const row = makeBulkNumRow(i, stamp);
+        row.querySelector('.num-inp').value = cur[i] || '';
+        list.appendChild(row);
+      }
+      if (activeIdx >= 0) getBulkNumInputs()[activeIdx]?.focus();
+      markBulkRows();
+    }
+    function addBulkNextRow(focusIdx) {
+      renderBulkNumRows(getBulkNumInputs().length + 1, focusIdx);
+    }
+    function maybeAddBulkRowOnInput(inp) {
+      const inputs = getBulkNumInputs();
+      const i = inputs.indexOf(inp);
+      if (i === inputs.length - 1 && inp.value.trim()) addBulkNextRow(i);
+    }
+    function focusBulkNextRow(inp) {
+      const inputs = getBulkNumInputs();
+      const i = inputs.indexOf(inp);
+      if (i < 0) return;
+      if (i >= inputs.length - 1) addBulkNextRow(i);
+      getBulkNumInputs()[i + 1]?.focus();
+    }
+    function focusBulkPrevRow(inp) {
+      const inputs = getBulkNumInputs();
+      const i = inputs.indexOf(inp);
+      if (i <= 0) return false;
+      const prev = inputs[i - 1];
+      prev.focus();
+      const len = prev.value.length;
+      try { prev.setSelectionRange(len, len); } catch {}
+      return true;
+    }
+    function setBulkNumsDisabled(on) {
+      getBulkNumInputs().forEach(i => { i.disabled = on; });
+      $('bulk-list')?.classList.toggle('running', !!on);
+    }
+    function setBulkNumsFromList(nums) {
+      const needed = nums.length ? Math.max(NUM_ROWS_START, nums.length + 1) : NUM_ROWS_START;
+      renderBulkNumRows(needed);
+      getBulkNumInputs().forEach((inp, i) => { inp.value = nums[i] ? formatPhoneDisplay(nums[i]) : ''; });
+      onBulkNumsChange();
+    }
+    function markBulkRows() {
+      const list = $('bulk-list');
+      if (!list) return;
+      const activeKey = B.run && B.q[B.i] ? normNum(B.q[B.i]) : '';
+      getBulkNumInputs().forEach(inp => {
+        const row = inp.closest('.num-row');
+        const mark = row?.querySelector('.num-mark');
+        const val = inp.value || '';
+        if (!localDigitCount(val)) {
+          row?.classList.remove('on', 'sent');
+          if (mark) mark.textContent = '';
+          return;
+        }
+        const key = normNum(val);
+        const sent = !!B.sent[key];
+        const on = !!activeKey && key === activeKey;
+        row.classList.toggle('on', on);
+        row.classList.toggle('sent', sent);
+        if (mark) mark.textContent = sent ? '✓' : (on ? '→' : '');
+      });
+      list.classList.toggle('running', !!B.run);
+      const nums = parse(getBulkNumsText());
+      if ($('bulk-ncount')) $('bulk-ncount').textContent = String(nums.length);
       const sentN = nums.filter(n => B.sent[normNum(n)]).length;
-      $('bulk-sent') && ($('bulk-sent').textContent = String(sentN));
-      if (!nums.length) {
-        list.innerHTML = '<p class="empty" style="padding:16px;margin:0">ჯერ დარეკვის ტაბში ჩასვი ნომრები</p>';
+      if ($('bulk-sent')) $('bulk-sent').textContent = String(sentN);
+    }
+    function renderBulkList() {
+      markBulkRows();
+      updateBulkPreview();
+    }
+    function updateBulkPreview() {
+      const ta = $('bulk-preview');
+      if (!ta) return;
+      const tpl = $('bulk-tpl')?.value || B.tpl;
+      if (!tpl) {
+        ta.value = '';
         return;
       }
-      list.innerHTML = nums.map((raw, i) => {
+      const first = parse(getBulkNumsText())[0] || '';
+      ta.value = msgForTpl(tpl, first) || '';
+    }
+    function applyBulkPaste(pasted) {
+      if (!pasted) return;
+      const existing = getBulkNumsRaw();
+      const incoming = String(pasted).split(/[\n,;\t]+/).map(l => l.trim()).filter(Boolean);
+      const cleaned = [];
+      const seen = new Set();
+      for (const raw of [...existing, ...incoming]) {
         const n = tel(raw);
+        if (localDigitCount(n) < 9) continue;
         const key = normNum(n);
-        const sent = !!B.sent[key];
-        const on = B.run && B.i === i ? ' on' : '';
-        const sentCls = sent ? ' sent' : '';
-        return `<div class="num-row${on}${sentCls}" data-bulk-i="${i}" data-num="${escapeHtml(n)}">
-          <span class="num-lbl">${i + 1}.</span>
-          <input class="num-inp" type="tel" readonly tabindex="-1" value="${escapeHtml(formatPhoneDisplay(n))}">
-          <span class="num-row-actions">
-            <button type="button" class="row-sms" data-bulk-send="sms">${channelLabel('sms', 'SMS')}</button>
-            <button type="button" class="row-wa" data-bulk-send="wa">${channelLabel('wa', 'WA')}</button>
-          </span>
-          <span class="num-mark">${sent ? '✓' : (B.run && B.i === i ? '→' : '')}</span>
-        </div>`;
-      }).join('');
-      list.classList.toggle('running', !!B.run);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        cleaned.push(formatPhoneDisplay(n));
+      }
+      const rows = Math.max(NUM_ROWS_START, cleaned.length + 1);
+      renderBulkNumRows(rows);
+      getBulkNumInputs().forEach((inp, i) => { inp.value = cleaned[i] || ''; });
+      onBulkNumsChange();
+      setStatus(cleaned.length ? `ჩასმულია · ${cleaned.length} ნომერი` : 'ნომერი ვერ მოიძებნა');
+    }
+    function clearBulkNums(e) {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      if (B.run) stopBulk({ silent: true });
+      bulkNumSaveLock++;
+      B.sent = {};
+      B.i = 0;
+      B.q = [];
+      renderBulkNumRows(NUM_ROWS_START);
+      getBulkNumInputs().forEach(inp => { inp.value = ''; });
+      setBulkNumsDisabled(false);
+      onBulkNumsChange();
+      bulkNumSaveLock--;
+      saveBulkNums();
+      setStatus('გასუფთავებულია');
+    }
+    function initBulkNumList() {
+      renderBulkNumRows(NUM_ROWS_START);
+      const list = $('bulk-list');
+      if (!list) return;
+      list.addEventListener('input', e => {
+        if (B.run) return;
+        const inp = e.target.closest('.num-inp');
+        if (!inp) return;
+        const before = localDigitCount(inp.dataset.prev || '');
+        filterPhoneInput(inp);
+        const after = localDigitCount(inp.value);
+        inp.dataset.prev = inp.value;
+        maybeAddBulkRowOnInput(inp);
+        if (before < 9 && after >= 9) focusBulkNextRow(inp);
+        onBulkNumsChange();
+      });
+      list.addEventListener('keydown', e => {
+        if (B.run) return;
+        const inp = e.target.closest('.num-inp');
+        if (!inp) return;
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          focusBulkNextRow(inp);
+          return;
+        }
+        if (e.key === 'Backspace') {
+          const empty = !inp.value.trim();
+          const atStart = (inp.selectionStart ?? 0) === 0 && (inp.selectionEnd ?? 0) === 0;
+          if (empty && atStart) {
+            e.preventDefault();
+            focusBulkPrevRow(inp);
+          }
+        }
+      });
     }
     function updateBulkBar() {
       if (currentTab() !== 'bulk') return;
@@ -6209,7 +6394,7 @@ The main requirement is that the car is in a washed condition. It must be photog
       }
       $('start').classList.remove('hide');
       $('stop').classList.add('hide');
-      const q = parse(getNumsText());
+      const q = parse(getBulkNumsText());
       const done = q.filter(n => B.sent[normNum(n)]).length;
       if (done > 0 && done < q.length) $('start').textContent = `განაგრძე (${done}/${q.length})`;
       else $('start').textContent = 'დაწყება';
@@ -6223,9 +6408,9 @@ The main requirement is that the car is in a washed condition. It must be photog
       }
       B.tpl = tpl;
       B.channel = bulkChannel();
-      B.q = parse(getNumsText());
+      B.q = parse(getBulkNumsText());
       if (!B.q.length) {
-        setStatus('ჯერ დარეკვის ტაბში ჩასვი ნომრები');
+        setStatus('ჩაწერე ნომრები');
         return;
       }
       const msg = msgForTpl(tpl, B.q[0]);
@@ -6244,6 +6429,7 @@ The main requirement is that the car is in a washed condition. It must be photog
       }
       B.run = true;
       B.wait = false;
+      setBulkNumsDisabled(true);
       updateBulkBar();
       renderBulkList();
       setStatus(`ავტო გაგზავნა · ${channelTitle(B.channel)}`, true);
@@ -6332,9 +6518,10 @@ The main requirement is that the car is in a washed condition. It must be photog
       B.run = false;
       B.wait = false;
       B.watch = null;
+      setBulkNumsDisabled(false);
       updateBulkBar();
       renderBulkList();
-      const q = parse(getNumsText());
+      const q = parse(getBulkNumsText());
       const done = q.filter(n => B.sent[normNum(n)]).length;
       setStatus(done ? `დასრულდა · გაგზავნილი ${done}/${q.length}` : 'დასრულდა');
     }
@@ -6342,11 +6529,12 @@ The main requirement is that the car is in a washed condition. It must be photog
       B.run = false;
       B.wait = false;
       B.watch = null;
+      setBulkNumsDisabled(false);
       $('after-call-modal')?.classList.add('hide');
       updateBulkBar();
       renderBulkList();
       if (opts.silent) return;
-      const q = parse(getNumsText());
+      const q = parse(getBulkNumsText());
       const done = q.filter(n => B.sent[normNum(n)]).length;
       setStatus(done > 0 && done < q.length
         ? `გაჩერებულია · განაგრძე ${done}/${q.length}-დან`
@@ -7316,6 +7504,7 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
       if (e.target === $('field-modal')) closeFieldModal();
     });
     initNumList();
+    initBulkNumList();
 
     $('start').onclick = () => {
       if (currentTab() === 'bulk') startBulk();
@@ -7327,18 +7516,27 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
     };
     $('bulk-tpl')?.addEventListener('change', () => {
       B.tpl = $('bulk-tpl').value || '';
+      updateBulkPreview();
     });
     $('bulk-channel')?.addEventListener('click', e => {
       const btn = e.target.closest('[data-bulk-ch]');
       if (!btn) return;
       setBulkChannel(btn.dataset.bulkCh);
     });
+    $('bulk-paste')?.addEventListener('click', async () => {
+      try {
+        const t = await navigator.clipboard.readText();
+        if (t) applyBulkPaste(t);
+      } catch { setStatus('ჩასმა ვერ მოხერხდა'); }
+    });
+    $('bulk-clear')?.addEventListener('click', clearBulkNums);
     $('bulk-list')?.addEventListener('click', e => {
       const sendBtn = e.target.closest('[data-bulk-send]');
       if (!sendBtn) return;
       e.preventDefault();
+      if (B.run) return;
       const row = sendBtn.closest('.num-row');
-      const num = tel(row?.dataset.num || '');
+      const num = tel(row?.querySelector('.num-inp')?.value || '');
       if (!num) return;
       const ch = sendBtn.dataset.bulkSend === 'wa' ? 'wa' : 'sms';
       const tpl = $('bulk-tpl')?.value || B.tpl;
@@ -7461,6 +7659,12 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
     const saved = localStorage.getItem('nums');
     if (saved) setNumsFromList(saved.split(/[\n,;]+/).map(l => l.trim()).filter(Boolean));
     else count();
+    const savedBulk = localStorage.getItem('bulk_nums');
+    if (savedBulk) setBulkNumsFromList(savedBulk.split(/[\n,;]+/).map(l => l.trim()).filter(Boolean));
+    else {
+      markBulkRows();
+      updateBulkPreview();
+    }
     restoreSession();
     pruneCalledToList();
     markNumRows();
