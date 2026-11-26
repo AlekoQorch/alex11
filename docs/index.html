@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
-    window.__CC_VER = '314';
+    window.__CC_VER = '315';
     (function () {
       function bustCaches() {
         var jobs = [];
@@ -455,6 +455,10 @@
     .bulk-channel button.on[data-bulk-ch="wa"] {
       background: rgba(37, 211, 102, 0.16);
       color: #fff;
+    }
+    .bulk-channel button:disabled {
+      opacity: 0.38;
+      cursor: not-allowed;
     }
     .bulk-list .num-row-actions {
       display: flex;
@@ -2590,7 +2594,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver" id="app-ver" title="განახლება">v314</div>
+      <div class="ver" id="app-ver" title="განახლება">v315</div>
     </header>
 
     <div class="tabs">
@@ -2629,7 +2633,7 @@
       </div>
 
       <div class="page" id="p-bulk">
-        <p class="sms-hint">რამდენიმე ნომერზე ერთად — Messages. გრძელ ტექსტს iOS URL-ში ვერ სვამს: კოპირდება და ჩასმა გჭირდება. WhatsApp — ერთ ნომერზე.</p>
+        <p class="sms-hint" id="bulk-hint">ერთი ნომერი — WhatsApp ან SMS. რამდენიმე — ყველა ერთ Messages-ში.</p>
         <label class="field-label" for="bulk-tpl">შაბლონი</label>
         <select id="bulk-tpl" class="field-inp" aria-label="შაბლონი"></select>
         <div class="bulk-channel" id="bulk-channel" role="group" aria-label="არხი">
@@ -2684,9 +2688,9 @@
 
   <div class="overlay hide" id="sms-paste-modal">
     <div class="box">
-      <div class="lbl">ტექსტი კოპირებულია</div>
-      <p id="sms-paste-note">Messages-ში დააჭირე <b>ჩასმას</b> (paste), რომ ტექსტი გამოჩნდეს. iOS გრძელ SMS-ს URL-ში ვერ სვამს.</p>
-      <button class="go" id="sms-paste-go" type="button">Messages-ის გახსნა</button>
+      <div class="lbl">ტექსტი კოპირებულია ✓</div>
+      <p id="sms-paste-note">1) გაიხსნება Messages ყველა ნომრით<br>2) დააჭირე <b>ჩასმას</b> (paste)<br>3) გაგზავნე</p>
+      <button class="go" id="sms-paste-go" type="button">გახსენი Messages</button>
       <button class="skip" id="sms-paste-cancel" type="button">გაუქმება</button>
     </div>
   </div>
@@ -5150,7 +5154,7 @@ The main requirement is that the car is in a washed condition. It must be photog
       if (v === 'sms') fillSmsTarget();
       if (v === 'bulk') {
         paintBulkChannelButtons();
-        setBulkChannel(B.channel || 'wa');
+        syncBulkChannelUi();
         fillBulkTplSelect();
         markBulkRows();
         updateBulkPreview();
@@ -5979,7 +5983,7 @@ The main requirement is that the car is in a washed condition. It must be photog
       pendingSmsHref = href || '';
       const noteEl = $('sms-paste-note');
       if (noteEl) {
-        noteEl.innerHTML = note || 'Messages-ში დააჭირე <b>ჩასმას</b> (paste), რომ ტექსტი გამოჩნდეს.';
+        noteEl.innerHTML = note || '1) გაიხსნება Messages<br>2) დააჭირე <b>ჩასმას</b> (paste)<br>3) გაგზავნე';
       }
       $('sms-paste-modal')?.classList.remove('hide');
     }
@@ -5988,14 +5992,25 @@ The main requirement is that the car is in a washed condition. It must be photog
       closeSmsPasteModal();
       if (href) location.href = href;
     }
+    /** გრძელი ტექსტი: კოპირება → მოკლე შეტყობინება → Messages/აპი */
+    function openWithPasteBackup(href, text, toastMsg) {
+      copyTextQuiet(text);
+      showAppToast(toastMsg || 'ტექსტი კოპირებულია — ჩასვი (paste)', 4800);
+      setTimeout(() => { location.href = href; }, 200);
+    }
     function smsUrlWithBody(addresses, text) {
       const body = encodeURIComponent(String(text || ''));
-      // iOS ერთ ნომერზე ?body= მუშაობს; მრავალზე &body= სცადე
       const q = 'sms:' + addresses + '?body=' + body;
       const a = 'sms:' + addresses + '&body=' + body;
-      if (q.length <= 1200) return q;
-      if (a.length <= 1200) return a;
+      // iOS ლიმიტი მკაცრია; მოკლე შაბლონები (არ პასუხობს და სხვა) ჩაისმება
+      if (q.length <= 1400) return q;
+      if (a.length <= 1400) return a;
       return '';
+    }
+    function smsAddressList(nums) {
+      const list = (nums || []).map(n => tel(n)).filter(Boolean);
+      const isAndroid = /Android/i.test(navigator.userAgent);
+      return list.join(isAndroid ? ';' : ',');
     }
     function sendSmsTo(num, msg) {
       const n = tel(num);
@@ -6007,12 +6022,10 @@ The main requirement is that the car is in a washed condition. It must be photog
         location.href = withBody;
         return;
       }
-      // გრძელი ტექსტი — iOS URL-ში ვერ ჩაისმება
-      showSmsPasteModal('sms:' + n, text,
-        'ტექსტი კოპირებულია. Messages-ში დააჭირე <b>ჩასმას</b> (paste).');
+      openWithPasteBackup('sms:' + n, text, 'ტექსტი კოპირებულია — Messages-ში ჩასვი (paste)');
     }
 
-    /** რამდენიმე მიმღები ერთ Messages ფანჯარაში + ტექსტი */
+    /** რამდენიმე მიმღები ერთ Messages-ში; მოკლე ტექსტი URL-ში, გრძელი — ჩასმა */
     function sendSmsToMany(nums, msg) {
       const list = (nums || []).map(n => tel(n)).filter(Boolean);
       if (!list.length) return;
@@ -6021,23 +6034,19 @@ The main requirement is that the car is in a washed condition. It must be photog
         return;
       }
       const text = String(msg || '');
-      const isAndroid = /Android/i.test(navigator.userAgent);
-      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-      const addresses = list.join(isAndroid ? ';' : ',');
-      // iOS: რამდენიმე მიმღებიან SMS-ზე body თითქმის ყოველთვის იკარგება
-      if (isIOS) {
-        showSmsPasteModal('sms:' + addresses, text,
-          'ტექსტი კოპირებულია. Messages გაიხსნება ყველა ნომრით — დააჭირე <b>ჩასმას</b> (paste), რომ ტექსტი გამოჩნდეს.');
-        return;
-      }
+      const addresses = smsAddressList(list);
       const withBody = smsUrlWithBody(addresses, text);
       if (withBody) {
         copyTextQuiet(text);
         location.href = withBody;
         return;
       }
-      showSmsPasteModal('sms:' + addresses, text,
-        'ტექსტი კოპირებულია. Messages-ში დააჭირე <b>ჩასმას</b> (paste).');
+      // გრძელი / iOS ვერ სვამს body-ს → კოპირება + მარტივი ნაბიჯები + Messages
+      showSmsPasteModal(
+        'sms:' + addresses,
+        text,
+        `ტექსტი კოპირებულია ✓ · ${list.length} ნომერი<br><br>1) დააჭირე <b>გახსენი Messages</b><br>2) დააჭირე <b>ჩასმას</b> (paste)<br>3) გაგზავნე ერთხელ — ყველას მიადგება`
+      );
     }
 
     function sendWaTo(num, msg) {
@@ -6047,14 +6056,16 @@ The main requirement is that the car is in a washed condition. It must be photog
         return;
       }
       const full = String(msg || '');
-      // პირდაპირ აპი — არა api.whatsapp.com / wa.me ბრაუზერის გვერდი
+      // პირდაპირ აპი — არა api.whatsapp.com ბრაუზერის გვერდი
       const encoded = encodeURIComponent(full);
       let url = 'whatsapp://send?phone=' + n + '&text=' + encoded;
-      // deep link ძალიან გრძელია → clipboard + ჩატი ტექსტის გარეშე
       if (url.length > 1800) {
-        copyTextQuiet(full);
-        showAppToast('ტექსტი კოპირებულია — WhatsApp-ში ჩასვი', 3200);
-        url = 'whatsapp://send?phone=' + n;
+        openWithPasteBackup(
+          'whatsapp://send?phone=' + n,
+          full,
+          'ტექსტი კოპირებულია — WhatsApp-ში ჩასვი (paste)'
+        );
+        return;
       }
       location.href = url;
     }
@@ -6325,6 +6336,35 @@ The main requirement is that the car is in a washed condition. It must be photog
       document.querySelectorAll('#bulk-channel [data-bulk-ch]').forEach(b => {
         b.classList.toggle('on', b.dataset.bulkCh === B.channel);
       });
+      updateBulkHint();
+      updateBulkBar();
+    }
+    /** რამდენიმე ნომერი → მხოლოდ SMS (ერთად); ერთი → WA ნებადართული */
+    function syncBulkChannelUi() {
+      const n = parse(getBulkNumsText()).length;
+      const waBtn = document.querySelector('#bulk-channel [data-bulk-ch="wa"]');
+      if (waBtn) {
+        waBtn.disabled = n > 1;
+        waBtn.title = n > 1 ? 'რამდენიმე ნომერზე WhatsApp ერთდროულად ვერ იგზავნის' : '';
+      }
+      if (n > 1) setBulkChannel('sms');
+      else if (!B.channel) setBulkChannel('wa');
+      else setBulkChannel(B.channel);
+      updateBulkHint();
+    }
+    function updateBulkHint() {
+      const el = $('bulk-hint');
+      if (!el) return;
+      const n = parse(getBulkNumsText()).length;
+      if (n > 1) {
+        el.textContent = `${n} ნომერი · ყველა ერთ Messages-ში გაიგზავნება (SMS). მოკლე ტექსტი ჩაისმება, გრძელზე — ჩასმა.`;
+      } else if (n === 1) {
+        el.textContent = bulkChannel() === 'wa'
+          ? 'ერთი ნომერი · WhatsApp პირდაპირ აპში გაიხსნება.'
+          : 'ერთი ნომერი · Messages გაიხსნება.';
+      } else {
+        el.textContent = 'ჩასვი ნომრები. ერთი — WhatsApp/SMS; რამდენიმე — ყველა ერთ Messages-ში.';
+      }
     }
 
     let bulkNumSaveLock = 0;
@@ -6345,6 +6385,7 @@ The main requirement is that the car is in a washed condition. It must be photog
       saveBulkNums();
       markBulkRows();
       updateBulkPreview();
+      syncBulkChannelUi();
       updateBulkBar();
     }
     function makeBulkNumRow(i, stamp) {
@@ -6530,8 +6571,15 @@ The main requirement is that the car is in a washed condition. It must be photog
       $('stop').classList.add('hide');
       const q = parse(getBulkNumsText());
       const done = q.filter(n => B.sent[normNum(n)]).length;
-      if (done > 0 && done < q.length) $('start').textContent = `განაგრძე (${done}/${q.length})`;
-      else $('start').textContent = 'დაწყება';
+      if (done > 0 && done < q.length) {
+        $('start').textContent = `განაგრძე (${done}/${q.length})`;
+      } else if (q.length > 1) {
+        $('start').textContent = `ყველას გაგზავნა · ${q.length}`;
+      } else if (q.length === 1) {
+        $('start').textContent = bulkChannel() === 'wa' ? 'WhatsApp-ით გაგზავნა' : 'SMS-ით გაგზავნა';
+      } else {
+        $('start').textContent = 'დაწყება';
+      }
     }
     function startBulk() {
       fillBulkTplSelect();
@@ -6541,6 +6589,7 @@ The main requirement is that the car is in a washed condition. It must be photog
         return;
       }
       B.tpl = tpl;
+      syncBulkChannelUi();
       B.channel = bulkChannel();
       B.q = parse(getBulkNumsText());
       if (!B.q.length) {
@@ -6570,15 +6619,11 @@ The main requirement is that the car is in a washed condition. It must be photog
       const remMsgs = remaining.map(n => msgForTpl(tpl, n));
       const sameText = remMsgs.every(m => m === remMsgs[0]);
 
-      // რამდენიმე ნომერი + ერთნაირი ტექსტი → მხოლოდ SMS ერთ Messages-ში
-      // (WhatsApp ერთდროულად რამდენიმე ჩატს ვერ ხსნის; wa.me ციკლი აღარ)
+      // რამდენიმე ნომერი → ერთი Messages ყველასთვის (საუკეთესო რაც ტელეფონზე შეიძლება)
       if (remaining.length > 1) {
         if (!sameText) {
-          setStatus('განსხვავებული ტექსტებია — გაგზავნე ნომრიდან ცალ-ცალკე');
+          setStatus('განსხვავებული ტექსტებია — გაგზავნე ნომრის ღილაკით ცალ-ცალკე');
           return;
-        }
-        if (B.channel === 'wa') {
-          showAppToast('WhatsApp ერთდროულად ვერ იგზავნის — იხსნება SMS ყველასთვის', 3400);
         }
         B.channel = 'sms';
         setBulkChannel('sms');
@@ -6590,12 +6635,12 @@ The main requirement is that the car is in a washed condition. It must be photog
         saveBulkSession();
         updateBulkBar();
         renderBulkList();
-        setStatus(`ყველას ერთად · SMS · ${remaining.length}`, true);
+        setStatus(`ყველას ერთად · ${remaining.length} ნომერი`, true);
         sendSmsToMany(remaining, remMsgs[0]);
         return;
       }
 
-      // ერთი ნომერი — არჩეული არხი (WA = პირდაპირ აპი)
+      // ერთი ნომერი — არჩეული არხი
       B.mode = 'chain';
       B.run = true;
       B.wait = false;
