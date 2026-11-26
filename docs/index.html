@@ -5972,7 +5972,7 @@ The main requirement is that the car is in a washed condition. It must be photog
       location.href = url;
     }
 
-    /** რამდენიმე მიმღები ერთ Messages ფანჯარაში (iOS/Android comma list) */
+    /** რამდენიმე მიმღები ერთ Messages ფანჯარაში + ტექსტი */
     function sendSmsToMany(nums, msg) {
       const list = (nums || []).map(n => tel(n)).filter(Boolean);
       if (!list.length) return;
@@ -5980,18 +5980,25 @@ The main requirement is that the car is in a washed condition. It must be photog
         sendSmsTo(list[0], msg);
         return;
       }
-      const addresses = list.join(',');
-      const body = encodeURIComponent(msg || '');
-      // iOS: sms:/open?addresses=a,b&body=… — ერთი compose ყველა მიმღებით
-      let url = 'sms:/open?addresses=' + encodeURIComponent(addresses) + '&body=' + body;
-      if (url.length > 1800) {
+      const text = String(msg || '');
+      const body = encodeURIComponent(text);
+      // iOS: /open?addresses=… ხშირად ტექსტს არ სვამს.
+      // მუშაობს: sms:a,b&body=… (Apple) და sms:a,b?body=…
+      // Android: ხშირად ; გამყოფი
+      const isAndroid = /Android/i.test(navigator.userAgent);
+      const addresses = list.join(isAndroid ? ';' : ',');
+      let url = 'sms:' + addresses + '&body=' + body;
+      if (url.length > 1500) {
         url = 'sms:' + addresses + '?body=' + body;
       }
-      if (url.length > 1800) {
-        copyTextQuiet(msg);
+      if (url.length > 1500) {
+        copyTextQuiet(text);
         showAppToast('ტექსტი კოპირებულია — Messages-ში ჩასვი', 3200);
-        url = 'sms:/open?addresses=' + encodeURIComponent(addresses);
+        location.href = 'sms:' + addresses;
+        return;
       }
+      // backup — თუ OS body-ს მაინც დაკარგავს, ჩასმა მზადაა
+      copyTextQuiet(text);
       location.href = url;
     }
 
