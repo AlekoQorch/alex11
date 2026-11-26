@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
-    window.__CC_VER = '302';
+    window.__CC_VER = '303';
     (function () {
       function bustCaches() {
         var jobs = [];
@@ -195,9 +195,9 @@
       border: none;
       background: none;
       color: var(--dim);
-      font-size: 14px;
+      font-size: 13px;
       font-family: inherit;
-      padding: 10px 4px;
+      padding: 10px 2px;
       border-radius: 9px;
       transition: background .12s ease, color .12s ease;
     }
@@ -386,6 +386,56 @@
       margin: 10px 0 12px;
       line-height: 1.4;
     }
+    .bulk-channel {
+      display: flex;
+      gap: 8px;
+      margin: 0 0 12px;
+    }
+    .bulk-channel button {
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.04);
+      color: var(--dim);
+      font: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 12px 8px;
+      cursor: pointer;
+    }
+    .bulk-channel button.on[data-bulk-ch="sms"] {
+      background: rgba(77, 159, 255, 0.2);
+      border-color: rgba(77, 159, 255, 0.45);
+      color: #fff;
+    }
+    .bulk-channel button.on[data-bulk-ch="wa"] {
+      background: rgba(37, 211, 102, 0.18);
+      border-color: rgba(37, 211, 102, 0.45);
+      color: #fff;
+    }
+    #bulk-tpl {
+      margin-bottom: 10px;
+    }
+    .bulk-list .num-row-actions {
+      display: flex;
+    }
+    .bulk-list .num-inp {
+      pointer-events: none;
+    }
+    .bulk-list .num-row.sent {
+      background: rgba(37, 211, 102, 0.06);
+    }
+    .bulk-list .num-row.sent .num-inp {
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    .bulk-list .num-row.on {
+      background: #1a2a3a;
+      border-left: 3px solid var(--blue);
+      padding-left: 7px;
+    }
+    .bulk-list.running .num-row { cursor: default; }
+    #p-bulk .tools { margin: 0 0 40px; padding: 8px 0 4px; }
     .sms-card {
       position: relative;
       background: var(--surface);
@@ -2491,6 +2541,7 @@
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
       <button data-v="sms" type="button">SMS</button>
+      <button data-v="bulk" type="button">ავტო</button>
       <button data-v="history" type="button">ისტორია</button>
     </div>
 
@@ -2520,6 +2571,20 @@
         <p class="sms-hint">შაბლონები შეგიძლია დაამატო ან წაშალო</p>
         <div id="sms-list"></div>
         <button type="button" id="sms-add-tpl" class="sms-add-btn">+ შაბლონის დამატება</button>
+      </div>
+
+      <div class="page" id="p-bulk">
+        <p class="sms-hint">ავტომატურად ყველა კლიენტს გაუგზავნის არჩეულ შაბლონს SMS-ით ან WhatsApp-ით. ნომრები დარეკვის სიიდან მოდის.</p>
+        <label class="field-label" for="bulk-tpl" style="display:block;margin:0 0 6px">შაბლონი</label>
+        <select id="bulk-tpl" class="field-inp" aria-label="შაბლონი"></select>
+        <div class="bulk-channel" id="bulk-channel" role="group" aria-label="არხი">
+          <button type="button" data-bulk-ch="sms" class="on">SMS</button>
+          <button type="button" data-bulk-ch="wa">WhatsApp</button>
+        </div>
+        <div class="num-list bulk-list" id="bulk-list"></div>
+        <div class="tools">
+          <span><b id="bulk-ncount">0</b> ნომერი · გაგზავნილი <b id="bulk-sent">0</b></span>
+        </div>
       </div>
 
       <div class="page" id="p-history">
@@ -4732,7 +4797,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '302';
+      const v = window.__CC_VER || '303';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -4928,6 +4993,11 @@ The main requirement is that the car is in a washed condition. It must be photog
     let dialWatch = null;
     const DIAL_MIN_AWAY_MS = 400;
     const DIAL_CANCEL_MAX_MS = 2000;
+    /** მასობრივი SMS/WA გაგზავნა */
+    const B = {
+      run: false, wait: false, i: 0, q: [],
+      sent: {}, tpl: '', channel: 'sms', watch: null
+    };
 
     const $ = id => document.getElementById(id);
     const st = $('status');
@@ -4937,13 +5007,24 @@ The main requirement is that the car is in a washed condition. It must be photog
       st.classList.toggle('work', !!work);
     }
 
+    function currentTab() {
+      return document.querySelector('.tabs button.on')?.dataset.v || 'dial';
+    }
     function goTab(v) {
+      // სხვა ტაბზე გადასვლა — მასობრივი სესია გაჩერდეს
+      if (v !== 'bulk' && B.run) stopBulk({ silent: true });
       document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x.dataset.v === v));
       document.querySelectorAll('.page').forEach(x => x.classList.remove('on'));
       $('p-' + v).classList.add('on');
-      $('action-bar').classList.toggle('hide', v !== 'dial');
+      $('action-bar').classList.toggle('hide', v !== 'dial' && v !== 'bulk');
       // SMS ტაბზე — გალურჯებული / მიმდინარე ნომერი
       if (v === 'sms') fillSmsTarget();
+      if (v === 'bulk') {
+        fillBulkTplSelect();
+        renderBulkList();
+        updateBulkBar();
+      }
+      if (v === 'dial') updateStartBtn();
     }
 
     const NUM_ROWS_START = 5;
@@ -5082,6 +5163,7 @@ The main requirement is that the car is in a washed condition. It must be photog
       saveNums();
       saveSession();
       updateStartBtn();
+      if (currentTab() === 'bulk') renderBulkList();
     }
 
     let numSaveLock = 0;
@@ -5493,11 +5575,19 @@ The main requirement is that the car is in a washed condition. It must be photog
     }
 
     function noteDialLeftApp() {
+      if (B.run && B.watch && !B.watch.leftAt) {
+        B.watch.leftAt = Date.now();
+        return;
+      }
       if (!dialWatch || dialWatch.leftAt) return;
       dialWatch.leftAt = Date.now();
     }
 
     function onAppVisible() {
+      if (B.run && B.watch) {
+        onBulkAppVisible();
+        return;
+      }
       if (!S.run || !dialWatch) return;
 
       // აპი ნამდვილად გავიდა Phone-ზე → ✓
@@ -5978,6 +6068,9 @@ The main requirement is that the car is in a washed condition. It must be photog
     }
 
     function showAfterCall(n) {
+      const box = $('after-call-modal');
+      const lbl = box?.querySelector('.lbl');
+      if (lbl) lbl.textContent = 'გადავიდეთ შემდეგზე?';
       const hasNext = S.run && S.i < S.q.length;
       const next = hasNext ? S.q[S.i] : n;
       $('after-call-num').textContent = formatPhoneDisplay(next);
@@ -5989,6 +6082,226 @@ The main requirement is that the car is in a washed condition. It must be photog
       if (hasNext) $('after-call-next').textContent = `დიახ, შემდეგი (${S.i + 1}/${S.q.length})`;
       else $('after-call-next').classList.add('hide');
       $('after-call-modal').classList.remove('hide');
+    }
+
+    function listBulkTplOptions() {
+      const opts = [];
+      const add = (id, title) => {
+        if (isSmsHidden(id === 'intro-ka' || id === 'intro-en' || id === 'intro-both' ? 'intro' : id)) return;
+        opts.push({ id, title });
+      };
+      add('aldagi', 'სრული შეთავაზება');
+      add('home', 'ბინა სრული შეთავაზება');
+      add('noanswer', 'არ პასუხობს');
+      add('tariff', 'ტარიფის დაანგარიშება');
+      add('photos', 'დასურათების ინსტრუქცია');
+      if (!isSmsHidden('intro')) {
+        opts.push({ id: 'intro', title: 'პატარა SMS' });
+      }
+      add('docs', 'დოკუმენტების ლინკი');
+      loadCustomSms().forEach(c => opts.push({ id: c.id, title: c.title || 'შაბლონი' }));
+      return opts;
+    }
+    function fillBulkTplSelect() {
+      const sel = $('bulk-tpl');
+      if (!sel) return;
+      const prev = sel.value || B.tpl || '';
+      const opts = listBulkTplOptions();
+      sel.innerHTML = opts.map(o =>
+        `<option value="${escapeHtml(o.id)}">${escapeHtml(o.title)}</option>`
+      ).join('') || '<option value="">შაბლონი არაა</option>';
+      if (prev && [...sel.options].some(o => o.value === prev)) sel.value = prev;
+      B.tpl = sel.value || '';
+    }
+    function bulkChannel() {
+      return normalizeChannel(B.channel) === 'wa' ? 'wa' : 'sms';
+    }
+    function setBulkChannel(ch) {
+      B.channel = ch === 'wa' ? 'wa' : 'sms';
+      document.querySelectorAll('#bulk-channel [data-bulk-ch]').forEach(b => {
+        b.classList.toggle('on', b.dataset.bulkCh === B.channel);
+      });
+    }
+    function renderBulkList() {
+      const list = $('bulk-list');
+      if (!list) return;
+      const nums = parse(getNumsText());
+      $('bulk-ncount') && ($('bulk-ncount').textContent = String(nums.length));
+      const sentN = nums.filter(n => B.sent[normNum(n)]).length;
+      $('bulk-sent') && ($('bulk-sent').textContent = String(sentN));
+      if (!nums.length) {
+        list.innerHTML = '<p class="empty" style="padding:16px;margin:0">ჯერ დარეკვის ტაბში ჩასვი ნომრები</p>';
+        return;
+      }
+      list.innerHTML = nums.map((raw, i) => {
+        const n = tel(raw);
+        const key = normNum(n);
+        const sent = !!B.sent[key];
+        const on = B.run && B.i === i ? ' on' : '';
+        const sentCls = sent ? ' sent' : '';
+        return `<div class="num-row${on}${sentCls}" data-bulk-i="${i}" data-num="${escapeHtml(n)}">
+          <span class="num-lbl">${i + 1}.</span>
+          <input class="num-inp" type="tel" readonly tabindex="-1" value="${escapeHtml(formatPhoneDisplay(n))}">
+          <span class="num-row-actions">
+            <button type="button" class="row-sms" data-bulk-send="sms">${channelLabel('sms', 'SMS')}</button>
+            <button type="button" class="row-wa" data-bulk-send="wa">${channelLabel('wa', 'WA')}</button>
+          </span>
+          <span class="num-mark">${sent ? '✓' : (B.run && B.i === i ? '→' : '')}</span>
+        </div>`;
+      }).join('');
+      list.classList.toggle('running', !!B.run);
+    }
+    function updateBulkBar() {
+      if (currentTab() !== 'bulk') return;
+      if (B.run) {
+        $('start').classList.add('hide');
+        $('stop').classList.remove('hide');
+        return;
+      }
+      $('start').classList.remove('hide');
+      $('stop').classList.add('hide');
+      const q = parse(getNumsText());
+      const done = q.filter(n => B.sent[normNum(n)]).length;
+      if (done > 0 && done < q.length) $('start').textContent = `განაგრძე (${done}/${q.length})`;
+      else $('start').textContent = 'დაწყება';
+    }
+    function startBulk() {
+      fillBulkTplSelect();
+      const tpl = $('bulk-tpl')?.value || B.tpl;
+      if (!tpl) {
+        setStatus('აირჩიე შაბლონი');
+        return;
+      }
+      B.tpl = tpl;
+      B.channel = bulkChannel();
+      B.q = parse(getNumsText());
+      if (!B.q.length) {
+        setStatus('ჯერ დარეკვის ტაბში ჩასვი ნომრები');
+        return;
+      }
+      const msg = msgForTpl(tpl, B.q[0]);
+      if (!String(msg || '').trim()) {
+        setStatus('შაბლონის ტექსტი ცარიელია');
+        return;
+      }
+      const done = B.q.filter(n => B.sent[normNum(n)]).length;
+      if (done === 0 || done >= B.q.length) {
+        B.sent = {};
+        B.i = 0;
+      } else {
+        B.i = 0;
+        while (B.i < B.q.length && B.sent[normNum(B.q[B.i])]) B.i++;
+        if (B.i >= B.q.length) { B.sent = {}; B.i = 0; }
+      }
+      B.run = true;
+      B.wait = false;
+      updateBulkBar();
+      renderBulkList();
+      setStatus(`ავტო გაგზავნა · ${channelTitle(B.channel)}`, true);
+      sendBulkCurrent();
+    }
+    function sendBulkCurrent() {
+      if (!B.run || B.i >= B.q.length) {
+        doneBulk();
+        return;
+      }
+      const num = B.q[B.i];
+      const msg = msgForTpl(B.tpl, num);
+      if (!String(msg || '').trim()) {
+        setStatus('შაბლონის ტექსტი ცარიელია');
+        stopBulk();
+        return;
+      }
+      B.wait = true;
+      B.watch = { i: B.i, startedAt: Date.now(), leftAt: 0 };
+      renderBulkList();
+      setStatus(`${B.i + 1}/${B.q.length} · ${formatPhoneDisplay(num)}`, true);
+      if (B.channel === 'wa') sendWaTo(num, msg);
+      else sendSmsTo(num, msg);
+    }
+    function finishBulkOne() {
+      if (!B.run || !B.wait) return;
+      B.watch = null;
+      B.wait = false;
+      const n = B.q[B.i];
+      B.sent[normNum(n)] = true;
+      B.i++;
+      renderBulkList();
+      showAfterBulk(n);
+    }
+    function onBulkAppVisible() {
+      if (!B.run || !B.watch) return;
+      if (B.watch.leftAt) {
+        const away = Date.now() - B.watch.leftAt;
+        if (away < DIAL_MIN_AWAY_MS) {
+          B.watch.leftAt = 0;
+          return;
+        }
+        B.i = B.watch.i;
+        B.watch = null;
+        B.wait = true;
+        finishBulkOne();
+        return;
+      }
+      const elapsed = Date.now() - B.watch.startedAt;
+      if (elapsed < DIAL_CANCEL_MAX_MS) {
+        B.watch = null;
+        B.wait = false;
+        renderBulkList();
+        return;
+      }
+      B.i = B.watch.i;
+      B.watch = null;
+      B.wait = true;
+      finishBulkOne();
+    }
+    function showAfterBulk(n) {
+      const hasNext = B.run && B.i < B.q.length;
+      const next = hasNext ? B.q[B.i] : n;
+      const box = $('after-call-modal');
+      const lbl = box?.querySelector('.lbl');
+      if (lbl) lbl.textContent = 'შემდეგ კლიენტზე გავაგზავნოთ?';
+      $('after-call-num').textContent = formatPhoneDisplay(next);
+      $('after-call-num').dataset.raw = tel(next);
+      const note = $('after-call-note');
+      if (note) {
+        note.textContent = channelTitle(B.channel) + ' · ' + (listBulkTplOptions().find(o => o.id === B.tpl)?.title || B.tpl);
+        note.classList.remove('hide');
+      }
+      $('after-call-next').classList.toggle('hide', !hasNext);
+      $('after-call-done').classList.toggle('hide', false);
+      if (hasNext) $('after-call-next').textContent = `დიახ, შემდეგი (${B.i + 1}/${B.q.length})`;
+      else $('after-call-next').classList.add('hide');
+      box?.classList.remove('hide');
+    }
+    function goNextBulk() {
+      $('after-call-modal').classList.add('hide');
+      if (B.run && B.i < B.q.length) sendBulkCurrent();
+      else doneBulk();
+    }
+    function doneBulk() {
+      B.run = false;
+      B.wait = false;
+      B.watch = null;
+      updateBulkBar();
+      renderBulkList();
+      const q = parse(getNumsText());
+      const done = q.filter(n => B.sent[normNum(n)]).length;
+      setStatus(done ? `დასრულდა · გაგზავნილი ${done}/${q.length}` : 'დასრულდა');
+    }
+    function stopBulk(opts = {}) {
+      B.run = false;
+      B.wait = false;
+      B.watch = null;
+      $('after-call-modal')?.classList.add('hide');
+      updateBulkBar();
+      renderBulkList();
+      if (opts.silent) return;
+      const q = parse(getNumsText());
+      const done = q.filter(n => B.sent[normNum(n)]).length;
+      setStatus(done > 0 && done < q.length
+        ? `გაჩერებულია · განაგრძე ${done}/${q.length}-დან`
+        : 'გაჩერებულია');
     }
 
     function smsEditField(tpl, opts = {}) {
@@ -6955,12 +7268,49 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
     });
     initNumList();
 
-    $('start').onclick = start;
-    $('stop').onclick = stopAll;
-    $('after-call-next').onclick = goNextCall;
+    $('start').onclick = () => {
+      if (currentTab() === 'bulk') startBulk();
+      else start();
+    };
+    $('stop').onclick = () => {
+      if (currentTab() === 'bulk' || B.run) stopBulk();
+      else stopAll();
+    };
+    $('bulk-tpl')?.addEventListener('change', () => {
+      B.tpl = $('bulk-tpl').value || '';
+    });
+    $('bulk-channel')?.addEventListener('click', e => {
+      const btn = e.target.closest('[data-bulk-ch]');
+      if (!btn) return;
+      setBulkChannel(btn.dataset.bulkCh);
+    });
+    $('bulk-list')?.addEventListener('click', e => {
+      const sendBtn = e.target.closest('[data-bulk-send]');
+      if (!sendBtn) return;
+      e.preventDefault();
+      const row = sendBtn.closest('.num-row');
+      const num = tel(row?.dataset.num || '');
+      if (!num) return;
+      const ch = sendBtn.dataset.bulkSend === 'wa' ? 'wa' : 'sms';
+      const tpl = $('bulk-tpl')?.value || B.tpl;
+      if (tpl) {
+        const msg = msgForTpl(tpl, num);
+        const title = listBulkTplOptions().find(o => o.id === tpl)?.title || 'გაგზავნა';
+        if (msg) {
+          showSendConfirm(num, msg, ch, title);
+          return;
+        }
+      }
+      showTemplatePicker(num, ch);
+    });
+    $('after-call-next').onclick = () => {
+      if (B.run) goNextBulk();
+      else goNextCall();
+    };
     // «არა» — მხოლოდ მოდალის დახურვა; გაჩერება = ქვედა «გაჩერება»
     $('after-call-done').onclick = () => {
       $('after-call-modal').classList.add('hide');
+      if (B.run) stopBulk();
     };
     $('send-go').onclick = confirmSend;
     $('send-cancel').onclick = closeSendModal;
