@@ -2633,8 +2633,8 @@
         <label class="field-label" for="bulk-tpl">შაბლონი</label>
         <select id="bulk-tpl" class="field-inp" aria-label="შაბლონი"></select>
         <div class="bulk-channel" id="bulk-channel" role="group" aria-label="არხი">
-          <button type="button" data-bulk-ch="sms" class="on">SMS</button>
-          <button type="button" data-bulk-ch="wa">WhatsApp</button>
+          <button type="button" data-bulk-ch="wa" class="on">WhatsApp</button>
+          <button type="button" data-bulk-ch="sms">SMS</button>
         </div>
         <label class="field-label" for="bulk-preview">გასაგზავნი ტექსტი</label>
         <textarea id="bulk-preview" readonly rows="7" aria-label="გასაგზავნი ტექსტი"></textarea>
@@ -5057,7 +5057,7 @@ The main requirement is that the car is in a washed condition. It must be photog
     /** მასობრივი SMS/WA გაგზავნა */
     const B = {
       run: false, wait: false, i: 0, q: [],
-      sent: {}, tpl: '', channel: 'sms', watch: null
+      sent: {}, tpl: '', channel: 'wa', watch: null
     };
     const BULK_SESSION_KEY = 'cc_bulk_session';
     function saveBulkSession() {
@@ -5099,7 +5099,7 @@ The main requirement is that the car is in a washed condition. It must be photog
       B.q = sess.q.map(String);
       B.sent = sess.sent && typeof sess.sent === 'object' ? { ...sess.sent } : {};
       B.tpl = sess.tpl || '';
-      B.channel = sess.channel === 'wa' ? 'wa' : 'sms';
+      B.channel = sess.channel === 'sms' ? 'sms' : 'wa';
       if (sess.run) {
         B.run = true;
         B.wait = !!sess.wait;
@@ -5137,7 +5137,7 @@ The main requirement is that the car is in a washed condition. It must be photog
       if (v === 'sms') fillSmsTarget();
       if (v === 'bulk') {
         paintBulkChannelButtons();
-        setBulkChannel(B.channel || 'sms');
+        setBulkChannel(B.channel || 'wa');
         fillBulkTplSelect();
         markBulkRows();
         updateBulkPreview();
@@ -6274,7 +6274,7 @@ The main requirement is that the car is in a washed condition. It must be photog
       const row = document.createElement('div');
       row.className = 'num-row';
       const id = `bcn-${stamp}-${i}`;
-      row.innerHTML = `<span class="num-lbl">${i + 1}.</span><input class="num-inp" id="${id}" name="${id}" type="tel" inputmode="tel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="ნომერი"><span class="num-row-actions"><button type="button" class="row-sms" data-bulk-send="sms">${channelLabel('sms', 'SMS')}</button><button type="button" class="row-wa" data-bulk-send="wa">${channelLabel('wa', 'WA')}</button></span><span class="num-mark"></span>`;
+      row.innerHTML = `<span class="num-lbl">${i + 1}.</span><input class="num-inp" id="${id}" name="${id}" type="tel" inputmode="tel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="ნომერი"><span class="num-row-actions"><button type="button" class="row-wa" data-bulk-send="wa">${channelLabel('wa', 'WA')}</button><button type="button" class="row-sms" data-bulk-send="sms">${channelLabel('sms', 'SMS')}</button></span><span class="num-mark"></span>`;
       return row;
     }
     function renderBulkNumRows(count, focusIdx) {
