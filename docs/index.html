@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
-    window.__CC_VER = '299';
+    window.__CC_VER = '300';
     (function () {
       function bustCaches() {
         var jobs = [];
@@ -1068,6 +1068,43 @@
       background: #2f6fed;
       border-color: #2f6fed;
       color: #fff;
+    }
+    .tpl-field-swap-box {
+      width: min(100%, 420px);
+      max-height: 90%;
+      overflow: auto;
+    }
+    .tpl-field-swap-box .tpl-ed-hint {
+      margin: 0 0 10px;
+      line-height: 1.45;
+    }
+    .tpl-swap-select {
+      min-height: 140px;
+      margin: 0 0 12px;
+      -webkit-user-select: text;
+      user-select: text;
+      caret-color: transparent;
+      cursor: text;
+    }
+    .tpl-swap-select:focus {
+      outline: 1px solid rgba(77, 159, 255, 0.45);
+    }
+    .tpl-swap-select .tpl-chip {
+      pointer-events: none;
+    }
+    .tpl-field-swap-box .field-label {
+      display: block;
+      margin: 0 0 6px;
+      font-size: 12px;
+      color: var(--dim);
+    }
+    .tpl-field-pick-desc {
+      display: block;
+      margin-top: 6px;
+      font-size: 11px;
+      line-height: 1.4;
+      color: var(--dim);
+      font-weight: 400;
     }
     .tpl-field-place {
       position: absolute;
@@ -2589,13 +2626,14 @@
           </div>
         </button>
         <button type="button" data-add-field="checkbox">
-          <div class="tpl-pick-head"><strong>მონიშვნა</strong><span>ტექსტის შეცვლა ჩართვაზე</span></div>
+          <div class="tpl-pick-head"><strong>მონიშვნა</strong><span>ტექსტის მონაკვეთის შეცვლა</span></div>
           <div class="tpl-pick-demo" aria-hidden="true">
             <div class="tpl-demo-switch-row">
               <span class="tpl-demo-switch-copy">ავტომობილი ელექტროა</span>
               <span class="tpl-demo-switch on"></span>
             </div>
           </div>
+          <span class="tpl-field-pick-desc">ღილაკის გააქტიურების შემთხვევაში ტექსტიდან, რომელ მონაკვეთსაც მონიშნავთ შეიცვლება თქვენთვის სასურველი მონაკვეთით.</span>
         </button>
         <button type="button" data-add-field="date">
           <div class="tpl-pick-head"><strong>თარიღი</strong><span>ერთი თარიღი</span></div>
@@ -2629,18 +2667,20 @@
         </div>
       </div>
     </div>
-    <div id="tpl-field-swap" class="tpl-field-name hide" aria-hidden="true">
-      <div class="tpl-field-name-box">
-        <div class="tpl-field-name-head">
-          <div class="tpl-field-name-title">რა ტექსტი შეიცვალოს?</div>
+    <div id="tpl-field-swap" class="tpl-field-place hide" aria-hidden="true">
+      <div class="tpl-field-place-box tpl-field-swap-box">
+        <div class="tpl-field-place-head">
+          <div class="tpl-field-place-title">მონიშნე მონაკვეთი ტექსტიდან</div>
           <button type="button" class="tpl-field-name-x" id="tpl-field-swap-x" aria-label="დახურვა">×</button>
         </div>
-        <p class="tpl-ed-hint" style="margin:0 0 10px">სტანდარტული ტექსტი იგზავნება გამორთულზე. ჩართვისას მხოლოდ ეს ნაწილი იცვლება — როგორც „ავტომობილი ელექტროა“.</p>
-        <label class="field-label" for="tpl-field-swap-off" style="display:block;margin:0 0 6px">სტანდარტული ტექსტი</label>
-        <input id="tpl-field-swap-off" class="tpl-ed-inp" type="text" placeholder="მაგ: საწვავის ფასდაკლება 20%" maxlength="240" autocomplete="off">
-        <label class="field-label" for="tpl-field-swap-on" style="display:block;margin:0 0 6px">ჩართულზე</label>
+        <p class="tpl-ed-hint">ღილაკის გააქტიურების შემთხვევაში ტექსტიდან, რომელ მონაკვეთსაც მონიშნავთ შეიცვლება თქვენთვის სასურველი მონაკვეთით. დანარჩენი ტექსტი უცვლელი რჩება.</p>
+        <label class="field-label" for="tpl-swap-text">არსებული ტექსტი — მონიშნე შესაცვლელი ნაწილი</label>
+        <div id="tpl-swap-text" class="tpl-ed-textarea tpl-swap-select" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="ტექსტი ჯერ ცარიელია" aria-label="ტექსტი მონიშვნისთვის"></div>
+        <label class="field-label" for="tpl-field-swap-off">მონიშნული მონაკვეთი (სტანდარტული)</label>
+        <input id="tpl-field-swap-off" class="tpl-ed-inp" type="text" placeholder="ტექსტში მონიშნე მონაკვეთი…" maxlength="240" autocomplete="off" readonly>
+        <label class="field-label" for="tpl-field-swap-on">ჩართულზე შეიცვლება</label>
         <input id="tpl-field-swap-on" class="tpl-ed-inp" type="text" placeholder="მაგ: EV Power 20% დატენვაზე" maxlength="240" autocomplete="off">
-        <div class="tpl-field-name-actions">
+        <div class="tpl-field-place-actions">
           <button type="button" id="tpl-field-swap-ok" class="ok">დადასტურება</button>
         </div>
       </div>
@@ -3969,20 +4009,72 @@ ${ALDAGI_DETAILS}`;
       // ნაბიჯი 3 — ჯერ ტექსტიდან აირჩიოს სად ჩაჯდეს
       openTplFieldPlace();
     }
+    function syncTplSwapOffFromSelection() {
+      const swap = $('tpl-swap-text');
+      const offInp = $('tpl-field-swap-off');
+      if (!swap || !offInp) return;
+      const box = $('tpl-field-swap');
+      if (!box || box.classList.contains('hide')) return;
+      const selText = getTplSelectionText(swap);
+      if (!selText) return;
+      offInp.value = selText;
+      if (tplEditorState.pendingField) tplEditorState.pendingField.offText = selText;
+      // შევინახოთ არჩევანი, რომ ჩასმისას სწორი ადგილი ჩანაცვლდეს მთავარ ტექსტში
+      rememberTplCaret(swap);
+    }
+    function bindTplSwapSelectOnly(swap) {
+      if (!swap || swap.dataset.swapBound === '1') return;
+      swap.dataset.swapBound = '1';
+      const blockEdit = (e) => { e.preventDefault(); };
+      swap.addEventListener('beforeinput', blockEdit);
+      swap.addEventListener('paste', blockEdit);
+      swap.addEventListener('cut', blockEdit);
+      swap.addEventListener('drop', blockEdit);
+      swap.addEventListener('keydown', (e) => {
+        // ნავიგაცია/მონიშვნა დაშვებულია, ტექსტის შეცვლა — არა
+        const ok = e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown'
+          || e.key === 'Home' || e.key === 'End' || e.key === 'Shift' || e.key === 'Meta' || e.key === 'Control'
+          || e.key === 'Alt' || e.key === 'Tab' || e.key === 'Escape'
+          || ((e.metaKey || e.ctrlKey) && (e.key === 'a' || e.key === 'A' || e.key === 'c' || e.key === 'C'));
+        if (!ok && e.key.length === 1) e.preventDefault();
+        if (e.key === 'Backspace' || e.key === 'Delete' || e.key === 'Enter') e.preventDefault();
+      });
+      ['mouseup', 'touchend', 'keyup'].forEach(ev => {
+        swap.addEventListener(ev, () => setTimeout(syncTplSwapOffFromSelection, 0));
+      });
+    }
     function openTplFieldSwapPrompt() {
       const box = $('tpl-field-swap');
       const offInp = $('tpl-field-swap-off');
       const onInp = $('tpl-field-swap-on');
-      if (!box || !offInp || !onInp) return;
+      const swap = $('tpl-swap-text');
+      if (!box || !offInp || !onInp || !swap) return;
+      const draft = getTplDraft();
+      if ($('tpl-ed-text')) draft.text = serializeTplRichText($('tpl-ed-text')) || draft.text;
       const field = tplEditorState.pendingField;
+      loadTplRichText(draft.text || '', swap);
+      bindTplSwapSelectOnly(swap);
       offInp.value = field && field.offText != null ? String(field.offText) : '';
       onInp.value = field && field.onText != null ? String(field.onText) : '';
       box.classList.remove('hide');
       box.setAttribute('aria-hidden', 'false');
       setTimeout(() => {
-        const focusEl = offInp.value.trim() ? onInp : offInp;
-        focusEl.focus();
-        try { focusEl.select(); } catch (_) {}
+        swap.focus();
+        // თუ უკვე არის მონიშნული ტექსტი — ვიპოვოთ და მოვნიშნოთ ტექსტში
+        const needle = (offInp.value || '').trim();
+        if (needle) {
+          const range = findTextRangeInEditor(swap, needle);
+          if (range) {
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+            tplEditorState.savedRange = range.cloneRange();
+          }
+        }
+        if ((offInp.value || '').trim()) {
+          onInp.focus();
+          try { onInp.select(); } catch (_) {}
+        }
       }, 40);
     }
     function hideTplFieldSwapUi() {
@@ -4007,11 +4099,18 @@ ${ALDAGI_DETAILS}`;
         hideTplFieldSwapUi();
         return;
       }
+      // ბოლო მონიშვნაც გადავიღოთ (თუ კურსორი ჯერ კიდევ ტექსტზეა)
+      syncTplSwapOffFromSelection();
       const offText = (offInp?.value || '').trim();
       const onText = (onInp?.value || '').trim();
-      if (!offText || !onText) {
-        showAppToast('სტანდარტული და ჩართულის ტექსტი სავალდებულოა', 1800);
-        (!(offText) ? offInp : onInp)?.focus();
+      if (!offText) {
+        showAppToast('ჯერ ტექსტიდან მონიშნე შესაცვლელი მონაკვეთი', 2000);
+        $('tpl-swap-text')?.focus();
+        return;
+      }
+      if (!onText) {
+        showAppToast('ჩაწერე ტექსტი, რითაც შეიცვლება ჩართვაზე', 2000);
+        onInp?.focus();
         return;
       }
       if (offText === onText) {
@@ -4028,8 +4127,16 @@ ${ALDAGI_DETAILS}`;
       tplEditorState.pendingField = field;
       hideTplFieldSwapUi();
       if (shouldInsert) {
-        commitPendingTplField(field, { insertInto: $('tpl-ed-text') });
-        $('tpl-ed-text')?.focus();
+        // ჩანაცვლება მთავარ ტექსტში — offText-ის ადგილას
+        const main = $('tpl-ed-text');
+        if (main) {
+          const range = findTextRangeInEditor(main, offText);
+          if (range) {
+            tplEditorState.savedRange = range.cloneRange();
+          }
+        }
+        commitPendingTplField(field, { insertInto: main });
+        main?.focus();
         return;
       }
       openTplFieldPlace();
@@ -4431,7 +4538,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '299';
+      const v = window.__CC_VER || '300';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -6478,17 +6585,20 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
       e.preventDefault();
       cancelTplFieldSwap();
     });
-    ['tpl-field-swap-off', 'tpl-field-swap-on'].forEach(id => {
-      $(id)?.addEventListener('keydown', e => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          confirmTplFieldSwap();
-        }
-        if (e.key === 'Escape') {
-          e.preventDefault();
-          cancelTplFieldSwap();
-        }
-      });
+    $('tpl-field-swap-on')?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        confirmTplFieldSwap();
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        cancelTplFieldSwap();
+      }
+    });
+    document.addEventListener('selectionchange', () => {
+      const box = $('tpl-field-swap');
+      if (!box || box.classList.contains('hide')) return;
+      syncTplSwapOffFromSelection();
     });
     $('tpl-field-swap')?.addEventListener('click', e => {
       if (e.target === $('tpl-field-swap')) cancelTplFieldSwap();
