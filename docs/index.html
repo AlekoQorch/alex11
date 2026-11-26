@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
-    window.__CC_VER = '304';
+    window.__CC_VER = '306';
     (function () {
       function bustCaches() {
         var jobs = [];
@@ -386,35 +386,75 @@
       margin: 10px 0 12px;
       line-height: 1.4;
     }
+    #p-bulk .field-label {
+      margin: 0 0 6px;
+    }
+    #bulk-tpl {
+      display: block;
+      width: 100%;
+      margin: 0 0 10px;
+      box-sizing: border-box;
+      appearance: none;
+      -webkit-appearance: none;
+      background-color: var(--surface);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%239aa3b5' d='M1.1 1.2 6 6.1l4.9-4.9 1.1 1.1L6 8.3.0 2.3z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      background-size: 12px 8px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font: inherit;
+      font-size: 16px;
+      padding: 14px 34px 14px 14px;
+    }
+    #bulk-tpl:focus {
+      outline: none;
+      border-color: rgba(77, 159, 255, 0.55);
+    }
     .bulk-channel {
       display: flex;
-      gap: 8px;
-      margin: 0 0 12px;
+      margin: 0 0 14px;
+      padding: 4px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--surface);
     }
     .bulk-channel button {
       flex: 1;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      background: rgba(255,255,255,0.04);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border: none;
+      border-radius: 9px;
+      background: none;
       color: var(--dim);
       font: inherit;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
-      padding: 12px 8px;
+      padding: 10px 4px;
       cursor: pointer;
+      transition: background .12s ease, color .12s ease;
     }
-    .bulk-channel button.on[data-bulk-ch="sms"] {
-      background: rgba(77, 159, 255, 0.2);
-      border-color: rgba(77, 159, 255, 0.45);
+    .bulk-channel button .ch-ico {
+      width: 16px;
+      height: 16px;
+      display: inline-flex;
+      flex-shrink: 0;
+    }
+    .bulk-channel button .ch-ico svg {
+      width: 16px;
+      height: 16px;
+      display: block;
+    }
+    .bulk-channel button.on {
+      background: rgba(77, 159, 255, 0.16);
       color: #fff;
     }
     .bulk-channel button.on[data-bulk-ch="wa"] {
-      background: rgba(37, 211, 102, 0.18);
-      border-color: rgba(37, 211, 102, 0.45);
+      background: rgba(37, 211, 102, 0.16);
       color: #fff;
-    }
-    #bulk-tpl {
-      margin-bottom: 10px;
     }
     .bulk-list .num-row-actions {
       display: flex;
@@ -2574,8 +2614,8 @@
       </div>
 
       <div class="page" id="p-bulk">
-        <p class="sms-hint">ავტომატურად ყველა კლიენტს გაუგზავნის არჩეულ შაბლონს SMS-ით ან WhatsApp-ით. ნომრები დარეკვის სიიდან მოდის.</p>
-        <label class="field-label" for="bulk-tpl" style="display:block;margin:0 0 6px">შაბლონი</label>
+        <p class="sms-hint">ყველა კლიენტს გაუგზავნის არჩეულ შაბლონს SMS-ით ან WhatsApp-ით. ნომრები დარეკვის სიიდან მოდის.</p>
+        <label class="field-label" for="bulk-tpl">შაბლონი</label>
         <select id="bulk-tpl" class="field-inp" aria-label="შაბლონი"></select>
         <div class="bulk-channel" id="bulk-channel" role="group" aria-label="არხი">
           <button type="button" data-bulk-ch="sms" class="on">SMS</button>
@@ -4797,7 +4837,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '304';
+      const v = window.__CC_VER || '306';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
@@ -5020,6 +5060,8 @@ The main requirement is that the car is in a washed condition. It must be photog
       // SMS ტაბზე — გალურჯებული / მიმდინარე ნომერი
       if (v === 'sms') fillSmsTarget();
       if (v === 'bulk') {
+        paintBulkChannelButtons();
+        setBulkChannel(B.channel || 'sms');
         fillBulkTplSelect();
         renderBulkList();
         updateBulkBar();
@@ -6115,6 +6157,13 @@ The main requirement is that the car is in a washed condition. It must be photog
     }
     function bulkChannel() {
       return normalizeChannel(B.channel) === 'wa' ? 'wa' : 'sms';
+    }
+    function paintBulkChannelButtons() {
+      document.querySelectorAll('#bulk-channel [data-bulk-ch]').forEach(b => {
+        const ch = b.dataset.bulkCh === 'wa' ? 'wa' : 'sms';
+        const label = ch === 'wa' ? 'WhatsApp' : 'SMS';
+        b.innerHTML = channelLabel(ch, label);
+      });
     }
     function setBulkChannel(ch) {
       B.channel = ch === 'wa' ? 'wa' : 'sms';
