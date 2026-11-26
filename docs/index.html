@@ -5071,13 +5071,16 @@ The main requirement is that the car is in a washed condition. It must be photog
     function currentTab() {
       return document.querySelector('.tabs button.on')?.dataset.v || 'dial';
     }
+    const TAB_IDS = ['dial', 'sms', 'bulk', 'history'];
     function goTab(v) {
+      if (!TAB_IDS.includes(v)) v = 'dial';
       // სხვა ტაბზე გადასვლა — მასობრივი სესია გაჩერდეს
       if (v !== 'bulk' && B.run) stopBulk({ silent: true });
       document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x.dataset.v === v));
       document.querySelectorAll('.page').forEach(x => x.classList.remove('on'));
       $('p-' + v).classList.add('on');
       $('action-bar').classList.toggle('hide', v !== 'dial' && v !== 'bulk');
+      try { localStorage.setItem('last_tab', v); } catch {}
       // SMS ტაბზე — გალურჯებული / მიმდინარე ნომერი
       if (v === 'sms') fillSmsTarget();
       if (v === 'bulk') {
@@ -7681,6 +7684,9 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
     if (resumeDone > 0 && resumeDone < resumeTotal) {
       setStatus(`შენახულია · განაგრძე ${resumeDone}/${resumeTotal}-დან`);
     }
+    let savedTab = 'dial';
+    try { savedTab = localStorage.getItem('last_tab') || 'dial'; } catch {}
+    if (TAB_IDS.includes(savedTab) && savedTab !== 'dial') goTab(savedTab);
   </script>
   <div id="sms-saved-toast" class="sms-saved-toast" role="status" aria-live="polite">Saved</div>
 </body>
