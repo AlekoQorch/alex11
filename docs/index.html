@@ -2629,7 +2629,7 @@
       </div>
 
       <div class="page" id="p-bulk">
-        <p class="sms-hint">SMS — ყველა ნომერი ერთ Messages ფანჯარაში. WhatsApp — რიგრიგობით, ავტომატურად.</p>
+        <p class="sms-hint">რამდენიმე ნომერზე ერთად გაგზავნა Messages-ით იხსნება. WhatsApp — მხოლოდ ერთ ნომერზე (აპში პირდაპირ).</p>
         <label class="field-label" for="bulk-tpl">შაბლონი</label>
         <select id="bulk-tpl" class="field-inp" aria-label="შაბლონი"></select>
         <div class="bulk-channel" id="bulk-channel" role="group" aria-label="არხი">
@@ -6001,12 +6001,17 @@ The main requirement is that the car is in a washed condition. It must be photog
         showAppToast('ნომერი არასწორია', 2000);
         return;
       }
-      // Full text always — same as early wa.me behavior (no truncation)
       const full = String(msg || '');
-      const withText = 'https://wa.me/' + n + '?text=' + encodeURIComponent(full);
-      // Silent clipboard backup if URL is huge; never strip ?text=
-      if (withText.length > 8000) copyTextQuiet(full);
-      location.href = withText;
+      // პირდაპირ აპი — არა api.whatsapp.com / wa.me ბრაუზერის გვერდი
+      const encoded = encodeURIComponent(full);
+      let url = 'whatsapp://send?phone=' + n + '&text=' + encoded;
+      // deep link ძალიან გრძელია → clipboard + ჩატი ტექსტის გარეშე
+      if (url.length > 1800) {
+        copyTextQuiet(full);
+        showAppToast('ტექსტი კოპირებულია — WhatsApp-ში ჩასვი', 3200);
+        url = 'whatsapp://send?phone=' + n;
+      }
+      location.href = url;
     }
 
     function intlDigits(num) {
@@ -6513,25 +6518,47 @@ The main requirement is that the car is in a washed condition. It must be photog
         if (B.i >= B.q.length) { B.sent = {}; B.i = 0; }
       }
       const remaining = B.q.slice(B.i).filter(n => !B.sent[normNum(n)]);
+      if (!remaining.length) {
+        setStatus('ყველა უკვე გაგზავნილია');
+        return;
+      }
       const remMsgs = remaining.map(n => msgForTpl(tpl, n));
-      const sameText = remMsgs.length > 0 && remMsgs.every(m => m === remMsgs[0]);
-      // SMS + ერთნაირი ტექსტი → ერთი Messages ყველა მიმღებით
-      B.mode = (B.channel === 'sms' && sameText && remaining.length > 1) ? 'all' : 'chain';
+      const sameText = remMsgs.every(m => m === remMsgs[0]);
+
+      // რამდენიმე ნომერი + ერთნაირი ტექსტი → მხოლოდ SMS ერთ Messages-ში
+      // (WhatsApp ერთდროულად რამდენიმე ჩატს ვერ ხსნის; wa.me ციკლი აღარ)
+      if (remaining.length > 1) {
+        if (!sameText) {
+          setStatus('განსხვავებული ტექსტებია — გაგზავნე ნომრიდან ცალ-ცალკე');
+          return;
+        }
+        if (B.channel === 'wa') {
+          showAppToast('WhatsApp ერთდროულად ვერ იგზავნის — იხსნება SMS ყველასთვის', 3400);
+        }
+        B.channel = 'sms';
+        setBulkChannel('sms');
+        B.mode = 'all';
+        B.run = true;
+        B.wait = true;
+        B.watch = { i: B.i, startedAt: Date.now(), leftAt: 0, all: true };
+        setBulkNumsDisabled(true);
+        saveBulkSession();
+        updateBulkBar();
+        renderBulkList();
+        setStatus(`ყველას ერთად · SMS · ${remaining.length}`, true);
+        sendSmsToMany(remaining, remMsgs[0]);
+        return;
+      }
+
+      // ერთი ნომერი — არჩეული არხი (WA = პირდაპირ აპი)
+      B.mode = 'chain';
       B.run = true;
       B.wait = false;
       setBulkNumsDisabled(true);
       saveBulkSession();
       updateBulkBar();
       renderBulkList();
-      if (B.mode === 'all') {
-        setStatus(`ყველას ერთად · SMS · ${remaining.length}`, true);
-        B.wait = true;
-        B.watch = { i: B.i, startedAt: Date.now(), leftAt: 0, all: true };
-        saveBulkSession();
-        sendSmsToMany(remaining, remMsgs[0]);
-        return;
-      }
-      setStatus(`ავტო გაგზავნა · ${channelTitle(B.channel)}`, true);
+      setStatus(`გაგზავნა · ${channelTitle(B.channel)}`, true);
       sendBulkCurrent();
     }
     function sendBulkCurrent() {
@@ -6572,15 +6599,7 @@ The main requirement is that the car is in a washed condition. It must be photog
       B.i++;
       saveBulkSession();
       renderBulkList();
-      // WhatsApp / განსხვავებული ტექსტი — ავტო შემდეგი, მოდალის გარეშე
-      if (B.run && B.i < B.q.length) {
-        setStatus(`${B.i + 1}/${B.q.length} · შემდეგი…`, true);
-        setTimeout(() => {
-          if (B.run && B.i < B.q.length) sendBulkCurrent();
-          else doneBulk();
-        }, 280);
-        return;
-      }
+      // აღარ ვხსნით შემდეგ WhatsApp/SMS ავტომატურად — ციკლი გაჩერდა
       doneBulk();
     }
     function onBulkAppVisible() {
