@@ -2629,12 +2629,12 @@
       </div>
 
       <div class="page" id="p-bulk">
-        <p class="sms-hint">ყველა კლიენტს გაუგზავნის არჩეულ შაბლონს SMS-ით ან WhatsApp-ით.</p>
+        <p class="sms-hint">SMS — ყველა ნომერი ერთ Messages ფანჯარაში. WhatsApp — რიგრიგობით, ავტომატურად.</p>
         <label class="field-label" for="bulk-tpl">შაბლონი</label>
         <select id="bulk-tpl" class="field-inp" aria-label="შაბლონი"></select>
         <div class="bulk-channel" id="bulk-channel" role="group" aria-label="არხი">
-          <button type="button" data-bulk-ch="sms" class="on">SMS</button>
-          <button type="button" data-bulk-ch="wa">WhatsApp</button>
+          <button type="button" data-bulk-ch="wa" class="on">WhatsApp</button>
+          <button type="button" data-bulk-ch="sms">SMS</button>
         </div>
         <label class="field-label" for="bulk-preview">გასაგზავნი ტექსტი</label>
         <textarea id="bulk-preview" readonly rows="7" aria-label="გასაგზავნი ტექსტი"></textarea>
@@ -5057,7 +5057,9 @@ The main requirement is that the car is in a washed condition. It must be photog
     /** მასობრივი SMS/WA გაგზავნა */
     const B = {
       run: false, wait: false, i: 0, q: [],
-      sent: {}, tpl: '', channel: 'sms', watch: null
+      sent: {}, tpl: '', channel: 'wa', watch: null,
+      /** 'all' = ერთი SMS ყველაზე; 'chain' = რიგრიგობით ავტო */
+      mode: 'chain'
     };
     const BULK_SESSION_KEY = 'cc_bulk_session';
     function saveBulkSession() {
@@ -5075,6 +5077,7 @@ The main requirement is that the car is in a washed condition. It must be photog
           sent: B.sent || {},
           tpl: B.tpl,
           channel: B.channel,
+          mode: B.mode === 'all' ? 'all' : 'chain',
           watch: B.run ? B.watch : null,
           updated: Date.now()
         }));
@@ -5099,7 +5102,8 @@ The main requirement is that the car is in a washed condition. It must be photog
       B.q = sess.q.map(String);
       B.sent = sess.sent && typeof sess.sent === 'object' ? { ...sess.sent } : {};
       B.tpl = sess.tpl || '';
-      B.channel = sess.channel === 'wa' ? 'wa' : 'sms';
+      B.channel = sess.channel === 'sms' ? 'sms' : 'wa';
+      B.mode = sess.mode === 'all' ? 'all' : 'chain';
       if (sess.run) {
         B.run = true;
         B.wait = !!sess.wait;
@@ -5137,7 +5141,7 @@ The main requirement is that the car is in a washed condition. It must be photog
       if (v === 'sms') fillSmsTarget();
       if (v === 'bulk') {
         paintBulkChannelButtons();
-        setBulkChannel(B.channel || 'sms');
+        setBulkChannel(B.channel || 'wa');
         fillBulkTplSelect();
         markBulkRows();
         updateBulkPreview();
@@ -5968,6 +5972,29 @@ The main requirement is that the car is in a washed condition. It must be photog
       location.href = url;
     }
 
+    /** რამდენიმე მიმღები ერთ Messages ფანჯარაში (iOS/Android comma list) */
+    function sendSmsToMany(nums, msg) {
+      const list = (nums || []).map(n => tel(n)).filter(Boolean);
+      if (!list.length) return;
+      if (list.length === 1) {
+        sendSmsTo(list[0], msg);
+        return;
+      }
+      const addresses = list.join(',');
+      const body = encodeURIComponent(msg || '');
+      // iOS: sms:/open?addresses=a,b&body=… — ერთი compose ყველა მიმღებით
+      let url = 'sms:/open?addresses=' + encodeURIComponent(addresses) + '&body=' + body;
+      if (url.length > 1800) {
+        url = 'sms:' + addresses + '?body=' + body;
+      }
+      if (url.length > 1800) {
+        copyTextQuiet(msg);
+        showAppToast('ტექსტი კოპირებულია — Messages-ში ჩასვი', 3200);
+        url = 'sms:/open?addresses=' + encodeURIComponent(addresses);
+      }
+      location.href = url;
+    }
+
     function sendWaTo(num, msg) {
       const n = intlDigits(num);
       if (!n) {
@@ -6274,7 +6301,7 @@ The main requirement is that the car is in a washed condition. It must be photog
       const row = document.createElement('div');
       row.className = 'num-row';
       const id = `bcn-${stamp}-${i}`;
-      row.innerHTML = `<span class="num-lbl">${i + 1}.</span><input class="num-inp" id="${id}" name="${id}" type="tel" inputmode="tel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="ნომერი"><span class="num-row-actions"><button type="button" class="row-sms" data-bulk-send="sms">${channelLabel('sms', 'SMS')}</button><button type="button" class="row-wa" data-bulk-send="wa">${channelLabel('wa', 'WA')}</button></span><span class="num-mark"></span>`;
+      row.innerHTML = `<span class="num-lbl">${i + 1}.</span><input class="num-inp" id="${id}" name="${id}" type="tel" inputmode="tel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="ნომერი"><span class="num-row-actions"><button type="button" class="row-wa" data-bulk-send="wa">${channelLabel('wa', 'WA')}</button><button type="button" class="row-sms" data-bulk-send="sms">${channelLabel('sms', 'SMS')}</button></span><span class="num-mark"></span>`;
       return row;
     }
     function renderBulkNumRows(count, focusIdx) {
@@ -6470,7 +6497,8 @@ The main requirement is that the car is in a washed condition. It must be photog
         setStatus('ჩაწერე ნომრები');
         return;
       }
-      const msg = msgForTpl(tpl, B.q[0]);
+      const msgs = B.q.map(n => msgForTpl(tpl, n));
+      const msg = msgs[0];
       if (!String(msg || '').trim()) {
         setStatus('შაბლონის ტექსტი ცარიელია');
         return;
@@ -6484,12 +6512,25 @@ The main requirement is that the car is in a washed condition. It must be photog
         while (B.i < B.q.length && B.sent[normNum(B.q[B.i])]) B.i++;
         if (B.i >= B.q.length) { B.sent = {}; B.i = 0; }
       }
+      const remaining = B.q.slice(B.i).filter(n => !B.sent[normNum(n)]);
+      const remMsgs = remaining.map(n => msgForTpl(tpl, n));
+      const sameText = remMsgs.length > 0 && remMsgs.every(m => m === remMsgs[0]);
+      // SMS + ერთნაირი ტექსტი → ერთი Messages ყველა მიმღებით
+      B.mode = (B.channel === 'sms' && sameText && remaining.length > 1) ? 'all' : 'chain';
       B.run = true;
       B.wait = false;
       setBulkNumsDisabled(true);
       saveBulkSession();
       updateBulkBar();
       renderBulkList();
+      if (B.mode === 'all') {
+        setStatus(`ყველას ერთად · SMS · ${remaining.length}`, true);
+        B.wait = true;
+        B.watch = { i: B.i, startedAt: Date.now(), leftAt: 0, all: true };
+        saveBulkSession();
+        sendSmsToMany(remaining, remMsgs[0]);
+        return;
+      }
       setStatus(`ავტო გაგზავნა · ${channelTitle(B.channel)}`, true);
       sendBulkCurrent();
     }
@@ -6506,7 +6547,7 @@ The main requirement is that the car is in a washed condition. It must be photog
         return;
       }
       B.wait = true;
-      B.watch = { i: B.i, startedAt: Date.now(), leftAt: 0 };
+      B.watch = { i: B.i, startedAt: Date.now(), leftAt: 0, all: false };
       saveBulkSession();
       renderBulkList();
       setStatus(`${B.i + 1}/${B.q.length} · ${formatPhoneDisplay(num)}`, true);
@@ -6515,14 +6556,32 @@ The main requirement is that the car is in a washed condition. It must be photog
     }
     function finishBulkOne() {
       if (!B.run || !B.wait) return;
+      const wasAll = B.mode === 'all' || (B.watch && B.watch.all);
       B.watch = null;
       B.wait = false;
+      if (wasAll) {
+        B.q.forEach(n => { B.sent[normNum(n)] = true; });
+        B.i = B.q.length;
+        saveBulkSession();
+        renderBulkList();
+        doneBulk();
+        return;
+      }
       const n = B.q[B.i];
       B.sent[normNum(n)] = true;
       B.i++;
       saveBulkSession();
       renderBulkList();
-      showAfterBulk(n);
+      // WhatsApp / განსხვავებული ტექსტი — ავტო შემდეგი, მოდალის გარეშე
+      if (B.run && B.i < B.q.length) {
+        setStatus(`${B.i + 1}/${B.q.length} · შემდეგი…`, true);
+        setTimeout(() => {
+          if (B.run && B.i < B.q.length) sendBulkCurrent();
+          else doneBulk();
+        }, 280);
+        return;
+      }
+      doneBulk();
     }
     function onBulkAppVisible() {
       if (!B.run || !B.watch) return;
@@ -7755,9 +7814,10 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
       if (B.watch) {
         // Messages/WA-დან დაბრუნება (გვერდი გადაიტვირთა)
         onBulkAppVisible();
+      } else if (B.i < B.q.length) {
+        sendBulkCurrent();
       } else {
-        const prev = B.i > 0 ? B.q[B.i - 1] : B.q[Math.min(B.i, B.q.length - 1)];
-        showAfterBulk(prev || '');
+        doneBulk();
       }
     } else {
       if (TAB_IDS.includes(savedTab) && savedTab !== 'dial') goTab(savedTab);
