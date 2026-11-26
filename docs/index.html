@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
-    window.__CC_VER = '306';
+    window.__CC_VER = '314';
     (function () {
       function bustCaches() {
         var jobs = [];
@@ -2590,7 +2590,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver" title="განახლება">v192</div>
+      <div class="ver" id="app-ver" title="განახლება">v314</div>
     </header>
 
     <div class="tabs">
@@ -2629,7 +2629,7 @@
       </div>
 
       <div class="page" id="p-bulk">
-        <p class="sms-hint">რამდენიმე ნომერზე ერთად გაგზავნა Messages-ით იხსნება. WhatsApp — მხოლოდ ერთ ნომერზე (აპში პირდაპირ).</p>
+          <p class="sms-hint">რამდენიმე ნომერზე ერთად — Messages. გრძელ ტექსტს iOS URL-ში ვერ სვამს: კოპირდება და ჩასმა გჭირდება. WhatsApp — ერთ ნომერზე.</p>
         <label class="field-label" for="bulk-tpl">შაბლონი</label>
         <select id="bulk-tpl" class="field-inp" aria-label="შაბლონი"></select>
         <div class="bulk-channel" id="bulk-channel" role="group" aria-label="არხი">
@@ -2679,6 +2679,15 @@
       <p id="after-call-note"></p>
       <button class="go" id="after-call-next" type="button">დიახ, შემდეგი</button>
       <button class="skip" id="after-call-done" type="button">არა</button>
+    </div>
+  </div>
+
+  <div class="overlay hide" id="sms-paste-modal">
+    <div class="box">
+      <div class="lbl">ტექსტი კოპირებულია</div>
+      <p id="sms-paste-note">Messages-ში დააჭირე <b>ჩასმას</b> (paste), რომ ტექსტი გამოჩნდეს. iOS გრძელ SMS-ს URL-ში ვერ სვამს.</p>
+      <button class="go" id="sms-paste-go" type="button">Messages-ის გახსნა</button>
+      <button class="skip" id="sms-paste-cancel" type="button">გაუქმება</button>
     </div>
   </div>
 
@@ -5960,16 +5969,47 @@ The main requirement is that the car is in a washed condition. It must be photog
       }
     }
 
+    let pendingSmsHref = '';
+    function closeSmsPasteModal() {
+      pendingSmsHref = '';
+      $('sms-paste-modal')?.classList.add('hide');
+    }
+    function showSmsPasteModal(href, text, note) {
+      copyTextQuiet(text);
+      pendingSmsHref = href || '';
+      const noteEl = $('sms-paste-note');
+      if (noteEl) {
+        noteEl.innerHTML = note || 'Messages-ში დააჭირე <b>ჩასმას</b> (paste), რომ ტექსტი გამოჩნდეს.';
+      }
+      $('sms-paste-modal')?.classList.remove('hide');
+    }
+    function confirmSmsPasteOpen() {
+      const href = pendingSmsHref;
+      closeSmsPasteModal();
+      if (href) location.href = href;
+    }
+    function smsUrlWithBody(addresses, text) {
+      const body = encodeURIComponent(String(text || ''));
+      // iOS ერთ ნომერზე ?body= მუშაობს; მრავალზე &body= სცადე
+      const q = 'sms:' + addresses + '?body=' + body;
+      const a = 'sms:' + addresses + '&body=' + body;
+      if (q.length <= 1200) return q;
+      if (a.length <= 1200) return a;
+      return '';
+    }
     function sendSmsTo(num, msg) {
-      const body = encodeURIComponent(msg || '');
-      const url = 'sms:' + num + '?body=' + body;
-      if (url.length > 1500) {
-        copyTextQuiet(msg);
-        showAppToast('ტექსტი კოპირებულია — Messages-ში ჩასვი', 3200);
-        location.href = 'sms:' + num;
+      const n = tel(num);
+      if (!n) return;
+      const text = String(msg || '');
+      const withBody = smsUrlWithBody(n, text);
+      if (withBody) {
+        copyTextQuiet(text);
+        location.href = withBody;
         return;
       }
-      location.href = url;
+      // გრძელი ტექსტი — iOS URL-ში ვერ ჩაისმება
+      showSmsPasteModal('sms:' + n, text,
+        'ტექსტი კოპირებულია. Messages-ში დააჭირე <b>ჩასმას</b> (paste).');
     }
 
     /** რამდენიმე მიმღები ერთ Messages ფანჯარაში + ტექსტი */
@@ -5981,25 +6021,23 @@ The main requirement is that the car is in a washed condition. It must be photog
         return;
       }
       const text = String(msg || '');
-      const body = encodeURIComponent(text);
-      // iOS: /open?addresses=… ხშირად ტექსტს არ სვამს.
-      // მუშაობს: sms:a,b&body=… (Apple) და sms:a,b?body=…
-      // Android: ხშირად ; გამყოფი
       const isAndroid = /Android/i.test(navigator.userAgent);
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
       const addresses = list.join(isAndroid ? ';' : ',');
-      let url = 'sms:' + addresses + '&body=' + body;
-      if (url.length > 1500) {
-        url = 'sms:' + addresses + '?body=' + body;
-      }
-      if (url.length > 1500) {
-        copyTextQuiet(text);
-        showAppToast('ტექსტი კოპირებულია — Messages-ში ჩასვი', 3200);
-        location.href = 'sms:' + addresses;
+      // iOS: რამდენიმე მიმღებიან SMS-ზე body თითქმის ყოველთვის იკარგება
+      if (isIOS) {
+        showSmsPasteModal('sms:' + addresses, text,
+          'ტექსტი კოპირებულია. Messages გაიხსნება ყველა ნომრით — დააჭირე <b>ჩასმას</b> (paste), რომ ტექსტი გამოჩნდეს.');
         return;
       }
-      // backup — თუ OS body-ს მაინც დაკარგავს, ჩასმა მზადაა
-      copyTextQuiet(text);
-      location.href = url;
+      const withBody = smsUrlWithBody(addresses, text);
+      if (withBody) {
+        copyTextQuiet(text);
+        location.href = withBody;
+        return;
+      }
+      showSmsPasteModal('sms:' + addresses, text,
+        'ტექსტი კოპირებულია. Messages-ში დააჭირე <b>ჩასმას</b> (paste).');
     }
 
     function sendWaTo(num, msg) {
@@ -7705,6 +7743,17 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
       $('after-call-modal').classList.add('hide');
       if (B.run) stopBulk();
     };
+    $('sms-paste-go')?.addEventListener('click', confirmSmsPasteOpen);
+    $('sms-paste-cancel')?.addEventListener('click', () => {
+      closeSmsPasteModal();
+      if (B.run) stopBulk();
+    });
+    $('sms-paste-modal')?.addEventListener('click', e => {
+      if (e.target === $('sms-paste-modal')) {
+        closeSmsPasteModal();
+        if (B.run) stopBulk();
+      }
+    });
     $('send-go').onclick = confirmSend;
     $('send-cancel').onclick = closeSendModal;
     $('send-modal').onclick = e => { if (e.target === $('send-modal')) closeSendModal(); };
