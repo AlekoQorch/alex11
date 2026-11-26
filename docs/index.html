@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
-    window.__CC_VER = '303';
+    window.__CC_VER = '304';
     (function () {
       function bustCaches() {
         var jobs = [];
@@ -2540,8 +2540,8 @@
 
     <div class="tabs">
       <button class="on" data-v="dial" type="button">დარეკვა</button>
-      <button data-v="sms" type="button">SMS</button>
-      <button data-v="bulk" type="button">ავტო</button>
+      <button data-v="sms" type="button">შაბლონები</button>
+      <button data-v="bulk" type="button">SMS</button>
       <button data-v="history" type="button">ისტორია</button>
     </div>
 
@@ -4797,7 +4797,7 @@ ${ALDAGI_DETAILS}`;
     function docsVerifyUrl(num) {
       const base = new URL('verify.html', location.href).href.split('?')[0];
       const n = tel(num || getPhone() || '').replace(/\D/g, '');
-      const v = window.__CC_VER || '303';
+      const v = window.__CC_VER || '304';
       const q = new URLSearchParams();
       q.set('v', v);
       if (n) q.set('n', n);
