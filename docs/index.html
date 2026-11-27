@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
-    window.__CC_VER = '316';
+    window.__CC_VER = '317';
     (function () {
       function bustCaches() {
         var jobs = [];
@@ -2594,7 +2594,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver" id="app-ver" title="განახლება">v316</div>
+      <div class="ver" id="app-ver" title="განახლება">v317</div>
     </header>
 
     <div class="tabs">
@@ -2633,7 +2633,7 @@
       </div>
 
       <div class="page" id="p-bulk">
-        <p class="sms-hint" id="bulk-hint">ერთი ნომერი — WhatsApp ან SMS. რამდენიმე — ყველა ერთ Messages-ში.</p>
+        <p class="sms-hint" id="bulk-hint">ნომრები სათითაოდ გაიგზავნება — WhatsApp ან SMS. დაბრუნებისას შემდეგზე გადახვალ.</p>
         <label class="field-label" for="bulk-tpl">შაბლონი</label>
         <select id="bulk-tpl" class="field-inp" aria-label="შაბლონი"></select>
         <div class="bulk-channel" id="bulk-channel" role="group" aria-label="არხი">
@@ -6351,16 +6351,13 @@ The main requirement is that the car is in a washed condition. It must be photog
       updateBulkHint();
       updateBulkBar();
     }
-    /** რამდენიმე ნომერი → მხოლოდ SMS (ერთად); ერთი → WA ნებადართული */
     function syncBulkChannelUi() {
-      const n = parse(getBulkNumsText()).length;
       const waBtn = document.querySelector('#bulk-channel [data-bulk-ch="wa"]');
       if (waBtn) {
-        waBtn.disabled = n > 1;
-        waBtn.title = n > 1 ? 'რამდენიმე ნომერზე WhatsApp ერთდროულად ვერ იგზავნის' : '';
+        waBtn.disabled = false;
+        waBtn.title = '';
       }
-      if (n > 1) setBulkChannel('sms');
-      else if (!B.channel) setBulkChannel('wa');
+      if (!B.channel) setBulkChannel('wa');
       else setBulkChannel(B.channel);
       updateBulkHint();
     }
@@ -6368,14 +6365,13 @@ The main requirement is that the car is in a washed condition. It must be photog
       const el = $('bulk-hint');
       if (!el) return;
       const n = parse(getBulkNumsText()).length;
+      const ch = bulkChannel() === 'wa' ? 'WhatsApp' : 'SMS';
       if (n > 1) {
-        el.textContent = `${n} ნომერი · ყველა ერთ Messages-ში გაიგზავნება (SMS). მოკლე ტექსტი ჩაისმება, გრძელზე — ჩასმა.`;
+        el.textContent = `${n} ნომერი · ${ch}-ით სათითაოდ გაიგზავნება. თითოეულის შემდეგ შემდეგზე გადახვალ.`;
       } else if (n === 1) {
-        el.textContent = bulkChannel() === 'wa'
-          ? 'ერთი ნომერი · WhatsApp პირდაპირ აპში გაიხსნება.'
-          : 'ერთი ნომერი · Messages გაიხსნება.';
+        el.textContent = `ერთი ნომერი · ${ch}-ით გაგზავნა.`;
       } else {
-        el.textContent = 'ჩასვი ნომრები. ერთი — WhatsApp/SMS; რამდენიმე — ყველა ერთ Messages-ში.';
+        el.textContent = 'ჩასვი ნომრები. გაგზავნა სათითაოდაა — WhatsApp ან SMS.';
       }
     }
 
@@ -6585,10 +6581,8 @@ The main requirement is that the car is in a washed condition. It must be photog
       const done = q.filter(n => B.sent[normNum(n)]).length;
       if (done > 0 && done < q.length) {
         $('start').textContent = `განაგრძე (${done}/${q.length})`;
-      } else if (q.length > 1) {
-        $('start').textContent = `ყველას გაგზავნა · ${q.length}`;
-      } else if (q.length === 1) {
-        $('start').textContent = bulkChannel() === 'wa' ? 'WhatsApp-ით გაგზავნა' : 'SMS-ით გაგზავნა';
+      } else if (q.length) {
+        $('start').textContent = 'დაწყება';
       } else {
         $('start').textContent = 'დაწყება';
       }
@@ -6601,15 +6595,13 @@ The main requirement is that the car is in a washed condition. It must be photog
         return;
       }
       B.tpl = tpl;
-      syncBulkChannelUi();
       B.channel = bulkChannel();
       B.q = parse(getBulkNumsText());
       if (!B.q.length) {
         setStatus('ჩაწერე ნომრები');
         return;
       }
-      const msgs = B.q.map(n => msgForTpl(tpl, n));
-      const msg = msgs[0];
+      const msg = msgForTpl(tpl, B.q[0]);
       if (!String(msg || '').trim()) {
         setStatus('შაბლონის ტექსტი ცარიელია');
         return;
@@ -6623,36 +6615,7 @@ The main requirement is that the car is in a washed condition. It must be photog
         while (B.i < B.q.length && B.sent[normNum(B.q[B.i])]) B.i++;
         if (B.i >= B.q.length) { B.sent = {}; B.i = 0; }
       }
-      const remaining = B.q.slice(B.i).filter(n => !B.sent[normNum(n)]);
-      if (!remaining.length) {
-        setStatus('ყველა უკვე გაგზავნილია');
-        return;
-      }
-      const remMsgs = remaining.map(n => msgForTpl(tpl, n));
-      const sameText = remMsgs.every(m => m === remMsgs[0]);
-
-      // რამდენიმე ნომერი → ერთი Messages ყველასთვის (საუკეთესო რაც ტელეფონზე შეიძლება)
-      if (remaining.length > 1) {
-        if (!sameText) {
-          setStatus('განსხვავებული ტექსტებია — გაგზავნე ნომრის ღილაკით ცალ-ცალკე');
-          return;
-        }
-        B.channel = 'sms';
-        setBulkChannel('sms');
-        B.mode = 'all';
-        B.run = true;
-        B.wait = true;
-        B.watch = { i: B.i, startedAt: Date.now(), leftAt: 0, all: true };
-        setBulkNumsDisabled(true);
-        saveBulkSession();
-        updateBulkBar();
-        renderBulkList();
-        setStatus(`ყველას ერთად · ${remaining.length} ნომერი`, true);
-        sendSmsToMany(remaining, remMsgs[0]);
-        return;
-      }
-
-      // ერთი ნომერი — არჩეული არხი
+      // სათითაოდ — არჩეული არხი (WhatsApp ან SMS)
       B.mode = 'chain';
       B.run = true;
       B.wait = false;
@@ -6660,7 +6623,7 @@ The main requirement is that the car is in a washed condition. It must be photog
       saveBulkSession();
       updateBulkBar();
       renderBulkList();
-      setStatus(`გაგზავნა · ${channelTitle(B.channel)}`, true);
+      setStatus(`ავტო გაგზავნა · ${channelTitle(B.channel)}`, true);
       sendBulkCurrent();
     }
     function sendBulkCurrent() {
@@ -6685,24 +6648,14 @@ The main requirement is that the car is in a washed condition. It must be photog
     }
     function finishBulkOne() {
       if (!B.run || !B.wait) return;
-      const wasAll = B.mode === 'all' || (B.watch && B.watch.all);
       B.watch = null;
       B.wait = false;
-      if (wasAll) {
-        B.q.forEach(n => { B.sent[normNum(n)] = true; });
-        B.i = B.q.length;
-        saveBulkSession();
-        renderBulkList();
-        doneBulk();
-        return;
-      }
       const n = B.q[B.i];
       B.sent[normNum(n)] = true;
       B.i++;
       saveBulkSession();
       renderBulkList();
-      // აღარ ვხსნით შემდეგ WhatsApp/SMS ავტომატურად — ციკლი გაჩერდა
-      doneBulk();
+      showAfterBulk(n);
     }
     function onBulkAppVisible() {
       if (!B.run || !B.watch) return;
