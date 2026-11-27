@@ -7900,7 +7900,8 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
         // Messages/WA-დან დაბრუნება (გვერდი გადაიტვირთა)
         onBulkAppVisible();
       } else if (B.i < B.q.length) {
-        sendBulkCurrent();
+        const prev = B.i > 0 ? B.q[B.i - 1] : B.q[0];
+        showAfterBulk(prev || '');
       } else {
         doneBulk();
       }
