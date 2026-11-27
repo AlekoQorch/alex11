@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
-    window.__CC_VER = '318';
+    window.__CC_VER = '319';
     (function () {
       function bustCaches() {
         var jobs = [];
@@ -2594,7 +2594,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver" id="app-ver" title="განახლება">v318</div>
+      <div class="ver" id="app-ver" title="განახლება">v319</div>
     </header>
 
     <div class="tabs">
@@ -2633,7 +2633,7 @@
       </div>
 
       <div class="page" id="p-bulk">
-        <p class="sms-hint" id="bulk-hint">ნომრები სათითაოდ გაიგზავნება — WhatsApp ან SMS. დაბრუნებისას შემდეგზე გადახვალ.</p>
+        <p class="sms-hint" id="bulk-hint">ნომრები სათითაოდ გაიგზავნება — WhatsApp ან SMS. ტექსტი ჩატში ჩაიწერება.</p>
         <label class="field-label" for="bulk-tpl">შაბლონი</label>
         <select id="bulk-tpl" class="field-inp" aria-label="შაბლონი"></select>
         <div class="bulk-channel" id="bulk-channel" role="group" aria-label="არხი">
@@ -2683,15 +2683,6 @@
       <p id="after-call-note"></p>
       <button class="go" id="after-call-next" type="button">დიახ, შემდეგი</button>
       <button class="skip" id="after-call-done" type="button">არა</button>
-    </div>
-  </div>
-
-  <div class="overlay hide" id="sms-paste-modal">
-    <div class="box">
-      <div class="lbl">ტექსტი კოპირებულია ✓</div>
-      <p id="sms-paste-note">1) გაიხსნება Messages ყველა ნომრით<br>2) დააჭირე <b>ჩასმას</b> (paste)<br>3) გაგზავნე</p>
-      <button class="go" id="sms-paste-go" type="button">გახსენი Messages</button>
-      <button class="skip" id="sms-paste-cancel" type="button">გაუქმება</button>
     </div>
   </div>
 
@@ -5973,89 +5964,14 @@ The main requirement is that the car is in a washed condition. It must be photog
       }
     }
 
-    let pendingSmsHref = '';
-    function closeSmsPasteModal() {
-      pendingSmsHref = '';
-      $('sms-paste-modal')?.classList.add('hide');
-      const go = $('sms-paste-go');
-      if (go) go.textContent = 'გახსენი Messages';
-    }
-    function showSmsPasteModal(href, text, note) {
-      copyTextQuiet(text);
-      pendingSmsHref = href || '';
-      const noteEl = $('sms-paste-note');
-      if (noteEl) {
-        noteEl.innerHTML = note || '1) გაიხსნება Messages<br>2) დააჭირე <b>ჩასმას</b> (paste)<br>3) გაგზავნე';
-      }
-      $('sms-paste-modal')?.classList.remove('hide');
-    }
-    function confirmSmsPasteOpen() {
-      const href = pendingSmsHref;
-      closeSmsPasteModal();
-      const go = $('sms-paste-go');
-      if (go) go.textContent = 'გახსენი Messages';
-      if (href) location.href = href;
-    }
-    /** გრძელი ტექსტი: კოპირება + დაუყოვნებელი გახსნა (iOS setTimeout-ს ჭრის) */
-    function openWithPasteBackup(href, text, toastMsg) {
-      copyTextQuiet(text);
-      showAppToast(toastMsg || 'ტექსტი კოპირებულია — ჩასვი (paste)', 4800);
-      location.href = href;
-    }
-    function smsUrlWithBody(addresses, text) {
-      const body = encodeURIComponent(String(text || ''));
-      const q = 'sms:' + addresses + '?body=' + body;
-      const a = 'sms:' + addresses + '&body=' + body;
-      // iOS ლიმიტი მკაცრია; მოკლე შაბლონები (არ პასუხობს და სხვა) ჩაისმება
-      if (q.length <= 1400) return q;
-      if (a.length <= 1400) return a;
-      return '';
-    }
-    function smsAddressList(nums) {
-      const list = (nums || []).map(n => tel(n)).filter(Boolean);
-      const isAndroid = /Android/i.test(navigator.userAgent);
-      return list.join(isAndroid ? ';' : ',');
-    }
     function sendSmsTo(num, msg) {
       const n = tel(num);
       if (!n) return;
       const text = String(msg || '');
-      const withBody = smsUrlWithBody(n, text);
-      if (withBody) {
-        copyTextQuiet(text);
-        location.href = withBody;
-        return;
-      }
-      // გრძელი ტექსტი — URL-ში ვერ ჩაისმება; ჩასმა იგივე gesture-ით
-      showSmsPasteModal(
-        'sms:' + n,
-        text,
-        'ტექსტი კოპირებულია ✓<br><br>1) დააჭირე <b>გახსენი Messages</b><br>2) დააჭირე <b>ჩასმას</b> (paste)<br>3) გაგზავნე'
-      );
-    }
-
-    /** რამდენიმე მიმღები ერთ Messages-ში; მოკლე ტექსტი URL-ში, გრძელი — ჩასმა */
-    function sendSmsToMany(nums, msg) {
-      const list = (nums || []).map(n => tel(n)).filter(Boolean);
-      if (!list.length) return;
-      if (list.length === 1) {
-        sendSmsTo(list[0], msg);
-        return;
-      }
-      const text = String(msg || '');
-      const addresses = smsAddressList(list);
-      const withBody = smsUrlWithBody(addresses, text);
-      if (withBody) {
-        copyTextQuiet(text);
-        location.href = withBody;
-        return;
-      }
-      // გრძელი / iOS ვერ სვამს body-ს → კოპირება + მარტივი ნაბიჯები + Messages
-      showSmsPasteModal(
-        'sms:' + addresses,
-        text,
-        `ტექსტი კოპირებულია ✓ · ${list.length} ნომერი<br><br>1) დააჭირე <b>გახსენი Messages</b><br>2) დააჭირე <b>ჩასმას</b> (paste)<br>3) გაგზავნე ერთხელ — ყველას მიადგება`
-      );
+      const body = encodeURIComponent(text);
+      // როგორც ადრე: ტექსტი პირდაპირ Messages-ში
+      const url = 'sms:' + n + '?body=' + body;
+      location.href = url;
     }
 
     function sendWaTo(num, msg) {
@@ -6065,28 +5981,9 @@ The main requirement is that the car is in a washed condition. It must be photog
         return;
       }
       const full = String(msg || '');
-      const enc = encodeURIComponent(full);
-      const webBase = 'https://wa.me/' + n;
-      const webWithText = full ? webBase + '?text=' + enc : webBase;
-
-      // პრიორიტეტი: ტექსტი აუცილებლად ჩანდეს (wa.me + text)
-      if (full && webWithText.length <= 6000) {
-        copyTextQuiet(full);
-        location.href = webWithText;
-        return;
-      }
-      if (!full) {
-        location.href = webBase;
-        return;
-      }
-      // ძალიან გრძელი — კოპირება + ჩასმის ნაბიჯი, მერე ჩატი
-      showSmsPasteModal(
-        webBase,
-        full,
-        'ტექსტი კოპირებულია ✓<br><br>1) დააჭირე <b>გახსენი Messages</b> (WhatsApp გაიხსნება)<br>2) დააჭირე <b>ჩასმას</b> (paste)<br>3) გაგზავნე'
-      );
-      const go = $('sms-paste-go');
-      if (go) go.textContent = 'გახსენი WhatsApp';
+      // როგორც ადრე: ტექსტი პირდაპირ WhatsApp ჩატში
+      const url = 'https://wa.me/' + n + (full ? '?text=' + encodeURIComponent(full) : '');
+      location.href = url;
     }
 
     function intlDigits(num) {
@@ -7740,17 +7637,6 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
       $('after-call-modal').classList.add('hide');
       if (B.run) stopBulk();
     };
-    $('sms-paste-go')?.addEventListener('click', confirmSmsPasteOpen);
-    $('sms-paste-cancel')?.addEventListener('click', () => {
-      closeSmsPasteModal();
-      if (B.run) stopBulk();
-    });
-    $('sms-paste-modal')?.addEventListener('click', e => {
-      if (e.target === $('sms-paste-modal')) {
-        closeSmsPasteModal();
-        if (B.run) stopBulk();
-      }
-    });
     $('send-go').onclick = confirmSend;
     $('send-cancel').onclick = closeSendModal;
     $('send-modal').onclick = e => { if (e.target === $('send-modal')) closeSendModal(); };
