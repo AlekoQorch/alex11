@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
-    window.__CC_VER = '315';
+    window.__CC_VER = '316';
     (function () {
       function bustCaches() {
         var jobs = [];
@@ -2594,7 +2594,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver" id="app-ver" title="განახლება">v315</div>
+      <div class="ver" id="app-ver" title="განახლება">v316</div>
     </header>
 
     <div class="tabs">
@@ -5992,11 +5992,11 @@ The main requirement is that the car is in a washed condition. It must be photog
       closeSmsPasteModal();
       if (href) location.href = href;
     }
-    /** გრძელი ტექსტი: კოპირება → მოკლე შეტყობინება → Messages/აპი */
+    /** გრძელი ტექსტი: კოპირება + დაუყოვნებელი გახსნა (iOS setTimeout-ს ჭრის) */
     function openWithPasteBackup(href, text, toastMsg) {
       copyTextQuiet(text);
       showAppToast(toastMsg || 'ტექსტი კოპირებულია — ჩასვი (paste)', 4800);
-      setTimeout(() => { location.href = href; }, 200);
+      location.href = href;
     }
     function smsUrlWithBody(addresses, text) {
       const body = encodeURIComponent(String(text || ''));
@@ -6056,18 +6056,30 @@ The main requirement is that the car is in a washed condition. It must be photog
         return;
       }
       const full = String(msg || '');
-      // პირდაპირ აპი — არა api.whatsapp.com ბრაუზერის გვერდი
-      const encoded = encodeURIComponent(full);
-      let url = 'whatsapp://send?phone=' + n + '&text=' + encoded;
-      if (url.length > 1800) {
-        openWithPasteBackup(
-          'whatsapp://send?phone=' + n,
-          full,
-          'ტექსტი კოპირებულია — WhatsApp-ში ჩასვი (paste)'
-        );
-        return;
+      if (full) copyTextQuiet(full);
+
+      const enc = encodeURIComponent(full);
+      const webBase = 'https://wa.me/' + n;
+      const webText = full ? webBase + '?text=' + enc : webBase;
+      const nativeBase = 'whatsapp://send?phone=' + n;
+      const nativeText = full ? nativeBase + '&text=' + enc : nativeBase;
+
+      // ტექსტი URL-ში თუ ჯდება; თუ არა — clipboard + ჩატი
+      const web = (full && webText.length <= 6000) ? webText : webBase;
+      const native = (full && nativeText.length <= 1800) ? nativeText : nativeBase;
+      if (full && web === webBase) {
+        showAppToast('ტექსტი კოპირებულია — WhatsApp-ში ჩასვი (paste)', 4000);
       }
-      location.href = url;
+
+      // 1) ჯერ native (თუ აპი გაიხსნა — ბრაუზერის გვერდი არაა)
+      // 2) თუ ვერ გაიხსნა — wa.me (საიმედო)
+      location.href = native;
+      const started = Date.now();
+      setTimeout(() => {
+        if (document.visibilityState !== 'visible') return;
+        if (Date.now() - started > 2500) return;
+        location.href = web;
+      }, 700);
     }
 
     function intlDigits(num) {
