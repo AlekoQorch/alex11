@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
-    window.__CC_VER = '317';
+    window.__CC_VER = '318';
     (function () {
       function bustCaches() {
         var jobs = [];
@@ -2594,7 +2594,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver" id="app-ver" title="განახლება">v317</div>
+      <div class="ver" id="app-ver" title="განახლება">v318</div>
     </header>
 
     <div class="tabs">
@@ -5977,6 +5977,8 @@ The main requirement is that the car is in a washed condition. It must be photog
     function closeSmsPasteModal() {
       pendingSmsHref = '';
       $('sms-paste-modal')?.classList.add('hide');
+      const go = $('sms-paste-go');
+      if (go) go.textContent = 'გახსენი Messages';
     }
     function showSmsPasteModal(href, text, note) {
       copyTextQuiet(text);
@@ -5990,6 +5992,8 @@ The main requirement is that the car is in a washed condition. It must be photog
     function confirmSmsPasteOpen() {
       const href = pendingSmsHref;
       closeSmsPasteModal();
+      const go = $('sms-paste-go');
+      if (go) go.textContent = 'გახსენი Messages';
       if (href) location.href = href;
     }
     /** გრძელი ტექსტი: კოპირება + დაუყოვნებელი გახსნა (iOS setTimeout-ს ჭრის) */
@@ -6022,7 +6026,12 @@ The main requirement is that the car is in a washed condition. It must be photog
         location.href = withBody;
         return;
       }
-      openWithPasteBackup('sms:' + n, text, 'ტექსტი კოპირებულია — Messages-ში ჩასვი (paste)');
+      // გრძელი ტექსტი — URL-ში ვერ ჩაისმება; ჩასმა იგივე gesture-ით
+      showSmsPasteModal(
+        'sms:' + n,
+        text,
+        'ტექსტი კოპირებულია ✓<br><br>1) დააჭირე <b>გახსენი Messages</b><br>2) დააჭირე <b>ჩასმას</b> (paste)<br>3) გაგზავნე'
+      );
     }
 
     /** რამდენიმე მიმღები ერთ Messages-ში; მოკლე ტექსტი URL-ში, გრძელი — ჩასმა */
@@ -6056,30 +6065,28 @@ The main requirement is that the car is in a washed condition. It must be photog
         return;
       }
       const full = String(msg || '');
-      if (full) copyTextQuiet(full);
-
       const enc = encodeURIComponent(full);
       const webBase = 'https://wa.me/' + n;
-      const webText = full ? webBase + '?text=' + enc : webBase;
-      const nativeBase = 'whatsapp://send?phone=' + n;
-      const nativeText = full ? nativeBase + '&text=' + enc : nativeBase;
+      const webWithText = full ? webBase + '?text=' + enc : webBase;
 
-      // ტექსტი URL-ში თუ ჯდება; თუ არა — clipboard + ჩატი
-      const web = (full && webText.length <= 6000) ? webText : webBase;
-      const native = (full && nativeText.length <= 1800) ? nativeText : nativeBase;
-      if (full && web === webBase) {
-        showAppToast('ტექსტი კოპირებულია — WhatsApp-ში ჩასვი (paste)', 4000);
+      // პრიორიტეტი: ტექსტი აუცილებლად ჩანდეს (wa.me + text)
+      if (full && webWithText.length <= 6000) {
+        copyTextQuiet(full);
+        location.href = webWithText;
+        return;
       }
-
-      // 1) ჯერ native (თუ აპი გაიხსნა — ბრაუზერის გვერდი არაა)
-      // 2) თუ ვერ გაიხსნა — wa.me (საიმედო)
-      location.href = native;
-      const started = Date.now();
-      setTimeout(() => {
-        if (document.visibilityState !== 'visible') return;
-        if (Date.now() - started > 2500) return;
-        location.href = web;
-      }, 700);
+      if (!full) {
+        location.href = webBase;
+        return;
+      }
+      // ძალიან გრძელი — კოპირება + ჩასმის ნაბიჯი, მერე ჩატი
+      showSmsPasteModal(
+        webBase,
+        full,
+        'ტექსტი კოპირებულია ✓<br><br>1) დააჭირე <b>გახსენი Messages</b> (WhatsApp გაიხსნება)<br>2) დააჭირე <b>ჩასმას</b> (paste)<br>3) გაგზავნე'
+      );
+      const go = $('sms-paste-go');
+      if (go) go.textContent = 'გახსენი WhatsApp';
     }
 
     function intlDigits(num) {
@@ -6400,7 +6407,7 @@ The main requirement is that the car is in a washed condition. It must be photog
       const row = document.createElement('div');
       row.className = 'num-row';
       const id = `bcn-${stamp}-${i}`;
-      row.innerHTML = `<span class="num-lbl">${i + 1}.</span><input class="num-inp" id="${id}" name="${id}" type="tel" inputmode="tel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="ნომერი"><span class="num-row-actions"><button type="button" class="row-wa" data-bulk-send="wa">${channelLabel('wa', 'WA')}</button><button type="button" class="row-sms" data-bulk-send="sms">${channelLabel('sms', 'SMS')}</button></span><span class="num-mark"></span>`;
+      row.innerHTML = `<span class="num-lbl">${i + 1}.</span><input class="num-inp" id="${id}" name="${id}" type="tel" inputmode="tel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="ნომერი"><span class="num-mark"></span>`;
       return row;
     }
     function renderBulkNumRows(count, focusIdx) {
@@ -7724,26 +7731,6 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
       } catch { setStatus('ჩასმა ვერ მოხერხდა'); }
     });
     $('bulk-clear')?.addEventListener('click', clearBulkNums);
-    $('bulk-list')?.addEventListener('click', e => {
-      const sendBtn = e.target.closest('[data-bulk-send]');
-      if (!sendBtn) return;
-      e.preventDefault();
-      if (B.run) return;
-      const row = sendBtn.closest('.num-row');
-      const num = tel(row?.querySelector('.num-inp')?.value || '');
-      if (!num) return;
-      const ch = sendBtn.dataset.bulkSend === 'wa' ? 'wa' : 'sms';
-      const tpl = $('bulk-tpl')?.value || B.tpl;
-      if (tpl) {
-        const msg = msgForTpl(tpl, num);
-        const title = listBulkTplOptions().find(o => o.id === tpl)?.title || 'გაგზავნა';
-        if (msg) {
-          showSendConfirm(num, msg, ch, title);
-          return;
-        }
-      }
-      showTemplatePicker(num, ch);
-    });
     $('after-call-next').onclick = () => {
       if (B.run) goNextBulk();
       else goNextCall();
