@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Cold Caller">
-  <meta name="theme-color" content="#111113">
+  <meta name="theme-color" content="#0a1020">
   <meta name="color-scheme" content="dark">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
@@ -15,13 +15,14 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
-    window.__CC_VER = '321';
+    window.__CC_VER = '322';
     (function () {
       function bustCaches() {
         var jobs = [];
@@ -138,7 +139,7 @@
       padding: calc(env(safe-area-inset-top, 47px) + 12px) 20px 14px;
       text-align: center;
       background: var(--bg);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      border-bottom: 1px solid rgba(77, 159, 255, 0.10);
     }
     .brand::after {
       content: "";
@@ -148,10 +149,21 @@
       bottom: 0;
       height: 1px;
       border-radius: 0;
-      background: rgba(255, 255, 255, 0.08);
+      background: linear-gradient(90deg, transparent, rgba(126, 214, 255, 0.35), transparent);
       opacity: 1;
       transform: none;
       width: auto;
+    }
+    .brand-logo {
+      position: relative;
+      z-index: 1;
+      display: block;
+      width: 44px;
+      height: 44px;
+      margin: 0 auto 8px;
+      border-radius: 12px;
+      object-fit: cover;
+      box-shadow: 0 0 0 1px rgba(126, 214, 255, 0.18), 0 4px 14px rgba(0, 0, 0, 0.35);
     }
     .brand h1 {
       position: relative;
@@ -166,7 +178,7 @@
       font-weight: 800;
       letter-spacing: -0.04em;
       line-height: 1.1;
-      color: #f4f6f5;
+      color: #f2f7fb;
     }
     .brand .ver {
       display: inline-block;
@@ -177,9 +189,9 @@
       font-weight: 600;
       letter-spacing: 0.06em;
       text-transform: uppercase;
-      color: rgba(236, 236, 236, 0.55);
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.07);
+      color: rgba(180, 220, 255, 0.62);
+      background: rgba(77, 159, 255, 0.08);
+      border: 1px solid rgba(77, 159, 255, 0.16);
     }
 
     .tabs {
@@ -202,9 +214,10 @@
       transition: background .12s ease, color .12s ease;
     }
     .tabs button.on {
-      background: rgba(77, 159, 255, 0.16);
-      color: #fff;
+      background: rgba(77, 159, 255, 0.18);
+      color: #eaf6ff;
       font-weight: 600;
+      box-shadow: inset 0 0 0 1px rgba(126, 214, 255, 0.14);
     }
 
     .body {
@@ -2444,7 +2457,7 @@
       z-index: 200;
       padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
       background: var(--bg);
-      border-top: 1px solid var(--line);
+      border-top: 1px solid rgba(77, 159, 255, 0.12);
     }
     .bar .go {
       width: 100%;
@@ -2593,8 +2606,9 @@
 <body>
   <div class="app">
     <header class="brand">
+      <img class="brand-logo" src="icons/logo.png" width="44" height="44" alt="">
       <h1>Cold Caller</h1>
-      <div class="ver" id="app-ver" title="განახლება">v321</div>
+      <div class="ver" id="app-ver" title="განახლება">v322</div>
     </header>
 
     <div class="tabs">
