@@ -22,7 +22,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script>
     /* ავტო-განახლება: ძველი SW/კეში იძულებით იშლება */
-    window.__CC_VER = '326';
+    window.__CC_VER = '327';
     (function () {
       function bustCaches() {
         var jobs = [];
@@ -113,17 +113,25 @@
       --red: #ff453a;
       --bar: 80px;
     }
+    html {
+      height: 100%;
+    }
     body {
       font-family: -apple-system, sans-serif;
       background: var(--bg);
       color: var(--text);
       font-size: 16px;
       line-height: 1.45;
+      min-height: 100%;
+      min-height: 100svh;
       min-height: 100dvh;
+      overflow-x: hidden;
     }
     .app {
       max-width: 480px;
       margin: 0 auto;
+      min-height: 100%;
+      min-height: 100svh;
       min-height: 100dvh;
       display: flex;
       flex-direction: column;
@@ -136,7 +144,7 @@
       overflow: hidden;
       margin: 0 0 12px;
       /* Background goes under Dynamic Island; title starts below it */
-      padding: calc(env(safe-area-inset-top, 47px) + 12px) 20px 14px;
+      padding: calc(env(safe-area-inset-top, 0px) + 12px) 20px 14px;
       text-align: center;
       background: var(--bg);
       border-bottom: 1px solid rgba(77, 159, 255, 0.10);
@@ -2444,9 +2452,15 @@
       left: 0; right: 0;
       bottom: 0;
       z-index: 200;
-      padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+      padding: 12px 16px;
+      padding-bottom: calc(12px + constant(safe-area-inset-bottom));
+      padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
       background: var(--bg);
       border-top: 1px solid rgba(77, 159, 255, 0.12);
+      /* visualViewport pin after rotate — prevents up/down jump on iOS */
+      transform: translate3d(0, var(--bar-shift, 0px), 0);
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
     }
     .bar .go {
       width: 100%;
@@ -2596,7 +2610,7 @@
   <div class="app">
     <header class="brand">
       <h1>Cold Caller</h1>
-      <div class="ver" id="app-ver" title="განახლება">v326</div>
+      <div class="ver" id="app-ver" title="განახლება">v327</div>
     </header>
 
     <div class="tabs">
@@ -7787,6 +7801,44 @@ ${extrasBlock ? extrasBlock : '\n'}${buildAldagiBenefits(isElectric)}`;
         updateBulkBar();
       }
     }
+
+    /* iOS: after rotate, fixed bottom bar can jump — pin to visualViewport */
+    (function pinActionBar() {
+      const root = document.documentElement;
+      const bar = document.getElementById('action-bar');
+      if (!bar) return;
+      let timers = [];
+      function measure() {
+        const h = bar.offsetHeight;
+        if (h > 0) root.style.setProperty('--bar', Math.ceil(h) + 'px');
+        const vv = window.visualViewport;
+        let shift = 0;
+        if (vv) {
+          /* Gap below visual viewport inside layout viewport — move bar up by that amount */
+          const gap = window.innerHeight - vv.height - vv.offsetTop;
+          shift = -Math.max(0, Math.round(gap));
+        }
+        root.style.setProperty('--bar-shift', shift + 'px');
+      }
+      function settle() {
+        measure();
+        timers.forEach(clearTimeout);
+        timers = [50, 120, 300, 600, 1000].map(ms => setTimeout(measure, ms));
+      }
+      window.addEventListener('resize', settle);
+      window.addEventListener('orientationchange', settle);
+      window.addEventListener('pageshow', settle);
+      if (window.visualViewport) {
+        visualViewport.addEventListener('resize', settle);
+        visualViewport.addEventListener('scroll', measure);
+      }
+      /* after Safari URL bar show/hide */
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible') settle();
+      });
+      settle();
+    })();
+
   </script>
   <div id="sms-saved-toast" class="sms-saved-toast" role="status" aria-live="polite">Saved</div>
 </body>

@@ -1,5 +1,5 @@
 /* Cold Caller — network-first; wipe caches on activate */
-const CACHE = 'cold-caller-v326';
+const CACHE = 'cold-caller-v327';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
