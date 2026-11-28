@@ -9,8 +9,8 @@
   "orientation": "portrait",
   "lang": "ka",
   "icons": [
-    { "src": "icons/apple-touch-icon-v325.png", "sizes": "180x180", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-192-v325.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-512-v325.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    { "src": "icons/apple-touch-icon-v326.png", "sizes": "180x180", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-192-v326.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512-v326.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ]
 }
